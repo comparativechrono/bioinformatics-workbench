@@ -1,0 +1,13 @@
+muscle 3.8.1551
+Licence: public domain ("This software is donated to the public domain." – MUSCLE 3.8, usage.cpp)
+Upstream source: https://drive5.com/muscle/muscle_src_3.8.1551.tar.gz (the Biowasm recipe downloads this archive)
+WebAssembly build: Biowasm (https://biowasm.com/), downloaded from
+  https://biowasm.com/cdn/v3/muscle/3.8.1551/ on 2026-10-10
+Build recipes: https://github.com/biowasm/biowasm (a pinned copy is in ../../../licenses/biowasm-build/)
+
+This is MUSCLE version 3 (options -in, -out, -clw …), not MUSCLE 5.
+
+Local change to the JavaScript loader: exit(status) is recorded as Module.__exitStatus, so that the
+terminal of the workbench keeps the exit status of a failed command.
+Modified file: muscle.js
+muscle.wasm is unmodified.

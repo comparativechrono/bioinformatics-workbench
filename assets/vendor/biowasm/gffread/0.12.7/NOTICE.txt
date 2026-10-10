@@ -1,0 +1,16 @@
+gffread 0.12.7
+Licence: MIT (gffread) and the Artistic License 2.0 (GCLib, which gffread is built with); both texts in LICENSE
+Upstream source: https://github.com/gpertea/gffread/tree/v0.12.7 (commit 5647f076f616c583ea32fd19629d549d70fc43ea), with GCLib
+  from https://github.com/gpertea/gclib (the build fetches it)
+WebAssembly build: Biowasm (https://biowasm.com/), downloaded from
+  https://biowasm.com/cdn/v3/gffread/0.12.7/ on 2026-10-10
+Build recipes: https://github.com/biowasm/biowasm (a pinned copy is in ../../../licenses/biowasm-build/)
+
+gffread.data holds the two example files of gffread's source (/gffread/transcripts.gtf and
+/gffread/annotation.gff in the program's own file system). The source of GCLib is at
+https://github.com/gpertea/gclib, and with gffread's release archives at https://github.com/gpertea/gffread/releases.
+
+Local change to the JavaScript loader: exit(status) is recorded as Module.__exitStatus, so that the
+terminal of the workbench keeps the exit status of a failed command.
+Modified file: gffread.js
+gffread.wasm and gffread.data are unmodified.

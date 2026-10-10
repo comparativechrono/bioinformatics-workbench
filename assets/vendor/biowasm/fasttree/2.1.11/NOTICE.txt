@@ -1,0 +1,14 @@
+fasttree 2.1.11
+Licence: GNU GPL version 2 or later (LICENSE in this folder: the notice of the source; the text of version 3 is in ../../../licenses/GPL-3.0.txt)
+Upstream source: http://www.microbesonline.org/fasttree/ (FastTree-2.1.11.c, kept in the Biowasm repository as tools/fasttree/src/FastTree-2.1.11.c)
+WebAssembly build: Biowasm (https://biowasm.com/), downloaded from
+  https://biowasm.com/cdn/v3/fasttree/2.1.11/ on 2026-10-10
+Build recipes: https://github.com/biowasm/biowasm (a pinned copy is in ../../../licenses/biowasm-build/)
+
+The source (one C file) is ../../../licenses/sources/FastTree-2.1.11.c.xz. Compiled with -DNO_SSE -DUSE_DOUBLE
+(see ../../../licenses/biowasm-build/tools/fasttree/compile.sh): double precision, no SSE, one thread.
+
+Local change to the JavaScript loader: exit(status) is recorded as Module.__exitStatus, so that the
+terminal of the workbench keeps the exit status of a failed command.
+Modified file: fasttree.js
+fasttree.wasm is unmodified.

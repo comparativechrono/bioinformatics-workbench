@@ -1,0 +1,14 @@
+lastz 1.04.52
+Licence: MIT (LICENSE in this folder)
+Upstream source: https://github.com/lastz/lastz/tree/1.04.52 (commit dfb62716e0d1a6b1eb7e460f506429154ec8f37c)
+WebAssembly build: Biowasm (https://biowasm.com/), downloaded from
+  https://biowasm.com/cdn/v3/lastz/1.04.52/ on 2026-10-10
+Build recipes: https://github.com/biowasm/biowasm (a pinned copy is in ../../../licenses/biowasm-build/)
+
+lastz.data holds two example sequences of lastz's test data (/lastz/pseudocat.fa and /lastz/pseudopig2.fa
+in the program's own file system). lastz_D (the variant with floating-point scores) is not included.
+
+Local change to the JavaScript loader: exit(status) is recorded as Module.__exitStatus, so that the
+terminal of the workbench keeps the exit status of a failed command.
+Modified file: lastz.js
+lastz.wasm and lastz.data are unmodified.

@@ -1,0 +1,15 @@
+wgsim 2011.10.17
+Licence: MIT (LICENSE in this folder: the notice of wgsim.c)
+Upstream source: https://github.com/lh3/wgsim (commit a12da3375ff3b51a5594d4b6fa35591173ecc229)
+WebAssembly build: Biowasm (https://biowasm.com/), downloaded from
+  https://biowasm.com/cdn/v3/wgsim/2011.10.17/ on 2026-10-10
+Build recipes: https://github.com/biowasm/biowasm (a pinned copy is in ../../../licenses/biowasm-build/)
+
+The Biowasm build leaves out two things of the original (patch in ../../../licenses/biowasm-build/tools/wgsim/):
+the list of the mutations that wgsim made, which the original prints on its standard output, and the
+message about a reference sequence that is too short for the fragment length (it is skipped silently).
+
+Local change to the JavaScript loader: exit(status) is recorded as Module.__exitStatus, so that the
+terminal of the workbench keeps the exit status of a failed command.
+Modified file: wgsim.js
+wgsim.wasm is unmodified.
