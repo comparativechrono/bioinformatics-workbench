@@ -1,0 +1,33 @@
+<!-- id: h-alignment | title: Alignments and trees | group: Terminal and programs | summary: pairwise, multiple alignment, phylogenetic trees | keys: alignment pairwise global local needleman wunsch smith waterman multiple msa kalign muscle clustal tree phylogeny fasttree newick lastz -->
+<h1><!--ICON:tree-->Alignments and trees</h1>
+<p class="lede">Pairwise alignment (<b>needleman_wunsch</b>, <b>smith_waterman</b>), multiple alignment (<b>kalign</b>, <b>muscle</b>), trees (<b>FastTree</b>), and long DNA alignments (<b>lastz</b>).</p>
+<p>The examples work in a folder of your own: <button class="do" type="button" data-term-run="mkdir -p ~/align && cd ~/align">mkdir -p ~/align &amp;&amp; cd ~/align</button></p>
+
+<h2>Two sequences</h2>
+<pre class="code" data-run="term"><code>needleman_wunsch --printscores GATTACA GCATGCT
+smith_waterman --printseq ACACACTA AGCACACA</code></pre>
+<p><b>needleman_wunsch</b> aligns two sequences from end to end (global); <b>smith_waterman</b> finds the best-matching parts (local) and lists every good hit. The scores they use unless told otherwise differ: <code>needleman_wunsch</code> <code>--match 1 --mismatch -2 --gapopen -4 --gapextend -1</code>, <code>smith_waterman</code> <code>--match 2 --mismatch -2 --gapopen -2 --gapextend -1</code>. For proteins <code>--scoring BLOSUM62</code> (also PAM30, PAM70, BLOSUM80). With <code>--file pairs.fasta</code> they align the sequences of a file two at a time.</p>
+<pre class="code" data-run="term"><code>needleman_wunsch --scoring BLOSUM62 --gapopen -10 --gapextend -1 --printscores \
+  MVLSPADKTNVKAAWGKVGAHAGEYGAEALERMFLSFPTTKTYFPHF MVHLTPEEKSAVTALWGKVNVDEVGGEALGRLLVVYPWTQRFFESF</code></pre>
+<p><code>lcs SEQUENCE</code> (also from seq-align) lists the substrings that occur twice in a sequence, longest first.</p>
+
+<h2>Multiple alignment</h2>
+<pre class="code" data-run="term"><code>kalign -i /data/examples/sequences/myoglobins.fasta -o myoglobins.afa
+muscle -in /data/examples/sequences/myoglobins.fasta -out myoglobins_muscle.afa
+open myoglobins.afa</code></pre>
+<p>Both write aligned FASTA: every sequence has the same length, with <code>-</code> for gaps. The Files tab shows an alignment in colour, column by column. Clustal format: <code>kalign -f clu</code>, <code>muscle -clw</code>. Give kalign its output file with <code>-o</code>: this version also prints its banner on the standard output, so <code>kalign … &gt; file</code> would put the banner into the file.</p>
+
+<h2>A tree</h2>
+<pre class="code" data-run="term"><code>fasttree myoglobins.afa > myoglobins.nwk
+cat myoglobins.nwk
+open myoglobins.nwk</code></pre>
+<p>FastTree builds an approximately-maximum-likelihood tree (JTT+CAT for proteins; <code>-nt</code> for DNA, with <code>-gtr</code> for the GTR model). The numbers before the branch lengths are local support values (0–1). The Files tab draws a <code>.nwk</code> file as a tree; in R, <code>ape::read.tree()</code> reads it, in Python <code>Bio.Phylo</code>.</p>
+<pre class="code" data-run="term"><code>FastTree -nt -gtr /data/examples/sequences/tRNA-Thr.afa > trna.nwk 2> /dev/null && cat trna.nwk</code></pre>
+
+<h2>Long DNA: lastz</h2>
+<p>lastz aligns long DNA sequences – a region against a chromosome, two related genomes. <code>[multiple]</code> after the target file means it has more than one sequence; quote it, because <code>[ ]</code> mean something to the shell.</p>
+<pre class="code" data-run="term"><code>samtools faidx /data/examples/reads/reference.fa human_CYP2C19:1000-3000 > piece.fa
+lastz '/data/examples/reads/reference.fa[multiple]' piece.fa --format=general | head -4</code></pre>
+<p>Formats: <code>--format=general</code> (a table), <code>maf</code>, <code>sam</code>, <code>axt</code>; <code>--notransition --step=20</code> make it faster on big sequences.</p>
+
+<p>Alignments and trees are also tools in <a href="#h-galaxy">Galaxy</a> (Kalign, MUSCLE, FastTree), and BLAST searches run at EBI from the <a href="#h-db-blast">Databases tab</a>.</p>

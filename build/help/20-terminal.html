@@ -1,0 +1,67 @@
+<!-- id: h-terminal | title: The terminal | group: Terminal and programs | summary: bash, the programs, keys, saving a session | keys: terminal shell bash command line prompt help man history tab completion ctrl-c export-session save session script cd ls -->
+<h1><!--ICON:terminal-->The terminal</h1>
+<p class="lede">A Linux shell (bash) with real bioinformatics programs – samtools, bcftools, minimap2, Bowtie 2, fastp, bedtools and more, compiled to WebAssembly so that they run in your browser.</p>
+<div class="tryrow"><button class="do" type="button" data-term-run="help">List the programs</button> <button class="do" type="button" data-term-run="ls -R /data/examples">Show the example data</button></div>
+
+<h2>Where you are</h2>
+<p>The prompt <code>student@workbench:~$</code> shows the folder you are in; <code>~</code> is your home folder, <code>/home/student</code>. Your files are there (the Files tab shows the same ones); the example data is in <code>/data/examples</code>, read-only – copy what you want to change.</p>
+<pre class="code" data-run="term"><code>pwd
+mkdir -p ~/practice && cd ~/practice
+cp /data/examples/sequences/myoglobins.fasta .
+ls -l</code></pre>
+
+<h2>Getting help</h2>
+<ul>
+  <li><code>help</code> lists every program, with its version.</li>
+  <li><code>man NAME</code> shows examples for a program (<code>man bcftools</code>); <code>NAME --help</code> lists its options – for a command of samtools or bcftools, <code>samtools sort --help</code>, <code>bcftools view --help</code> (some first say that they do not know the option <i>help</i>, then list the ones they do).</li>
+  <li>A command that fails has a button under it, <b>Ask the AI assistant about this error</b>.</li>
+</ul>
+
+<h2>Keys</h2>
+<table class="keys">
+<tr><td><kbd>↑</kbd> <kbd>↓</kbd></td><td>earlier commands (they are kept when you reload the page)</td></tr>
+<tr><td><kbd>Tab</kbd></td><td>complete a file name or a command</td></tr>
+<tr><td><kbd>Ctrl</kbd>+<kbd>C</kbd></td><td>stop: the program that is running finishes and the rest of the command is skipped; press it again to stop the program itself (what it was writing is lost; <code>python</code> and <code>Rscript</code> start their language again, which forgets its variables). With text selected, it copies</td></tr>
+<tr><td><kbd>Ctrl</kbd>+<kbd>L</kbd></td><td>clear the screen</td></tr>
+<tr><td><kbd>Home</kbd> / <kbd>End</kbd></td><td>to the start / end of the line</td></tr>
+</table>
+<p>A command that needs more than one line (a <code>for</code> loop, a here-document) can be typed line by line: the prompt changes to <code>&gt;</code> until it is complete. Pasting several lines runs them one after the other.</p>
+
+<h2>The shell</h2>
+<p>It is bash: pipes <code>|</code>, <code>&amp;&amp;</code> and <code>||</code>, redirection (<code>&gt;</code> <code>&gt;&gt;</code> <code>&lt;</code> <code>2&gt;</code> <code>2&gt;&amp;1</code>), quotes, variables, globs (<code>*.fastq</code>), <code>$( )</code>, <code>$(( ))</code>, <code>for</code>/<code>while</code>/<code>if</code>/<code>case</code>, functions, here-documents, <code>&lt;( )</code> and <code>xargs</code>. Scripts run with <code>bash script.sh</code>. See <a href="#h-scripts">Scripts and pipelines</a>.</p>
+<pre class="code" data-run="term"><code>for f in /data/examples/reads/*.fastq; do
+  echo "$(basename "$f"): $(( $(wc -l < "$f") / 4 )) reads"
+done</code></pre>
+
+<h2>The programs</h2>
+<table>
+<tr><th>For</th><th>Programs</th><th>Guide</th></tr>
+<tr><td>reads</td><td>fastp, seqtk, wgsim</td><td><a href="#h-reads">Reads</a></td></tr>
+<tr><td>mapping</td><td>minimap2, bowtie2, samtools</td><td><a href="#h-mapping">Mapping reads</a></td></tr>
+<tr><td>variants</td><td>bcftools, bgzip, tabix</td><td><a href="#h-variants">Variant calling</a></td></tr>
+<tr><td>intervals and annotation</td><td>bedtools, gffread</td><td><a href="#h-intervals">Intervals</a></td></tr>
+<tr><td>alignments and trees</td><td>needleman_wunsch, smith_waterman, kalign, muscle, fasttree, lastz</td><td><a href="#h-alignment">Alignments and trees</a></td></tr>
+<tr><td>text and data</td><td>grep, sed, awk, sort, cut, jq, curl …</td><td><a href="#h-text">Text tools</a></td></tr>
+<tr><td>languages</td><td>python, Rscript, snakemake, dot</td><td><a href="#h-scripts">Scripts and pipelines</a></td></tr>
+</table>
+<p>All versions are in <a href="#h-programs">Programs and versions</a>.</p>
+
+<h2>Commands of the workbench</h2>
+<dl>
+<dt><code>open FILE</code></dt><dd>shows a file in its tab: a notebook in Notebook, a structure in the 3D viewer, the rest in Files (tables, pictures, HTML reports, trees).</dd>
+<dt><code>nano FILE</code></dt><dd>edits a file in the Files tab.</dd>
+<dt><code>igv FILE…</code></dt><dd>shows BAM, VCF, BED or GFF files in the Genome browser.</dd>
+<dt><code>download FILE|FOLDER</code></dt><dd>saves a copy on your computer (a folder as a <code>.zip</code>).</dd>
+<dt><code>export-session FILE.ipynb</code></dt><dd>writes the commands of this session, with their output, as a notebook (or <code>FILE.sh</code>: a script).</dd>
+</dl>
+
+<h2 data-anchor="session">Saving a session</h2>
+<p><b>Save session</b> (above the terminal) keeps the commands you ran, with what they printed: <i>Open as a notebook here</i> (every command in a <code>%%bash</code> cell, in the folder where it ran), <i>Download as a Jupyter notebook</i>, or <i>Download as a shell script</i>. That is a record of your analysis that runs again – in the workbench, or in Jupyter on a computer with the same programs.</p>
+
+<h2>Good to know</h2>
+<ul>
+  <li>Each program runs on one processor core: options for threads (<code>-@</code>, <code>-t</code>, <code>--threads</code>) are left out, with a note.</li>
+  <li>There are no background jobs (<code>&amp;</code>), no <code>sudo</code> or <code>apt</code>: nothing can be installed in the terminal except Python packages (<code>pip install</code>).</li>
+  <li>Programs have a few gigabytes of memory at most: whole human genomes are too big; regions, exomes of a few genes and bacterial genomes work well.</li>
+  <li><code>curl</code> and <code>wget</code> reach web services that allow web pages to use them (EBI, UniProt, Ensembl, NCBI…), not every site. See <a href="#h-limits">What is different in the browser</a>.</li>
+</ul>

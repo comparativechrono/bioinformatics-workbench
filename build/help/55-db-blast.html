@@ -1,0 +1,39 @@
+<!-- id: h-db-blast | title: BLAST | group: Databases | summary: Similarity searches at EBI: programs, databases, reading the hits | keys: blast blastp blastn blastx tblastn similarity search homology e-value evalue bit score identity alignment hit query database swiss-prot ebi job dispatcher email -->
+<h1><!--ICON:search-->BLAST</h1>
+<p class="lede">BLAST finds the sequences in a database that are similar to yours – the first thing to do with an unknown sequence. The BLAST card sends the search to EMBL-EBI, where it runs for seconds to a few minutes, and shows the hits.</p>
+<div class="tryrow"><button class="do" type="button" data-api="blast">Open the BLAST card</button></div>
+
+<h2>A search</h2>
+<ol>
+  <li><b>Program</b> – which depends on what your sequence is and what you search:
+    <table>
+    <tr><th>Program</th><th>Your sequence</th><th>Searches</th></tr>
+    <tr><td><code>blastp</code></td><td>protein</td><td>proteins</td></tr>
+    <tr><td><code>blastn</code></td><td>DNA</td><td>DNA</td></tr>
+    <tr><td><code>blastx</code></td><td>DNA, translated in all six reading frames</td><td>proteins</td></tr>
+    <tr><td><code>tblastn</code></td><td>protein</td><td>DNA, translated in all six frames</td></tr>
+    </table>
+    Protein searches find relatives much further back in evolution than DNA searches: when the sequence codes for a protein, compare proteins (<code>blastp</code>, or <code>blastx</code> from DNA).</li>
+  <li><b>Database</b>. For proteins: UniProtKB/Swiss-Prot (reviewed – a good first choice), the PDB (proteins with a known structure), AlphaFold DB, human UniProtKB, or all of UniProtKB (slow). For DNA: the coding sequences in ENA (human, mammals, mouse, all), or virus sequences.</li>
+  <li><b>Sequence</b>: FASTA, or just the letters.</li>
+  <li><b>E-value cut-off</b> and the number of <b>Hits</b> to keep.</li>
+  <li><b>Your e-mail address</b>: EBI asks for one with each job, and writes to it only if something goes wrong. <i>Remember it in this browser</i> keeps it here, on this computer only.</li>
+  <li><b>Run</b>. The job's state is shown while it waits and runs.</li>
+</ol>
+<p>The examples (<b>Try:</b>) fill in the form – a myoglobin protein, a piece of human DNA; press <b>Run</b> after typing your e-mail address.</p>
+
+<h2>Reading the hits</h2>
+<table>
+<tr><th>Column</th><th>Means</th></tr>
+<tr><td>E-value</td><td>how many hits this good would turn up by chance in a database this size. The smaller, the better: below 1e-10 the similarity is almost certainly real (the sequences share an ancestor); around 0.01–1 it may be chance.</td></tr>
+<tr><td>Bits</td><td>the bit score: the quality of the alignment, independent of the database's size. Higher is better.</td></tr>
+<tr><td>Identity %</td><td>the share of identical residues in the aligned part</td></tr>
+<tr><td>Aligned</td><td>the length of the aligned part – a hit can cover only a piece of your sequence (one domain, say)</td></tr>
+</table>
+<p><b>The full BLAST report</b> (under the table) has the alignments themselves. <b>Save the full report</b> keeps it; <b>Save the table (.tsv)</b> keeps the hits; <b>Open the results at EBI</b> shows them on EBI's site, where they stay for 7 days. Click a hit to open its entry (UniProt, PDB or ENA).</p>
+
+<h2>From code</h2>
+<p><b>Send to notebook → Python</b> writes the whole job – submit, wait, fetch the hits into a pandas table. Put your e-mail address where it says <code>YOUR_EMAIL</code> before you run it: addresses are not written into notebooks, which you may share. R in the browser cannot submit a BLAST job (it needs a POST request); use a Python notebook.</p>
+
+<h2>Without BLAST</h2>
+<p>For two sequences you already have, align them in the terminal: <code>needleman_wunsch</code> (whole sequences), <code>smith_waterman</code> (the best matching parts), <code>lastz</code> (long DNA) – see <a href="#h-alignment">Alignments and trees</a>. There is no local BLAST database in the workbench.</p>

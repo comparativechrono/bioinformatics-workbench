@@ -1,0 +1,62 @@
+<!-- id: h-galaxy | title: Galaxy | group: Galaxy | summary: Upload, run tools, the history, dataset details | keys: galaxy history dataset upload tool run job provenance usegalaxy datatype format fastqsanger rerun delete purge notebook export -->
+<h1><!--ICON:workflow-->Galaxy</h1>
+<p class="lede">Galaxy runs analysis tools from forms, keeps every result in a <b>history</b> with a record of how it was made, and joins tools into <b>workflows</b>. This one works like usegalaxy.org and its sister servers – and runs in your browser, with the same programs as the terminal.</p>
+<div class="tryrow"><button class="do" type="button" data-bench="galaxy">Open Galaxy</button></div>
+
+<h2>The three columns</h2>
+<ul>
+  <li><b>Tools</b> (left): <b>Upload Data</b>, and the tools in sections. Search them with the box above the list.</li>
+  <li><b>The middle</b>: the form of a tool, a dataset, the details of a job, or the workflow editor.</li>
+  <li><b>History</b> (right): your datasets, newest at the top, numbered. Grey: waiting; yellow: running; green: ready; red: failed. Click a dataset to open it.</li>
+</ul>
+<p>Hide the help pane (<kbd>Ctrl</kbd>+<kbd>\</kbd>) to give Galaxy room.</p>
+
+<h2>Get data</h2>
+<p><b>Upload Data</b> has three sources:</p>
+<ul>
+  <li><b>From your files</b> – the files in your home folder and the example data; tick them and press <b>Start</b>. The Files tab sends files here too (⋯ → <i>Upload to Galaxy</i>).</li>
+  <li><b>From your computer</b> – choose files or drop them.</li>
+  <li><b>Paste text</b> – a few sequences, a list of positions …</li>
+</ul>
+<p>Galaxy decides the <b>datatype</b> from the name and content (<code>fastqsanger</code> for reads, <code>fasta</code>, <code>bam</code>, <code>vcf</code>, <code>bed</code>, <code>tabular</code> …); tools offer only the datasets of the types they read. If it guessed wrong, choose the type in the upload form. Compressed text files (<code>.fastq.gz</code>, <code>.fa.gz</code>) are uncompressed on the way in.</p>
+
+<h2>Run a tool</h2>
+<ol>
+  <li>Click a tool. Its form lists its inputs – choose datasets from your history – and its settings, with Galaxy's own help under the form.</li>
+  <li><b>Run tool</b>. The new datasets appear at the top of the history; wait for them to turn green.</li>
+  <li>Open a dataset: <!--ICON:eye--> shows it (tables as tables, HTML reports, trees drawn), <!--ICON:download--> downloads it, <i>copy to my files</i> puts it in <code>~/galaxy</code> for the terminal and notebooks. BAM, VCF and BED datasets have <!--ICON:genome--> to show them in the Genome browser.</li>
+</ol>
+<p>A first analysis with the example reads: upload <code>NA12878_R1.fastq</code>, <code>NA12878_R2.fastq</code> and <code>reference.fa</code>; run <b>fastp</b> on the two read files; <b>Map with minimap2</b> with the reference and the two trimmed outputs; <b>bcftools mpileup</b> on the BAM, then <b>bcftools call</b>, then <b>bcftools filter</b>. Each step takes seconds.</p>
+
+<h2>The tools</h2>
+<table>
+<tr><th>Section</th><th>Tools</th></tr>
+<tr><td>Quality control</td><td>fastp, seqtk_comp</td></tr>
+<tr><td>Mapping</td><td>Map with minimap2, Bowtie2 (both single- or paired-end)</td></tr>
+<tr><td>SAM/BAM</td><td>Samtools flagstat, stats, idxstats, depth, view (filter)</td></tr>
+<tr><td>Variant calling</td><td>bcftools mpileup, call, filter, view, query, stats</td></tr>
+<tr><td>Intervals</td><td>bedtools Genome Coverage, Intersect intervals</td></tr>
+<tr><td>FASTA/FASTQ</td><td>seqtk_seq (FASTQ to FASTA), seqtk_sample</td></tr>
+<tr><td>Alignments and trees</td><td>Kalign, MUSCLE, FastTree</td></tr>
+<tr><td>Text manipulation</td><td>Select lines, Cut columns, Sort, Line/Word/Character count, Concatenate</td></tr>
+</table>
+<p>The tool IDs and versions are those of the Galaxy Tool Shed, so a workflow made here opens on usegalaxy.org (see <a href="#h-galaxy-workflows">Workflows</a>) – except Kalign and MUSCLE: the Tool Shed has no tool for the versions here, so a server shows those steps as missing and you choose its own alignment tool there.</p>
+
+<h2>How was this made? Dataset details</h2>
+<p>The <!--ICON:info--> of a dataset shows Galaxy's record of it: the tool and its version, the versions of the programs (dependencies), the <b>command line</b> that ran, every parameter, and the program's messages. That record is why Galaxy analyses can be repeated – and the first place to look when a dataset is red. <!--ICON:rerun--> opens the tool again with the same inputs and settings.</p>
+
+<h2>The history</h2>
+<ul>
+  <li>Click the history's name to rename it.</li>
+  <li><b>×</b> deletes a dataset; the history's <b>⋯</b> shows deleted datasets (to undelete them) and <b>purges</b> them, which frees their space.</li>
+  <li><b>⋯ → Open the history as a notebook</b> (or download it as <code>.ipynb</code>): every upload and job as a <code>%%bash</code> cell with its command, inputs and parameters. Run the notebook and it makes the same datasets again, as files <code>data1.fastq</code>, <code>data2.bam</code> …</li>
+  <li><b>⋯ → Start a new history</b> clears it (your workflows stay).</li>
+</ul>
+<p>The history and its datasets are kept in this browser with your files (see <a href="#h-files/kept">where your files are kept</a>).</p>
+
+<h2>Different from a Galaxy server</h2>
+<ul>
+  <li>The tools are a selection, run with the programs of the terminal, one job at a time.</li>
+  <li>There is one history and no user account; nothing is shared with others.</li>
+  <li>Datasets have no genome build ("database: ?") unless a tool passes one on.</li>
+</ul>

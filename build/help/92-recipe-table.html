@@ -1,0 +1,87 @@
+<!-- id: h-recipe-table | title: A table, in Python and in R | group: Recipes | summary: Read, summarise, plot and test the yeast gene table | keys: recipe table csv pandas dataframe groupby r data frame dplyr ggplot2 boxplot scatter statistics test mann-whitney wilcoxon chi-squared spearman correlation essential genes yeast -->
+<h1><!--ICON:flask-->A table, in Python and in R</h1>
+<p class="lede">Are essential genes different? The example table describes 5,481 yeast genes – whether each is essential, how long its protein is, how many partners it has, how abundant it is. The same analysis in both languages: read the table, summarise it, plot it, and test what the plots suggest.</p>
+<div class="tryrow"><button class="do" type="button" data-recipe="python">Open as a Python notebook</button> <button class="do" type="button" data-recipe="r">Open as an R notebook</button> <button class="do" type="button" data-open="/data/examples/tables/yeast_genes.csv">Show the table</button></div>
+<p>Each step has the Python code first, then the R code; each button takes the code of one language.</p>
+
+<h2>1. Read the table</h2>
+<pre class="code" data-run="py"><code>import pandas as pd
+
+genes = pd.read_csv("/data/examples/tables/yeast_genes.csv")
+print(genes.shape)
+genes.head()</code></pre>
+<pre class="code" data-run="r"><code>genes &lt;- read.csv("/data/examples/tables/yeast_genes.csv")
+dim(genes)
+head(genes[, 1:8])</code></pre>
+<p>One row per gene. <code>essential</code> is 1 when the yeast cannot live without the gene; <code>interaction_partners</code> counts the proteins its protein is known to interact with; <code>human_homolog</code> is 1 when the gene has a human counterpart.</p>
+
+<h2>2. Summarise by group</h2>
+<pre class="code" data-run="py"><code>genes.groupby("essential")[["protein_length", "interaction_partners", "protein_abundance"]].median()</code></pre>
+<pre class="code" data-run="r"><code>aggregate(cbind(protein_length, interaction_partners, protein_abundance) ~ essential,
+          data = genes, FUN = median)</code></pre>
+<p>Medians, not means: these columns are skewed – a few proteins have thousands of partners. (R's formula drops the genes with a missing value in any of the columns.)</p>
+
+<h2>3. Plot it</h2>
+<pre class="code" data-run="py"><code>import matplotlib.pyplot as plt
+
+fig, ax = plt.subplots(figsize=(5, 3.5))
+genes.boxplot(column="interaction_partners", by="essential", ax=ax)
+ax.set_yscale("log")
+ax.set_xticklabels(["not essential", "essential"])
+ax.set_xlabel("")
+ax.set_ylabel("interaction partners")
+ax.set_title("")
+fig.suptitle("")
+plt.tight_layout()
+plt.show()</code></pre>
+<pre class="code" data-run="r"><code>library(ggplot2)
+ggplot(genes, aes(x = factor(essential, labels = c("not essential", "essential")), y = interaction_partners + 1)) +
+  geom_boxplot() +
+  scale_y_log10() +
+  labs(x = NULL, y = "interaction partners + 1") +
+  theme_bw()</code></pre>
+<p>On a log scale, because the values span four orders of magnitude (the + 1 in R keeps genes with no partners on the plot).</p>
+
+<h2>4. Test it</h2>
+<p>The Mann–Whitney (Wilcoxon rank-sum) test asks whether one group's values tend to be larger, without assuming a normal distribution.</p>
+<pre class="code" data-run="py"><code>from scipy.stats import mannwhitneyu
+
+ess = genes.loc[genes.essential == 1, "interaction_partners"]
+non = genes.loc[genes.essential == 0, "interaction_partners"]
+mannwhitneyu(ess, non)</code></pre>
+<pre class="code" data-run="r"><code>wilcox.test(interaction_partners ~ essential, data = genes)</code></pre>
+<p>Are genes with a human counterpart more often essential? Two yes/no columns: a table of counts and a chi-squared test.</p>
+<pre class="code" data-run="py"><code>from scipy.stats import chi2_contingency
+
+counts = pd.crosstab(genes.human_homolog, genes.essential)
+print(counts)
+print(f"essential: {counts.loc[1, 1] / counts.loc[1].sum():.0%} with a human homologue, {counts.loc[0, 1] / counts.loc[0].sum():.0%} without")
+chi2_contingency(counts)</code></pre>
+<pre class="code" data-run="r"><code>counts &lt;- table(homolog = genes$human_homolog, essential = genes$essential)
+counts
+prop.table(counts, margin = 1)
+chisq.test(counts)</code></pre>
+
+<h2>5. Two measurements together</h2>
+<p>Highly expressed genes use the codons that are read fastest (high codon bias). Spearman's correlation works on ranks, so it does not mind skewed values.</p>
+<pre class="code" data-run="py"><code>from scipy.stats import spearmanr
+
+d = genes.dropna(subset=["codon_bias", "protein_abundance"])
+print(spearmanr(d.codon_bias, d.protein_abundance))
+d.plot.scatter(x="codon_bias", y="protein_abundance", logy=True, s=4, alpha=0.4, figsize=(5, 3.5))
+plt.show()</code></pre>
+<pre class="code" data-run="r"><code>cor.test(genes$codon_bias, genes$protein_abundance, method = "spearman", exact = FALSE)
+ggplot(genes, aes(codon_bias, protein_abundance)) +
+  geom_point(size = 0.6, alpha = 0.4) +
+  scale_y_log10() +
+  theme_bw()</code></pre>
+
+<h2>6. Save the results</h2>
+<pre class="code" data-run="py"><code>summary = genes.groupby("location").agg(genes=("orf", "size"), essential=("essential", "mean")).sort_values("essential")
+summary.to_csv("essential_by_location.csv")
+summary</code></pre>
+<pre class="code" data-run="r"><code>summary &lt;- aggregate(essential ~ location, data = genes, FUN = mean)
+summary &lt;- summary[order(summary$essential), ]
+write.csv(summary, "essential_by_location.csv", row.names = FALSE)
+summary</code></pre>
+<p>The file is written next to the notebook, in <code>~/notebooks</code>. A p-value says how surprising a difference would be by chance; how large the difference is – the medians, the percentages – is what to report with it.</p>

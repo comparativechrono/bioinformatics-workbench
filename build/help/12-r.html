@@ -1,0 +1,42 @@
+<!-- id: h-r | title: R | group: Notebooks: Python and R | summary: webR: packages, Bioconductor, plots, files | keys: r rstats webr ggplot2 dplyr tidyverse tidyr readr bioconductor biostrings genomicranges limma deseq2 install.packages library rscript plot data frame -->
+<h1><!--ICON:rlang-->R</h1>
+<p class="lede">R 4.6 (webR), running in this page. Packages are downloaded the first time you load them; base graphics and ggplot2 plots appear under the cell.</p>
+<div class="tryrow"><button class="do" type="button" data-new-nb="r">New R notebook</button> <button class="do" type="button" data-open-nb="~/notebooks/welcome-r.ipynb">Open the R welcome notebook</button></div>
+
+<h2>Packages</h2>
+<p><code>library(NAME)</code> downloads a package the first time it is used in a visit, from the builds of CRAN packages for the browser (repo.r-wasm.org) and of Bioconductor packages on r-universe. <code>install.packages("NAME")</code> works too, and so does <code>BiocManager::install("NAME")</code>. The first <code>library(ggplot2)</code> or <code>library(dplyr)</code> takes half a minute; packages last until the page is reloaded.</p>
+<p>Tested in October 2026: ggplot2, dplyr, tidyr, readr, stringr, ape, seqinr, pheatmap, and from Bioconductor Biostrings, GenomicRanges and limma. DESeq2 and edgeR do not load yet (a package they need, locfit, has no build for the browser).</p>
+<pre class="code" data-run="r"><code>library(Biostrings)
+myo <- readAAStringSet("/data/examples/sequences/myoglobins.fasta")
+width(myo)
+alphabetFrequency(myo)[, c("A", "G", "L", "K")]</code></pre>
+
+<h2>Data frames and plots</h2>
+<pre class="code" data-run="r"><code>library(dplyr)
+library(ggplot2)
+
+genes <- read.csv("/data/examples/tables/yeast_genes.csv")
+genes |>
+  group_by(location) |>
+  summarise(n = n(), essential = mean(essential)) |>
+  arrange(desc(n)) |>
+  head(8)
+
+ggplot(genes, aes(protein_length, protein_abundance, colour = factor(essential))) +
+  geom_point(alpha = 0.4, size = 0.8) +
+  scale_x_log10() + scale_y_log10() +
+  labs(x = "protein length (aa)", y = "abundance (ppm)", colour = "essential")</code></pre>
+<p>A data frame on the last line of a cell is shown as a table. The plots of a cell appear after its printed output. <code>ggsave("plot.png", width = 6, height = 4)</code> or <code>png("plot.png")</code> … <code>dev.off()</code> also write the picture as a file.</p>
+
+<h2>Files</h2>
+<p>R reads and writes your files like Python does: the working folder is the notebook's folder (<code>getwd()</code>), <code>~</code> means <code>/home/student</code>, and <code>/data/examples</code> is read-only.</p>
+
+<h2>Programs and the terminal</h2>
+<p><code>system()</code> cannot start programs in the browser: use a <code>%%bash</code> cell in the R notebook instead. In the terminal, <code>Rscript script.R</code> and <code>Rscript -e '…'</code> run R code with the same R; their plots go to <code>Rplots.pdf</code> unless the script opens a <code>png()</code> device.</p>
+
+<h2>Good to know</h2>
+<ul>
+  <li>R cannot be interrupted in the middle of a computation: <b>Stop</b> restarts it (variables are forgotten).</li>
+  <li>Web requests from R (<code>read.csv("https://…")</code>, <code>readLines(url)</code>) work for services that allow requests from web pages; POST requests do not – use Python for those.</li>
+  <li>Downloaded R notebooks (<code>.ipynb</code>) run in Jupyter with the R kernel (IRkernel), and in Google Colab with the R runtime.</li>
+</ul>

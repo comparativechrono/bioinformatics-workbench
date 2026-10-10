@@ -1,0 +1,56 @@
+<!-- id: h-recipe-keep | title: Keep and share your work | group: Recipes | summary: Every tab as a notebook; downloads; running a notebook elsewhere; versions | keys: keep save download share ipynb notebook zip backup reproducible reproducibility versions session record jupyter colab conda bioconda environment sessioninfo restart run all hand in submit -->
+<h1><!--ICON:save-->Keep and share your work</h1>
+<p class="lede">Everything you run in the workbench can become a notebook – a record that shows what you did and runs again. Your files live in this browser: download what you want to keep.</p>
+
+<h2>Everything as a notebook</h2>
+<table>
+<tr><th>Where you worked</th><th>How it becomes a notebook</th></tr>
+<tr><td>Notebook</td><td>it is one: <b>Download → Jupyter notebook (.ipynb)</b> (or a <code>.py</code>/<code>.R</code> script, or a web page with the results)</td></tr>
+<tr><td>Terminal</td><td><b>Save session</b> → <i>Open as a notebook here</i> or <i>Download as a Jupyter notebook</i>: each command in a <code>%%bash</code> cell, with its output; or <code>export-session NAME.ipynb</code></td></tr>
+<tr><td>Galaxy</td><td>the history's <b>⋯ → Open the history as a notebook</b> (or download it): each upload and job as a cell that makes the same dataset again</td></tr>
+<tr><td>Databases</td><td><b>Your queries → Save as a Python notebook</b> (or R); <b>Send to notebook</b> for one query</td></tr>
+<tr><td>AI agent</td><td>each run is <code>agent-record.ipynb</code> in its folder</td></tr>
+<tr><td>Help recipes</td><td><b>Open this recipe as a notebook</b>; <b>Add to notebook</b> on any code box</td></tr>
+<tr><td>3D viewer</td><td>not a notebook: <b>Save session</b> keeps the structures, styles and views; the command line keeps most steps as commands – copy them into a script that makes the picture again</td></tr>
+</table>
+
+<h2>Download</h2>
+<ul>
+  <li>One notebook: <b>Download</b> in the Notebook tab.</li>
+  <li>One file or folder: its ⋯ in the Files tab, or <code>download FILE</code> in the terminal (a folder becomes a <code>.zip</code>).</li>
+  <li>Everything: <b>My files → Download all my files (.zip)</b>. Do this at the end of each session if you work on a shared computer – see <a href="#h-files/kept">where your files are kept</a>.</li>
+</ul>
+
+<h2>Before you share or hand in a notebook</h2>
+<ol>
+  <li><b>Restart</b> the language and <b>Run all</b>: the notebook must run from top to bottom without the cells you deleted on the way.</li>
+  <li>Put a text cell at the top: what the notebook does, with which data, when.</li>
+  <li>Keep the data with it: copy the input files into a folder of your own, next to the notebook, and download the folder.</li>
+  <li>Record the versions (below) and the dates of database queries.</li>
+  <li>Never leave a key, a password or personal data in a notebook – also not in its outputs.</li>
+</ol>
+
+<h2>The versions</h2>
+<p>Results depend on the versions of the programs and packages. A last cell that prints them makes a notebook complete:</p>
+<pre class="code" data-run="py"><code>import sys, numpy, pandas, matplotlib
+print("Python", sys.version.split()[0], "· numpy", numpy.__version__, "· pandas", pandas.__version__, "· matplotlib", matplotlib.__version__)</code></pre>
+<pre class="code" data-run="py"><code>%%bash
+samtools --version | head -n 1
+bcftools --version | head -n 1
+echo "minimap2 $(minimap2 --version)"</code></pre>
+<pre class="code" data-run="r"><code>sessionInfo()</code></pre>
+
+<h2>Running a notebook elsewhere</h2>
+<p>A downloaded notebook opens in Jupyter, JupyterLab, VS Code and Google Colab (R notebooks need the R kernel, IRkernel). What the other computer needs:</p>
+<ul>
+  <li><b>The data</b>, at the paths the notebook uses. <code>/data/examples</code> exists only here: download it (Files tab: the ⋯ of <i>Examples (read-only)</i> → <i>Download as a .zip</i>) and change the paths.</li>
+  <li><b>The packages</b>: <code>pip install pandas matplotlib biopython requests scipy</code>; in R, <code>install.packages(c("ggplot2", "jsonlite"))</code>.</li>
+  <li><b>The programs</b> of <code>%%bash</code> cells – with conda, from Bioconda, in the versions used here (or the nearest ones Bioconda has):</li>
+</ul>
+<pre class="code"><code>conda create -n workbench -c conda-forge -c bioconda \
+    samtools=1.17 minimap2=2.22 bowtie2=2.4.2 fastp=0.20.1 \
+    seqtk=1.4 bedtools=2.31.0 kalign3=3.3.2 muscle=3.8.1551 fasttree=2.1.11
+conda create -n workbench-bcftools -c conda-forge -c bioconda bcftools=1.10
+conda activate workbench</code></pre>
+<p>bcftools 1.10 needs an older htslib than samtools 1.17, so it has an environment of its own (or take a current bcftools into the first one – its output can differ in details). Bioconda has no Kalign 3.3.1; 3.3.2 is the nearest.</p>
+<p>Lines that only the workbench understands – <code>igv</code>, <code>open</code>, <code>download</code> – do nothing useful elsewhere: leave them out.</p>

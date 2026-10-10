@@ -1,0 +1,37 @@
+<!-- id: h-intervals | title: Intervals and annotation | group: Terminal and programs | summary: bedtools, gffread, BED and GFF files | keys: bed gff gff3 gtf interval intersect overlap bedtools genomecov coverage merge getfasta gffread annotation exons genes -->
+<h1><!--ICON:layers-->Intervals and annotation</h1>
+<p class="lede">BED and GFF files describe regions: genes, exons, peaks. <b>bedtools</b> compares and combines them; <b>gffread</b> converts annotations and writes the sequences of transcripts and proteins.</p>
+<p>The examples work in a folder of your own: <button class="do" type="button" data-term-run="mkdir -p ~/intervals && cd ~/intervals">mkdir -p ~/intervals &amp;&amp; cd ~/intervals</button></p>
+
+<h2>The files</h2>
+<pre class="code" data-run="term"><code>head -3 /data/examples/annotation/cyp2c_exons.bed
+grep -v "^#" /data/examples/annotation/cyp2c_slices.gff3 | cut -f 1-5,9 | head -4</code></pre>
+<p>The BED file lists the exons of eight transcripts (named <code>TRANSCRIPT_exonN</code>): those of CYP2C19 and CYP2C9, and of two pseudogenes that lie in their introns, MTND4P19 and MTND4P20. The GFF3 file describes the same genes in full: genes, transcripts, exons and the coding parts (CDS).</p>
+<p>BED counts from 0 and its end is not included (a region <code>100–200</code> is bases 101 to 200); GFF and VCF count from 1. bedtools takes care of that when it compares them.</p>
+
+<h2>bedtools intersect: what overlaps what</h2>
+<pre class="code" data-run="term"><code># the variants that fall in an exon (of any of the transcripts)
+bedtools intersect -header -u -a /data/examples/variants/NA12878.calls.vcf.gz -b /data/examples/annotation/cyp2c_exons.bed | grep -v "^##" | cut -f 1-5
+# and those that do not
+bedtools intersect -v -a /data/examples/variants/NA12878.calls.vcf.gz -b /data/examples/annotation/cyp2c_exons.bed | wc -l</code></pre>
+<p><code>-u</code>: each feature of A that overlaps B, once; <code>-v</code>: those that do not; <code>-wa -wb</code>: both features of each overlap; <code>-header</code> keeps the header of A (needed for a valid VCF).</p>
+
+<h2>Coverage, merging, sequences</h2>
+<pre class="code" data-run="term"><code>minimap2 -ax sr /data/examples/reads/reference.fa /data/examples/reads/NA12878_R1.fastq /data/examples/reads/NA12878_R2.fastq 2> /dev/null | samtools sort -o mapped.bam -
+# depth along the reference, as a BedGraph (positions with the same depth form one line)
+bedtools genomecov -ibam mapped.bam -bg > coverage.bedgraph
+head -3 coverage.bedgraph
+# the exons of all eight transcripts, joined where they overlap or touch
+sort -k1,1 -k2,2n /data/examples/annotation/cyp2c_exons.bed | bedtools merge -i - | head -3
+# the DNA of the exons
+bedtools getfasta -fi /data/examples/reads/reference.fa -bed /data/examples/annotation/cyp2c_exons.bed -name | head -2</code></pre>
+<p>Also: <code>bedtools coverage</code> (how much of each region is covered), <code>bedtools closest</code>, <code>bedtools complement</code>, <code>bedtools slop</code> (widen regions; it needs a genome file of sequence lengths: <code>cut -f 1,2 reference.fa.fai</code>). <code>bedtools</code> alone lists them all.</p>
+
+<h2>gffread: annotations and their sequences</h2>
+<pre class="code" data-run="term"><code># GFF3 to GTF
+gffread /data/examples/annotation/cyp2c_slices.gff3 -T -o cyp2c.gtf
+head -3 cyp2c.gtf
+# the spliced transcripts (-w) and their proteins (-y)
+gffread /data/examples/annotation/cyp2c_slices.gff3 -g /data/examples/reads/reference.fa -w transcripts.fa -y proteins.fa
+grep ">" proteins.fa</code></pre>
+<p>Other options: <code>-x</code> (coding sequences only), <code>-E</code> (report problems in the file), <code>--table</code>. The proteins can go straight to an alignment (<a href="#h-alignment">Alignments and trees</a>) or to BLAST (<a href="#h-db-blast">BLAST</a>).</p>

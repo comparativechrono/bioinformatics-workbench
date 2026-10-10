@@ -1,0 +1,53 @@
+<!-- id: h-python | title: Python | group: Notebooks: Python and R | summary: Packages, files, plots, web data, limits | keys: python pyodide pandas numpy matplotlib seaborn biopython scipy sklearn scikit-learn statsmodels requests pip install import package plot dataframe -->
+<h1><!--ICON:python-->Python</h1>
+<p class="lede">Python 3.13 (Pyodide), running in this page. NumPy, pandas and matplotlib load when Python starts; most other packages load the first time you import them, or with <code>%pip install</code>.</p>
+<div class="tryrow"><button class="do" type="button" data-new-nb="python">New Python notebook</button></div>
+
+<h2>Packages</h2>
+<p>Pyodide's own packages load by themselves when a cell imports them – among them Biopython (<code>import Bio</code>), SciPy, scikit-learn, statsmodels, NetworkX, SymPy, Pillow, PyYAML and requests. Pure-Python packages from PyPI install with <code>%pip</code>:</p>
+<pre class="code" data-run="py"><code>%pip install seaborn
+import seaborn as sns
+sns.__version__</code></pre>
+<p>Installed packages last for this visit of the page: after a reload, run the <code>%pip</code> line again – keep it in the first cell of the notebook. Packages that need compiled code that has not been built for the browser cannot be installed; the error message says so.</p>
+
+<h2>Tables and plots</h2>
+<pre class="code" data-run="py"><code>import pandas as pd
+import matplotlib.pyplot as plt
+
+genes = pd.read_csv("/data/examples/tables/yeast_genes.csv")
+counts = genes.groupby("location")["essential"].mean().sort_values()
+counts.plot.barh(figsize=(6, 4), xlabel="fraction of genes that are essential")
+plt.tight_layout()
+plt.show()</code></pre>
+<p>A DataFrame on the last line of a cell is shown as a table. Plots appear under the cell; <code>plt.savefig("plot.png", dpi=150)</code> also writes the picture as a file (in the notebook's folder).</p>
+
+<h2>Sequences with Biopython</h2>
+<pre class="code" data-run="py"><code>from Bio import SeqIO
+from Bio.SeqUtils import gc_fraction
+
+for rec in SeqIO.parse("/data/examples/reads/reference.fa", "fasta"):
+    print(rec.id, len(rec.seq), f"GC {gc_fraction(rec.seq):.1%}")</code></pre>
+
+<h2>Your files</h2>
+<p>Python reads and writes your files: they are given to Python before each cell runs, and what it writes appears in the Files tab afterwards. The working folder is the notebook's folder (see <a href="#h-notebook/files">Files and folders</a>). <code>/data/examples</code> is read-only. Files larger than 300 MB are not passed to Python.</p>
+
+<h2>Data from the web</h2>
+<p><code>requests</code> works with web services that allow requests from web pages – Ensembl, UniProt, NCBI E-utilities, EBI, the PDB and others (the Databases tab writes such code for you):</p>
+<pre class="code" data-run="py"><code>import requests
+
+r = requests.get("https://rest.ensembl.org/lookup/symbol/homo_sapiens/CYP2C19",
+                 headers={"Content-Type": "application/json"})
+gene = r.json()
+print(gene["id"], gene["seq_region_name"], gene["start"], gene["end"], gene["biotype"])</code></pre>
+<p>Sites that do not allow it (KEGG, most web pages) fail with a network error: download the file with your browser and upload it in the Files tab instead.</p>
+
+<h2>Python in the terminal</h2>
+<p><code>python script.py</code>, <code>python -c "…"</code> and <code>pip install NAME</code> work in the terminal too, with the same Python as the notebooks (a script runs with its own variables). <code>%run script.py</code> runs a script inside a notebook.</p>
+
+<h2>Good to know</h2>
+<ul>
+  <li>Python here runs on one processor core: no threads or <code>multiprocessing</code>, and no <code>subprocess</code> (use <code>!</code> or <code>%%bash</code> for programs).</li>
+  <li>Memory is limited to a few gigabytes. Work on samples of very large files, or summarise them in the terminal first.</li>
+  <li>A long computation can be stopped with <b>Stop</b>; that restarts Python, so its variables are forgotten.</li>
+  <li><code>input()</code> does not work in a notebook: put the values in a variable instead.</li>
+</ul>

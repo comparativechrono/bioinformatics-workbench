@@ -1,0 +1,104 @@
+<!-- id: h-recipe-api | title: Databases from code | group: Recipes | summary: requests, batches and loops, retries, Biopython's Entrez, part of a big file, R | keys: recipe api rest requests json pandas loop rate limit retry 429 batch post ensembl uniprot ncbi entrez biopython efetch genbank ena fastq range jsonlite fromjson r cors -->
+<h1><!--ICON:flask-->Databases from code</h1>
+<p class="lede">The Databases tab asks one question at a time. Code asks a hundred – and keeps the record. This recipe shows the patterns: a request and its answer as a table, many at once, a polite loop, what to do when a service is busy, NCBI with Biopython, and the first reads of a file too big to download.</p>
+<div class="tryrow"><button class="do" type="button" data-recipe="python">Open this recipe as a notebook</button></div>
+
+<h2>1. A request that tries again</h2>
+<p>Web services are shared and sometimes busy: now and then they answer <i>429</i> (too many requests) or <i>5xx</i> (a problem of the server), or nothing at all. A small function waits and asks again – and stops with a clear error for anything else (a wrong identifier gives <i>400</i> or <i>404</i>).</p>
+<pre class="code" data-run="py"><code>import time
+import requests
+import pandas as pd
+
+def ask(method, url, tries=4, **kwargs):
+    """Make a request; when the service is busy or does not answer, wait and try again."""
+    for attempt in range(1, tries + 1):
+        try:
+            r = requests.request(method, url, **kwargs)
+            if r.status_code not in (429, 500, 502, 503, 504):
+                r.raise_for_status()          # 400, 404 …: a mistake in the request – stop
+                return r
+            problem = f"HTTP {r.status_code}"
+        except requests.exceptions.ConnectionError:
+            problem = "no answer"
+        if attempt == tries:
+            raise RuntimeError(f"{problem} from {url} after {tries} tries – try again later")
+        print(f"{problem} – trying again in {2 ** attempt} s")
+        time.sleep(2 ** attempt)
+
+def get_json(url, params=None):
+    return ask("GET", url, params=params, headers={"Accept": "application/json"}).json()
+
+gene = get_json("https://rest.ensembl.org/lookup/symbol/homo_sapiens/CYP2C19")
+gene["id"], gene["seq_region_name"], gene["start"], gene["end"]</code></pre>
+
+<h2>2. Many at once</h2>
+<p>Many services take a list in one request (a POST request with the list in its body). One request for five genes is quicker – and kinder to the service – than five.</p>
+<pre class="code" data-run="py"><code>symbols = ["CYP2C19", "CYP2C9", "CYP2D6", "CYP3A4", "CYP1A2"]
+r = ask("POST", "https://rest.ensembl.org/lookup/symbol/homo_sapiens", json={"symbols": symbols},
+        headers={"Content-Type": "application/json", "Accept": "application/json"})
+genes = pd.DataFrame([{"symbol": s, "ensembl": g["id"], "chromosome": g["seq_region_name"], "start": g["start"], "end": g["end"]}
+                      for s, g in r.json().items()])
+genes</code></pre>
+
+<h2>3. A polite loop</h2>
+<p>When there is no batch request, loop – with a short pause between requests. Here: the reviewed UniProt entry of each gene.</p>
+<pre class="code" data-run="py"><code>rows = []
+for s in symbols:
+    data = get_json("https://rest.uniprot.org/uniprotkb/search",
+                    params={"query": f"gene_exact:{s} AND organism_id:9606 AND reviewed:true",
+                            "fields": "accession,length", "format": "json"})
+    for e in data["results"]:
+        rows.append({"symbol": s, "uniprot": e["primaryAccession"], "length": e["sequence"]["length"]})
+    time.sleep(0.2)          # the service is shared
+genes.merge(pd.DataFrame(rows), on="symbol")</code></pre>
+
+<h2>4. A table straight into pandas</h2>
+<p>Services that can answer as TSV or CSV are read by pandas directly:</p>
+<pre class="code" data-run="py"><code>from urllib.parse import urlencode
+
+query = urlencode({"query": "ec:1.14.14.1 AND organism_id:9606 AND reviewed:true",
+                   "fields": "accession,gene_primary,protein_name,length", "format": "tsv"})
+p450 = pd.read_csv("https://rest.uniprot.org/uniprotkb/search?" + query, sep="\t")
+print(len(p450), "human enzymes with EC 1.14.14.1")
+p450.head()</code></pre>
+
+<h2>5. NCBI with Biopython</h2>
+<p>Biopython's <code>Bio.Entrez</code> speaks NCBI's E-utilities: search, then fetch. NCBI asks who is asking – put your own address in <code>Entrez.email</code>.</p>
+<pre class="code" data-run="py"><code>from Bio import Entrez, SeqIO
+
+Entrez.email = "your.name@example.ac.uk"
+found = Entrez.read(Entrez.esearch(db="nuccore", term="CYP2C19[gene] AND human[orgn] AND refseq[filter] AND mRNA[filter]"))
+record = SeqIO.read(Entrez.efetch(db="nuccore", id=found["IdList"][0], rettype="gb", retmode="text"), "genbank")
+cds = next(f for f in record.features if f.type == "CDS")
+print(record.id, record.description)
+print(cds.qualifiers["protein_id"][0], cds.extract(record.seq).translate()[:60], "…")</code></pre>
+
+<h2>6. The first reads of a big file</h2>
+<p>A sequencing run is usually far too big for the browser – the reads of SRR098401 are 7.5 GB per file. A <i>Range</i> request downloads only the start of a compressed file, and <code>zlib</code> unpacks as much as arrived:</p>
+<pre class="code" data-run="py"><code>import zlib
+
+url = "https://ftp.sra.ebi.ac.uk/vol1/fastq/SRR098/SRR098401/SRR098401_1.fastq.gz"
+r = ask("GET", url, headers={"Range": "bytes=0-4999999"})      # the first 5 MB
+text = zlib.decompressobj(16 + zlib.MAX_WBITS).decompress(r.content).decode()
+lines = text.split("\n")
+keep = (len(lines) - 1) // 4 * 4                                # whole reads only
+with open("SRR098401_start_1.fastq", "w") as fh:
+    fh.write("\n".join(lines[:keep]) + "\n")
+print(keep // 4, "reads")</code></pre>
+<pre class="code" data-run="py"><code>!head -n 8 SRR098401_start_1.fastq</code></pre>
+<p>The first reads of a run come from the edge of the flow cell, and are often poor (all <code>N</code>): for a fair sample, use reads from the middle of the file, or trim and filter first (<a href="#h-reads">Reads</a>).</p>
+
+<h2>7. In R</h2>
+<p><code>jsonlite::fromJSON()</code> reads a URL's JSON into lists and data frames; <code>readLines()</code> reads text. R in the browser can make only GET requests: for POST requests (batches, BLAST, VEP with positions), use Python.</p>
+<pre class="code" data-run="r"><code>library(jsonlite)
+
+symbols &lt;- c("CYP2C19", "CYP2C9", "CYP2D6")
+genes &lt;- do.call(rbind, lapply(symbols, function(s) {
+  g &lt;- fromJSON(paste0("https://rest.ensembl.org/lookup/symbol/homo_sapiens/", s, "?content-type=application/json"))
+  Sys.sleep(0.2)
+  data.frame(symbol = s, id = g$id, chromosome = g$seq_region_name, start = g$start, end = g$end)
+}))
+genes</code></pre>
+
+<h2>Which services work from the browser</h2>
+<p>A web page – and so a notebook here – can only ask services that allow requests from web pages (CORS): Ensembl, UniProt, NCBI's E-utilities, the EBI services (ENA, InterPro, QuickGO, BLAST …), RCSB PDB, AlphaFold DB, STRING, Reactome, Europe PMC, PubChem and the UCSC API do. Many others – KEGG, most web pages – do not: the request fails with <i>no answer</i>. Download such files with your browser and upload them (<a href="#h-files">Your files</a>).</p>

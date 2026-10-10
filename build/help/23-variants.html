@@ -1,0 +1,40 @@
+<!-- id: h-variants | title: Variant calling | group: Terminal and programs | summary: bcftools mpileup, call, filter, query; bgzip, tabix | keys: variants snp indel vcf bcf bcftools mpileup call filter view query stats norm bgzip tabix genotype calling -->
+<h1><!--ICON:tag-->Variant calling</h1>
+<p class="lede"><b>bcftools</b> finds the positions where the reads differ from the reference, decides the genotypes, filters the calls and turns VCF files into tables. <b>bgzip</b> and <b>tabix</b> compress and index them.</p>
+<p>The examples work in a folder of your own: <button class="do" type="button" data-term-run="mkdir -p ~/variants && cd ~/variants">mkdir -p ~/variants &amp;&amp; cd ~/variants</button></p>
+
+<h2>From a BAM file to variants</h2>
+<p>First a sorted BAM file (see <a href="#h-mapping">Mapping reads</a>):</p>
+<pre class="code" data-run="term"><code>minimap2 -ax sr -R '@RG\tID:NA12878\tSM:NA12878' /data/examples/reads/reference.fa \
+    /data/examples/reads/NA12878_R1.fastq /data/examples/reads/NA12878_R2.fastq 2> /dev/null \
+  | samtools sort -o mapped.bam -
+samtools index mapped.bam</code></pre>
+<p>Then the two steps of bcftools: <code>mpileup</code> collects the evidence at each position, <code>call</code> decides the genotypes:</p>
+<pre class="code" data-run="term"><code>bcftools mpileup -f /data/examples/reads/reference.fa mapped.bam | bcftools call -mv -Oz -o calls.vcf.gz
+bcftools index calls.vcf.gz
+bcftools view -H calls.vcf.gz | cut -f 1-6 | head</code></pre>
+<p><code>-m</code> is the multiallelic caller, <code>-v</code> keeps only variant sites, <code>-Oz</code> writes compressed VCF (<code>-Ov</code> plain VCF, <code>-Ob</code> BCF).</p>
+
+<h2>Filter and count</h2>
+<pre class="code" data-run="term"><code>bcftools filter -i 'QUAL>=20 && INFO/DP>=5' -Oz -o filtered.vcf.gz calls.vcf.gz
+bcftools index filtered.vcf.gz
+bcftools view -H filtered.vcf.gz | wc -l
+bcftools view -H -v snps filtered.vcf.gz | wc -l
+bcftools view -H -v indels filtered.vcf.gz | wc -l
+bcftools stats filtered.vcf.gz | grep -E "^SN|^TSTV"</code></pre>
+<p>The expression language: <code>QUAL</code>, <code>INFO/DP</code>, <code>FORMAT/GT="1/1"</code>, <code>TYPE="snp"</code>, with <code>&amp;&amp;</code>, <code>||</code>. <code>-e</code> excludes instead of including.</p>
+
+<h2>A table of the calls</h2>
+<pre class="code" data-run="term"><code>bcftools query -H -f '%CHROM\t%POS\t%REF\t%ALT\t%QUAL\t%INFO/DP[\t%GT]\n' filtered.vcf.gz > calls.tsv
+head calls.tsv</code></pre>
+<p>A table like this reads straight into pandas or R (<code>pd.read_csv("calls.tsv", sep="\t")</code>). A known position, such as the CYP2C19*2 variant (rs4244285, G&gt;A) at position 11,616 of <code>human_CYP2C19</code> – NA12878 carries it on one chromosome (0/1):</p>
+<pre class="code" data-run="term"><code>bcftools view -H -r human_CYP2C19:11616 filtered.vcf.gz | cut -f 1-10</code></pre>
+
+<h2>bgzip and tabix</h2>
+<p>A VCF file that tools read by region must be compressed with <code>bgzip</code> (not plain <code>gzip</code>) and indexed:</p>
+<pre class="code" data-run="term"><code>bcftools view filtered.vcf.gz > plain.vcf
+bgzip -c plain.vcf > again.vcf.gz
+tabix -p vcf again.vcf.gz
+tabix again.vcf.gz human_CYP2C19:11000-12000 | cut -f 1-5</code></pre>
+<p>Also useful: <code>bcftools norm</code> (normalise indels against the reference), <code>bcftools isec</code> (compare two call sets), <code>bcftools annotate</code>. <code>bcftools COMMAND --help</code> lists the options of a command. The plugins (<code>bcftools +NAME</code>) cannot run in a browser.</p>
+<p><code>igv filtered.vcf.gz mapped.bam</code> shows the calls next to the reads in the <a href="#h-genome">Genome browser</a>.</p>

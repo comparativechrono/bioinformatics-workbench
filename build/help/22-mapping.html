@@ -1,0 +1,44 @@
+<!-- id: h-mapping | title: Mapping reads | group: Terminal and programs | summary: minimap2, Bowtie 2, samtools | keys: map mapping align alignment reads reference minimap2 bowtie2 bowtie2-build samtools sam bam sort index flagstat stats depth view faidx coverage tview -->
+<h1><!--ICON:align-->Mapping reads</h1>
+<p class="lede">Mapping finds where each read comes from in a reference sequence. <b>minimap2</b> and <b>Bowtie 2</b> map; <b>samtools</b> sorts, indexes, filters and counts the alignments.</p>
+<p>The examples work in a folder of your own: <button class="do" type="button" data-term-run="mkdir -p ~/mapping && cd ~/mapping">mkdir -p ~/mapping &amp;&amp; cd ~/mapping</button></p>
+
+<h2>The reference</h2>
+<p>The example reference has two pieces of human chromosome 10 (GRCh37), named <code>human_CYP2C19</code> and <code>human_CYP2C9</code>. <code>samtools faidx</code> indexes a FASTA file and cuts regions out of it:</p>
+<pre class="code" data-run="term"><code>cp /data/examples/reads/reference.fa .
+samtools faidx reference.fa
+cut -f 1,2 reference.fa.fai
+samtools faidx reference.fa human_CYP2C19:11590-11640</code></pre>
+
+<h2>minimap2</h2>
+<pre class="code" data-run="term"><code>minimap2 -ax sr reference.fa /data/examples/reads/NA12878_R1.fastq /data/examples/reads/NA12878_R2.fastq > mapped.sam
+samtools sort -o mapped.bam mapped.sam
+samtools index mapped.bam
+samtools flagstat mapped.bam</code></pre>
+<p><code>-ax sr</code> is the preset for short paired reads (<code>map-ont</code> and <code>map-pb</code> for long reads, <code>asm5</code> for an assembly against a reference). The two steps can be one pipe: <code>minimap2 -ax sr … | samtools sort -o mapped.bam -</code>. A read group names the sample in the BAM file – variant callers use it: <code>-R '@RG\tID:NA12878\tSM:NA12878'</code>.</p>
+
+<h2>Bowtie 2</h2>
+<pre class="code" data-run="term"><code>bowtie2-build reference.fa refindex > /dev/null
+bowtie2 -x refindex -1 /data/examples/reads/NA12878_R1.fastq -2 /data/examples/reads/NA12878_R2.fastq 2> bowtie2.log | samtools sort -o bt2.bam -
+samtools index bt2.bam
+cat bowtie2.log</code></pre>
+<p><code>bowtie2-build</code> makes the index (six <code>.bt2</code> files) once. The summary of the mapping goes to the standard error – here into <code>bowtie2.log</code>. Presets: <code>--very-fast</code> … <code>--very-sensitive</code>, and <code>--local</code> for local alignment.</p>
+
+<h2>samtools</h2>
+<table>
+<tr><th>Command</th><th>What it does</th></tr>
+<tr><td><code>samtools view -H mapped.bam</code></td><td>the header (reference names, read groups, the programs that made the file)</td></tr>
+<tr><td><code>samtools view mapped.bam | head</code></td><td>alignments as text: name, flag, position, MAPQ, CIGAR …</td></tr>
+<tr><td><code>samtools view -b -q 20 -F 4 -o good.bam mapped.bam</code></td><td>keep mapped reads with MAPQ ≥ 20</td></tr>
+<tr><td><code>samtools view -c mapped.bam human_CYP2C19:11000-12000</code></td><td>count the reads in a region (needs the index)</td></tr>
+<tr><td><code>samtools flagstat mapped.bam</code></td><td>mapped, properly paired, duplicates …</td></tr>
+<tr><td><code>samtools stats mapped.bam | grep ^SN</code></td><td>summary numbers: error rate, insert size, read lengths</td></tr>
+<tr><td><code>samtools idxstats mapped.bam</code></td><td>reads per reference sequence</td></tr>
+<tr><td><code>samtools depth -a -r human_CYP2C19:11610-11620 mapped.bam</code></td><td>depth at each position</td></tr>
+<tr><td><code>samtools tview -d T -p human_CYP2C19:11600 mapped.bam reference.fa</code></td><td>the reads as text around a position</td></tr>
+</table>
+<pre class="code" data-run="term"><code>samtools view mapped.bam | head -3 | cut -f 1-9
+samtools view -c mapped.bam human_CYP2C19:11000-12000
+samtools depth -a -r human_CYP2C19:11610-11620 mapped.bam</code></pre>
+<p>To see the reads, <code>igv mapped.bam</code> opens them in the <a href="#h-genome">Genome browser</a>.</p>
+<div class="callout info"><div class="co-t"><!--ICON:info-->SAM flags</div><p>The second column of a SAM line is a sum of bits: 1 paired, 2 properly paired, 4 unmapped, 16 reverse strand, 256 secondary, 1024 duplicate, 2048 supplementary. <code>-f</code> keeps reads that have all the given bits, <code>-F</code> drops reads that have any of them.</p></div>

@@ -1,0 +1,63 @@
+<!-- id: h-viewer | title: The 3D viewer | group: 3D viewer | summary: Load, move, style, colour, select, measure, save pictures | keys: 3d viewer structure molecule protein pdb alphafold ngl cartoon sticks surface spheres colour color select residue chain ligand binding site contacts hydrogen bond distance measure label picture png image session superpose rotate zoom mouse -->
+<h1><!--ICON:cube-->The 3D viewer</h1>
+<p class="lede">The 3D viewer shows the structures of proteins, nucleic acids and small molecules – from the Protein Data Bank, from AlphaFold DB or from your files. Style and colour them, find binding sites, measure distances, and save pictures for your reports.</p>
+<div class="tryrow"><button class="do" type="button" data-open="/data/examples/structures/1mbn.pdb">Show myoglobin (example file)</button> <button class="do" type="button" data-cmd="load 3FXI">Load 3FXI from the PDB</button> <button class="do" type="button" data-cmd="load af O00206">AlphaFold model of TLR4</button></div>
+
+<h2>Load a structure</h2>
+<ul>
+  <li><b>PDB ID</b> (top left): type <code>1MBN</code> and <b>Load</b> – fetched from the RCSB PDB.</li>
+  <li><b>AlphaFold</b>: a UniProt accession and <b>Load model</b> – the predicted structure, coloured by its confidence (see <a href="#h-db-proteins">AlphaFold DB</a>).</li>
+  <li><b>From your files</b>: click a <code>.pdb</code>, <code>.cif</code> or <code>.sdf</code> file in the Files tab, or type <code>open FILE.pdb</code> in the terminal. <b>Open file</b> takes one from your computer.</li>
+  <li><b>From the Databases tab</b>: <i>Load in 3D</i> in the Protein Data Bank card, <i>Show in the 3D viewer</i> in AlphaFold DB and PubChem, <i>3D</i> buttons in a UniProt entry.</li>
+</ul>
+<p>The <b>workspace</b> on the left lists what is loaded – each structure with its chains and ligands. Click a name to select it, double-click to centre on it, and use the eye to show or hide it. Several structures can be loaded together.</p>
+
+<h2>Move it</h2>
+<table class="keys">
+<tr><td>Rotate</td><td>drag with the left mouse button (one finger on a touch screen)</td></tr>
+<tr><td>Move sideways</td><td>drag with the right button, or <kbd>Ctrl</kbd> + left button (two fingers)</td></tr>
+<tr><td>Zoom</td><td>the scroll wheel or a pinch, or <kbd>Shift</kbd> + left button</td></tr>
+<tr><td>Select</td><td>click an atom; <kbd>Shift</kbd>-click adds to the selection; <kbd>Esc</kbd> clears it</td></tr>
+<tr><td>Centre on a residue</td><td>double-click it</td></tr>
+</table>
+<p>The buttons at the top right: reset the view, centre on the selection, spin, change the background, full screen, and these controls (<!--ICON:help-->).</p>
+
+<h2>Styles and colours</h2>
+<p>The tabs above the picture – <b>Display</b>, <b>Colour</b>, <b>Select</b>, <b>Labels &amp; key</b>, <b>Measure</b>, <b>Views</b>, <b>Save image</b> – hold the tools. Styles and colours apply to the <b>selection</b>, or to everything when nothing is selected: the bar above the picture always says which.</p>
+<table>
+<tr><th>Style</th><th>Shows</th></tr>
+<tr><td>Cartoon</td><td>the fold of the backbone: helices as spirals, strands as arrows, loops as tubes</td></tr>
+<tr><td>Tube</td><td>a smooth line through the backbone</td></tr>
+<tr><td>Sticks, Ball &amp; stick</td><td>every bond – for ligands and side chains</td></tr>
+<tr><td>Spheres</td><td>atoms at their real size: the space a molecule fills</td></tr>
+<tr><td>Surface, See-through</td><td>the molecular surface – shape, pockets and grooves; see-through shows what is inside</td></tr>
+<tr><td>Lines</td><td>thin bonds</td></tr>
+</table>
+<p>Colour schemes: <i>by chain</i>, <i>by molecule</i>, <i>rainbow</i> (blue at the N-terminus to red at the C-terminus), <i>secondary structure</i>, <i>hydrophobicity</i> (orange hydrophobic, blue hydrophilic), <i>residue type</i> (acidic red, basic blue, polar green, hydrophobic sandy), <i>element</i>, <i>pLDDT</i> (AlphaFold models), <i>B-factor</i> (experimental structures), or one colour of your choice.</p>
+<div class="tryrow"><button class="do" type="button" data-cmd="load 1MBN; hide all; show cartoon; color ss; show sticks HEM; center HEM">Myoglobin: fold and haem</button> <button class="do" type="button" data-cmd="load 1MBN; color hydrophobicity; show surface">Myoglobin: hydrophobic surface</button></div>
+
+<h2>Select</h2>
+<p>Click atoms, names in the workspace, or letters in the <b>sequence bar</b> under the picture (it shows the sequence of one chain; choose which). The <b>Select</b> tab also has <i>Box select</i> (drag a rectangle), <i>Select nearby</i> (residues within some ångström of the selection), and a box for a selection query such as <code>A:64</code> (residue 64 of chain A), <code>A:60-70</code>, <code>HEM</code>.</p>
+
+<h2>Binding sites and contacts</h2>
+<p>Select a ligand – click <b>HEM</b> in the workspace – and use <b>Binding site</b>: the residues around it are shown as sticks, with lines for the contacts they make: hydrogen bonds, salt bridges, π-stacking, cation–π, halogen bonds and metal coordination. Hydrophobic contacts are many, and are left out: the command <code>contacts HEM hydrophobic</code> adds them.</p>
+<div class="tryrow"><button class="do" type="button" data-cmd="load 1MBN; site HEM 4.5">Binding site of the haem</button></div>
+
+<h2>Measure, label, compare</h2>
+<ul>
+  <li><b>Measure</b>: click two atoms for the distance between them, in ångström.</li>
+  <li><b>Labels &amp; key</b>: labels on residues, a title on the picture, and a colour key (legend).</li>
+  <li><b>Views</b>: <i>Save view</i> remembers the picture – orientation, styles, colours and labels – like a slide; click it to go back to it.</li>
+  <li><b>Superpose</b>: lay one structure on another (an AlphaFold model on an experimental structure); the RMSD says how far apart they are. In the model's panel: <i>Superpose onto…</i>, or the command <code>superpose</code>.</li>
+</ul>
+
+<h2>The command line</h2>
+<p>Under the picture, <b>Command line</b> opens a command line: <code>load 1MBN</code>, <code>color rainbow A</code>, <code>show sticks HEM</code>; type <code>help</code> for the list. Most buttons write the command they stand for there too – a record of how you made a picture. All the commands are in the <a href="#h-viewer-commands">command reference</a>.</p>
+
+<h2>Save your work</h2>
+<ul>
+  <li><b>Save image</b>: a PNG picture at 1×–4× the screen size, on the current or a transparent background, with or without the labels and key. <b>Download PNG</b> saves it to your computer; <b>PNG to my files</b> keeps it in <code>~/figures</code>, for a notebook or a report; <b>Copy image</b> puts it on the clipboard for Word or PowerPoint.</li>
+  <li><b>Coordinates</b>: a structure as it is shown – superposed, if it was – as a <code>.pdb</code> file, downloaded or kept in <code>~/structures</code>.</li>
+  <li><b>Views → Save session</b> downloads everything – structures, styles, labels, views – as one file; <b>Open session</b> continues from it.</li>
+</ul>
+<p>The structures, styles and views are not kept when the page is reloaded: save a session to continue later.</p>

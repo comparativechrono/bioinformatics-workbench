@@ -1,0 +1,69 @@
+<!-- id: h-databases | title: Databases | group: Databases | summary: Search public databases; keep the answers as files or notebook code | keys: database api rest web service query search uniprot pdb alphafold interpro ensembl ncbi ucsc ena blast string reactome gene ontology europe pmc pubchem json url requests notebook your queries -->
+<h1><!--ICON:database-->Databases</h1>
+<p class="lede">The Databases tab asks public bioinformatics databases your questions, straight from the browser: proteins and structures, genes and genomes, variants, interactions, pathways, papers and small molecules. Every answer can be kept – saved among your files, or sent to a notebook as Python or R code that asks the same question again.</p>
+<div class="tryrow"><button class="do" type="button" data-bench="apis">Open the Databases tab</button></div>
+
+<h2>The cards</h2>
+<table>
+<tr><th>Group</th><th>Card</th><th>Ask it for</th></tr>
+<tr><td rowspan="4">Proteins</td><td><a href="#h-db-uniprot">UniProt</a></td><td>protein entries: function, names, location, disease and variants, domains, sequence</td></tr>
+<tr><td><a href="#h-db-pdb">Protein Data Bank</a></td><td>experimental 3D structures</td></tr>
+<tr><td><a href="#h-db-proteins">AlphaFold DB</a></td><td>the predicted structure of a protein, with its confidence</td></tr>
+<tr><td><a href="#h-db-proteins">InterPro</a></td><td>the families, domains and sites of a protein</td></tr>
+<tr><td rowspan="4">Genes and genomes</td><td><a href="#h-db-genes">Ensembl</a></td><td>genes and transcripts, sequences, the effect of a variant (VEP), orthologues, the genes in a region</td></tr>
+<tr><td><a href="#h-db-genes">NCBI</a></td><td>Gene, Nucleotide, Protein, PubMed, dbSNP, ClinVar, Taxonomy, Assembly; sequences as FASTA or GenBank</td></tr>
+<tr><td><a href="#h-db-genes">UCSC Genome Browser</a></td><td>the DNA of any region of a genome</td></tr>
+<tr><td><a href="#h-db-genes">European Nucleotide Archive</a></td><td>sequencing runs and their FASTQ files; any sequence by accession</td></tr>
+<tr><td>Sequence searches</td><td><a href="#h-db-blast">BLAST</a></td><td>similar sequences in UniProt, the PDB, AlphaFold DB or ENA</td></tr>
+<tr><td rowspan="3">Function and pathways</td><td><a href="#h-db-function">STRING</a></td><td>protein–protein interaction networks</td></tr>
+<tr><td><a href="#h-db-function">Reactome</a></td><td>the pathways of a protein, with diagrams</td></tr>
+<tr><td><a href="#h-db-function">Gene Ontology</a></td><td>the GO terms of a protein; terms of GO and other ontologies</td></tr>
+<tr><td rowspan="2">Literature and chemistry</td><td><a href="#h-db-literature">Europe PMC</a></td><td>papers, with links to free full texts</td></tr>
+<tr><td><a href="#h-db-literature">PubChem</a></td><td>drugs, metabolites and ligands: properties, drawings, 3D models</td></tr>
+</table>
+
+<h2>Ask a question</h2>
+<ol>
+  <li>Click a card. Cards that answer several kinds of question have tabs at the top – Ensembl has <i>Gene</i>, <i>Sequence</i>, <i>Variant effect (VEP)</i>, <i>Orthologues</i> and <i>Genes in a region</i>.</li>
+  <li>Fill in the form, or click one of the examples after <b>Try:</b> – they fill in the form and search.</li>
+  <li><b>Search</b>. The answer appears under the form: a title and a short summary, then a table (click a column heading to sort by it), a picture or a sequence.</li>
+</ol>
+<p><b>← All databases</b> goes back to the cards. <b>Help</b> opens the card's page in this pane; <b>About the API</b> opens the service's own documentation.</p>
+<div class="tryrow"><button class="do" type="button" data-api="ensembl:vep:rs4244285">Effect of rs4244285 (VEP)</button> <button class="do" type="button" data-api="uniprot:P04637">UniProt entry of p53</button> <button class="do" type="button" data-api="alphafold:model:P69905">AlphaFold model of haemoglobin α</button></div>
+
+<h2>Keep the answer</h2>
+<p>The buttons above an answer:</p>
+<ul>
+  <li><b>Save to my files</b> (a sequence, a report) and <b>Save the table (.tsv)</b> – it asks where, in <code>~/data</code> unless you change it; structures go to <code>~/structures</code>. From there the terminal, the notebooks and Galaxy can use them.</li>
+  <li><b>Send to notebook</b> → <i>Python (requests)</i> or <i>R</i>: adds a cell with code that makes the same query to the notebook that is open. Run it, and the answer is in Python (a dictionary, or a pandas table) or in R – ready for the next step of an analysis.</li>
+  <li><b>Raw data (JSON)</b>: what the service sent back, unchanged – every field, also those the table leaves out.</li>
+  <li><b>Copy the URL</b>: the query as a web address. Paste it into a browser, into <code>curl</code>, or into code.</li>
+  <li>Some answers have more: <i>Show in the 3D viewer</i> (AlphaFold, PubChem), <i>Show in the Genome browser</i> (Ensembl genes), a FASTA file for each transcript (Ensembl), <i>Open at …</i> the service's own page.</li>
+</ul>
+
+<h2 data-anchor="queries">Your queries – as a notebook</h2>
+<p>Under the cards, <b>Your queries</b> lists the questions you asked in this visit, newest first – those of the UniProt and PDB cards too. <b>Save as a Python notebook</b> (or <b>… as an R notebook</b>) writes them all into one notebook, <code>~/notebooks/database-queries-DATE.ipynb</code>: for each query a heading, its URL and a code cell that makes it again. It is a record of where your data came from; download it from the Notebook tab like any other notebook.</p>
+<div class="callout info"><div class="co-t"><!--ICON:info-->The list is kept until you reload the page</div><p>Save it as a notebook before you leave.</p></div>
+
+<h2>Asking from code</h2>
+<p>Each card uses a <b>REST API</b>: a web address goes in, data comes out – JSON for most, FASTA or text for sequences. The same works in a notebook:</p>
+<pre class="code" data-run="py"><code>import requests
+
+r = requests.get("https://rest.ensembl.org/lookup/symbol/homo_sapiens/CYP2C19",
+                 headers={"Content-Type": "application/json"})
+r.raise_for_status()          # stop here if the service said no
+gene = r.json()
+gene["id"], gene["seq_region_name"], gene["start"], gene["end"]</code></pre>
+<pre class="code" data-run="r"><code>library(jsonlite)
+gene &lt;- fromJSON("https://rest.ensembl.org/lookup/symbol/homo_sapiens/CYP2C19?content-type=application/json")
+c(gene$id, gene$seq_region_name, gene$start, gene$end)</code></pre>
+<p>In the browser, R can only make <b>GET</b> requests (a URL); for services that need a POST request – BLAST, VEP with positions, the PDB search – use Python. More in the recipe <a href="#h-recipe-api">Databases from code</a>.</p>
+
+<h2>Good practice</h2>
+<ul>
+  <li><b>Databases change.</b> New releases add, correct and remove entries; a query can give another answer next month. Note the date – the notebook of your queries does – and, for positions on a genome, the assembly: GRCh38 (hg38) and GRCh37 (hg19) number the same base differently.</li>
+  <li><b>Annotations are predictions.</b> VEP calls rs4244285 synonymous – yet it is CYP2C19*2, a loss-of-function allele that changes the splicing of the gene (see <a href="#h-db-genes">Genes, genomes and variants</a>). Look at the clinical significance and the literature before you conclude.</li>
+  <li><b>The services are shared</b> by scientists everywhere. Ask for what you need, not thousands of queries in a quick loop: Ensembl allows about 15 requests a second, NCBI 3. A request that gets no answer at all is sent again (twice) by the tab; for code, see the recipe.</li>
+  <li><b>When a query fails</b>, the message says why: <i>Not found (404)</i> – check the identifier; <i>did not accept the query (400)</i> – check what you typed; <i>slow down (429)</i> – wait a minute; <i>not answering (5xx)</i> or <i>no answer that the page could read</i> – the service is busy or down: try again later.</li>
+</ul>
+<div class="callout warn"><div class="co-t"><!--ICON:warning-->Public services</div><p>Only what you type into a form is sent to the service (for BLAST, also your e-mail address). These are public services that keep logs: never type or paste personal or patient data into them.</p></div>

@@ -1,0 +1,41 @@
+<!-- id: h-limits | title: What is different in the browser | group: Reference | summary: Memory, speed, storage, internet, what cannot run | keys: limits limitation browser webassembly memory ram speed slow core thread storage quota large file internet cors offline install sudo apt background job gpu mobile phone tablet -->
+<h1><!--ICON:info-->What is different in the browser</h1>
+<p class="lede">Everything in the workbench runs on your own computer, inside this web page: the programs are the real ones, compiled to WebAssembly, and Python and R are the real languages. That brings some limits a server would not have.</p>
+
+<h2>Speed and memory</h2>
+<ul>
+  <li>Each program runs on <b>one processor core</b>; options for threads (<code>-t</code>, <code>-@</code>, <code>--threads</code>) are ignored, with a note. Programs run more slowly than on a server, and the speed depends on your computer: keep the data small.</li>
+  <li>A program, Python and R each have <b>a few gigabytes of memory</b> at most (WebAssembly is 32-bit: 4 GB is the ceiling, and browsers often allow less). Mapping reads to a whole human genome does not fit; regions, a few genes, bacterial and viral genomes do.</li>
+  <li>Python has no threads, no <code>multiprocessing</code> and no <code>subprocess</code>; <code>input()</code> does not work in a notebook. R cannot run <code>system()</code>: use a <code>%%bash</code> cell.</li>
+</ul>
+
+<h2>Files</h2>
+<ul>
+  <li>Your files are kept <b>in this browser</b> on this computer, not on a server – see <a href="#h-files/kept">where your files are kept</a>.</li>
+  <li>Browsers give a site a share of the free disk space – usually several gigabytes; <b>My files</b> shows how much is used. Files of hundreds of megabytes work, but slowly. Python and R are not given files over 300 MB, and a file over 1 GB is not kept in the browser at all: it is there while the page is open – download it if you need it.</li>
+  <li>Large intermediate files fill the space fast: pipe programs together (<code>minimap2 … | samtools sort -o mapped.bam -</code>) instead of writing a SAM file, and delete what you no longer need.</li>
+</ul>
+
+<h2>Installing</h2>
+<ul>
+  <li>No <code>sudo</code>, <code>apt</code> or background jobs (<code>&amp;</code>). Programs cannot be added to the terminal – <code>conda install</code> there only models environments.</li>
+  <li>Python packages install with <code>%pip install</code> (pure-Python packages, and those Pyodide has built); R packages with <code>install.packages()</code> (those built for webR). Both last until the page is reloaded.</li>
+  <li>Some packages have no build for the browser yet – among them DESeq2 and edgeR in R.</li>
+</ul>
+
+<h2>The internet</h2>
+<ul>
+  <li>Python is downloaded when a Python notebook is open, R when an R notebook is open – and the page opens the last notebook you had open when it starts (a Python one on the first visit) –, packages when they are imported or installed: tens of megabytes, of which the browser keeps a copy for later visits.</li>
+  <li>A web page can only ask web services that allow requests from web pages (<b>CORS</b>). The big bioinformatics services do – Ensembl, UniProt, NCBI, EBI, the PDB, AlphaFold DB and the others of the Databases tab; KEGG and most web pages do not. This holds for notebooks, <code>curl</code> and <code>wget</code> alike.</li>
+  <li>R in the browser can only make GET requests; use Python for POST requests.</li>
+  <li>The Databases tab, the AI assistant, the hosted genomes of the genome browser and downloads from the PDB need the internet all the time.</li>
+</ul>
+
+<h2>The tabs</h2>
+<ul>
+  <li><b>Galaxy</b> offers a selection of tools, runs one job at a time, and has no user accounts or shared histories.</li>
+  <li><b>Snakemake</b> is a browser edition of its commonly used core: rules, wildcards, <code>expand</code>, <code>-n</code>, <code>--dag</code>, <code>--summary</code>; no cluster execution.</li>
+  <li><b>The 3D viewer</b> needs WebGL (3D graphics in the browser): if it does not start, turn on hardware acceleration in the browser's settings.</li>
+  <li>The workbench is made for a laptop or desktop screen; on a phone or tablet it works, cramped.</li>
+</ul>
+<p>Use a current Chrome, Edge, Firefox or Safari.</p>

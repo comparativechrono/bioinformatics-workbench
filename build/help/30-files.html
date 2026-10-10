@@ -1,0 +1,48 @@
+<!-- id: h-files | title: Your files | group: Files | summary: Where they are kept, the Files tab, upload, download | keys: files folder home storage browser kept indexeddb upload download zip unzip rename delete edit save editor viewer quota storage space backup lost start afresh -->
+<h1><!--ICON:folder-->Your files</h1>
+<p class="lede">Your files are in your home folder, <code>~</code> (<code>/home/student</code>). The notebooks, the terminal, Galaxy and the Files tab all use the same files.</p>
+
+<h2 data-anchor="kept">Where your files are kept</h2>
+<p>There is no server: your files are kept <b>in this browser, on this computer</b> (in its storage for web sites, IndexedDB). They are there when you come back – in the same browser, on the same computer, at the same web address.</p>
+<div class="callout warn"><div class="co-t"><!--ICON:warning-->Download what you want to keep</div>
+<ul>
+  <li>Another browser, another computer or a private window does not have your files.</li>
+  <li>Clearing the browser's data for this site (cookies and site data) deletes them – some computers do that by themselves when you log out (shared university PCs often do).</li>
+  <li>Browsers may delete site data when the disk is nearly full.</li>
+</ul>
+<p><b>My files → Download all my files (.zip)</b> (top right) keeps everything; download single notebooks with <b>Download</b> in the Notebook tab.</p></div>
+<p>The dot at the top right, <i>Saved in this browser</i>, shows that the latest changes are stored. <b>My files</b> also says how much space you use; browsers give a site a share of the free disk space – usually several gigabytes.</p>
+
+<h2>The Files tab</h2>
+<ul>
+  <li><b>Open a file</b> by clicking it. Text files open in an editor (with colours for Python, R, shell, YAML …): edit, then <b>Save</b> or <kbd>Ctrl</kbd>+<kbd>S</kbd>. Several files open as tabs.</li>
+  <li><b>Other files are shown</b> in a way that fits them: tables (CSV, TSV) as tables, FASTA files with their sequences, alignments in colour, trees (<code>.nwk</code>) drawn, pictures, PDF files, HTML reports (without their scripts). <b>Open as text</b> shows the text itself.</li>
+  <li><b>Notebooks</b> (<code>.ipynb</code>) open in the Notebook tab, <b>structures</b> (<code>.pdb</code>, <code>.cif</code>) in the 3D viewer.</li>
+  <li>The <b>⋯ of a file or folder</b>: open in another tab (Notebook, 3D viewer, Genome browser, Galaxy), download, rename, duplicate, copy the path, open the folder in the terminal, unzip, delete.</li>
+  <li>The buttons at the top: upload files from your computer, a new file, a new folder, show hidden files (names that start with a dot).</li>
+</ul>
+<div class="tryrow"><button class="do" type="button" data-bench="editor">Open the Files tab</button> <button class="do" type="button" data-open="/data/examples/tables/yeast_genes.csv">Show the yeast table</button> <button class="do" type="button" data-open="/data/examples/sequences/tRNA-Thr.afa">Show an alignment</button></div>
+
+<h2>Upload and download</h2>
+<ul>
+  <li><b>Upload</b>: drag files from your computer onto the Files tab, or use the upload button or <b>My files → Add files from my computer…</b>. Folders can be uploaded too. A <code>.zip</code> can be unpacked with its ⋯ menu (or <code>unzip</code> in the terminal).</li>
+  <li><b>Download</b>: the ⋯ of a file; a folder downloads as a <code>.zip</code>. In the terminal: <code>download FILE</code>.</li>
+  <li>Very large files (several gigabytes) do not fit: work on a part of them (<code>head</code>, <code>samtools view -s</code>, <code>seqtk sample</code>) on your own computer first.</li>
+</ul>
+
+<h2 data-anchor="examples">The example data</h2>
+<p><code>/data/examples</code> comes with the workbench and cannot be changed. The Files tab shows it under <b>Examples (read-only)</b>; its <code>README.md</code> says where each file comes from. To change a file, copy it first – its ⋯ menu has <b>Copy to my files</b>, or in the terminal:</p>
+<pre class="code" data-run="term"><code>cp -r /data/examples/reads ~/example-reads
+ls -l ~/example-reads</code></pre>
+<table>
+<tr><th>Folder</th><th>What is in it</th></tr>
+<tr><td><code>reads/</code></td><td>Illumina exome reads of the reference sample NA12878 (3,519 pairs, 76 bases) from two regions of chromosome 10, and their reference (<code>reference.fa</code>: the CYP2C19 and CYP2C9 regions of GRCh37)</td></tr>
+<tr><td><code>variants/</code></td><td>the variants called from those reads (<code>NA12878.calls.vcf.gz</code>)</td></tr>
+<tr><td><code>annotation/</code></td><td>the genes and exons of the two regions (GFF3, BED)</td></tr>
+<tr><td><code>sequences/</code></td><td>pBR322 (DNA), myoglobins of eight animals (protein), aligned tRNAs</td></tr>
+<tr><td><code>tables/</code></td><td>5,481 yeast genes in 19 columns – names, essentiality, protein length and abundance, location, chromosome … (<code>yeast_genes.csv</code>; the README describes each column)</td></tr>
+<tr><td><code>structures/</code></td><td>sperm whale myoglobin, PDB 1MBN</td></tr>
+</table>
+
+<h2>Start afresh</h2>
+<p><b>My files → Start afresh</b> deletes all your files, Galaxy's history and the workbench's settings in this browser – after you have downloaded what you want to keep. The settings of the AI assistant and of the help pane are kept.</p>

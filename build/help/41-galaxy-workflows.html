@@ -1,0 +1,25 @@
+<!-- id: h-galaxy-workflows | title: Galaxy workflows | group: Galaxy | summary: Build, extract, run, export to usegalaxy.org | keys: galaxy workflow editor extract history run invocation ga export import usegalaxy canvas connect input dataset -->
+<h1><!--ICON:workflow-->Galaxy workflows</h1>
+<p class="lede">A workflow is a saved graph of tools: each step's inputs are connected to the outputs of earlier steps. It runs again with one click – on the same data or on new data.</p>
+
+<h2>Extract a workflow from your history</h2>
+<p>After a few tools have run, <b>Extract workflow</b> (at the top of the history) turns the jobs into a workflow: the datasets you uploaded become its inputs, and each job a step. It opens in the editor.</p>
+
+<h2>Build one in the editor</h2>
+<ol>
+  <li><b>Workflows → Create a new workflow</b>. Give it a name (the box at the top).</li>
+  <li><b>+ Input dataset</b> adds an input; click it to set its label and datatype (for example <code>fastqsanger</code> for reads).</li>
+  <li>Click tools on the left: each becomes a box. Its inputs are on the left side, its outputs on the right.</li>
+  <li>Drag from an <b>output</b> dot to an <b>input</b> dot to connect them. Only matching datatypes connect: while you drag, the inputs that fit light up.</li>
+  <li>Click a box to change its settings (right column). With nothing selected, the right column lists what is still missing.</li>
+</ol>
+<p>Click a connection to remove it; <b>×</b> on a box removes the step. <b>Tidy layout</b> arranges the boxes. Changes are saved as you go.</p>
+
+<h2>Run it</h2>
+<p><b>Run</b> asks for a dataset of your history for each input, lists the steps, and runs them in order. <b>Invocations</b> shows each run and the state of its jobs; the outputs appear in your history, with the full record of each job (<!--ICON:info-->).</p>
+
+<h2>Take it to a Galaxy server</h2>
+<p><b>.ga</b> downloads the workflow in Galaxy's own format. On usegalaxy.org (or usegalaxy.eu, .org.au …): <i>Workflows → Import</i>, choose the file. The steps name the Tool Shed tools and versions they use; where the server has another version of a tool, it says so when the workflow opens. Steps with Kalign or MUSCLE come up as missing tools (they have no Tool Shed counterpart): replace them with the server's own alignment tool. <b>to my files</b> keeps the <code>.ga</code> file in <code>~/galaxy/workflows</code>, and <b>Import a .ga file</b> opens a workflow made elsewhere – if its tools are among the ones here.</p>
+
+<h2>Workflows and notebooks</h2>
+<p>A workflow records the steps; a history records one run of them. To keep the commands of a run as code, use the history's <b>⋯ → Open the history as a notebook</b> (see <a href="#h-galaxy">Galaxy</a>).</p>

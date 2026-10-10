@@ -1,0 +1,48 @@
+<!-- id: h-ai | title: The AI assistant | group: AI assistant | summary: Connect a model, ask about code and errors, use the code it gives | keys: ai assistant chat gemini claude anthropic openai model api key llm question error explain code notebook terminal prompt privacy check hallucination academic integrity -->
+<h1><!--ICON:sparkle-->The AI assistant</h1>
+<p class="lede">The AI assistant answers questions about your code, an error message, a program or a method – and puts the code from its answers into a notebook or the terminal with one click. Its <b>Agent</b> tab goes further: it carries out a whole task in the terminal (see <a href="#h-ai-agent">The AI agent</a>).</p>
+<div class="callout warn"><div class="co-t"><!--ICON:warning-->Before you start</div>
+<ul>
+  <li><b>Never paste personal or patient data</b> into an AI tool, here or anywhere else.</li>
+  <li><b>Check what it gives you.</b> AI models make mistakes, invent options and references, and sound sure when they do. Run the code and look at the result.</li>
+  <li>Follow your course's rules on using AI in assessed work, and say where you used it.</li>
+</ul></div>
+<div class="tryrow"><button class="do" type="button" data-bench="assistant">Open the AI assistant</button></div>
+
+<h2>Connect a model</h2>
+<p>The assistant uses an AI service of your choice, with a key of your own (or one you have been given). Your questions go from your browser straight to that service. Click <b>Not connected</b> or <!--ICON:gear--> (AI settings), and choose the <b>Service</b>:</p>
+<ul>
+  <li><b>Google Gemini</b> – make a free key with a Google account at <a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener">aistudio.google.com/apikey</a> (you must be 18 or over). On the free tier Google may use what you send to improve its products, and people may read it – except for users in the UK, the European Economic Area and Switzerland, whose free use Google treats like paid use (it keeps what is sent for a limited time, to detect misuse, and does not use it to improve its products). Each model allows a few requests a minute. When one model is busy, the page asks another, and the answer says which one replied.</li>
+  <li><b>Anthropic (Claude)</b> – a key from the Claude Console, <a href="https://platform.claude.com/settings/keys" target="_blank" rel="noopener">platform.claude.com</a> (paid).</li>
+  <li><b>An OpenAI-compatible service</b> – its address (base URL) and model: a service of your university, or a model running on your own computer, if it allows requests from web pages.</li>
+</ul>
+<p>Paste the key, press <b>Test</b>, then <b>Save</b>. The model's name then shows at the top of the tab.</p>
+<h3>Where the key is kept</h3>
+<p>Only in this browser tab, in memory: reloading the page forgets it. Tick <b>Keep the key until I close this browser tab</b> to keep it across reloads. It is never written into your files, into downloads, or into the browser's long-term storage. <b>Forget the key</b> removes it. A key is like a password: do not share it, and do not paste it into notebooks or files.</p>
+
+<h2>Ask</h2>
+<p>Type your question and press <kbd>Enter</kbd> (<kbd>Shift</kbd>+<kbd>Enter</kbd> for a new line); <b>Stop</b> ends an answer. Under the box, choose what goes with your question:</p>
+<ul>
+  <li><b>the open notebook's code</b> – its code cells, not their output, not your data;</li>
+  <li><b>your file names</b> – names and sizes, not what is in the files;</li>
+  <li><b>your last commands</b> – when you come from the Terminal, your last three commands and the end of what they printed.</li>
+</ul>
+<p>It also knows which programs the terminal has, and the versions of Python and R. From the other tabs: <b>Ask AI</b> on a notebook cell, or <b>Ask the AI to explain this error</b> under a cell that failed – this sends the cell's code with its error message (up to 2,500 characters), or with the beginning of its output (up to 1,200 characters); <b>✦ Ask the AI assistant about this error</b> after a command that failed in the terminal – the command, its folder and the end of what it printed (up to 3,000 characters). The open notebook's code and your file names go with them if they are ticked under the box.</p>
+<p><b>Without a key</b>, common errors still get a short explanation from the page itself, and <b>Copy a prompt for another AI tool</b> copies your question, with its context, to paste into an AI tool you are allowed to use.</p>
+
+<h2>Code in the answers</h2>
+<p>Each block of code in an answer has buttons:</p>
+<ul>
+  <li>Python or R: <b>Add to notebook</b>, or <b>Add and run</b> – into the notebook that is open.</li>
+  <li>Shell commands: <b>Run in the terminal</b> (commands with <code>rm</code>, <code>rmdir</code>, <code>mv</code>, <code>shred</code>, <code>truncate</code> or <code>find -delete</code>, and <code>&gt;</code> into a path that starts with <code>~/</code> or <code>/home</code>, ask first – other commands can overwrite files too, such as <code>&gt; results.txt</code>: read them before you run them), <b>Type in the terminal</b> (a single command, put at the prompt without running it: check it, then press <kbd>Enter</kbd>), or <b>Add to notebook</b> as a <code>%%bash</code> cell.</li>
+  <li>A file with a name – a Snakefile, a script – <b>Save as</b> that name; <b>Copy</b> for any block.</li>
+</ul>
+<p>⋯ (More) has <b>Download this conversation (Markdown)</b>; <b>New</b> starts a new conversation.</p>
+
+<h2>Use it well</h2>
+<ul>
+  <li><b>Say what you want and what you have</b>: the file and its format, the program, the error message as it is.</li>
+  <li><b>Ask for explanations, not only answers</b>: <i>explain each option of this command</i>, <i>why did this fail</i>, <i>what would go wrong if …</i>. You learn more, and you notice its mistakes.</li>
+  <li><b>Check against the source</b>: <code>man samtools</code> or <code>samtools view --help</code> in the terminal, <code>help(function)</code> in Python, <code>?function</code> in R, and these help pages.</li>
+  <li><b>Look at the results</b>, not only at the code: the number of reads, the first lines of a file, a plot. Code that runs is not code that is right.</li>
+</ul>

@@ -1,0 +1,121 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Bioinformatics workbench</title>
+<meta name="description" content="A bioinformatics workbench in the browser: a Python and R notebook, a Linux terminal with real bioinformatics programs, Galaxy, database APIs, a 3D protein viewer, a genome browser and an AI assistant. Nothing to install.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%2310263a'/%3E%3Cpath d='M10 7c0 6 12 6 12 12s-12 6-12 6M22 7c0 6-12 6-12 12' fill='none' stroke='%237fd6c2' stroke-width='2.4' stroke-linecap='round'/%3E%3C/svg%3E">
+<link rel="stylesheet" href="assets/vendor/codemirror/codemirror.css">
+<link rel="stylesheet" href="assets/css/app.css">
+<link rel="stylesheet" href="assets/css/genomics.css">
+<link rel="stylesheet" href="assets/css/nb-ai.css">
+<link rel="stylesheet" href="assets/css/pipe.css">
+<link rel="stylesheet" href="assets/css/wb.css">
+</head>
+<body data-page="workbench" data-title="Bioinformatics workbench">
+<div class="app">
+
+  <header class="topbar">
+    <button class="tbtn top-toggle" id="helpToggle" type="button" title="Show or hide the help (Ctrl+\)" aria-controls="helpPane" aria-expanded="true"><!--ICON:sidebar--></button>
+    <a class="brand" href="#" title="Bioinformatics workbench">
+      <svg class="brand-mark" viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="7" fill="#1d4660"/><path d="M10 7c0 6 12 6 12 12s-12 6-12 6M22 7c0 6-12 6-12 12" fill="none" stroke="#7fd6c2" stroke-width="2.4" stroke-linecap="round"/><path d="M12 11h8M12 21h8" stroke="#cfeee6" stroke-width="1.6" stroke-linecap="round"/></svg>
+      <div>
+        <div class="brand-title">Bioinformatics workbench</div>
+        <div class="brand-sub">Notebook · terminal · Galaxy · databases · 3D · genomes · AI – in your browser</div>
+      </div>
+    </a>
+    <div class="spacer"></div>
+    <span class="store-status" id="storeStatus" title="Your files and notebooks are kept in this browser, on this computer"></span>
+    <button class="btn" id="projectBtn" type="button" title="Download all your files, add files, or start afresh"><!--ICON:folder--><span>My files</span></button>
+    <button class="btn" id="fullBtn" type="button" title="Full screen (F11 also works)"><!--ICON:expand--><span>Full screen</span></button>
+  </header>
+
+  <div class="main">
+    <aside class="tut help-pane" id="helpPane" aria-label="Help">
+      <div class="help-head">
+        <button class="icon-btn help-home" type="button" title="Help: all topics" data-goto="h-home"><!--ICON:book2--></button>
+        <div class="help-search"><!--ICON:search--><input id="helpSearch" type="search" placeholder="Search the help (e.g. samtools, ggplot, UniProt)" autocomplete="off" aria-label="Search the help"></div>
+        <button class="icon-btn help-collapse" id="helpCollapse" type="button" title="Hide the help: the workbench fills the window (Ctrl+\)"><!--ICON:sidebarClose--></button>
+      </div>
+      <div class="help-crumbs" id="helpCrumbs"></div>
+      <div class="help-body" id="helpBody">
+<!--HELP-->
+      </div>
+    </aside>
+
+    <div class="splitter" role="separator" aria-orientation="vertical" title="Drag to resize · double-click to reset"></div>
+
+    <section class="bench" aria-label="Workbench">
+      <div class="wb-tabs" role="tablist">
+        <button class="wb-tab rail-btn" type="button" id="helpRail" title="Show the help (Ctrl+\)" hidden><!--ICON:sidebarOpen--><span>Help</span></button>
+        <button class="wb-tab on" type="button" role="tab" data-wb="notebook" title="Notebook"><!--ICON:notebook--><span class="lbl">Notebook</span><span class="dot"></span></button>
+        <button class="wb-tab" type="button" role="tab" data-wb="terminal" title="Terminal"><!--ICON:terminal--><span class="lbl">Terminal</span><span class="dot"></span></button>
+        <button class="wb-tab" type="button" role="tab" data-wb="editor" title="Files"><!--ICON:folder--><span class="lbl">Files</span><span class="dot"></span></button>
+        <button class="wb-tab" type="button" role="tab" data-wb="galaxy" title="Galaxy"><!--ICON:workflow--><span class="lbl">Galaxy</span><span class="dot"></span></button>
+        <button class="wb-tab" type="button" role="tab" data-wb="apis" title="Databases"><!--ICON:database--><span class="lbl">Databases</span><span class="dot"></span></button>
+        <button class="wb-tab" type="button" role="tab" data-wb="viewer" title="3D viewer"><!--ICON:cube--><span class="lbl">3D viewer</span><span class="dot"></span></button>
+        <button class="wb-tab" type="button" role="tab" data-wb="igv" title="Genome browser"><!--ICON:genome--><span class="lbl">Genome browser</span><span class="dot"></span></button>
+        <button class="wb-tab" type="button" role="tab" data-wb="assistant" title="AI"><!--ICON:sparkle--><span class="lbl">AI</span><span class="dot"></span></button>
+      </div>
+      <div class="wb-body">
+        <div class="wb-pane" data-wb="notebook"><div id="nbRoot"></div></div>
+        <div class="wb-pane" data-wb="terminal" hidden><div id="termRoot"></div></div>
+        <div class="wb-pane" data-wb="editor" hidden><div id="edRoot"></div></div>
+        <div class="wb-pane" data-wb="galaxy" hidden><div id="gxRoot"></div></div>
+        <div class="wb-pane" data-wb="apis" hidden><div id="apiRoot"></div></div>
+        <div class="wb-pane" data-wb="viewer" hidden><div id="viewerRoot"></div></div>
+        <div class="wb-pane" data-wb="igv" hidden><div id="igvRoot"></div></div>
+        <div class="wb-pane" data-wb="assistant" hidden><div id="aiRoot"></div></div>
+      </div>
+    </section>
+  </div>
+</div>
+
+<noscript><p style="padding:20px">This page needs JavaScript.</p></noscript>
+
+<!--DATA-->
+<script src="assets/js/config.js"></script>
+<script src="assets/js/core.js"></script>
+<script src="assets/js/icons.js"></script>
+<script src="assets/js/vfs.js"></script>
+<script src="assets/js/shell.js"></script>
+<script src="assets/js/shell-lang.js"></script>
+<script src="assets/js/tools-wasm.js"></script>
+<script src="assets/js/conda.js"></script>
+<script src="assets/js/shell-extra.js"></script>
+<script src="assets/js/shell-wb.js"></script>
+<script src="assets/js/terminal.js"></script>
+<script src="assets/vendor/codemirror/codemirror.js"></script>
+<script src="assets/vendor/codemirror/python.js"></script>
+<script src="assets/vendor/codemirror/r.js"></script>
+<script src="assets/vendor/codemirror/yaml.js"></script>
+<script src="assets/vendor/codemirror/shell.js"></script>
+<script src="assets/vendor/codemirror/markdown.js"></script>
+<script src="assets/vendor/codemirror/javascript.js"></script>
+<script src="assets/vendor/codemirror/matchbrackets.js"></script>
+<script src="assets/vendor/codemirror/closebrackets.js"></script>
+<script src="assets/vendor/codemirror/comment.js"></script>
+<script src="assets/vendor/dompurify/purify.min.js"></script>
+<script src="assets/vendor/marked/marked.min.js"></script>
+<script src="assets/js/project.js"></script>
+<script src="assets/js/kernels.js"></script>
+<script src="assets/js/notebook.js"></script>
+<script src="assets/js/pysync.js"></script>
+<script src="assets/js/editor.js"></script>
+<script src="assets/js/galaxy.js"></script>
+<script src="assets/js/assistant.js"></script>
+<script src="assets/js/viewer-core.js"></script>
+<script src="assets/js/annot.js"></script>
+<script src="assets/js/alphafold.js"></script>
+<script src="assets/js/viewer-ui.js"></script>
+<script src="assets/js/commands.js"></script>
+<script src="assets/js/session.js"></script>
+<script src="assets/js/uniprot.js"></script>
+<script src="assets/js/pdb.js"></script>
+<script src="assets/js/apis.js"></script>
+<script src="assets/js/igv-panel.js"></script>
+<script src="assets/js/page-wb.js"></script>
+<script src="assets/js/workbench.js"></script>
+</body>
+</html>

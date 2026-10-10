@@ -1,0 +1,81 @@
+<!-- id: h-recipe-protein | title: From a protein to its structure | group: Recipes | summary: UniProt, Biopython, a PDB file, an AlphaFold model, superposition | keys: recipe protein uniprot sequence protparam molecular weight isoelectric point structure pdb biopython bio.pdb distance haem heme histidine alphafold plddt superimposer rmsd myoglobin -->
+<h1><!--ICON:flask-->From a protein to its structure</h1>
+<p class="lede">Sperm whale myoglobin, from its UniProt entry to its structure: the sequence and its properties, the haem pocket of the experimental structure 1MBN measured with Biopython, and the AlphaFold model compared with the experiment.</p>
+<div class="tryrow"><button class="do" type="button" data-recipe="python">Open this recipe as a notebook</button> <button class="do" type="button" data-api="uniprot:P02185">UniProt entry P02185</button> <button class="do" type="button" data-cmd="load 1MBN; color ss; show sticks HEM or A:64 or A:93; center HEM">1MBN in 3D</button></div>
+
+<h2>1. The UniProt entry</h2>
+<pre class="code" data-run="py"><code>import requests
+
+acc = "P02185"
+entry = requests.get(f"https://rest.uniprot.org/uniprotkb/{acc}.json").json()
+print(entry["uniProtkbId"], "–", entry["proteinDescription"]["recommendedName"]["fullName"]["value"])
+print(entry["organism"]["scientificName"], "·", entry["sequence"]["length"], "amino acids")
+
+# the binding sites UniProt lists: which residue binds what
+for f in entry["features"]:
+    if f["type"] == "Binding site":
+        print(f["location"]["start"]["value"], f.get("ligand", {}).get("name", ""), f.get("description", ""))</code></pre>
+<p>His 65 binds the oxygen, His 94 the haem's iron. UniProt numbers the sequence from its first methionine; that methionine is removed in the mature protein, so the structure numbers every residue one lower (UniProt's His 65 is His 64 in 1MBN).</p>
+
+<h2>2. The sequence and its properties</h2>
+<pre class="code" data-run="py"><code>from io import StringIO
+from Bio import SeqIO
+from Bio.SeqUtils.ProtParam import ProteinAnalysis
+
+fasta = requests.get(f"https://rest.uniprot.org/uniprotkb/{acc}.fasta").text
+record = SeqIO.read(StringIO(fasta), "fasta")
+p = ProteinAnalysis(str(record.seq))
+print(f"molecular weight {p.molecular_weight():.0f} Da, isoelectric point {p.isoelectric_point():.2f}, GRAVY {p.gravy():.3f}")
+helix, turn, sheet = p.secondary_structure_fraction()
+print(f"amino acids that favour helix: {helix:.0%}")</code></pre>
+
+<h2>3. The haem pocket of 1MBN</h2>
+<p>The example file <code>1mbn.pdb</code> is the first protein structure solved at high resolution (1960s). The haem's iron is held by His 93 below it – the proximal histidine – while His 64 above it lines the pocket where oxygen binds.</p>
+<pre class="code" data-run="py"><code>from Bio.PDB import PDBParser
+
+s = PDBParser(QUIET=True).get_structure("1MBN", "/data/examples/structures/1mbn.pdb")
+chain = s[0]["A"]
+iron = next(a for a in s.get_atoms() if a.element == "FE")
+for resno in (64, 93):
+    res = chain[resno]
+    print(f"{res.get_resname()} {resno}: NE2 is {iron - res['NE2']:.2f} Å from the iron")
+
+# every residue with an atom within 5 Å of the haem
+haem = [r for r in chain if r.get_resname() == "HEM"][0]
+near = sorted({r.id[1] for r in chain for a in r for b in haem
+               if r is not haem and r.id[0] == " " and a - b &lt; 5})
+print(len(near), "residues within 5 Å of the haem:", near)</code></pre>
+
+<h2>4. The AlphaFold model</h2>
+<p>AlphaFold's file keeps its confidence, pLDDT, in the B-factor column.</p>
+<pre class="code" data-run="py"><code>import matplotlib.pyplot as plt
+
+info = requests.get(f"https://alphafold.ebi.ac.uk/api/prediction/{acc}").json()[0]
+with open(f"{info['entryId']}.pdb", "w") as fh:
+    fh.write(requests.get(info["pdbUrl"]).text)
+model = PDBParser(QUIET=True).get_structure("AF", f"{info['entryId']}.pdb")
+plddt = [res["CA"].get_bfactor() for res in model[0]["A"]]
+
+plt.figure(figsize=(6, 2.5))
+plt.plot(range(1, len(plddt) + 1), plddt)
+plt.axhline(70, ls="--", c="grey")
+plt.xlabel("residue (UniProt numbering)")
+plt.ylabel("pLDDT")
+plt.tight_layout()
+plt.show()</code></pre>
+
+<h2>5. Model and experiment, superposed</h2>
+<p>The Cα atoms of the model (residue <i>n</i> + 1) and of 1MBN (residue <i>n</i>) are laid on each other as closely as they go; the RMSD (root-mean-square deviation: the square root of the mean of the squared distances) then says how far apart they are.</p>
+<pre class="code" data-run="py"><code>from Bio.PDB import Superimposer
+
+exp_ca, model_ca = [], []
+af_chain = model[0]["A"]
+for res in chain:
+    n = res.id[1]
+    if res.id[0] == " " and "CA" in res and (n + 1) in af_chain:
+        exp_ca.append(res["CA"])
+        model_ca.append(af_chain[n + 1]["CA"])
+sup = Superimposer()
+sup.set_atoms(exp_ca, model_ca)
+print(f"RMSD over {len(exp_ca)} Cα atoms: {sup.rms:.2f} Å")</code></pre>
+<p>An RMSD around 1 Å means the prediction matches the experiment closely. To see it, run in the 3D viewer: <code>load 1MBN; load af P02185; superpose AF-P02185-F1:A onto 1MBN:A</code> (<a href="#h-viewer-commands">Viewer commands</a>). The viewer reports a slightly smaller RMSD over a few residues fewer: it pairs the residues by aligning the sequences, leaves out pairs that end up more than 2 Å apart (loose ends) and fits again, as structure programs often do – the code above keeps every pair.</p>

@@ -1,0 +1,34 @@
+<!-- id: h-start | title: A first session | group: Start here | summary: Ten minutes: a notebook, the terminal, your files | keys: tour tutorial begin getting started first steps introduction -->
+<h1><!--ICON:play-->A first session</h1>
+<p class="lede">Ten minutes to see what the workbench does. Each step has a ▶ button that does it for you – but try typing too.</p>
+
+<h2>1 · A notebook</h2>
+<p>The <b>Notebook</b> tab opens with <code>welcome-python.ipynb</code>. Click into the first grey cell and press <kbd>Shift</kbd>+<kbd>Enter</kbd>: the code runs, its output appears below, and the next cell is selected. Python starts in the background when the notebook opens; if it is not ready yet, the first run waits for it – a few seconds.</p>
+<div class="tryrow"><button class="do" type="button" data-open-nb="~/notebooks/welcome-python.ipynb">Open the Python welcome notebook</button> <button class="do" type="button" data-open-nb="~/notebooks/welcome-r.ipynb">… or the R one</button></div>
+<p>Run the cells one after the other. You will read a table with pandas, draw a histogram, read protein sequences with Biopython, call <code>samtools</code> from a cell, and fetch a protein from UniProt. Everything is saved as you go.</p>
+
+<h2>2 · The terminal</h2>
+<p>The <b>Terminal</b> tab is a Linux shell (bash) with real programs. The example data is in <code>/data/examples</code>:</p>
+<pre class="code" data-run="term"><code>ls -R /data/examples
+head -4 /data/examples/reads/NA12878_R1.fastq
+samtools faidx /data/examples/reads/reference.fa human_CYP2C19:11590-11640</code></pre>
+<p>Type <code>help</code> for the list of programs, and <code>man samtools</code> for examples of one of them.</p>
+
+<h2>3 · Your files</h2>
+<p>Your own files live in your home folder, <code>~</code> (<code>/home/student</code>). The notebooks, the terminal and the <b>Files</b> tab all see the same files: a file that a terminal command writes can be read by a notebook a moment later.</p>
+<pre class="code" data-run="term"><code>mkdir -p ~/first && cd ~/first
+seqtk comp /data/examples/sequences/myoglobins.fasta | cut -f 1,2 > lengths.tsv
+cat lengths.tsv</code></pre>
+<div class="tryrow"><button class="do" type="button" data-open="~/first/lengths.tsv">Open lengths.tsv in Files</button></div>
+
+<h2>4 · The other tabs</h2>
+<ul>
+  <li><b>Galaxy</b> – the same programs as tools with forms, a history and workflows. <a href="#h-galaxy">Galaxy</a></li>
+  <li><b>Databases</b> – UniProt, the PDB, Ensembl, NCBI, BLAST and more; each search can go into a notebook as code. <a href="#h-databases">Databases</a></li>
+  <li><b>3D viewer</b> – protein structures from the PDB or AlphaFold. <button class="do" type="button" data-cmd="load 1mbn; color rainbow">Show myoglobin</button></li>
+  <li><b>Genome browser</b> – reads, variants and genes along the genome. <button class="do" type="button" data-igv="human_CYP2C19:11,560-11,680">Open it</button></li>
+  <li><b>AI assistant</b> – a chat and an agent, with a model of your choice. <a href="#h-ai">AI assistant</a></li>
+</ul>
+
+<h2>5 · Keep your work</h2>
+<p>Everything you make is kept in this browser on this computer. To keep it anywhere else: <b>Download</b> in the Notebook tab gives the <code>.ipynb</code> file; <b>My files</b> (top right) downloads all your files as a <code>.zip</code>. <a href="#h-recipe-keep">Keep your work</a> has the details.</p>

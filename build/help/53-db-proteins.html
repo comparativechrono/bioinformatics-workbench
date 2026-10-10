@@ -1,0 +1,36 @@
+<!-- id: h-db-proteins | title: AlphaFold DB and InterPro | group: Databases | summary: Predicted structures and their confidence; domains and families | keys: alphafold predicted structure model plddt pae confidence predicted aligned error disordered interpro pfam smart prosite cdd domain family superfamily repeat site signature -->
+<h1><!--ICON:sparkle-->AlphaFold DB and InterPro</h1>
+<p class="lede">Two cards for what a protein's sequence says about it: <b>AlphaFold DB</b> has a predicted 3D structure for almost every protein in UniProt; <b>InterPro</b> finds its families, domains and important sites.</p>
+
+<h2>AlphaFold DB</h2>
+<p>AlphaFold predicts a protein's structure from its sequence. AlphaFold DB (EMBL-EBI and Google DeepMind) holds the predictions for over 200 million UniProt proteins. Type a <b>UniProt accession</b> and <b>Search</b>:</p>
+<ul>
+  <li>The table names the model (<code>AF-P69905-F1</code>), the protein and its organism, and the <b>mean pLDDT</b>.</li>
+  <li>The picture is the <b>predicted aligned error</b> (PAE).</li>
+  <li><b>Show in the 3D viewer</b> loads the model, coloured by confidence; <b>Save the model (.pdb) to my files</b> keeps it in <code>~/structures</code>.</li>
+</ul>
+<div class="tryrow"><button class="do" type="button" data-api="alphafold:model:P69905">Haemoglobin α (P69905)</button> <button class="do" type="button" data-api="alphafold:model:O00206">TLR4 (O00206)</button> <button class="do" type="button" data-cmd="load af P04637">p53 in the 3D viewer</button></div>
+
+<h3>How far to trust a model</h3>
+<table>
+<tr><th>pLDDT</th><th>Colour</th><th>Meaning</th></tr>
+<tr><td>above 90</td><td>dark blue</td><td>very high confidence: side chains placed well too</td></tr>
+<tr><td>70 – 90</td><td>light blue</td><td>confident: the backbone is right</td></tr>
+<tr><td>50 – 70</td><td>yellow</td><td>low confidence</td></tr>
+<tr><td>below 50</td><td>orange</td><td>very low: often a region with no fixed structure (disordered), not a real shape</td></tr>
+</table>
+<p><b>pLDDT</b> is a confidence for each residue, about its own surroundings. It says nothing about how the domains lie relative to each other: that is what the <b>PAE</b> plot shows. Its colour in column <i>x</i> (the scored residue, along the top) and row <i>y</i> (the aligned residue, down the side) is the error AlphaFold expects in the position of residue <i>x</i> when the model is lined up on residue <i>y</i>: dark is a small error. Dark squares along the diagonal are domains placed confidently; light areas between them mean their arrangement is uncertain.</p>
+<p>In the 3D viewer the model's panel has the pLDDT profile (click it to go to a residue), the PAE plot (drag a box over it: the two stretches of residues are selected, with the mean expected error between them), <b>Hide pLDDT &lt; 50</b>, and <b>Superpose onto…</b> an experimental structure. A model is a prediction: where an experimental structure exists, compare them.</p>
+
+<h2>InterPro</h2>
+<p>InterPro (EMBL-EBI) brings together the protein signatures of several databases – Pfam, PROSITE, SMART, CDD and others – and groups those that describe the same thing into InterPro entries. Type a <b>UniProt accession</b>, choose whose signatures to show, and <b>Search</b>: they are drawn along the sequence and listed with their positions.</p>
+<table>
+<tr><th>Type</th><th>Is</th></tr>
+<tr><td>Family</td><td>a group of proteins that share an evolutionary origin, usually along their whole length</td></tr>
+<tr><td>Domain</td><td>a distinct unit – of structure or function – that also occurs in other proteins</td></tr>
+<tr><td>Homologous superfamily</td><td>proteins related by structure, even where their sequences are not similar</td></tr>
+<tr><td>Repeat</td><td>a short unit that occurs several times in a protein</td></tr>
+<tr><td>Site</td><td>a few important residues: an active site, a binding site, a conserved site, a modification site</td></tr>
+</table>
+<div class="tryrow"><button class="do" type="button" data-api="interpro:domains:P04637">Domains of p53 (P04637)</button> <button class="do" type="button" data-api="interpro:domains:O00206">Domains of TLR4 (O00206)</button></div>
+<p>The UniProt entry of a protein (its <i>Family &amp; Domains</i> section) has the same information in a shorter form; InterPro shows the signatures of each database separately.</p>

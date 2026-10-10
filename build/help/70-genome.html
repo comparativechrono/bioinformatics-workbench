@@ -1,0 +1,46 @@
+<!-- id: h-genome | title: The genome browser | group: Genome browser | summary: Reads, variants and genes along a genome (igv.js) | keys: genome browser igv igv.js bam bai vcf tbi bed gff gtf bigwig bedgraph track locus reads alignment coverage mismatch variant genotype reference fasta fai hg19 hg38 chromosome name zoom -->
+<h1><!--ICON:genome-->The genome browser</h1>
+<p class="lede">The genome browser (igv.js, the web edition of IGV) draws data along a genome: mapped reads, variants, genes, coverage. It is where you check, with your own eyes, what a program has claimed – a variant call, a deletion, a badly mapped region.</p>
+<div class="tryrow"><button class="do" type="button" data-bench="igv">Open the genome browser</button> <button class="do" type="button" data-igv="human_CYP2C19:11,566-11,666">Go to CYP2C19*2 on the example genome</button></div>
+
+<h2>The genome</h2>
+<p>Choose it at the top left:</p>
+<ul>
+  <li><b>Example: CYP2C19 / CYP2C9 slices</b> – the reference of the example reads: two pieces of human chromosome 10 (GRCh37), called <code>human_CYP2C19</code> and <code>human_CYP2C9</code>, with their genes. Use it for anything made from the example data.</li>
+  <li><b>Hosted by the IGV team</b> – whole genomes, with their genes: human hg38 and hg19, mouse, zebrafish, fly, worm, yeast. They need the internet.</li>
+  <li><b>A FASTA file of yours</b> – any FASTA file in your home folder, once it has an index: <code>samtools faidx genome.fa</code>.</li>
+</ul>
+<div class="callout warn"><div class="co-t"><!--ICON:warning-->The chromosome names must match</div><p>A track is drawn only on a genome whose chromosome (sequence) names are the ones in the file. Reads mapped to <code>reference.fa</code> are on <code>human_CYP2C19</code>, and show only on the example genome; a VCF file that says <code>chr10</code> needs hg19 or hg38 – the one it was made on.</p></div>
+
+<h2>Add your files</h2>
+<ul>
+  <li><b>Add my files…</b> lists the files among yours that the browser can show: BAM (with its <code>.bai</code> index – <code>samtools index</code> makes it), VCF (<code>.vcf</code>, or <code>.vcf.gz</code> with its <code>.tbi</code>), BED, GFF and GTF, bedGraph, wig, bigWig and bigBed.</li>
+  <li>In the terminal: <code>igv mapped.bam calls.vcf.gz</code>, and <code>igv --locus human_CYP2C19:11,566-11,666</code> to go somewhere.</li>
+  <li>From the Files tab (⋯ → <i>Show in the Genome browser</i>; a FASTA file: <i>Use as the genome</i>), from a Galaxy dataset (<!--ICON:genome-->), and from the Ensembl and UCSC cards of the Databases tab.</li>
+  <li><b>From my computer…</b> shows files from your computer without copying them into your files – choose a BAM file together with its index.</li>
+</ul>
+<p>Map the example reads and look at them:</p>
+<pre class="code" data-run="term"><code>mkdir -p ~/igv &amp;&amp; cd ~/igv
+minimap2 -ax sr /data/examples/reads/reference.fa /data/examples/reads/NA12878_R1.fastq /data/examples/reads/NA12878_R2.fastq 2&gt; /dev/null | samtools sort -o mapped.bam -
+samtools index mapped.bam
+igv mapped.bam /data/examples/variants/NA12878.calls.vcf.gz --locus human_CYP2C19:11,566-11,666</code></pre>
+
+<h2>Find your way</h2>
+<ul>
+  <li>Type a position – <code>human_CYP2C19:11,566-11,666</code>, <code>chr10:96,541,616</code> (on hg19) – or, on the hosted genomes, a gene name (<code>CYP2C19</code>) in the box at the top, and press <kbd>Enter</kbd>.</li>
+  <li>Drag the picture sideways to move; <b>+</b> and <b>−</b> (or a double-click) to zoom. Reads appear when you are zoomed in far enough.</li>
+  <li>Click a read, a variant or a gene for its details. The ⚙ of a track changes how it is drawn: colours, height, expanded or squished.</li>
+</ul>
+
+<h2>Reading the reads</h2>
+<ul>
+  <li>The <b>coverage</b> track on top shows how many reads cover each base. Where many reads disagree with the reference, the bar is coloured by the bases they have.</li>
+  <li>Each bar is a read, coloured by its strand: pink forward, blue reverse. A <b>coloured letter</b> in a read is a base that differs from the reference; faint letters are bases of low quality.</li>
+  <li>A <b>purple I</b> is an insertion, a <b>black line</b> a deletion. Faint reads have mapping quality 0 (MAPQ 0): they fit equally well somewhere else in the genome.</li>
+  <li>A real heterozygous SNV shows the other base in about half the reads, on both strands; a sequencing error shows up in one or two reads, or on one strand only.</li>
+</ul>
+<h3>Variants</h3>
+<p>In a VCF track, each variant is a bar (its colour shows the frequency of the alternative allele); under it, each sample's genotype: dark blue heterozygous, cyan homozygous for the alternative allele, grey homozygous for the reference.</p>
+
+<h2>Save a picture</h2>
+<p><b>Save image</b> downloads the current view as a PNG file.</p>

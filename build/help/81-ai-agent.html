@@ -1,0 +1,31 @@
+<!-- id: h-ai-agent | title: The AI agent | group: AI assistant | summary: Give a task; it runs commands in the terminal and keeps a record | keys: ai agent task autonomous terminal commands steps folder ai-agent run record agent-record.ipynb stop internet curl wget limits undo check -->
+<h1><!--ICON:robot-->The AI agent</h1>
+<p class="lede">Give the agent a whole task – <i>map the example reads, call the variants and tell me how many there are</i>. It carries it out in the Terminal, one command at a time, reads what each command prints before it decides the next, and reports. Every run is kept as a notebook.</p>
+
+<h2>Give it a task</h2>
+<ol>
+  <li>Connect a model first (see <a href="#h-ai">The AI assistant</a>), then open the <b>Agent</b> tab.</li>
+  <li>Type a task – or click one under <b>Try a task</b> – and <b>Send</b>.</li>
+  <li>Watch: each step shows the command and what it printed, here and in the Terminal. <b>Stop</b> ends the task at any time.</li>
+  <li>Read its report – then check it (below).</li>
+</ol>
+<p>The agent works in a folder of its own, <code>~/ai-agent/run-1</code>, <code>run-2</code> …; programs put the files they make there. A further task goes on in the same folder, and the agent is told what was done before – until <b>New</b> starts a new folder.</p>
+
+<h2>What it may do</h2>
+<ul>
+  <li>Run the commands of the terminal: the bioinformatics programs, the text tools, <code>python</code> and <code>Rscript</code> scripts, Snakemake. Not <code>cd</code> – every step starts in its folder, and it uses paths instead.</li>
+  <li><b>Read</b> your files. What it <b>changes</b> outside its folder – a file it deletes or overwrites by mistake – is put back at the end of each step. What you change yourself while it works is yours, and stays.</li>
+  <li>Use the internet (<code>curl</code>, <code>wget</code>) only if you allow it: <!--ICON:gear--> AI settings → <b>Let the agent use the internet</b>. Without it, <code>curl</code> and <code>wget</code> are refused and the agent is told not to use the network from Python or R – but a Python or R script could still reach the web, so read what it runs.</li>
+</ul>
+<p>Limits: at most 20 steps for a task; a command that runs for more than 150 seconds is stopped; the model sees the last 3,000 characters of what each command prints. While the agent works, the terminal is its own: wait, or press Stop.</p>
+<div class="callout warn"><div class="co-t"><!--ICON:warning-->What is sent to the AI service</div><p>The task, the commands and everything they print – including what the agent reads from your files. Do not let it work on files with personal or patient data.</p></div>
+
+<h2 data-anchor="record">The record</h2>
+<p>Each run is written into its folder as a notebook, <code>agent-record.ipynb</code>: the task, each command as a <code>%%bash</code> cell with its output, and the report. Under the agent's card: <b>Open the record</b> (in the Notebook tab), <b>.ipynb</b> (download it), <b>Folder</b> (show it in Files). Run the notebook's cells again to see that the commands really make what the report says. The cells run in the notebook's own folder: to keep the agent's files as they are, copy the whole folder and run the copy of the record.</p>
+
+<h2>Check its work</h2>
+<ul>
+  <li><b>Read the commands.</b> Are the options what you would choose? The right reference, the right files, the right genome assembly?</li>
+  <li><b>Look at the results yourself</b>: open the files, count, put the reads in the genome browser. The report can be wrong even when the commands are right – and a model may describe output it has not seen.</li>
+  <li><b>Could you do it without the agent?</b> If not, ask the Chat tab to explain each step, and do it yourself in a notebook.</li>
+</ul>

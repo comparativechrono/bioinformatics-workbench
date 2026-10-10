@@ -1,0 +1,56 @@
+<!-- id: h-viewer-commands | title: Viewer commands | group: 3D viewer | summary: Every command of the 3D viewer's command line | keys: viewer command line load af show hide only color colour select near site contacts center reset spin background opacity label label2d key distance superpose view export png script semicolon -->
+<h1><!--ICON:terminal-->Viewer commands</h1>
+<p class="lede">The command line under the 3D picture takes these commands. Several can go on one line, separated by <code>;</code> – a script that rebuilds a picture exactly. <kbd>↑</kbd> brings back earlier commands.</p>
+
+<h2>What a command acts on</h2>
+<p>Many commands end with <i>what</i> they act on; without it they act on the selection, or on everything when nothing is selected.</p>
+<table>
+<tr><th>Write</th><th>For</th></tr>
+<tr><td><code>A</code> · <code>chain A</code></td><td>chain A</td></tr>
+<tr><td><code>A:64</code> · <code>A:60-70</code> · <code>A:His64</code></td><td>a residue, a range of residues</td></tr>
+<tr><td><code>HEM</code></td><td>a ligand, by its name in the workspace</td></tr>
+<tr><td><code>ligands</code> · <code>water</code> · <code>ions</code> · <code>sugars</code> · <code>polymer</code> · <code>all</code></td><td>kinds of molecule</td></tr>
+<tr><td><code>A or HEM</code></td><td>both</td></tr>
+<tr><td><code>sele</code></td><td>the selection</td></tr>
+<tr><td><code>3FXI A</code></td><td>chain A of one of several loaded structures</td></tr>
+</table>
+
+<h2>The commands</h2>
+<table class="keys">
+<tr><th>Command</th><th>Does</th></tr>
+<tr><td><code>load 1MBN</code></td><td>load an entry of the PDB (<code>load 1MBN again</code>: a second copy)</td></tr>
+<tr><td><code>load af P69905</code></td><td>load the AlphaFold model of a UniProt accession</td></tr>
+<tr><td><code>load https://…/file.pdb</code></td><td>load a structure from a web address (files of yours: <code>open FILE</code> in the terminal)</td></tr>
+<tr><td><code>remove 1MBN</code> · <code>clear</code></td><td>remove one structure · everything, labels too</td></tr>
+<tr><td><code>show cartoon A</code></td><td>add a style: <code>cartoon</code>, <code>tube</code>, <code>sticks</code>, <code>ballstick</code>, <code>spheres</code>, <code>surface</code>, <code>glass</code> (see-through), <code>lines</code></td></tr>
+<tr><td><code>hide sticks A</code> · <code>hide all water</code></td><td>remove one style, or all of them</td></tr>
+<tr><td><code>only sticks HEM</code></td><td>just this one style</td></tr>
+<tr><td><code>undisplay B</code> · <code>display B</code> · <code>isolate A</code> · <code>showall</code></td><td>hide and show parts, like the eyes in the workspace</td></tr>
+<tr><td><code>color rainbow A</code></td><td>a colour scheme: <code>chain</code>, <code>molecule</code>, <code>rainbow</code>, <code>ss</code>, <code>hydrophobicity</code>, <code>restype</code>, <code>element</code>, <code>cpk</code>, <code>plddt</code>, <code>bfactor</code>, <code>default</code></td></tr>
+<tr><td><code>color orange HEM</code> · <code>color #2a9d8f A:60-70</code></td><td>one colour, by name or hex code</td></tr>
+<tr><td><code>select A:64</code> · <code>select add HEM</code> · <code>select invert</code> · <code>select none</code></td><td>the selection</td></tr>
+<tr><td><code>select near HEM 4.5</code></td><td>the residues within 4.5 Å</td></tr>
+<tr><td><code>site HEM 4.5</code></td><td>the binding site: nearby residues as sticks, with their contacts</td></tr>
+<tr><td><code>contacts HEM</code> · <code>contacts HEM hydrophobic</code> · <code>contacts off</code></td><td>lines for hydrogen bonds, salt bridges and other contacts</td></tr>
+<tr><td><code>center HEM</code> · <code>reset</code> · <code>spin on</code></td><td>the camera</td></tr>
+<tr><td><code>background black</code> · <code>opacity 0.4</code></td><td>the background; how see-through <code>glass</code> is</td></tr>
+<tr><td><code>label A:64</code> · <code>label3d "Distal His" A:64</code> · <code>label2d "Myoglobin" 0.05 0.05</code> · <code>labels clear</code></td><td>labels on residues (<code>label A:64</code> selects A:64 first – the selection is replaced); text that moves with the molecule; a title fixed on the picture (x, y from 0 to 1)</td></tr>
+<tr><td><code>key on</code> · <code>key auto</code> · <code>key add red "Haem"</code> · <code>key title "Colours"</code> · <code>key off</code></td><td>the colour key</td></tr>
+<tr><td><code>distance A:64.NE2 A:93.NE2</code> · <code>distance clear</code></td><td>the distance between two atoms (chain:residue.atom)</td></tr>
+<tr><td><code>superpose AF-P02185-F1:A onto 1MBN:A</code></td><td>lay one chain on another; reports the RMSD</td></tr>
+<tr><td><code>view save "Pocket"</code> · <code>view 1</code> · <code>view Pocket</code></td><td>save a view; go back to it</td></tr>
+<tr><td><code>export png 2</code> (or <code>2x</code>)</td><td>download the picture at 2× the screen size</td></tr>
+<tr><td><code>camera</code> · <code>orient …</code></td><td>print the camera's orientation as an <code>orient</code> command, to put it back exactly</td></tr>
+<tr><td><code>wait 1000</code> · <code>echo text</code> · <code>tab colour</code></td><td>for scripts: pause (ms), show a message, open a tab of the viewer</td></tr>
+<tr><td><code>help</code></td><td>the list of commands</td></tr>
+</table>
+
+<h2>Scripts</h2>
+<p>Each button runs a script in the viewer – copy the commands into the command line to change them:</p>
+<pre class="code"><code>load 1MBN; hide all; show cartoon; color ss; only sticks HEM; color element HEM; site HEM 4.5; center HEM</code></pre>
+<div class="tryrow"><button class="do" type="button" data-cmd="load 1MBN; hide all; show cartoon; color ss; only sticks HEM; color element HEM; site HEM 4.5; center HEM">Run it</button></div>
+<pre class="code"><code>load 1MBN; color rainbow; show sticks A:64 or A:93; label A:64 or A:93; distance A:64.NE2 A:93.NE2</code></pre>
+<div class="tryrow"><button class="do" type="button" data-cmd="load 1MBN; color rainbow; show sticks A:64 or A:93; label A:64 or A:93; distance A:64.NE2 A:93.NE2">Run it</button></div>
+<p>The AlphaFold model of sperm whale myoglobin, laid on the experimental structure:</p>
+<pre class="code"><code>load 1MBN; load af P02185; superpose AF-P02185-F1:A onto 1MBN:A</code></pre>
+<div class="tryrow"><button class="do" type="button" data-cmd="load 1MBN; load af P02185; superpose AF-P02185-F1:A onto 1MBN:A">Run it</button></div>

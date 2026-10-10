@@ -1,0 +1,33 @@
+<!-- id: h-db-pdb | title: Protein Data Bank | group: Databases | summary: Experimental structures: search, read an entry, load it in 3D | keys: pdb rcsb structure x-ray crystallography cryo-em nmr resolution angstrom chain ligand assembly asymmetric unit mmcif cif pdb file b-factor occupancy hetatm atom -->
+<h1><!--ICON:cube-->Protein Data Bank</h1>
+<p class="lede">The Protein Data Bank (PDB) holds the 3D structures of proteins, DNA, RNA and their complexes that have been determined by experiment – over 260,000 of them. Each has a four-character <b>PDB ID</b>, such as 1MBN. The card searches the RCSB PDB, shows an entry, and loads it into the 3D viewer.</p>
+<div class="tryrow"><button class="do" type="button" data-api="pdb:1MBN">Open 1MBN (myoglobin)</button> <button class="do" type="button" data-api="pdb:3FXI">Open 3FXI (TLR4 with MD-2)</button></div>
+
+<h2>Search</h2>
+<p>Type a PDB ID, a protein name, a UniProt accession or any words. <i>Auto</i> decides which it is; the menu next to it can say so instead (<i>Protein name</i>, <i>UniProt accession</i>, <i>Full text</i>). Narrow the results with <b>Human only</b>, <b>Contains DNA</b> and the method (X-ray, cryo-EM, NMR); sort by <i>Best match</i>, <i>Newest first</i> or <i>Best resolution</i>. The results come ten to a page, each with <b>Load in 3D</b> and <b>Details</b>.</p>
+
+<h2>An entry</h2>
+<ul>
+  <li><b>Method</b> and <b>resolution</b>. X-ray crystallography and cryo-EM give a resolution in ångström (Å): the smaller the number, the finer the detail. Roughly: at 1.2–1.5 Å and better single atoms can be told apart; around 2 Å the side chains are clear; beyond about 3.5 Å the path of the chain shows, and the side chains are largely modelled. NMR structures have no resolution; they are a set of models.</li>
+  <li>The <b>paper</b> that describes the structure.</li>
+  <li><b>Macromolecules</b>: each kind of molecule, its chains (A, B …), type, length, organism, and the UniProt entry of the protein – click it to open it in the UniProt card.</li>
+  <li><b>Small molecules</b>: ligands, ions and sugars, each with its three-letter code (HEM is haem, HOH water) and a drawing.</li>
+  <li><b>Biological assemblies</b>: the file holds the <i>asymmetric unit</i> – the chains the experiment saw together – which is not always the molecule as it exists in the cell. The assembly says which it is (a monomer, a dimer …).</li>
+  <li><b>Files</b>: <b>Look inside the .pdb file</b> shows its records with the columns coloured; <b>Save .pdb to my files</b> or <b>Save .cif</b> keeps the file in <code>~/structures</code>; <b>Send to notebook</b> adds Python or R code that fetches the entry and its file.</li>
+</ul>
+
+<h2>The file</h2>
+<p>A structure is a text file with one line per atom. In the old <code>.pdb</code> format the columns are fixed:</p>
+<pre class="code"><code>ATOM      1  N   VAL A   1      -2.900  17.600  15.500  1.00  0.00           N
+ATOM      2  CA  VAL A   1      -3.600  16.400  15.300  1.00  0.00           C</code></pre>
+<p>After <code>ATOM</code> and the atom's number come the atom name (<code>CA</code> is the alpha carbon), the residue (<code>VAL</code>), the chain (<code>A</code>), the residue number, the x, y and z coordinates in ångström, the occupancy and the B-factor (0 in this old file), and the element.</p>
+<p><code>ATOM</code> lines are the protein or nucleic acid, <code>HETATM</code> lines the ligands and water. The <b>B-factor</b> says how much an atom moves or how uncertain its position is (in AlphaFold models this column holds the pLDDT confidence instead). Very large structures exist only in the newer <code>.cif</code> (mmCIF) format. Both are read by the 3D viewer and by Biopython (<code>Bio.PDB</code>) in a Python notebook.</p>
+<pre class="code" data-run="term"><code>grep -c '^ATOM' /data/examples/structures/1mbn.pdb
+grep '^HETATM' /data/examples/structures/1mbn.pdb | awk '{print $4}' | sort | uniq -c</code></pre>
+
+<h2>See also</h2>
+<ul>
+  <li><a href="#h-viewer">The 3D viewer</a>: <code>load 1MBN</code> fetches and shows any PDB entry.</li>
+  <li><a href="#h-db-proteins">AlphaFold DB</a>: a predicted structure when there is no experimental one.</li>
+  <li><a href="#h-recipe-protein">Recipe: from a protein to its structure</a>.</li>
+</ul>

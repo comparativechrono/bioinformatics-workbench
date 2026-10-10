@@ -1,0 +1,26 @@
+<!-- id: h-privacy | title: Your data and privacy | group: Reference | summary: What is kept where, and what is sent to whom | keys: privacy data protection personal patient data gdpr storage indexeddb local storage key api key sent service third party cdn tracking cookies shared computer -->
+<h1><!--ICON:lock-->Your data and privacy</h1>
+<p class="lede">The workbench has no server of its own that keeps or sees your work: it runs in your browser. What leaves your computer goes to the public services you use, and only when you use them.</p>
+
+<h2>What is kept on your computer</h2>
+<ul>
+  <li><b>Your files</b> – notebooks, results, uploads – and Galaxy's datasets: in this browser's storage for the site (IndexedDB).</li>
+  <li><b>In the browser's local storage</b>: your last 200 terminal commands; the list of Galaxy's history and its workflows; settings – the open tab and notebook, the help page, the genome, the choices of the AI assistant (not its key), and your e-mail address for BLAST if you ask to remember it.</li>
+  <li><b>The AI key</b>: only in the tab's memory, or, if you tick it, until the tab is closed (session storage). Never in a file or in long-term storage.</li>
+</ul>
+<p>On a shared computer, the next person who uses the same browser account can see what is stored: download your work, then <b>My files → Start afresh</b>. That deletes your files, Galaxy's history, the terminal's commands and the remembered e-mail address; the choices of the AI assistant and of the help pane stay, and the AI key is forgotten when you close the tab. The workbench itself sets no cookies and has no tracking or analytics.</p>
+
+<h2>What is sent, and to whom</h2>
+<table>
+<tr><th>When you…</th><th>…this is sent</th><th>to</th></tr>
+<tr><td>open the workbench</td><td>requests for the page and its programs; and for the language of the notebook that opens (the last one you had open – Python on the first visit), which starts in the background</td><td>the web server that hosts the workbench (as for any web page); jsDelivr (Python) or webR's servers (R)</td></tr>
+<tr><td>open a notebook of the other language, or install a package</td><td>requests for R and the package</td><td>webR's servers, the R package repositories (r-wasm.org, r-universe.dev, ropensci.org), PyPI</td></tr>
+<tr><td>search in the Databases tab, or ask a service from code</td><td>the query you typed (for BLAST, also your e-mail address and the sequence)</td><td>the service: EMBL-EBI, NCBI, RCSB PDB, UCSC, STRING, Reactome …</td></tr>
+<tr><td>load a structure, a hosted genome or a genome region</td><td>the identifier or region</td><td>RCSB PDB, AlphaFold DB; for hosted genomes the IGV team (igv.org) and UCSC (hgdownload.soe.ucsc.edu)</td></tr>
+<tr><td>ask the AI assistant</td><td>your question and what you tick under the box: the open notebook's code, your file names, your last commands. From a notebook cell: its code, with its error (up to 2,500 characters) or the beginning of its output (up to 1,200 characters); from a failed terminal command: the command, its folder and the end of what it printed (up to 3,000 characters)</td><td>the AI service you connected, under its terms</td></tr>
+<tr><td>give the AI agent a task</td><td>the task, its commands and what they print (up to 3,000 characters a step) – including what it reads from your files</td><td>the AI service you connected</td></tr>
+</table>
+<p>Nothing else leaves your computer: your files are not uploaded anywhere unless you send them yourself.</p>
+
+<div class="callout warn"><div class="co-t"><!--ICON:warning-->Personal and patient data</div>
+<p>The workbench is for learning, with public data. Never put personal or patient data into it – not into the Databases tab, not into an AI tool, not into your files here. Data you have been given for your studies stays within the rules you were given with it.</p></div>

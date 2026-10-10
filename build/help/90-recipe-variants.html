@@ -1,0 +1,93 @@
+<!-- id: h-recipe-variants | title: Reads to variants, in a notebook | group: Recipes | summary: QC, mapping, calling, a table of the variants, VEP, the genome browser | keys: recipe pipeline workflow notebook fastp minimap2 samtools bcftools vcf pandas plot quality depth genotype vep consequence cyp2c19 rs4244285 clopidogrel -->
+<h1><!--ICON:flask-->Reads to variants, in a notebook</h1>
+<p class="lede">A whole analysis in one notebook: check and trim the example reads, map them, call the variants, look at them in a table and a plot, ask Ensembl what they do – and keep every step, so the notebook is the record of the work.</p>
+<div class="tryrow"><button class="do" type="button" data-recipe="python">Open this recipe as a notebook</button></div>
+<p>The button writes the steps below into a new Python notebook in <code>~/notebooks</code>; run its cells from the top. Or add the cells one by one with <b>Add to notebook</b>.</p>
+
+<h2>1. A folder for the work</h2>
+<p>The results go into a folder of their own. <code>%cd</code> makes it the folder of the notebook's code and of its <code>%%bash</code> cells.</p>
+<pre class="code" data-run="py"><code>import os
+os.makedirs(os.path.expanduser("~/recipe-variants"), exist_ok=True)
+%cd ~/recipe-variants</code></pre>
+
+<h2>2. Check and trim the reads</h2>
+<p><code>fastp</code> removes adapters, drops reads of poor quality, and reports on the reads before and after (it trims low-quality ends too when asked: <code>--cut_tail</code>). Its report, <code>fastp.html</code>, opens in the Files tab.</p>
+<pre class="code" data-run="py"><code>%%bash
+fastp -i /data/examples/reads/NA12878_R1.fastq -I /data/examples/reads/NA12878_R2.fastq \
+      -o trimmed_1.fastq -O trimmed_2.fastq -h fastp.html -j fastp.json 2&gt; fastp.log
+grep -A 4 "after filtering" fastp.log | head -10</code></pre>
+
+<h2>3. Map them to the reference</h2>
+<p>The reads come from two regions of chromosome 10; <code>reference.fa</code> holds those two regions. <code>-R</code> names the sample in the BAM file, so that the VCF file names it too.</p>
+<pre class="code" data-run="py"><code>%%bash
+minimap2 -ax sr -R '@RG\tID:NA12878\tSM:NA12878' /data/examples/reads/reference.fa \
+         trimmed_1.fastq trimmed_2.fastq 2&gt; minimap2.log | samtools sort -o mapped.bam -
+samtools index mapped.bam
+samtools flagstat mapped.bam</code></pre>
+
+<h2>4. Call the variants</h2>
+<pre class="code" data-run="py"><code>%%bash
+bcftools mpileup -f /data/examples/reads/reference.fa -a AD,DP mapped.bam 2&gt; /dev/null \
+  | bcftools call -mv -Oz -o calls.vcf.gz
+bcftools filter -i 'QUAL&gt;=20 &amp;&amp; INFO/DP&gt;=5' -Oz -o filtered.vcf.gz calls.vcf.gz
+bcftools index -t filtered.vcf.gz
+echo "variants called: $(bcftools view -H calls.vcf.gz | wc -l), after filtering: $(bcftools view -H filtered.vcf.gz | wc -l)"</code></pre>
+
+<h2>5. The variants as a table</h2>
+<p><code>bcftools query</code> writes the fields you name as a table; pandas reads it.</p>
+<pre class="code" data-run="py"><code>%%bash
+bcftools query -f '%CHROM\t%POS\t%REF\t%ALT\t%QUAL\t%INFO/DP[\t%GT]\n' filtered.vcf.gz &gt; variants.tsv
+head -3 variants.tsv</code></pre>
+<pre class="code" data-run="py"><code>import pandas as pd
+
+v = pd.read_csv("variants.tsv", sep="\t", names=["chrom", "pos", "ref", "alt", "qual", "depth", "genotype"])
+v["type"] = ["SNP" if len(r) == 1 and len(a) == 1 else "indel" for r, a in zip(v.ref, v.alt)]
+v.groupby(["chrom", "type", "genotype"]).size()</code></pre>
+
+<h2>6. Quality and depth</h2>
+<p>Calls with few reads have low quality: the filter of step 4 removed the weakest.</p>
+<pre class="code" data-run="py"><code>import matplotlib.pyplot as plt
+
+fig, ax = plt.subplots(figsize=(6, 3.5))
+for gt, d in v.groupby("genotype"):
+    ax.scatter(d.depth, d.qual, label=gt, s=20)
+ax.set_xlabel("reads covering the position (DP)")
+ax.set_ylabel("call quality (QUAL)")
+ax.legend(title="genotype")
+plt.tight_layout()
+plt.savefig("quality_depth.png", dpi=150)
+plt.show()</code></pre>
+
+<h2>7. What do the variants do?</h2>
+<p>Ensembl's Variant Effect Predictor (VEP) says what each variant changes. The positions in the VCF file are on the two slices of the reference; on chromosome 10 of GRCh37 the slices start at 96,530,001 and 96,699,001, so the positions are moved before they are sent – to Ensembl's GRCh37 server.</p>
+<pre class="code" data-run="py"><code>import time
+import requests
+
+def post_json(url, data, tries=4):
+    """POST data as JSON; when the service is busy or does not answer, wait and try again."""
+    for attempt in range(tries):
+        try:
+            r = requests.post(url, json=data, headers={"Content-Type": "application/json", "Accept": "application/json"})
+            if r.status_code not in (429, 500, 502, 503, 504):
+                r.raise_for_status()
+                return r.json()
+        except requests.exceptions.ConnectionError:
+            pass
+        time.sleep(2 ** attempt)
+    raise RuntimeError(f"no answer from {url} – try again in a few minutes")
+
+start = {"human_CYP2C19": 96_530_000, "human_CYP2C9": 96_699_000}
+lines = [f"10 {p + start[c]} . {r} {a} . . ." for c, p, r, a in zip(v.chrom, v.pos, v.ref, v.alt)]
+answer = post_json("https://grch37.rest.ensembl.org/vep/homo_sapiens/region", {"variants": lines})
+vep = pd.DataFrame([{"position (GRCh37)": x["input"].split()[1], "consequence": x["most_severe_consequence"],
+                     "known as": ", ".join(c["id"] for c in x.get("colocated_variants", []) if c["id"].startswith("rs"))}
+                    for x in answer])
+vep</code></pre>
+<p>Position 96,541,616 is rs4244285, the <i>CYP2C19*2</i> allele. VEP calls it a <i>synonymous variant</i> – the changed codon still codes for proline – yet it is the commonest reason for a CYP2C19 enzyme that does not work: the change creates a new splice site in exon 5, the mRNA is spliced wrongly, and no working enzyme is made. A prediction is not the whole story: read what is known about the variants that matter (Europe PMC, ClinVar in the Databases tab). NA12878 carries one copy (genotype <code>0/1</code>); people with two copies turn the drug clopidogrel into its active form poorly.</p>
+
+<h2>8. Look at the evidence</h2>
+<p>In the workbench, <code>igv</code> shows the reads and the calls in the Genome browser (this line works only here, not in Jupyter):</p>
+<pre class="code" data-run="py"><code>!igv mapped.bam filtered.vcf.gz --locus human_CYP2C19:11,566-11,666</code></pre>
+
+<h2>Keep it</h2>
+<p>Restart Python and run the notebook from the top: if every cell runs, the notebook is a complete record. <b>Download → Jupyter notebook (.ipynb)</b> keeps it; the files it made are in <code>~/recipe-variants</code>. The same steps as Galaxy tools: <a href="#h-galaxy">Galaxy</a>; as a Snakemake pipeline: <a href="#h-scripts">Scripts and pipelines</a>.</p>

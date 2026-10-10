@@ -1,0 +1,60 @@
+<!-- id: h-notebook | title: Notebooks | group: Notebooks: Python and R | summary: Cells, running, saving, downloading .ipynb | keys: notebook jupyter ipynb cell markdown run kernel restart download save shift enter colab -->
+<h1><!--ICON:notebook-->Notebooks</h1>
+<p class="lede">Jupyter-style notebooks in Python or R. Each notebook is an <code>.ipynb</code> file among your files – saved as you work, and ready to download and open in Jupyter, JupyterLab, VS Code or Google Colab.</p>
+<div class="tryrow"><button class="do" type="button" data-new-nb="python">New Python notebook</button> <button class="do" type="button" data-new-nb="r">New R notebook</button></div>
+
+<h2>Open, start and rename</h2>
+<ul>
+  <li><b>Notebooks</b> (top left) lists your notebooks and starts new ones: <i>New Python notebook</i>, <i>New R notebook</i>, <i>Open a notebook from my computer…</i> (an <code>.ipynb</code> file). The same menu makes a copy, shows the notebook in Files, or deletes it.</li>
+  <li><b>The name</b> next to it is the file name: click it, type a new one and press <kbd>Enter</kbd>.</li>
+  <li>New notebooks go into <code>~/notebooks</code>. Any <code>.ipynb</code> file opens here: click it in the Files tab, or type <code>open NAME.ipynb</code> in the terminal.</li>
+  <li>Drop <code>.ipynb</code> files from your computer onto the notebook to open them; other files you drop are added next to the notebook.</li>
+</ul>
+
+<h2>Cells</h2>
+<p>A notebook is a list of <b>code cells</b> and <b>text cells</b>. <b>+ Code</b> and <b>+ Text</b> add one below the selected cell.</p>
+<table class="keys">
+<tr><td><kbd>Shift</kbd>+<kbd>Enter</kbd> or <b>▶ Run</b></td><td>run the cell and go to the next one</td></tr>
+<tr><td><kbd>Ctrl</kbd>+<kbd>Enter</kbd></td><td>run the cell and stay on it</td></tr>
+<tr><td><kbd>Alt</kbd>+<kbd>Enter</kbd></td><td>run the cell and add a new one below</td></tr>
+<tr><td><b>Run all</b></td><td>run every cell from the top, in order</td></tr>
+</table>
+<p>The number in brackets, <code>[3]</code>, shows the order in which the cells ran; <code>[…]</code> means the cell is waiting for its turn, <code>[*]</code> that it is running. Output appears below the cell: printed text, tables, plots, and errors (with a hint on what they usually mean).</p>
+<p>The <b>⋯</b> of a cell changes it into a text or code cell, moves it, duplicates it, clears its output or deletes it.</p>
+<h3>Text cells</h3>
+<p>Text cells use Markdown: <code># Heading</code>, <code>**bold**</code>, <code>*italic*</code>, <code>- a list</code>, <code>`code`</code>, <code>[a link](https://…)</code> and tables. <kbd>Shift</kbd>+<kbd>Enter</kbd> shows a text cell formatted; double-click it to edit it again.</p>
+<h3>Keys for a selected cell</h3>
+<p>Press <kbd>Esc</kbd> to leave the cell's text; then, as in Jupyter: <kbd>A</kbd> / <kbd>B</kbd> add a cell above / below, <kbd>M</kbd> makes it a text cell, <kbd>Y</kbd> a code cell, <kbd>D</kbd> <kbd>D</kbd> deletes it, <kbd>↑</kbd> <kbd>↓</kbd> move between cells and <kbd>Enter</kbd> edits.</p>
+
+<h2>Python or R</h2>
+<p>Each notebook is either Python or R; the label at the top right says which, and whether the language has started (it starts in the background when a notebook of that language opens, and the first cell you run waits for it). All your Python notebooks share one Python, and all your R notebooks one R: a variable made in one Python notebook is there in the others.</p>
+<ul>
+  <li><b>Restart</b> makes the language forget everything (variables, loaded packages) – then run the cells again from the top. Do that before you hand in or share a notebook: it shows that the notebook runs from start to end.</li>
+  <li><b>Stop</b> (while code runs) stops it by restarting the language – its variables are forgotten.</li>
+  <li><b>Variables</b> (<!--ICON:list-->) lists what the language remembers now.</li>
+</ul>
+<p>More on each language: <a href="#h-python">Python</a> · <a href="#h-r">R</a>.</p>
+
+<h2 data-anchor="files">Files and folders</h2>
+<p>A notebook's code runs in the notebook's own folder – <code>~/notebooks</code> for most – so a file name without a folder means a file next to the notebook. Use full paths for files elsewhere: <code>/data/examples/tables/yeast_genes.csv</code>, or <code>/home/student/…</code> for your own (Python's <code>open()</code> does not understand <code>~</code>; pandas and R do).</p>
+<p>Files a cell writes appear in the Files tab and the terminal as soon as the cell has finished.</p>
+
+<h2>Terminal commands in a notebook</h2>
+<p>A cell whose first line is <code>%%bash</code> runs shell commands, with the programs of the terminal, in the notebook's folder – or in the folder <code>%cd</code> (Python) or <code>setwd()</code> (R) moved to. In Python a line can also start with <code>!</code>:</p>
+<pre class="code" data-run="py"><code>!samtools faidx /data/examples/reads/reference.fa human_CYP2C19:11590-11640</code></pre>
+<pre class="code" data-run="py"><code>%%bash
+bcftools view -H /data/examples/variants/NA12878.calls.vcf.gz | cut -f 1-5 | head -3</code></pre>
+<p>Python notebooks also understand <code>%pip install NAME</code>, <code>%cd</code>, <code>%pwd</code>, <code>%ls</code>, <code>%time</code>, <code>%who</code>, <code>%run script.py</code>, and the cell commands <code>%%writefile FILE</code>, <code>%%time</code>, <code>%%html</code> and <code>%%capture</code> (what the cell prints is not shown – plots, tables and the output of <code>!</code> commands still are; <code>%%capture out</code> keeps it in <code>out</code>: <code>out.stdout</code> is the text, <code>out.show()</code> shows it).</p>
+
+<h2 data-anchor="download">Saving and downloading</h2>
+<p>A notebook saves itself a moment after each change – the word next to its name says <i>Editing…</i>, then <i>Saved</i>; <kbd>Ctrl</kbd>+<kbd>S</kbd> saves at once. It is kept in this browser – see <a href="#h-files/kept">where your files are kept</a>.</p>
+<p><b>Download</b> offers:</p>
+<ul>
+  <li><b>Jupyter notebook (.ipynb)</b> – the notebook with its outputs and plots. It opens in Jupyter and JupyterLab, VS Code and Google Colab; an R notebook needs the R kernel there (IRkernel).</li>
+  <li><b>Python script (.py)</b> or <b>R script (.R)</b> – the code alone.</li>
+  <li><b>Web page with the results (.html)</b> – to read or print, without Jupyter.</li>
+</ul>
+<p>Data files that the notebook reads are not inside it: download them too (Files tab), and keep them in the same folders relative to the notebook. <code>%%bash</code> cells need the same programs on the other computer.</p>
+
+<h2>Help with code</h2>
+<p><b>Ask AI</b> on a cell explains the code, suggests improvements, or – after an error – explains the error and how to fix it, using the model you connected in the AI tab (<a href="#h-ai">The AI assistant</a>). Without a model it explains common error messages by itself.</p>

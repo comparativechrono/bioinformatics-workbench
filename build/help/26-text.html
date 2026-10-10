@@ -1,0 +1,52 @@
+<!-- id: h-text | title: Text tools | group: Terminal and programs | summary: grep, sed, awk, sort, cut, jq, curl, archives | keys: grep sed awk gawk sort uniq cut paste join wc head tail tr jq json curl wget download web zip unzip tar gzip regular expression pipe -->
+<h1><!--ICON:text-->Text tools</h1>
+<p class="lede">Most bioinformatics files are text. The GNU tools – grep, sed, awk, sort, cut, uniq, wc – answer many questions in one line, without a program of their own.</p>
+<p>The examples work in a folder of your own: <button class="do" type="button" data-term-run="mkdir -p ~/text && cd ~/text">mkdir -p ~/text &amp;&amp; cd ~/text</button></p>
+
+<h2>Look and count</h2>
+<pre class="code" data-run="term"><code>head -3 /data/examples/tables/yeast_genes.csv | cut -c 1-120
+wc -l /data/examples/tables/yeast_genes.csv
+grep -c ">" /data/examples/sequences/myoglobins.fasta</code></pre>
+
+<h2>Columns: cut, sort, uniq</h2>
+<pre class="code" data-run="term"><code># essential genes (column 3 of the yeast table: 1 = essential)
+cut -d, -f3 /data/examples/tables/yeast_genes.csv | tail -n +2 | sort | uniq -c
+# the variant positions of a VCF, as a list
+bcftools view -H /data/examples/variants/NA12878.calls.vcf.gz | cut -f 1,2 | head -5</code></pre>
+<p>Careful with <code>cut -d,</code> on CSV files: a field with a comma inside quotes is cut there too. In the yeast table the location (<code>"Golgi, vesicles &amp; vacuole"</code>) and the description have such commas, so every column after the location – the chromosome is column 16 – would be counted wrong. gawk can read the quoted fields (<code>FPAT</code> describes what a field looks like); pandas and R read CSV files properly too:</p>
+<pre class="code" data-run="term"><code># genes per chromosome (column 16), most first
+awk -v FPAT='[^,]*|"[^"]*"' 'NR > 1 { print $16 }' /data/examples/tables/yeast_genes.csv | sort | uniq -c | sort -rn | head -5</code></pre>
+
+<h2>grep: lines that match</h2>
+<pre class="code" data-run="term"><code>grep -i "kinase" /data/examples/tables/yeast_genes.csv | wc -l
+grep -v "^#" /data/examples/annotation/cyp2c_slices.gff3 | cut -f 3 | sort | uniq -c</code></pre>
+<p><code>-i</code> ignore case, <code>-v</code> lines that do not match, <code>-w</code> whole words, <code>-c</code> count, <code>-E</code> extended regular expressions, <code>-o</code> only the matching part, <code>-P</code> Perl patterns.</p>
+
+<h2>awk: tables and arithmetic</h2>
+<pre class="code" data-run="term"><code># mean quality of the variant calls
+bcftools view -H /data/examples/variants/NA12878.calls.vcf.gz | awk '{ s += $6; n++ } END { printf "%d calls, mean QUAL %.1f\n", n, s / n }'
+# the gene lines of a GFF file: column 3 is "gene" (grep -w gene would find the mRNAs too – their
+# column 9 says Parent=gene:…)
+awk -F'\t' '$3 == "gene"' /data/examples/annotation/cyp2c_slices.gff3 | cut -f 1,4,5,9 | cut -c 1-100
+# GC content of the reads (the sequence is every 4th line, from the 2nd; gsub counts what it replaces)
+awk 'NR % 4 == 2 { n += length($0); gc += gsub(/[GC]/, "") } END { printf "%d reads, GC %.1f%%\n", NR / 4, 100 * gc / n }' /data/examples/reads/NA12878_R1.fastq</code></pre>
+
+<h2>sed: change text</h2>
+<pre class="code" data-run="term"><code># shorter sequence names
+sed 's/^>MyG_/>/' /data/examples/sequences/myoglobins.fasta | grep ">"
+# lines 5 to 8 of a file
+sed -n '5,8p' /data/examples/reads/NA12878_R1.fastq</code></pre>
+<p><code>sed -i</code> changes a file in place (on your own copy – the examples are read-only).</p>
+
+<h2>JSON and the web: curl, jq</h2>
+<pre class="code" data-run="term"><code>curl -s "https://rest.ensembl.org/lookup/symbol/homo_sapiens/CYP2C19?content-type=application/json" | jq '{id, start, end, strand, biotype}'
+curl -s -o P02185.fasta "https://rest.uniprot.org/uniprotkb/P02185.fasta" && head -2 P02185.fasta</code></pre>
+<p><code>curl</code> and <code>wget</code> reach web services that allow web pages to use them (Ensembl, UniProt, NCBI E-utilities, EBI, the PDB, …). Others fail with a message about the server; download such files with your browser and upload them in the Files tab.</p>
+
+<h2>Compressed files and archives</h2>
+<pre class="code" data-run="term"><code>gzip -c /data/examples/sequences/pBR322.fasta > pBR322.fasta.gz
+zcat pBR322.fasta.gz | head -2
+tar -czf examples.tar.gz -C /data/examples sequences
+tar -tzf examples.tar.gz
+zip -r sequences.zip /data/examples/sequences > /dev/null && unzip -l sequences.zip</code></pre>
+<p><code>gzip</code>, <code>gunzip</code> and <code>zcat</code> are carried out by <code>bgzip</code>; <code>zip</code>, <code>unzip</code> and <code>tar</code> (with <code>z</code> for <code>.tar.gz</code>) work on your files.</p>

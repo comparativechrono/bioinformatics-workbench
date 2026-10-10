@@ -1,0 +1,30 @@
+<!-- id: h-db-function | title: Interactions, pathways and GO | group: Databases | summary: STRING networks, Reactome pathways, Gene Ontology terms | keys: string interaction network protein-protein confidence score neighbours reactome pathway diagram gene ontology go term molecular function biological process cellular component evidence code quickgo ols ontology hpo mondo sequence ontology -->
+<h1><!--ICON:link-->Interactions, pathways and GO</h1>
+<p class="lede">What does a protein do, and with whom? <b>STRING</b> draws the network of its interactions, <b>Reactome</b> names the pathways it takes part in, and the <b>Gene Ontology</b> card lists the standard terms for its function, the processes it is part of, and where it is in the cell.</p>
+
+<h2>STRING</h2>
+<p>STRING collects known and predicted protein–protein associations: from experiments, curated databases, genes that are switched on together (co-expression), genes that sit together in genomes, and papers that mention proteins together (text mining). Type gene or protein names, one per line, choose the species, and <b>Search</b>.</p>
+<ul>
+  <li><b>Minimum confidence</b>: STRING's combined score, from 0 to 1. <i>high (0.7)</i> keeps the associations it is most sure of.</li>
+  <li><b>Add neighbours</b>: adds the proteins most strongly connected to yours, to show the neighbourhood.</li>
+  <li>The picture is STRING's own drawing of the network; the table has one row for each pair, with the combined score and its parts (experiments, databases, text mining).</li>
+</ul>
+<p>An association is not always a physical contact: two enzymes of one pathway are associated without ever touching. Look at where a score comes from before you call it an interaction.</p>
+<div class="tryrow"><button class="do" type="button" data-api="string:network:TP53, MDM2, CDKN1A">Network of TP53, MDM2, CDKN1A</button></div>
+
+<h2>Reactome</h2>
+<p>Reactome is a curated database of human biological pathways – reactions, the molecules in them, and how they connect – with predictions for other species. Type a <b>UniProt accession</b>: the answer lists the pathways the protein is in, with <b>Diagram</b> for those that have one; <i>Disease</i> marks pathways of a disease.</p>
+<div class="tryrow"><button class="do" type="button" data-api="reactome:pathways:P04637">Pathways of p53 (P04637)</button> <button class="do" type="button" data-api="reactome:pathways:P06213">Insulin receptor (P06213)</button></div>
+
+<h2>Gene Ontology</h2>
+<p>The Gene Ontology (GO) is a dictionary of terms that describe what genes do, so that all databases say it the same way. It has three parts (aspects):</p>
+<table>
+<tr><th>Aspect</th><th>Describes</th><th>Example</th></tr>
+<tr><td>Molecular function</td><td>what the protein does itself</td><td>GO:0003700 DNA-binding transcription factor activity</td></tr>
+<tr><td>Biological process</td><td>the larger process it takes part in</td><td>GO:0006915 apoptotic process</td></tr>
+<tr><td>Cellular component</td><td>where in the cell it is</td><td>GO:0005634 nucleus</td></tr>
+</table>
+<p><b>GO terms of a protein</b> (from QuickGO): type a UniProt accession, and choose an aspect or all three. Each term has an <b>evidence</b> code that says how it was assigned: <code>EXP</code>, <code>IDA</code>, <code>IMP</code>, <code>IPI</code> … from experiments; <code>IBA</code>, <code>ISS</code> from related genes; <code>IEA</code> automatically, without a curator; <code>TAS</code>, <code>NAS</code> from statements in papers. The qualifier says how the protein relates to the term (<i>enables</i>, <i>involved in</i>, <i>located in</i>, <i>part of</i>, or <i>NOT</i>).</p>
+<p><b>Look up a term</b> (from the Ontology Lookup Service) searches the terms of GO and other ontologies: the Human Phenotype Ontology (symptoms and signs), Mondo (diseases), Uberon (anatomy), the Cell Ontology, ChEBI (chemicals), the Sequence Ontology (the names of variant consequences used by VEP).</p>
+<div class="tryrow"><button class="do" type="button" data-api="go:annot:P04637">GO terms of p53</button> <button class="do" type="button" data-api="go:terms:apoptosis">Look up "apoptosis"</button></div>
+<p>Lists of genes – the genes changed in an experiment – are compared against GO with an <i>enrichment</i> analysis, which asks which terms occur more often in the list than by chance. In a notebook, the recipe <a href="#h-recipe-api">Databases from code</a> asks UniProt about many proteins at once and reads the answer as a table: add <code>go_p</code>, <code>go_f</code> or <code>go_c</code> (biological process, molecular function, cellular component) to the <code>fields</code> of its query, and the table has their GO terms.</p>

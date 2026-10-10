@@ -1,0 +1,62 @@
+<!-- id: h-troubleshoot | title: When something goes wrong | group: Reference | summary: Common problems and what to do | keys: troubleshoot problem error help not working slow stuck crash files gone lost storage full quota not found no such file network failed to fetch cors 429 genome browser empty galaxy red ai key locked terminal out of memory reload -->
+<h1><!--ICON:help-->When something goes wrong</h1>
+<p class="lede">The usual problems, and what to do about them. Error messages in the notebook and the terminal often carry a hint of their own – and <b>Ask the AI assistant about this error</b> explains them (<a href="#h-ai">AI assistant</a>).</p>
+
+<h2>Starting</h2>
+<dl>
+  <dt>Python or R takes long to start</dt>
+  <dd>The first start of a visit downloads the language (tens of megabytes); later visits use the browser's copy and are quicker. The label at the top right of a notebook says what it is doing.</dd>
+  <dt>A tab says it could not start</dt>
+  <dd>Reload the page (your files are kept). For the 3D viewer: turn on hardware acceleration in the browser's settings. Use a current Chrome, Edge, Firefox or Safari.</dd>
+  <dt>The page is slow or stops answering</dt>
+  <dd>A long computation is running: <b>Stop</b> it (notebook), or press <kbd>Ctrl</kbd>+<kbd>C</kbd> in the terminal – once, and what follows the running program is skipped; twice, and the program itself is stopped. Close other heavy tabs of the browser.</dd>
+</dl>
+
+<h2>Files</h2>
+<dl>
+  <dt>My files are gone</dt>
+  <dd>They are kept in one browser on one computer – is it the same browser, the same computer, the same web address, and not a private window? If the browser's data for the site was cleared, they cannot be recovered: download what you want to keep (<a href="#h-recipe-keep">Keep and share your work</a>).</dd>
+  <dt>"No such file or directory"</dt>
+  <dd>The file is not where the code looked. A notebook works in its own folder (<code>~/notebooks</code>): use full paths such as <code>/data/examples/…</code> or <code>/home/student/…</code> (Python's <code>open()</code> does not understand <code>~</code>). <code>%pwd</code> or <code>getwd()</code> shows the folder; the Files tab shows the names.</dd>
+  <dt>"Read-only file system" or "Permission denied"</dt>
+  <dd><code>/data/examples</code> is read-only: its files cannot be changed, and nothing new can be written into it – not even what a program writes next to its input (<code>samtools faidx</code> writes its index next to the FASTA file). Copy what you need into your home folder and work there.</dd>
+  <dt>The space is running out</dt>
+  <dd><b>My files</b> (top right) shows how much is used. Delete large intermediate files – SAM files, unsorted BAM files, trimmed reads – or download and delete them.</dd>
+</dl>
+
+<h2>Programs and code</h2>
+<dl>
+  <dt>"command not found"</dt>
+  <dd>The program is not in the workbench: <code>help</code> lists what is. Python packages: <code>%pip install NAME</code>; R packages: <code>install.packages("NAME")</code>.</dd>
+  <dt>A program says it is out of memory, or stops without a message</dt>
+  <dd>The data is too big for the browser: take a part of it (<code>samtools view</code> of a region, <code>seqtk sample</code>) – see <a href="#h-limits">What is different in the browser</a>.</dd>
+  <dt>Python or R forgot my variables</dt>
+  <dd>The language was restarted – by <b>Restart</b>, <b>Stop</b>, or a reload of the page. Run the notebook's cells again from the top (<b>Run all</b>).</dd>
+  <dt>The terminal does not let me type</dt>
+  <dd>The AI agent is working in it: wait, or press <b>Stop</b> in the AI assistant tab.</dd>
+</dl>
+
+<h2>The internet</h2>
+<dl>
+  <dt>"Failed to fetch", "no answer", a network error</dt>
+  <dd>Either the internet connection is off, or the site does not allow requests from web pages (CORS – KEGG and most web pages do not). Download such files with your browser and upload them in the Files tab.</dd>
+  <dt>HTTP 429, "too many requests"</dt>
+  <dd>Wait a minute; in code, pause between requests (<a href="#h-recipe-api">Databases from code</a>).</dd>
+  <dt>HTTP 400 or 404</dt>
+  <dd>The service did not understand the query, or there is no such identifier: check the spelling and the version (<code>NM_000769.4</code>).</dd>
+  <dt>HTTP 500 or 503</dt>
+  <dd>The service is busy or down – try again later.</dd>
+</dl>
+
+<h2>The other tabs</h2>
+<dl>
+  <dt>The genome browser shows nothing</dt>
+  <dd>Is the right genome chosen? The chromosome names of the file must be those of the genome (<code>human_CYP2C19</code> for the example genome, <code>chr10</code> for hg19/hg38). A BAM file needs its <code>.bai</code> (<code>samtools index</code>), a FASTA genome its <code>.fai</code> (<code>samtools faidx</code>). Reads appear only when you zoom in.</dd>
+  <dt>A Galaxy dataset is red</dt>
+  <dd>Open its details (<!--ICON:info-->): the program's messages say what went wrong. Often an input of the wrong kind, or a setting; <!--ICON:rerun--> runs the tool again with the same settings, to change one.</dd>
+  <dt>The AI assistant says "Not connected", the key is not accepted, or it is busy</dt>
+  <dd>Check the service and key in <!--ICON:gear--> AI settings and press <b>Test</b>. Free keys allow only a few requests per minute: wait a minute.</dd>
+</dl>
+
+<h2>Reporting a problem</h2>
+<p>Say which browser and computer you use, what you did, and what happened – with the exact message (copy it, or take a screenshot). Leave out any personal data.</p>

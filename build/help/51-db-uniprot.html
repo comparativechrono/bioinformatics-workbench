@@ -1,0 +1,52 @@
+<!-- id: h-db-uniprot | title: UniProt | group: Databases | summary: Protein entries: search, read, map features onto 3D structures | keys: uniprot uniprotkb swiss-prot trembl reviewed unreviewed accession entry protein function domain variant disease feature sequence fasta isoform keyword query syntax annotation score -->
+<h1><!--ICON:database-->UniProt</h1>
+<p class="lede">UniProtKB, the UniProt Knowledgebase, is the reference collection of protein sequences and of what is known about each protein. The UniProt card shows its entries laid out like the pages of uniprot.org, from live data.</p>
+<div class="tryrow"><button class="do" type="button" data-api="uniprot:P04637">Open p53 (P04637)</button> <button class="do" type="button" data-api="uniprot:myoglobin">Search for myoglobin</button></div>
+
+<h2>Reviewed and unreviewed</h2>
+<p>UniProtKB has two parts. <b>Swiss-Prot</b> (★ Reviewed) entries are read and written by expert curators, from the literature; there are about 575,000 of them. <b>TrEMBL</b> (Unreviewed) entries – about 150 million – are annotated automatically, mostly from genome sequences (numbers of release 2026_03). When a reviewed entry exists, use it.</p>
+<p>Each entry has an <b>accession</b> (P04637), which never changes and is the one to cite, and an <b>entry name</b> (P53_HUMAN). Its <b>annotation score</b> (1 to 5) says how much is known about it, not how correct it is.</p>
+
+<h2>Search</h2>
+<p>Type a protein name, a gene name, an accession or any words, and <b>Search</b>. Tick <b>Reviewed (Swiss-Prot) only</b> and <b>Human (Homo sapiens) only</b> to narrow the list. An accession on its own opens the entry. The results come 25 at a time (<b>Show 25 more</b>); click an accession to open it.</p>
+<p>UniProt's query language works in the box:</p>
+<table>
+<tr><th>Query</th><th>Finds</th></tr>
+<tr><td><code>gene:CYP2C19 AND organism_id:9606</code></td><td>the human entries of a gene</td></tr>
+<tr><td><code>reviewed:true AND length:[100 TO 120]</code></td><td>reviewed proteins of 100 to 120 amino acids</td></tr>
+<tr><td><code>ec:3.4.21.4</code></td><td>proteins with that enzyme activity (EC number)</td></tr>
+<tr><td><code>keyword:KW-0675 AND organism_id:9606</code></td><td>human proteins with the keyword <i>Receptor</i></td></tr>
+<tr><td><code>cc_disease:Alzheimer AND reviewed:true</code></td><td>reviewed entries that mention the disease</td></tr>
+</table>
+
+<h2>An entry</h2>
+<p>The top of an entry gives the protein's name, gene, organism, status, annotation score and length, with buttons: <b>AlphaFold model in 3D</b>, <b>Save FASTA</b> (to your files) and <b>Send to notebook</b> (Python or R code that fetches the entry). The sections are listed on the left:</p>
+<table>
+<tr><th>Section</th><th>What it says</th></tr>
+<tr><td>Function</td><td>what the protein does, catalytic activity, GO terms</td></tr>
+<tr><td>Names &amp; Taxonomy</td><td>the names of the protein and gene, the organism and its lineage</td></tr>
+<tr><td>Subcellular Location</td><td>where in the cell, and the membrane topology</td></tr>
+<tr><td>Disease &amp; Variants</td><td>diseases, natural variants, mutagenesis experiments</td></tr>
+<tr><td>PTM / Processing</td><td>signal peptides, chains, modified residues, disulfide bonds, glycosylation</td></tr>
+<tr><td>Expression</td><td>tissues and developmental stages</td></tr>
+<tr><td>Interaction</td><td>subunits and binary interactions</td></tr>
+<tr><td>Structure</td><td>the PDB entries (which parts of the protein each covers) and the AlphaFold model</td></tr>
+<tr><td>Family &amp; Domains</td><td>domains, regions, motifs, repeats, and the family</td></tr>
+<tr><td>Sequence &amp; Isoforms</td><td>the sequence – find a motif, go to a residue, copy or save it as FASTA – and how the other isoforms differ</td></tr>
+</table>
+<p>Many statements carry an evidence tag: experimental evidence, or inferred by similarity to another protein (<i>ECO</i> codes). Positions are numbered along the canonical sequence of the entry.</p>
+
+<h2>Features in 3D</h2>
+<p>Domains, sites, variants and other features are drawn along the sequence. <b>Click one</b> to see where it is in the 3D viewer: the positions are found on the structure that is loaded – a PDB entry of this protein, or its AlphaFold model – by aligning its sequence with the entry's. If no structure of the protein is loaded, or the residues are not in it (experimental structures often contain only part of a protein), it offers to load the AlphaFold model, which covers the whole sequence.</p>
+<p>In <b>Structure</b>, the coverage map shows which residues each PDB entry contains; click a bar, or <b>3D</b> in the table, to load that structure, and <b>Details</b> to open it in the Protein Data Bank card.</p>
+<div class="tryrow"><button class="do" type="button" data-api="uniprot:O00206">Open TLR4 (O00206)</button> <button class="do" type="button" data-api="uniprot:P02144">Open human myoglobin (P02144)</button></div>
+
+<h2>From code</h2>
+<p>An entry as JSON is <code>https://rest.uniprot.org/uniprotkb/P04637.json</code>, its sequence <code>…/P04637.fasta</code>, and a search <code>https://rest.uniprot.org/uniprotkb/search?query=…</code>. <b>Send to notebook</b> writes the code; or:</p>
+<pre class="code" data-run="py"><code>import requests
+import pandas as pd
+
+r = requests.get("https://rest.uniprot.org/uniprotkb/search",
+                 params={"query": "gene:CYP2C19 AND reviewed:true", "fields": "accession,id,organism_name,length", "format": "tsv"})
+from io import StringIO
+pd.read_csv(StringIO(r.text), sep="\t")</code></pre>

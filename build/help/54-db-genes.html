@@ -1,0 +1,44 @@
+<!-- id: h-db-genes | title: Genes, genomes and variants | group: Databases | summary: Ensembl (genes, sequences, VEP), NCBI, UCSC, ENA | keys: ensembl gene transcript exon cdna cds canonical biotype vep variant effect predictor consequence sift polyphen hgvs rs dbsnp orthologue homology region ncbi entrez esearch efetch genbank refseq accession clinvar pubmed taxonomy ucsc assembly hg38 hg19 grch38 grch37 soft-masked ena sra fastq run study sample -->
+<h1><!--ICON:genome-->Genes, genomes and variants</h1>
+<p class="lede">Four cards for genes, genomes and sequencing data: <b>Ensembl</b>, <b>NCBI</b>, the <b>UCSC Genome Browser</b> and the <b>European Nucleotide Archive</b>.</p>
+
+<h2>Ensembl</h2>
+<p>Ensembl (EMBL-EBI) annotates the genomes of vertebrates and model organisms: genes, transcripts, proteins, variants, and how genes of different species are related. The card asks its REST API, which serves the latest release – for human, on the <b>GRCh38</b> assembly.</p>
+<dl>
+  <dt>Gene</dt>
+  <dd>A species and a gene symbol (<code>CYP2C19</code>) or Ensembl gene ID (<code>ENSG…</code>). The answer gives the gene's ID, type (biotype), position and strand, and a table of its transcripts – which is the <i>canonical</i> one, how many exons, how long the protein is – with buttons that save each transcript's cDNA, CDS or protein sequence. <b>Save the gene sequence (FASTA)</b>; for human genes, <b>Show in the Genome browser (GRCh38)</b>.</dd>
+  <dt>Sequence</dt>
+  <dd>The sequence of an Ensembl gene, transcript or protein ID. <i>genomic</i>: the whole region, introns included (with extra bases on each side if you ask); <i>cDNA</i>: the exons of a transcript, untranslated regions included; <i>CDS</i>: from the start codon to the stop codon; <i>protein</i>.</dd>
+  <dt>Variant effect (VEP)</dt>
+  <dd>The Variant Effect Predictor: an rs ID (<code>rs4244285</code>), an HGVS description (<code>ENST00000646891.2:c.1799T&gt;A</code>), or a chromosome, position, reference and alternative base on GRCh38 (<code>10 94781859 G A</code>). The answer gives the most severe consequence; the known variants at that position, with their clinical significance; allele frequencies (1000 Genomes, gnomAD); and for each transcript the consequence, its impact (HIGH, MODERATE, LOW, MODIFIER), the amino-acid change and the SIFT and PolyPhen predictions. A consequence is worked out from the position and the transcripts alone: rs4244285 comes out as <i>synonymous</i> (Pro227Pro), yet it is CYP2C19*2, the commonest loss-of-function allele of the gene – the base change makes a new splice site, and the mRNA is spliced wrongly. Read the clinical significance and the papers too.</dd>
+  <dt>Orthologues</dt>
+  <dd>The genes in another species – or in all of them – that descend from one gene of their last common ancestor: orthologues are separated by a speciation event (paralogues by a duplication within a genome).</dd>
+  <dt>Genes in a region</dt>
+  <dd>Every gene between two positions of a chromosome (at most 5 Mb).</dd>
+</dl>
+<div class="tryrow"><button class="do" type="button" data-api="ensembl:gene:CYP2C19">Gene CYP2C19</button> <button class="do" type="button" data-api="ensembl:vep:rs4244285">VEP: rs4244285</button> <button class="do" type="button" data-api="ensembl:vep:17 7675088 C T">VEP: 17 7675088 C T</button> <button class="do" type="button" data-api="ensembl:orth:PAX6">Orthologues of PAX6</button></div>
+<div class="callout info"><div class="co-t"><!--ICON:info-->GRCh38 and GRCh37</div><p>The same base has different positions on the two human assemblies: rs4244285 is at chr10:94,781,859 on GRCh38 and chr10:96,541,616 on GRCh37 (hg19). The example data of the workbench, and many older papers, use GRCh37. In code, Ensembl's GRCh37 server is <code>https://grch37.rest.ensembl.org</code>; the UCSC card has both.</p></div>
+
+<h2>NCBI</h2>
+<p>NCBI's E-utilities search the Entrez databases. <b>Search</b>: choose the database – Gene, Nucleotide, Protein, PubMed, dbSNP, ClinVar, Taxonomy or Assembly – and type search terms. Entrez's field tags narrow a search:</p>
+<table>
+<tr><th>Search</th><th>In</th><th>Finds</th></tr>
+<tr><td><code>CYP2C19[sym] AND human[orgn]</code></td><td>Gene</td><td>the human gene with that symbol</td></tr>
+<tr><td><code>myoglobin[title] AND refseq[filter]</code></td><td>Protein</td><td>RefSeq myoglobin sequences</td></tr>
+<tr><td><code>BRCA2[gene] AND pathogenic[clinsig]</code></td><td>ClinVar</td><td>pathogenic variants of BRCA2</td></tr>
+<tr><td><code>clopidogrel CYP2C19 AND 2020:2026[dp]</code></td><td>PubMed</td><td>papers published 2020–2026</td></tr>
+</table>
+<p>The table shows the records found, at most 50; Nucleotide and Protein records each have a <b>FASTA</b> button. <b>Download sequences</b> fetches sequences by accession, as FASTA, GenBank (nucleotide) or GenPept (protein) – the GenBank format has the annotation too: genes, coding sequences, the source organism, the paper.</p>
+<p>Accessions say what a record is: <code>NM_</code> a RefSeq mRNA, <code>NP_</code> a RefSeq protein, <code>NC_</code> a RefSeq chromosome or genome, <code>J01749</code> a GenBank submission. The number after the dot is the version: <code>NM_000769.4</code> is the fourth version of that record.</p>
+<div class="tryrow"><button class="do" type="button" data-api="ncbi:search:CYP2C19[sym] AND human[orgn]">Search Gene: CYP2C19</button> <button class="do" type="button" data-api="ncbi:fetch:NM_000769.4">FASTA of NM_000769.4</button></div>
+<p>In a Python notebook, Biopython's <code>Bio.Entrez</code> asks the same E-utilities (give it your e-mail address: <code>Entrez.email = "…"</code>).</p>
+
+<h2>UCSC Genome Browser</h2>
+<p>The DNA of any region of a genome assembly: human hg38 (GRCh38) and hg19 (GRCh37), mouse, zebrafish, fly, worm and yeast. Write the region as <code>chr10:96541580-96541650</code>, counting from 1 as genome browsers do; at most 1 Mb. Bases in <b>lower case</b> are repeats (the sequence is soft-masked); upper and lower case are the same bases. For hg38 and hg19, <b>Show this region in the Genome browser</b>.</p>
+<div class="tryrow"><button class="do" type="button" data-api="ucsc:dna:chr10:96541580-96541650">CYP2C19*2 on hg19</button></div>
+<p>The UCSC API itself counts from 0 (<code>start=96541579</code> for position 96,541,580); the code that <b>Send to notebook</b> writes takes care of it.</p>
+
+<h2>European Nucleotide Archive</h2>
+<p>ENA (EMBL-EBI) – with its partners NCBI's SRA and DDBJ – keeps the raw data of published sequencing experiments. <b>Sequencing runs</b> takes a study (<code>PRJEB37886</code>), sample or run (<code>SRR098401</code>) accession, or a query in ENA's language (<code>tax_eq(9606) AND library_strategy="AMPLICON"</code>), and lists the runs: organism, instrument, library strategy and layout, number of reads, and the FASTQ files. Click a file to download it into <code>~/reads</code>.</p>
+<div class="callout warn"><div class="co-t"><!--ICON:warning-->Mind the size</div><p>A human genome or exome run is many gigabytes (the two FASTQ files of SRR098401 are 7.5 and 7.7 GB): far more than fits in a browser. Small runs – of viruses, bacteria, amplicons – are a few megabytes to a few hundred. The recipe <a href="#h-recipe-api">Databases from code</a> shows how to take just the first reads of a large file.</p></div>
+<p><b>Sequence by accession</b> gives any ENA/GenBank sequence as FASTA (<code>MN908947.3</code> is the first SARS-CoV-2 genome).</p>

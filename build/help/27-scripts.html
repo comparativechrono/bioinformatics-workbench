@@ -1,0 +1,78 @@
+<!-- id: h-scripts | title: Scripts and pipelines | group: Terminal and programs | summary: bash scripts, Python and R scripts, Snakemake, Graphviz | keys: script bash sh loop for while variables function pipeline snakemake snakefile workflow rule dot graphviz python script rscript reproducible -->
+<h1><!--ICON:code-->Scripts and pipelines</h1>
+<p class="lede">Commands that work once belong in a script – so that they run again tomorrow, on new data, and show exactly what was done.</p>
+<p>The examples work in a folder of your own: <button class="do" type="button" data-term-run="mkdir -p ~/scripts &amp;&amp; cd ~/scripts">mkdir -p ~/scripts &amp;&amp; cd ~/scripts</button></p>
+
+<h2>A bash script</h2>
+<p>Write the commands into a file – in the Files tab, or with a here-document as below – and run it with <code>bash</code>:</p>
+<pre class="code" data-run="term"><code>cat &gt; count_reads.sh &lt;&lt; 'EOF'
+#!/usr/bin/env bash
+set -euo pipefail          # stop at the first error
+for f in "$@"; do
+  n=$(( $(wc -l &lt; "$f") / 4 ))
+  echo -e "$(basename "$f")\t$n"
+done
+EOF
+bash count_reads.sh /data/examples/reads/*.fastq</code></pre>
+<p><code>"$@"</code> are the file names given to the script; <code>set -euo pipefail</code> makes it stop at the first command that fails, instead of carrying on with half a result. After <code>chmod +x count_reads.sh</code> it also starts as <code>./count_reads.sh</code>.</p>
+
+<h2>A whole analysis in one script</h2>
+<pre class="code" data-run="term"><code>cat &gt; call_variants.sh &lt;&lt; 'EOF'
+#!/usr/bin/env bash
+set -euo pipefail
+ref=/data/examples/reads/reference.fa
+r1=/data/examples/reads/NA12878_R1.fastq
+r2=/data/examples/reads/NA12878_R2.fastq
+fastp -i "$r1" -I "$r2" -o trimmed_1.fastq -O trimmed_2.fastq -h fastp.html -j fastp.json 2&gt; fastp.log
+minimap2 -ax sr -R '@RG\tID:NA12878\tSM:NA12878' "$ref" trimmed_1.fastq trimmed_2.fastq 2&gt; minimap2.log | samtools sort -o mapped.bam -
+samtools index mapped.bam
+bcftools mpileup -f "$ref" mapped.bam 2&gt; /dev/null | bcftools call -mv -Oz -o calls.vcf.gz
+bcftools filter -i 'QUAL&gt;=20 &amp;&amp; INFO/DP&gt;=5' -Oz -o filtered.vcf.gz calls.vcf.gz
+echo "variants: $(bcftools view -H filtered.vcf.gz | wc -l)"
+EOF
+bash call_variants.sh</code></pre>
+
+<h2>Python and R scripts</h2>
+<pre class="code" data-run="term"><code>cat &gt; gc.py &lt;&lt; 'EOF'
+import sys
+from Bio import SeqIO
+from Bio.SeqUtils import gc_fraction
+for rec in SeqIO.parse(sys.argv[1], "fasta"):
+    print(rec.id, f"{gc_fraction(rec.seq):.3f}", sep="\t")
+EOF
+python gc.py /data/examples/reads/reference.fa
+Rscript -e 'x &lt;- read.csv("/data/examples/tables/yeast_genes.csv"); print(table(x$essential))'</code></pre>
+<p>Both use the same Python and R as the notebooks. A script's plots go to files: <code>plt.savefig("plot.png")</code> in Python; in R, <code>png("plot.png")</code> … <code>dev.off()</code> (otherwise <code>Rplots.pdf</code>).</p>
+
+<h2>Snakemake</h2>
+<p>Snakemake runs a pipeline from rules: each rule says which files it makes from which, and Snakemake runs only what is missing or out of date. The terminal has a browser edition of Snakemake 9 – <code>snakemake -n</code> shows the plan, <code>snakemake --cores 1</code> runs it, <code>snakemake --dag | dot -Tsvg -o dag.svg</code> draws it:</p>
+<pre class="code" data-run="term"><code>mkdir -p ~/smk &amp;&amp; cd ~/smk
+cat &gt; Snakefile &lt;&lt; 'EOF'
+rule all:
+    input: "results/flagstat.txt"
+
+rule map:
+    input:
+        ref="/data/examples/reads/reference.fa",
+        r1="/data/examples/reads/NA12878_R1.fastq",
+        r2="/data/examples/reads/NA12878_R2.fastq"
+    output: "results/mapped.bam"
+    shell: "minimap2 -ax sr {input.ref} {input.r1} {input.r2} | samtools sort -o {output} -"
+
+rule flagstat:
+    input: "results/mapped.bam"
+    output: "results/flagstat.txt"
+    shell: "samtools flagstat {input} &gt; {output}"
+EOF
+snakemake -n
+snakemake --cores 1
+cat results/flagstat.txt</code></pre>
+<p>Run <code>snakemake --cores 1</code> again: nothing to do, because every result is newer than its inputs. Snakemake keeps a record of how each file was made: <code>snakemake --summary</code>.</p>
+
+<h2>Graphviz</h2>
+<p><code>dot</code> draws graphs written in the DOT language – workflows, networks, decision trees:</p>
+<pre class="code" data-run="term"><code>echo 'digraph { rankdir=LR; reads -&gt; fastp -&gt; minimap2 -&gt; bcftools -&gt; variants }' | dot -Tsvg -o steps.svg
+open steps.svg</code></pre>
+
+<h2>Keep a record</h2>
+<p><b>Save session</b> above the terminal turns the commands you typed into a notebook or a script (see <a href="#h-terminal/session">Saving a session</a>) – a good start for a script of your own.</p>
