@@ -1,0 +1,2173 @@
+/* =====================================================================
+   A Galaxy server that runs in the page.
+
+   Tools panel · history of datasets (kept in the browser) · tool forms ·
+   dataset details (tool, version, command line and parameters: Galaxy's
+   provenance) · upload from your files, your computer or pasted text ·
+   a graphical workflow editor with typed connections · workflow runs
+   (invocations) · "extract workflow from history" · .ga export/import ·
+   the history as a notebook that repeats every step (.ipynb).
+
+   Jobs run the same WebAssembly programs as the terminal, in a job
+   working directory, the way Galaxy does – so a workflow gives the same
+   results as the same commands typed in the terminal.
+   ===================================================================== */
+(function () {
+  'use strict';
+  const MG = window.MG;
+  const { h, esc, bus, toast, store } = MG;
+  const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+  const GX_ROOT = '/galaxy';
+  const HOME = () => (MG.app && MG.app.HOME) || '/home/student';
+  /** a word for the shell, in single quotes */
+  const shq = (s) => "'" + String(s).replace(/'/g, "'\\''") + "'";
+  /** a read-group value: letters, digits and . _ - : only */
+  const rgSafe = (s) => String(s || '').replace(/[^\w.:-]+/g, '_') || 'sample';
+  const int = (v, d) => (Number.isFinite(+v) && String(v).trim() !== '' ? Math.round(+v) : d);
+
+  /* ------------------------------------------------------------------ datatypes */
+  const FORMATS = [
+    ['fastqsanger', 'fastqsanger – reads (FASTQ, Sanger qualities)', 'fastq'],
+    ['fasta', 'fasta – sequences, or an alignment', 'fasta'],
+    ['sam', 'sam – alignments (text)', 'sam'],
+    ['bam', 'bam – alignments (binary, sorted and indexed)', 'bam'],
+    ['vcf', 'vcf – variants (text)', 'vcf'],
+    ['vcf_bgzip', 'vcf_bgzip – variants (compressed with bgzip)', 'vcf.gz'],
+    ['bcf', 'bcf – variants (binary)', 'bcf'],
+    ['bed', 'bed – intervals', 'bed'],
+    ['bedgraph', 'bedgraph – values along the genome', 'bedgraph'],
+    ['gff3', 'gff3 – genome annotation', 'gff3'],
+    ['gtf', 'gtf – genome annotation', 'gtf'],
+    ['tabular', 'tabular – a table with tab-separated columns', 'tsv'],
+    ['csv', 'csv – a table with comma-separated columns', 'csv'],
+    ['txt', 'txt – plain text', 'txt'],
+    ['json', 'json', 'json'],
+    ['html', 'html – a report', 'html'],
+    ['newick', 'newick – a phylogenetic tree', 'nwk'],
+    ['pdb', 'pdb – a 3D structure', 'pdb']
+  ];
+  const DOWNLOAD_EXT = Object.fromEntries(FORMATS.map((f) => [f[0], f[2]]));
+  const TEXT = ['tabular', 'txt', 'csv', 'bed', 'bedgraph', 'vcf', 'gff3', 'gtf', 'sam', 'fasta', 'fastqsanger', 'json'];
+  const FEATURES = ['bed', 'bedgraph', 'vcf', 'vcf_bgzip', 'gff3', 'gtf'];
+  const GENOMIC = ['bam', 'vcf', 'vcf_bgzip', 'bed', 'bedgraph', 'gff3', 'gtf'];
+  const SNIFF = [
+    [/\.(fastq|fq)$/, 'fastqsanger'], [/\.(fa|fasta|fna|faa|fas|afa|mfa)$/, 'fasta'], [/\.sam$/, 'sam'], [/\.bam$/, 'bam'],
+    [/\.vcf\.gz$/, 'vcf_bgzip'], [/\.vcf$/, 'vcf'], [/\.bcf$/, 'bcf'], [/\.bed$/, 'bed'], [/\.(bedgraph|bg)$/, 'bedgraph'],
+    [/\.(gff3|gff)$/, 'gff3'], [/\.gtf$/, 'gtf'], [/\.(tsv|tab|tabular)$/, 'tabular'], [/\.csv$/, 'csv'], [/\.json$/, 'json'],
+    [/\.html?$/, 'html'], [/\.(nwk|newick|tree|treefile)$/, 'newick'], [/\.(pdb|ent)$/, 'pdb'], [/\.(txt|log|md)$/, 'txt']
+  ];
+  /** a datatype from the name of a file – or, when the name says nothing, from its first bytes */
+  function sniff(name, head) {
+    const n = String(name).toLowerCase();
+    for (const [re, x] of SNIFF) if (re.test(n)) return x;
+    const t = head || '';
+    if (/^>/.test(t)) return 'fasta';
+    if (/^@[^\n]*\n[^\n]*\n\+/.test(t)) return 'fastqsanger';
+    if (/^##fileformat=VCF/.test(t)) return 'vcf';
+    if (/^##gff-version 3/.test(t)) return 'gff3';
+    if (/^(HEADER|ATOM  |HETATM|REMARK)/.test(t)) return 'pdb';
+    if (/^\s*[{[]/.test(t)) return 'json';
+    if (/^[^\n]*\t/.test(t)) return 'tabular';
+    return 'txt';
+  }
+  // files that are uncompressed on upload (Galaxy's tools here read them uncompressed)
+  const GUNZIP = /\.(fastq|fq|fasta|fa|fna|faa|sam|bed|gff3?|gtf|tsv|tab|txt|csv|vcf_text)\.gz$/i;
+
+  /* ------------------------------------------------------------------ the tools
+     inputs:  {name, short, label, ext:[…], nice: 'file name' | (dataset) => name, pick?: /regex/, optional?}
+     params:  {name, short, label, type: select|bool|int|float|text, default, options?, help?}
+     outputs: {name, short, ext: 'type' | (params) => type | {from: input, map?}, file, when?: (inputs, params) => bool, label}
+     command: (inputs: name → file in the job's folder, params) => the command line
+     needs:   a program of the terminal – the tool is offered only if the program is there */
+  const TS = 'toolshed.g2.bx.psu.edu/repos';
+  const L = (tool, ins, what) => `${tool} on ${dataList(ins)}${what ? ': ' + what : ''}`;
+  const TOOLS = [
+    /* ---------- Quality control ---------- */
+    {
+      id: 'fastp', toolId: `${TS}/iuc/fastp/fastp/0.20.1+galaxy0`, name: 'fastp', desc: 'fast all-in-one preprocessing for FASTQ files', version: '0.20.1+galaxy0', section: 'Quality control', needs: 'fastp',
+      requirements: [['fastp', '0.20.1']],
+      inputs: [
+        { name: 'in1', short: 'reads 1', label: 'Reads (forward reads, or single-end reads)', ext: ['fastqsanger'], nice: 'input_1.fastq', pick: /_1\b|R1|forward/i },
+        { name: 'in2', short: 'reads 2', label: 'Reverse reads (for paired-end reads; leave empty for single-end)', ext: ['fastqsanger'], nice: 'input_2.fastq', pick: /_2\b|R2|reverse/i, optional: true }
+      ],
+      params: [
+        { name: 'q', short: 'quality', label: 'Qualified quality Phred (-q)', type: 'int', default: 15, help: 'A base is "qualified" when its Phred quality is at least this.' },
+        { name: 'u', short: 'unqualified %', label: 'Unqualified percent limit (-u)', type: 'int', default: 40, help: 'A read is removed when more than this percentage of its bases are not qualified.' },
+        { name: 'l', short: 'min length', label: 'Length required (-l)', type: 'int', default: 15, help: 'Reads shorter than this after trimming are removed.' },
+        { name: 'cut_tail', short: 'cut tail', label: 'Trim low-quality bases from the 3′ end (--cut_tail)', type: 'bool', default: false },
+        { name: 'pe_adapters', short: 'PE adapters', label: 'Detect adapters for paired-end reads (--detect_adapter_for_pe)', type: 'bool', default: true }
+      ],
+      outputs: [
+        { name: 'out1', short: 'reads 1', ext: 'fastqsanger', file: 'out1.fastq', label: (ins) => L('fastp', ins, 'Read 1 output') },
+        { name: 'out2', short: 'reads 2', ext: 'fastqsanger', file: 'out2.fastq', when: (i) => !!i.in2, label: (ins) => L('fastp', ins, 'Read 2 output') },
+        { name: 'report_html', short: 'HTML report', ext: 'html', file: 'report.html', label: (ins) => L('fastp', ins, 'HTML report') },
+        { name: 'report_json', short: 'JSON report', ext: 'json', file: 'report.json', label: (ins) => L('fastp', ins, 'JSON report') }
+      ],
+      command: (i, p) => `fastp -i ${i.in1}${i.in2 ? ` -I ${i.in2}` : ''} -o out1.fastq${i.in2 ? ' -O out2.fastq' : ''} -q ${int(p.q, 15)} -u ${int(p.u, 40)} -l ${int(p.l, 15)}${p.cut_tail ? ' --cut_tail' : ''}${i.in2 && p.pe_adapters ? ' --detect_adapter_for_pe' : ''} -h report.html -j report.json`,
+      help: '<p>Removes adapters and low-quality bases, and reports the quality of the reads before and after (the HTML report). For paired-end reads give both files: the two outputs stay in step, read for read.</p>'
+    },
+    {
+      id: 'seqtk_comp', toolId: `${TS}/iuc/seqtk/seqtk_comp/1.4+galaxy0`, name: 'seqtk_comp', desc: 'get the nucleotide composition of FASTA/Q', version: '1.4+galaxy0', section: 'Quality control', needs: 'seqtk',
+      requirements: [['seqtk', '1.4']],
+      inputs: [{ name: 'input', short: 'sequences', label: 'Input FASTA/Q file', ext: ['fastqsanger', 'fasta'], nice: (d) => 'input.' + DOWNLOAD_EXT[d.ext] }],
+      params: [],
+      outputs: [{ name: 'default', short: 'composition', ext: 'tabular', file: 'output.tsv', label: (ins) => L('seqtk_comp', ins) }],
+      command: (i) => `seqtk comp ${i.input} > output.tsv`,
+      help: '<p>One line per sequence: name, length, the counts of A, C, G, T, the count of IUPAC codes for two bases, and more. Use it for GC content and lengths.</p>'
+    },
+    /* ---------- Mapping ---------- */
+    {
+      id: 'minimap2', toolId: `${TS}/iuc/minimap2/minimap2/2.22+galaxy0`, name: 'Map with minimap2', desc: 'A fast pairwise aligner for genomic and spliced nucleotide sequences', version: '2.22+galaxy0', section: 'Mapping', needs: 'minimap2',
+      requirements: [['minimap2', '2.22'], ['samtools', '1.17']],
+      inputs: [
+        { name: 'reference', short: 'reference', label: 'Use the following dataset as the reference sequence', ext: ['fasta'], nice: 'reference.fa' },
+        { name: 'fastq1', short: 'reads 1', label: 'Select fastq dataset (forward reads, or single-end reads)', ext: ['fastqsanger'], nice: 'input_f.fastq', pick: /_1\b|R1|forward/i },
+        { name: 'fastq2', short: 'reads 2', label: 'Select fastq dataset (reverse reads; leave empty for single-end)', ext: ['fastqsanger'], nice: 'input_r.fastq', pick: /_2\b|R2|reverse/i, optional: true }
+      ],
+      params: [
+        { name: 'preset', short: 'preset', label: 'Select a profile of preset options', type: 'select', default: 'sr', options: [['sr', 'Short single-end reads without splicing (-k21 -w11 --sr --frag=yes …) (sr)'], ['map-ont', 'Oxford Nanopore read to reference mapping (map-ont)'], ['map-pb', 'PacBio CLR read to reference mapping (map-pb)'], ['asm5', 'Long assembly to reference mapping, divergence below 1% (asm5)']], help: 'sr is the profile for short Illumina reads, as in the command line minimap2 -ax sr.' },
+        { name: 'rg_id', short: 'read group ID', label: 'Read group identifier (ID)', type: 'text', default: 'sample1' },
+        { name: 'rg_sm', short: 'sample (SM)', label: 'Sample name (SM)', type: 'text', default: 'sample1' }
+      ],
+      outputs: [{ name: 'alignment_output', short: 'BAM', ext: 'bam', file: 'output.bam', label: (ins) => L('Map with minimap2', ins, 'mapped reads in BAM format') }],
+      command: (i, p) => `minimap2 -x ${p.preset} -a -t 1 -R '@RG\\tID:${rgSafe(p.rg_id)}\\tSM:${rgSafe(p.rg_sm)}' ${i.reference} ${i.fastq1}${i.fastq2 ? ' ' + i.fastq2 : ''} | samtools sort -o output.bam -`,
+      help: '<p><b>minimap2</b> aligns the reads to the reference; the output is sorted by position with <b>samtools sort</b>, like <code>minimap2 -ax sr … | samtools sort</code>. Galaxy indexes BAM files by itself (the index is kept with the dataset).</p>'
+    },
+    {
+      id: 'bowtie2', toolId: `${TS}/devteam/bowtie2/bowtie2/2.4.2+galaxy0`, name: 'Bowtie2', desc: '- map reads against reference genome', version: '2.4.2+galaxy0', section: 'Mapping', needs: 'bowtie2',
+      requirements: [['bowtie2', '2.4.2'], ['samtools', '1.17']],
+      inputs: [
+        { name: 'reference', short: 'reference', label: 'Select reference genome (from the history; it is indexed first)', ext: ['fasta'], nice: 'reference.fa' },
+        { name: 'fastq1', short: 'reads 1', label: 'FASTQ file (forward reads, or single-end reads)', ext: ['fastqsanger'], nice: 'input_f.fastq', pick: /_1\b|R1|forward/i },
+        { name: 'fastq2', short: 'reads 2', label: 'FASTQ file (reverse reads; leave empty for single-end)', ext: ['fastqsanger'], nice: 'input_r.fastq', pick: /_2\b|R2|reverse/i, optional: true }
+      ],
+      params: [
+        { name: 'preset', short: 'preset', label: 'Preset (sensitivity and speed)', type: 'select', default: '--sensitive', options: [['--very-fast', 'Very fast end-to-end (--very-fast)'], ['--fast', 'Fast end-to-end (--fast)'], ['--sensitive', 'Sensitive end-to-end (--sensitive)'], ['--very-sensitive', 'Very sensitive end-to-end (--very-sensitive)'], ['--sensitive-local', 'Sensitive local (--sensitive-local)']] },
+        { name: 'rg_id', short: 'read group ID', label: 'Read group identifier (--rg-id)', type: 'text', default: 'sample1' },
+        { name: 'rg_sm', short: 'sample (SM)', label: 'Sample name (--rg SM:)', type: 'text', default: 'sample1' }
+      ],
+      outputs: [
+        { name: 'output', short: 'BAM', ext: 'bam', file: 'output.bam', label: (ins) => L('Bowtie2', ins, 'aligned reads (sorted BAM)') },
+        { name: 'mapping_stats', short: 'mapping stats', ext: 'txt', file: 'mapping_stats.txt', label: (ins) => L('Bowtie2', ins, 'mapping stats') }
+      ],
+      command: (i, p) => `bowtie2-build ${i.reference} genome > /dev/null && bowtie2 -x genome ${i.fastq2 ? `-1 ${i.fastq1} -2 ${i.fastq2}` : `-U ${i.fastq1}`} ${p.preset} --rg-id ${rgSafe(p.rg_id)} --rg SM:${rgSafe(p.rg_sm)} 2> mapping_stats.txt | samtools sort -o output.bam -`,
+      help: '<p>Builds a Bowtie 2 index of the reference, aligns the reads and sorts the alignments. The second output is Bowtie 2\'s summary: how many reads aligned once, more than once or not at all.</p>'
+    },
+    /* ---------- SAM/BAM ---------- */
+    {
+      id: 'samtools_flagstat', toolId: `${TS}/devteam/samtools_flagstat/samtools_flagstat/2.0.5`, name: 'Samtools flagstat', desc: 'tabulate descriptive stats for BAM datset', version: '2.0.5', section: 'SAM/BAM', needs: 'samtools',
+      requirements: [['samtools', '1.17']],
+      inputs: [{ name: 'input1', short: 'BAM', label: 'BAM File to Convert', ext: ['bam'], nice: 'input.bam' }],
+      params: [],
+      outputs: [{ name: 'output1', short: 'stats', ext: 'txt', file: 'output.txt', label: (ins) => L('Samtools flagstat', ins) }],
+      command: (i) => `samtools flagstat ${i.input1} > output.txt`,
+      help: '<p>Counts the reads by their SAM flags: mapped, properly paired, duplicates…</p>'
+    },
+    {
+      id: 'samtools_stats', toolId: `${TS}/devteam/samtools_stats/samtools_stats/2.0.5`, name: 'Samtools stats', desc: 'generate statistics for BAM dataset', version: '2.0.5', section: 'SAM/BAM', needs: 'samtools',
+      requirements: [['samtools', '1.17']],
+      inputs: [{ name: 'input', short: 'BAM', label: 'BAM file', ext: ['bam'], nice: 'input.bam' }],
+      params: [],
+      outputs: [{ name: 'output', short: 'stats', ext: 'txt', file: 'output.txt', label: (ins) => L('Samtools stats', ins) }],
+      command: (i) => `samtools stats ${i.input} > output.txt`,
+      help: '<p>Detailed statistics: the summary numbers (lines starting with SN), insert sizes, read lengths, coverage, error rates. <code>grep ^SN</code> on the output gives the summary.</p>'
+    },
+    {
+      id: 'samtools_idxstats', toolId: `${TS}/devteam/samtools_idxstats/samtools_idxstats/2.0.4`, name: 'Samtools idxstats', desc: 'reports stats of the BAM index file', version: '2.0.4', section: 'SAM/BAM', needs: 'samtools',
+      requirements: [['samtools', '1.17']],
+      inputs: [{ name: 'input', short: 'BAM', label: 'BAM file', ext: ['bam'], nice: 'input.bam' }],
+      params: [],
+      outputs: [{ name: 'output', short: 'per sequence', ext: 'tabular', file: 'output.tsv', label: (ins) => L('Samtools idxstats', ins) }],
+      command: (i) => `samtools idxstats ${i.input} > output.tsv`,
+      help: '<p>One line per reference sequence: its name, length, and the numbers of mapped and unmapped reads on it.</p>'
+    },
+    {
+      id: 'samtools_depth', toolId: `${TS}/iuc/samtools_depth/samtools_depth/1.17`, name: 'Samtools depth', desc: 'compute the depth at each position or region', version: '1.17', section: 'SAM/BAM', needs: 'samtools',
+      requirements: [['samtools', '1.17']],
+      inputs: [{ name: 'input', short: 'BAM', label: 'BAM file', ext: ['bam'], nice: 'input.bam' }],
+      params: [
+        { name: 'all', short: 'all positions', label: 'Output all positions, also those with depth 0 (-a)', type: 'bool', default: false },
+        { name: 'mapq', short: 'min MAPQ', label: 'Only count reads with mapping quality at least (-Q)', type: 'int', default: 0 }
+      ],
+      outputs: [{ name: 'output', short: 'depth', ext: 'tabular', file: 'output.tsv', label: (ins) => L('Samtools depth', ins) }],
+      command: (i, p) => `samtools depth ${p.all ? '-a ' : ''}-Q ${int(p.mapq, 0)} ${i.input} > output.tsv`,
+      help: '<p>Three columns: reference, position, number of reads covering it.</p>'
+    },
+    {
+      id: 'samtools_view', toolId: `${TS}/iuc/samtools_view/samtools_view/1.17+galaxy0`, name: 'Samtools view', desc: '- reformat, filter, or subsample SAM, BAM or CRAM', version: '1.17+galaxy0', section: 'SAM/BAM', needs: 'samtools',
+      requirements: [['samtools', '1.17']],
+      inputs: [{ name: 'input', short: 'BAM', label: 'SAM/BAM/CRAM data set', ext: ['bam', 'sam'], nice: (d) => 'input.' + DOWNLOAD_EXT[d.ext] }],
+      params: [
+        { name: 'region', short: 'region', label: 'Region (e.g. chr10:1000-2000; empty: everything)', type: 'text', default: '' },
+        { name: 'mapq', short: 'min MAPQ', label: 'Minimum mapping quality (-q)', type: 'int', default: 0 },
+        { name: 'require', short: 'require flags', label: 'Only reads with all these flag bits (-f, a number; 2 = properly paired)', type: 'int', default: 0 },
+        { name: 'exclude', short: 'exclude flags', label: 'No reads with any of these flag bits (-F, a number; 4 = unmapped, 1024 = duplicate)', type: 'int', default: 0 },
+        { name: 'fmt', short: 'format', label: 'Output format', type: 'select', default: 'bam', options: [['bam', 'BAM (-b)'], ['sam', 'SAM with header (-h)']] }
+      ],
+      outputs: [{ name: 'outputsam', short: 'filtered', ext: (p) => (p.fmt === 'sam' ? 'sam' : 'bam'), file: 'output', label: (ins) => L('Samtools view', ins, 'filtered data') }],
+      command: (i, p) => `samtools view ${p.fmt === 'sam' ? '-h' : '-b'} -q ${int(p.mapq, 0)} -f ${int(p.require, 0)} -F ${int(p.exclude, 0)} -o output ${i.input}${String(p.region || '').trim() ? ' ' + shq(String(p.region).trim()) : ''}`,
+      help: '<p>Keeps the alignments that pass the filters: a region (needs an indexed BAM, which Galaxy has), a minimum mapping quality, and SAM flag bits that must or must not be set.</p>'
+    },
+    /* ---------- Variant calling ---------- */
+    {
+      id: 'bcftools_mpileup', toolId: `${TS}/iuc/bcftools_mpileup/bcftools_mpileup/1.10`, name: 'bcftools mpileup', desc: 'Generate VCF or BCF containing genotype likelihoods for one or multiple alignment (BAM or CRAM) files', version: '1.10', section: 'Variant calling', needs: 'bcftools',
+      requirements: [['bcftools', '1.10']],
+      inputs: [
+        { name: 'reference', short: 'reference', label: 'Choose the source for the reference genome: use a genome from the history', ext: ['fasta'], nice: 'ref.fa' },
+        { name: 'input_bam', short: 'BAM', label: 'Input BAM/CRAM', ext: ['bam'], nice: 'input.bam' }
+      ],
+      params: [
+        { name: 'max_depth', short: 'max depth', label: 'Maximum read depth per file (-d)', type: 'int', default: 250 },
+        { name: 'annotate', short: 'AD, DP', label: 'Add the FORMAT fields AD and DP (-a AD,DP)', type: 'bool', default: false },
+        { name: 'output_type', short: 'output type', label: 'Output type', type: 'select', default: 'u', options: [['u', 'uncompressed BCF'], ['b', 'compressed BCF'], ['v', 'uncompressed VCF'], ['z', 'compressed VCF']] }
+      ],
+      outputs: [{ name: 'output_file', short: 'likelihoods', ext: (p) => (p.output_type === 'v' ? 'vcf' : p.output_type === 'z' ? 'vcf_bgzip' : 'bcf'), file: 'output', label: (ins) => L('bcftools mpileup', ins) }],
+      command: (i, p) => `bcftools mpileup -f ${i.reference} -d ${int(p.max_depth, 250)}${p.annotate ? ' -a AD,DP' : ''} ${i.input_bam} -O${p.output_type} -o output`,
+      help: '<p>Collects, for every position of the reference, the evidence in the reads (<i>genotype likelihoods</i>). The next step, <b>bcftools call</b>, decides the genotypes.</p>'
+    },
+    {
+      id: 'bcftools_call', toolId: `${TS}/iuc/bcftools_call/bcftools_call/1.10`, name: 'bcftools call', desc: 'SNP/indel variant calling from VCF/BCF', version: '1.10', section: 'Variant calling', needs: 'bcftools',
+      requirements: [['bcftools', '1.10']],
+      inputs: [{ name: 'input_file', short: 'likelihoods', label: 'VCF/BCF Data', ext: ['bcf', 'vcf', 'vcf_bgzip'], nice: 'input.bcf' }],
+      params: [
+        { name: 'method', short: 'caller', label: 'Calling method', type: 'select', default: 'm', options: [['m', 'Multiallelic and rare-variant caller (-m)'], ['c', 'Consensus caller (-c)']] },
+        { name: 'variants_only', short: 'variants only', label: 'Output variant sites only (-v)', type: 'bool', default: true },
+        { name: 'output_type', short: 'output type', label: 'Output type', type: 'select', default: 'z', options: [['z', 'compressed VCF'], ['v', 'uncompressed VCF'], ['b', 'compressed BCF'], ['u', 'uncompressed BCF']] }
+      ],
+      outputs: [{ name: 'output_file', short: 'VCF', ext: (p) => (p.output_type === 'z' ? 'vcf_bgzip' : p.output_type === 'v' ? 'vcf' : 'bcf'), file: 'output', label: (ins) => L('bcftools call', ins) }],
+      command: (i, p) => `bcftools call -${p.method}${p.variants_only ? 'v' : ''} -O${p.output_type} -o output ${i.input_file}`,
+      help: '<p>Calls the variants: for each position it chooses the most likely genotype (0/0, 0/1 or 1/1) from the likelihoods made by mpileup. With <b>-v</b> only the variant sites are written.</p>'
+    },
+    {
+      id: 'bcftools_filter', toolId: `${TS}/iuc/bcftools_filter/bcftools_filter/1.10`, name: 'bcftools filter', desc: 'Apply fixed-threshold filters', version: '1.10', section: 'Variant calling', needs: 'bcftools',
+      requirements: [['bcftools', '1.10']],
+      inputs: [{ name: 'input_file', short: 'VCF', label: 'VCF/BCF Data', ext: ['vcf_bgzip', 'vcf', 'bcf'], nice: (d) => 'input.' + DOWNLOAD_EXT[d.ext] }],
+      params: [
+        { name: 'include', short: 'include', label: 'Include (expression)', type: 'text', default: 'QUAL>=20 && INFO/DP>=5', help: 'Keep only the sites for which the expression is true, e.g. QUAL>=20 && INFO/DP>=5' },
+        { name: 'output_type', short: 'output type', label: 'Output type', type: 'select', default: 'z', options: [['z', 'compressed VCF'], ['v', 'uncompressed VCF']] }
+      ],
+      outputs: [{ name: 'output_file', short: 'VCF', ext: (p) => (p.output_type === 'z' ? 'vcf_bgzip' : 'vcf'), file: 'output', label: (ins) => L('bcftools filter', ins) }],
+      command: (i, p) => `bcftools filter -i ${shq(p.include)} -O${p.output_type} -o output ${i.input_file}`,
+      help: '<p>Keeps the variant sites that pass a filter expression (QUAL, INFO/DP, FORMAT/GT …). See <code>bcftools filter --help</code> in the terminal for the syntax.</p>'
+    },
+    {
+      id: 'bcftools_view_h', toolId: `${TS}/iuc/bcftools_view/bcftools_view/1.10`, name: 'bcftools view', desc: 'VCF/BCF conversion, view, subset and filter VCF/BCF files', version: '1.10', section: 'Variant calling', needs: 'bcftools',
+      requirements: [['bcftools', '1.10']],
+      inputs: [{ name: 'input_file', short: 'VCF', label: 'VCF/BCF Data', ext: ['vcf_bgzip', 'vcf', 'bcf'], nice: (d) => 'input.' + DOWNLOAD_EXT[d.ext] }],
+      params: [{ name: 'header', short: 'header', label: 'Header', type: 'select', default: 'H', options: [['H', 'suppress the header (-H): records only'], ['h', 'header only (-h)'], ['', 'header and records']] }],
+      outputs: [{ name: 'output_file', short: 'text', ext: 'tabular', file: 'output.tsv', label: (ins) => L('bcftools view', ins) }],
+      command: (i, p) => `bcftools view ${p.header ? '-' + p.header + ' ' : ''}${i.input_file} > output.tsv`,
+      help: '<p>Shows a VCF as text. With <b>-H</b> only the variant records are written, without the header (whose lines record dates, file names and commands, so they differ between runs).</p>'
+    },
+    {
+      id: 'bcftools_query', toolId: `${TS}/iuc/bcftools_query/bcftools_query/1.10`, name: 'bcftools query', desc: 'Extracts fields from VCF/BCF file and prints them in user-defined format', version: '1.10', section: 'Variant calling', needs: 'bcftools',
+      requirements: [['bcftools', '1.10']],
+      inputs: [{ name: 'input_file', short: 'VCF', label: 'VCF/BCF Data', ext: ['vcf_bgzip', 'vcf', 'bcf'], nice: (d) => 'input.' + DOWNLOAD_EXT[d.ext] }],
+      params: [
+        { name: 'format', short: 'format', label: 'Format (-f)', type: 'text', default: '%CHROM\\t%POS\\t%REF\\t%ALT\\t%QUAL\\t%INFO/DP[\\t%GT]\\n', help: 'Fields: %CHROM %POS %ID %REF %ALT %QUAL %FILTER %INFO/TAG; per sample in [ ]: %GT %DP %SAMPLE. \\t is a tab, \\n the end of a line.' },
+        { name: 'header', short: 'header', label: 'Print a header line (-H)', type: 'bool', default: true }
+      ],
+      outputs: [{ name: 'output', short: 'table', ext: 'tabular', file: 'output.tsv', label: (ins) => L('bcftools query', ins) }],
+      command: (i, p) => `bcftools query${p.header ? ' -H' : ''} -f ${shq(p.format)} ${i.input_file} > output.tsv`,
+      help: '<p>Turns a VCF into a table of the fields you name – ready for a spreadsheet, Python or R.</p>'
+    },
+    {
+      id: 'bcftools_stats', toolId: `${TS}/iuc/bcftools_stats/bcftools_stats/1.10`, name: 'bcftools stats', desc: 'Parses VCF or BCF and produces stats which can be plotted using plot-vcfstats', version: '1.10', section: 'Variant calling', needs: 'bcftools',
+      requirements: [['bcftools', '1.10']],
+      inputs: [{ name: 'input_file', short: 'VCF', label: 'VCF/BCF Data', ext: ['vcf_bgzip', 'vcf', 'bcf'], nice: (d) => 'input.' + DOWNLOAD_EXT[d.ext] }],
+      params: [],
+      outputs: [{ name: 'output_file', short: 'stats', ext: 'txt', file: 'output.txt', label: (ins) => L('bcftools stats', ins) }],
+      command: (i) => `bcftools stats ${i.input_file} > output.txt`,
+      help: '<p>Counts of SNPs, indels, transitions and transversions (the lines starting with SN and TSTV), quality and depth distributions.</p>'
+    },
+    /* ---------- Intervals ---------- */
+    {
+      id: 'bedtools_genomecoveragebed', toolId: `${TS}/iuc/bedtools/bedtools_genomecoveragebed/2.31.0`, name: 'bedtools Genome Coverage', desc: 'compute the coverage over an entire genome', version: '2.31.0', section: 'Intervals (bedtools)', needs: 'bedtools',
+      requirements: [['bedtools', '2.31.0']],
+      inputs: [{ name: 'input', short: 'BAM', label: 'Input BAM file', ext: ['bam'], nice: 'input.bam' }],
+      params: [{ name: 'report', short: 'report', label: 'Output type', type: 'select', default: '-bg', options: [['-bg', 'BedGraph coverage file (-bg)'], ['-bga', 'BedGraph, regions with no coverage too (-bga)'], ['', 'Histogram of coverage']] }],
+      outputs: [{ name: 'output', short: 'coverage', ext: (p) => (p.report ? 'bedgraph' : 'tabular'), file: 'output', label: (ins) => L('Genome Coverage', ins) }],
+      command: (i, p) => `bedtools genomecov -ibam ${i.input}${p.report ? ' ' + p.report : ''} > output`,
+      help: '<p>The read depth along the genome. A BedGraph can be shown in the Genome browser (the 👁 of the dataset, or copy it to your files).</p>'
+    },
+    {
+      id: 'bedtools_intersectbed', toolId: `${TS}/iuc/bedtools/bedtools_intersectbed/2.31.0`, name: 'bedtools Intersect intervals', desc: 'find overlapping intervals in various ways', version: '2.31.0', section: 'Intervals (bedtools)', needs: 'bedtools',
+      requirements: [['bedtools', '2.31.0']],
+      inputs: [
+        { name: 'inputA', short: 'A', label: 'File A (its features are reported)', ext: FEATURES, nice: (d) => 'a.' + DOWNLOAD_EXT[d.ext] },
+        { name: 'inputB', short: 'B', label: 'File B (compared with A)', ext: FEATURES, nice: (d) => 'b.' + DOWNLOAD_EXT[d.ext] }
+      ],
+      params: [
+        { name: 'mode', short: 'report', label: 'What should be written?', type: 'select', default: 'u', options: [['u', 'Each feature of A that overlaps B, once (-u)'], ['v', 'The features of A that do NOT overlap B (-v)'], ['wa', 'The feature of A for every overlap with B (-wa)']] },
+        { name: 'header', short: 'header', label: 'Keep the header of A (-header)', type: 'bool', default: true }
+      ],
+      outputs: [{ name: 'output', short: 'features of A', ext: { from: 'inputA', map: { vcf_bgzip: 'vcf' } }, file: 'output', label: (ins) => L('Intersect intervals', ins) }],
+      command: (i, p) => `bedtools intersect -a ${i.inputA} -b ${i.inputB} -${p.mode}${p.header ? ' -header' : ''} > output`,
+      help: '<p>Keeps the features of A by their overlap with B – for example the variants (VCF) that fall in exons (BED or GFF). The output has the format of A.</p>'
+    },
+    /* ---------- FASTA/FASTQ ---------- */
+    {
+      id: 'seqtk_seq', toolId: `${TS}/iuc/seqtk/seqtk_seq/1.4+galaxy0`, name: 'seqtk_seq', desc: 'common transformation of FASTA/Q (FASTQ to FASTA)', version: '1.4+galaxy0', section: 'FASTA/FASTQ', needs: 'seqtk',
+      requirements: [['seqtk', '1.4']],
+      inputs: [{ name: 'input', short: 'reads', label: 'Input FASTQ file', ext: ['fastqsanger'], nice: 'input.fastq' }],
+      params: [{ name: 'q', short: 'mask below', label: 'Mask bases with quality lower than this as N (-q; 0: none)', type: 'int', default: 0 }],
+      outputs: [{ name: 'default', short: 'FASTA', ext: 'fasta', file: 'output.fasta', label: (ins) => L('seqtk_seq', ins, 'FASTA') }],
+      command: (i, p) => `seqtk seq -a${int(p.q, 0) > 0 ? ` -q ${int(p.q, 0)} -n N` : ''} ${i.input} > output.fasta`,
+      help: '<p>Converts reads from FASTQ to FASTA (and can mask low-quality bases).</p>'
+    },
+    {
+      id: 'seqtk_sample', toolId: `${TS}/iuc/seqtk/seqtk_sample/1.4+galaxy0`, name: 'seqtk_sample', desc: 'random subsample of fasta or fastq sequences', version: '1.4+galaxy0', section: 'FASTA/FASTQ', needs: 'seqtk',
+      requirements: [['seqtk', '1.4']],
+      inputs: [{ name: 'input', short: 'sequences', label: 'Input FASTA/Q file', ext: ['fastqsanger', 'fasta'], nice: (d) => 'input.' + DOWNLOAD_EXT[d.ext] }],
+      params: [
+        { name: 'n', short: 'number', label: 'Number of sequences (or a fraction, e.g. 0.1)', type: 'text', default: '1000' },
+        { name: 'seed', short: 'seed', label: 'Random seed (-s): use the same seed for the two files of a pair', type: 'int', default: 11 }
+      ],
+      outputs: [{ name: 'default', short: 'sample', ext: { from: 'input' }, file: 'output', label: (ins) => L('seqtk_sample', ins) }],
+      command: (i, p) => `seqtk sample -s ${int(p.seed, 11)} ${i.input} ${/^\d+(\.\d+)?$/.test(String(p.n).trim()) ? String(p.n).trim() : '1000'} > output`,
+      help: '<p>A random sample of the sequences. With the same seed, the two files of paired-end reads give the same pairs.</p>'
+    },
+    /* ---------- Multiple alignments and trees ---------- */
+    {
+      id: 'kalign', toolId: 'kalign_workbench', name: 'Kalign', desc: 'multiple sequence alignments', version: '3.3.1', section: 'Alignments and trees', needs: 'kalign',
+      requirements: [['kalign', '3.3.1']],
+      inputs: [{ name: 'input', short: 'sequences', label: 'Sequences to align (FASTA)', ext: ['fasta'], nice: 'input.fasta' }],
+      params: [],
+      outputs: [{ name: 'output', short: 'alignment', ext: 'fasta', file: 'output.fasta', label: (ins) => L('Kalign', ins, 'alignment') }],
+      command: (i) => `kalign -i ${i.input} -o output.fasta > /dev/null`,
+      help: '<p>Aligns all the sequences (DNA, RNA or protein) at once. The output is an aligned FASTA file: every sequence has the same length, with - for gaps.</p>'
+    },
+    {
+      id: 'muscle', toolId: 'muscle_workbench', name: 'MUSCLE', desc: 'multiple aligner tool', version: '3.8.1551', section: 'Alignments and trees', needs: 'muscle',
+      requirements: [['muscle', '3.8.1551']],
+      inputs: [{ name: 'input', short: 'sequences', label: 'Sequences to align (FASTA)', ext: ['fasta'], nice: 'input.fasta' }],
+      params: [{ name: 'maxiters', short: 'iterations', label: 'Maximum number of iterations (-maxiters; 2 is faster for many sequences)', type: 'int', default: 16 }],
+      outputs: [{ name: 'output', short: 'alignment', ext: 'fasta', file: 'output.fasta', label: (ins) => L('MUSCLE', ins, 'alignment') }],
+      command: (i, p) => `muscle -in ${i.input} -out output.fasta -maxiters ${Math.max(1, int(p.maxiters, 16))} -quiet`,
+      help: '<p>MUSCLE version 3: progressive alignment, refined by iteration.</p>'
+    },
+    {
+      id: 'fasttree', toolId: `${TS}/iuc/fasttree/fasttree/2.1.11+galaxy0`, name: 'FastTree', desc: 'build large maximum-likelihood phylogenies', version: '2.1.11+galaxy0', section: 'Alignments and trees', needs: 'fasttree',
+      requirements: [['fasttree', '2.1.11']],
+      inputs: [{ name: 'input', short: 'alignment', label: 'Aligned sequences (FASTA)', ext: ['fasta'], nice: 'alignment.fasta' }],
+      params: [{ name: 'model', short: 'model', label: 'Sequence type and model', type: 'select', default: 'prot', options: [['prot', 'Protein, JTT+CAT (default)'], ['wag', 'Protein, WAG+CAT (-wag)'], ['lg', 'Protein, LG+CAT (-lg)'], ['nt', 'Nucleotide, Jukes-Cantor+CAT (-nt)'], ['gtr', 'Nucleotide, GTR+CAT (-nt -gtr)']] }],
+      outputs: [{ name: 'output', short: 'tree', ext: 'newick', file: 'output.nwk', label: (ins) => L('FastTree', ins, 'tree') }],
+      command: (i, p) => `fasttree ${{ prot: '', wag: '-wag ', lg: '-lg ', nt: '-nt ', gtr: '-nt -gtr ' }[p.model] || ''}${i.input} > output.nwk`,
+      help: '<p>An approximately-maximum-likelihood tree from a multiple alignment, in Newick format, with local support values (0–1) at the branches. The 👁 of the dataset draws it.</p>'
+    },
+    /* ---------- Text manipulation ---------- */
+    {
+      id: 'Grep1', toolId: 'Grep1', name: 'Select', desc: 'lines that match an expression', version: '1.0.4', section: 'Text manipulation',
+      requirements: [['grep', '3.7']],
+      inputs: [{ name: 'input', short: 'text', label: 'Select lines from', ext: TEXT, nice: (d) => 'input.' + DOWNLOAD_EXT[d.ext] }],
+      params: [
+        { name: 'invert', short: 'matching', label: 'that', type: 'select', default: '', options: [['', 'Matching'], ['-v', 'NOT Matching']] },
+        { name: 'pattern', short: 'pattern', label: 'the pattern (an extended regular expression, as in grep -E)', type: 'text', default: '', help: 'e.g. ^human_CYP2C19 (lines that begin with it), PASS, essential' }
+      ],
+      outputs: [{ name: 'out_file1', short: 'lines', ext: { from: 'input' }, file: 'output', label: (ins) => `Select on ${dataList(ins)}` }],
+      command: (i, p) => `grep ${p.invert ? '-v ' : ''}-E -- ${shq(p.pattern)} ${i.input} > output || [ $? -eq 1 ]`,
+      help: '<p>Keeps the lines that match (or do not match) a pattern. No line matching is not an error: the output is then empty.</p>'
+    },
+    {
+      id: 'Cut1', toolId: 'Cut1', name: 'Cut', desc: 'columns from a table', version: '1.0.2', section: 'Text manipulation',
+      requirements: [['coreutils', '8.32']],
+      inputs: [{ name: 'input', short: 'table', label: 'From', ext: ['tabular', 'csv', 'bed', 'bedgraph', 'vcf', 'gff3', 'gtf', 'txt', 'sam'], nice: (d) => 'input.' + DOWNLOAD_EXT[d.ext] }],
+      params: [
+        { name: 'columns', short: 'columns', label: 'Cut columns (e.g. c1,c4 or 1-3)', type: 'text', default: 'c1,c2' },
+        { name: 'delimiter', short: 'delimiter', label: 'Delimited by', type: 'select', default: 'tab', options: [['tab', 'Tab'], ['comma', 'Comma']] }
+      ],
+      outputs: [{ name: 'out_file1', short: 'columns', ext: (p) => (p.delimiter === 'comma' ? 'csv' : 'tabular'), file: 'output', label: (ins) => `Cut on ${dataList(ins)}` }],
+      command: (i, p) => `cut ${p.delimiter === 'comma' ? "-d ',' " : ''}-f ${String(p.columns).replace(/[cC\s]/g, '').replace(/[^\d,-]/g, '') || '1'} ${i.input} > output`,
+      help: '<p>Keeps the columns you name, in the order of the file. Columns are counted from 1.</p>'
+    },
+    {
+      id: 'sort1', toolId: 'sort1', name: 'Sort', desc: 'data in ascending or descending order', version: '1.2.0', section: 'Text manipulation',
+      requirements: [['coreutils', '8.32']],
+      inputs: [{ name: 'input', short: 'table', label: 'Sort Dataset', ext: ['tabular', 'bed', 'bedgraph', 'vcf', 'gff3', 'gtf', 'txt'], nice: (d) => 'input.' + DOWNLOAD_EXT[d.ext] }],
+      params: [
+        { name: 'column', short: 'column', label: 'on column', type: 'int', default: 1 },
+        { name: 'numeric', short: 'numeric', label: 'with flavor', type: 'select', default: 'g', options: [['g', 'Numerical sort'], ['', 'Alphabetical sort']] },
+        { name: 'order', short: 'order', label: 'everything in', type: 'select', default: 'r', options: [['r', 'Descending order'], ['', 'Ascending order']] },
+        { name: 'header', short: 'header lines', label: 'Number of header lines to keep at the top', type: 'int', default: 0 }
+      ],
+      outputs: [{ name: 'out_file1', short: 'sorted', ext: { from: 'input' }, file: 'output', label: (ins) => `Sort on ${dataList(ins)}` }],
+      command: (i, p) => {
+        const c = Math.max(1, int(p.column, 1)), hd = Math.max(0, int(p.header, 0));
+        const sort = `sort -t "$(printf '\\t')" -k ${c},${c}${p.numeric}${p.order} -s`;
+        return hd ? `{ head -n ${hd} ${i.input}; tail -n +${hd + 1} ${i.input} | ${sort}; } > output` : `${sort} ${i.input} > output`;
+      },
+      help: '<p>Sorts the lines of a table by one column.</p>'
+    },
+    {
+      id: 'wc_gnu', toolId: 'wc_gnu', name: 'Line/Word/Character count', desc: 'of a dataset', version: '1.0.0', section: 'Text manipulation',
+      requirements: [['coreutils', '8.32']],
+      inputs: [{ name: 'input', short: 'text', label: 'Text file', ext: TEXT, nice: (d) => 'input.' + DOWNLOAD_EXT[d.ext] }],
+      params: [],
+      outputs: [{ name: 'out_file1', short: 'counts', ext: 'tabular', file: 'output.tsv', label: (ins) => `Line/Word/Character count on ${dataList(ins)}` }],
+      command: (i) => `wc ${i.input} | awk 'BEGIN { print "#lines\\twords\\tcharacters" } { print $1 "\\t" $2 "\\t" $3 }' > output.tsv`,
+      help: '<p>Counts the lines, words and characters.</p>'
+    },
+    {
+      id: 'cat1', toolId: 'cat1', name: 'Concatenate datasets', desc: 'tail-to-head', version: '1.0.0', section: 'Text manipulation',
+      requirements: [['coreutils', '8.32']],
+      inputs: [
+        { name: 'input1', short: 'first', label: 'First dataset', ext: TEXT, nice: (d) => 'first.' + DOWNLOAD_EXT[d.ext] },
+        { name: 'input2', short: 'second', label: 'Second dataset (put after the first)', ext: TEXT, nice: (d) => 'second.' + DOWNLOAD_EXT[d.ext] }
+      ],
+      params: [],
+      outputs: [{ name: 'out_file1', short: 'joined', ext: { from: 'input1' }, file: 'output', label: (ins) => `Concatenate datasets on ${dataList(ins)}` }],
+      command: (i) => `cat ${i.input1} ${i.input2} > output`,
+      help: '<p>Puts the second dataset after the first – for example two FASTA files of sequences to align together.</p>'
+    }
+  ];
+  const TOOL = new Map(TOOLS.map((t) => [t.id, t]));
+  const available = (t) => !t.needs || !!(MG.shellTools && MG.shellTools[t.needs]);
+  const uniq = (a) => a.filter((x, i) => a.indexOf(x) === i);
+  /** the datatype of an output when a job runs: from the parameters, or from an input */
+  function runExt(o, params, inDs) {
+    if (o.ext && typeof o.ext === 'object') {
+      const x = inDs.find((i) => i.name === o.ext.from);
+      const e = x && x.ds ? x.ds.ext : 'txt';
+      return (o.ext.map && o.ext.map[e]) || e;
+    }
+    return typeof o.ext === 'function' ? o.ext(params || {}) : o.ext;
+  }
+  /** the datatypes an output of a workflow step can have (from what its inputs are connected to) */
+  function stepOutExts(w, st, outName, depth = 0) {
+    if (!st) return [];
+    if (st.type === 'input') return st.ext;
+    const t = TOOL.get(st.tool);
+    const o = t && t.outputs.find((x) => x.name === outName);
+    if (!o) return [];
+    if (o.ext && typeof o.ext === 'object') {
+      const c = (st.connections || {})[o.ext.from];
+      const src = c && w.steps.find((s) => s.id === c.step);
+      const inp = t.inputs.find((i) => i.name === o.ext.from);
+      const base = src && depth < 30 ? stepOutExts(w, src, c.output, depth + 1) : inp ? inp.ext : [];
+      return uniq(base.map((x) => (o.ext.map && o.ext.map[x]) || x));
+    }
+    return [typeof o.ext === 'function' ? o.ext(st.params || {}) : o.ext];
+  }
+  /** the outputs a step makes: an output with a condition (fastp's second file) only when its input is connected */
+  function stepOutputs(st) {
+    const t = TOOL.get(st.tool);
+    if (!t) return [];
+    const conn = {};
+    Object.keys(st.connections || {}).forEach((k) => st.connections[k] && (conn[k] = true));
+    return t.outputs.filter((o) => !o.when || o.when(conn, st.params || {}));
+  }
+  function dataList(ins) {
+    const hids = ins.map((x) => 'data ' + x.hid);
+    if (hids.length <= 1) return hids.join('');
+    if (hids.length === 2) return hids.join(' and ');
+    return hids.slice(0, -1).join(', ') + ', and ' + hids[hids.length - 1];
+  }
+  const uid = () => Math.random().toString(36).slice(2, 10);
+  const uuid = () => ([1e7] + -1e3 + -4e3 + -8e3 + -1e11).replace(/[018]/g, (c) => (c ^ (crypto.getRandomValues(new Uint8Array(1))[0] & (15 >> (c / 4)))).toString(16));
+  const quiet = () => ({ out() {}, err() {}, note() {}, html() {}, progress() {}, colored() {}, clear() {} });
+
+  class GalaxyApp {
+    constructor(root, opts) {
+      this.root = root;
+      this.fs = opts.fs;
+      // Galaxy has its own working directory: a view of the shared file system with its own cwd
+      this.gfs = Object.create(this.fs);
+      this.gfs.cwd = GX_ROOT;
+      this.fs.mkdirp(GX_ROOT + '/database/files/000');
+      this.fs.mkdirp(GX_ROOT + '/jobs');
+      this.shell = new MG.Shell({ fs: this.gfs, term: null });
+      this.datasets = [];
+      this.jobs = [];
+      this.uploads = [];
+      this.invocations = [];
+      this.hid = 0;
+      this.jobN = 0;
+      this.queue = Promise.resolve();
+      this.historyName = 'Unnamed history';
+      this.showDeleted = false;
+      const saved = store.get('galaxy', null);
+      this.workflows = saved && Array.isArray(saved.workflows) ? saved.workflows : [];
+      try {
+        this._restore();
+      } catch (e) {
+        console.error(e);
+      }
+      // (a job's working directory left behind by a page that was closed while it ran)
+      for (const p of Array.from(this.fs.entries.keys())) if (/^\/galaxy\/jobs\/000\/[^/]+$/.test(p)) this.fs.remove(p);
+      this._build();
+      this.showHome();
+    }
+    save() {
+      store.set('galaxy', { workflows: this.workflows });
+    }
+
+    /* ================= the history, kept in the browser ================= */
+    _snapshot() {
+      const cut = (s, n) => (s && s.length > n ? s.slice(0, n / 2) + '\n… (shortened) …\n' + s.slice(-n / 2) : s || '');
+      const t = (d) => (d ? +d : null);
+      const job = (j) => ({ id: j.id, toolId: j.toolId, toolShedId: j.toolShedId || null, toolName: j.toolName, version: j.version, inputs: j.inputs || [], params: j.params || {}, state: j.state, created: t(j.created), started: t(j.started), finished: t(j.finished), runtime: j.runtime == null ? null : j.runtime, exitCode: j.exitCode == null ? null : j.exitCode, command: j.command || '', stdout: cut(j.stdout, 4000), stderr: cut(j.stderr, 16000), invocation: j.invocation || null, step: j.step || null, outputs: j.outputs || [] });
+      return {
+        version: 1,
+        name: this.historyName,
+        hid: this.hid,
+        jobN: this.jobN,
+        datasets: this.datasets.map((d) => ({ hid: d.hid, name: d.name, ext: d.ext, state: d.state, created: t(d.created), dbkey: d.dbkey, uuid: d.uuid, path: d.path, size: d.size || 0, info: d.info || '', peek: (d.peek || '').slice(0, 1500), deleted: !!d.deleted, missing: !!d.missing, job: d.job ? d.job.id : null, upload: d.upload ? d.upload.id : null, outName: d.outName || null })),
+        jobs: this.jobs.map(job),
+        uploads: this.uploads.map(job),
+        invocations: this.invocations.map((v) => ({ id: v.id, workflow: v.workflow, created: t(v.created), state: v.state, items: v.items.map((x) => ({ tool: x.tool, job: x.job && x.job.id })) }))
+      };
+    }
+    _saveSoon() {
+      clearTimeout(this._st);
+      this._st = setTimeout(() => {
+        try {
+          store.set('galaxy:history', this._snapshot());
+        } catch (e) {
+          console.error(e);
+        }
+      }, 300);
+    }
+    _restore() {
+      const H = store.get('galaxy:history', null);
+      if (!H || !Array.isArray(H.datasets)) return;
+      const date = (x) => (x ? new Date(x) : null);
+      const job = (j) => Object.assign({}, j, { created: date(j.created) || new Date(), started: date(j.started), finished: date(j.finished) });
+      this.historyName = H.name || this.historyName;
+      this.hid = +H.hid || 0;
+      this.jobN = +H.jobN || 0;
+      this.jobs = (H.jobs || []).map(job);
+      this.uploads = (H.uploads || []).map(job);
+      const J = new Map(this.jobs.concat(this.uploads).map((j) => [j.id, j]));
+      // jobs that were waiting or running when the page was closed did not finish
+      for (const j of J.values()) {
+        if (j.state === 'queued' || j.state === 'running') {
+          j.state = 'error';
+          j.stderr = (j.stderr ? j.stderr + '\n' : '') + 'The page was closed or reloaded before this job had finished. Run it again (↻).';
+        }
+      }
+      this.datasets = H.datasets.map((d) => Object.assign({}, d, { created: date(d.created) || new Date(), job: d.job ? J.get(d.job) || null : null, upload: d.upload ? J.get(d.upload) || null : null }));
+      for (const d of this.datasets) {
+        if (d.state === 'queued' || d.state === 'running') d.state = 'error';
+        if (d.state === 'ok' && !this.fs.exists(d.path)) {
+          d.state = 'error';
+          d.missing = true;
+        }
+      }
+      this.invocations = (H.invocations || []).map((v) => Object.assign({}, v, { created: date(v.created) || new Date(), items: (v.items || []).map((x) => ({ tool: x.tool, job: J.get(x.job) || { state: 'error' } })) }));
+    }
+
+    /* ================= layout ================= */
+    _build() {
+      const r = this.root;
+      r.classList.add('gx');
+      const nav = h('div.gx-nav');
+      const navb = (icon, label, fn) => {
+        const b = h('button.gx-navb', { type: 'button', html: MG.icon(icon) + '<span>' + esc(label) + '</span>' });
+        b.addEventListener('click', fn);
+        return b;
+      };
+      this.navHome = navb('database', 'Analyse data', () => this.showHome());
+      this.navWf = navb('workflow', 'Workflows', () => this.showWorkflows());
+      this.navInv = navb('history', 'Invocations', () => this.showInvocations());
+      nav.append(h('span.gx-brand', { html: '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#f6c343" stroke-width="2" aria-hidden="true"><path d="M12 3l2.6 5.6L20 9.5l-4 4 1 5.8L12 16.6 7 19.3l1-5.8-4-4 5.4-.9z"/></svg><b>Galaxy</b><small>in your browser</small>' }), this.navHome, this.navWf, this.navInv);
+      this.toolSearch = h('input.gx-search', { type: 'search', placeholder: 'search tools', 'aria-label': 'Search tools' });
+      this.toolList = h('div.gx-toollist');
+      this.toolSearch.addEventListener('input', () => this.renderTools());
+      const up = h('button.btn.small.gx-upload', { type: 'button', html: MG.icon('upload') + '<span>Upload Data</span>' });
+      up.addEventListener('click', () => this.showUpload());
+      this.toolPanel = h('aside.gx-tools', h('div.gx-ph', 'Tools'), h('div.gx-upwrap', up), this.toolSearch, this.toolList);
+      this.center = h('main.gx-center');
+      this.histHead = h('div.gx-hh');
+      this.histList = h('div.gx-hlist');
+      this.histPanel = h('aside.gx-history', h('div.gx-ph', 'History'), this.histHead, this.histList);
+      this.sideCol = h('aside.gx-sidecol');
+      r.append(nav, h('div.gx-body', this.toolPanel, this.center, this.histPanel, this.sideCol));
+      this.renderTools();
+      this.renderHistory();
+    }
+    setNav(which) {
+      this.navHome.classList.toggle('on', which === 'home');
+      this.navWf.classList.toggle('on', which === 'wf');
+      this.navInv.classList.toggle('on', which === 'inv');
+    }
+    _center(view) {
+      this.view = view;
+      if (view !== 'editor') {
+        this.root.classList.remove('gx-editing');
+        this.editing = null;
+      }
+      this.center.innerHTML = '';
+      this.center.scrollTop = 0;
+      return this.center;
+    }
+    /** the tab is shown again: the wires of the workflow editor are drawn where the boxes are now */
+    shown() {
+      if (this.view === 'editor' && this.canvas) requestAnimationFrame(() => this._drawWires(this.canvas.querySelector('svg')));
+    }
+
+    /* ================= tools panel ================= */
+    renderTools() {
+      const q = this.toolSearch.value.trim().toLowerCase();
+      const L2 = this.toolList;
+      L2.innerHTML = '';
+      const sections = [];
+      TOOLS.forEach((t) => {
+        if (!available(t)) return;
+        if (q && !(t.name + ' ' + t.desc + ' ' + t.section).toLowerCase().includes(q)) return;
+        let s = sections.find((x) => x.name === t.section);
+        if (!s) sections.push((s = { name: t.section, tools: [] }));
+        s.tools.push(t);
+      });
+      sections.forEach((s) => {
+        const det = h('details.gx-sec', { open: true });
+        det.appendChild(h('summary', s.name));
+        s.tools.forEach((t) => {
+          const b = h('button.gx-tool', { type: 'button', title: t.desc, dataset: { tool: t.id } }, h('b', t.name), h('span', ' ' + t.desc));
+          b.addEventListener('click', () => {
+            if (this.view === 'editor' && this.editing) this.editorAddTool(t.id);
+            else this.showTool(t.id);
+          });
+          det.appendChild(b);
+        });
+        L2.appendChild(det);
+      });
+      if (!sections.length) L2.appendChild(h('p.muted.small', 'No tools match.'));
+    }
+
+    /* ================= history ================= */
+    addDataset(d) {
+      const hid = ++this.hid;
+      const ds = Object.assign({ hid, state: 'ok', created: new Date(), dbkey: '?', uuid: uuid() }, d);
+      ds.path = `${GX_ROOT}/database/files/000/dataset_${ds.uuid}.dat`;
+      this.datasets.push(ds);
+      this.renderHistory();
+      return ds;
+    }
+    ds(hid) {
+      return this.datasets.find((d) => d.hid === hid);
+    }
+    renderHistory() {
+      const vis = this.datasets.filter((d) => !d.deleted || this.showDeleted);
+      const live = this.datasets.filter((d) => !d.deleted);
+      const nDel = this.datasets.length - live.length;
+      const size = live.reduce((s, d) => s + (d.size || 0), 0);
+      this.histHead.innerHTML = '';
+      const name = h('button.gx-hname', { type: 'button', title: 'Click to rename the history' }, this.historyName);
+      name.addEventListener('click', async () => {
+        const n = await MG.promptText('Rename the history', 'A name that says what the analysis is.', this.historyName, 'Rename');
+        if (n && n.trim()) {
+          this.historyName = n.trim();
+          this.renderHistory();
+        }
+      });
+      const extract = h('button.btn.small', { type: 'button', title: 'Turn the jobs in this history into a workflow', html: MG.icon('workflow') + '<span>Extract workflow</span>' });
+      extract.addEventListener('click', () => this.extractWorkflow());
+      const more = h('button.btn.small', { type: 'button', title: 'History options: export as a notebook, deleted datasets, a new history', 'aria-label': 'History options', html: MG.icon('dots') });
+      more.addEventListener('click', () =>
+        MG.popmenu(more, [
+          ['notebook', 'Open the history as a notebook', () => this.historyToNotebook(true)],
+          ['download', 'Download the history as a notebook (.ipynb)', () => this.historyToNotebook(false)],
+          ['eye', this.showDeleted ? 'Hide deleted datasets' : `Show deleted datasets (${nDel})`, () => {
+            this.showDeleted = !this.showDeleted;
+            this.renderHistory();
+          }],
+          ['trash', 'Purge deleted datasets (frees space)', () => this.purgeDeleted()],
+          ['plus', 'Start a new history…', () => this.newHistory()]
+        ])
+      );
+      this.histHead.append(name, h('div.gx-hmeta', `${live.length} dataset${live.length === 1 ? '' : 's'} · ${MG.humanSize(size)}B${nDel ? ` · ${nDel} deleted` : ''}`), h('div.gx-hacts', extract, more));
+      const L2 = this.histList;
+      const openSet = new Set(Array.from(L2.querySelectorAll('.gx-ds.open')).map((e) => +e.dataset.hid));
+      L2.innerHTML = '';
+      vis.slice().reverse().forEach((d) => {
+        const row = h('div.gx-ds.' + d.state + (d.deleted ? '.deleted' : ''), { dataset: { hid: d.hid } });
+        const title = h('div.gx-ds-t', { role: 'button', tabindex: '0' }, h('span.gx-hid', d.hid + ':'), h('span.gx-dname', d.name));
+        const icons = h('span.gx-ds-ic');
+        const mk = (ic, tip, fn) => {
+          const b = h('button.gx-ib', { type: 'button', title: tip, 'aria-label': tip, html: MG.icon(ic) });
+          b.addEventListener('click', (e) => {
+            e.stopPropagation();
+            fn();
+          });
+          return b;
+        };
+        if (d.state === 'ok' && !d.deleted) icons.append(mk('eye', 'View data', () => this.showDataset(d.hid)));
+        if (!d.deleted) icons.append(mk('x', 'Delete', () => this.deleteDataset(d.hid)));
+        row.append(h('div.gx-ds-top', title, icons));
+        const body = h('div.gx-ds-body');
+        if (d.deleted) {
+          const un = h('button.gx-link', { type: 'button' }, 'Undelete');
+          un.addEventListener('click', () => {
+            d.deleted = false;
+            this.renderHistory();
+          });
+          const pu = h('button.gx-link', { type: 'button' }, 'Purge');
+          pu.addEventListener('click', () => this.purge([d]));
+          body.appendChild(h('div.gx-stateline', 'This dataset has been deleted. ', un, pu));
+        }
+        if (d.state === 'queued') body.appendChild(h('div.gx-stateline', 'This job is waiting to run'));
+        else if (d.state === 'running') body.appendChild(h('div.gx-stateline', { html: '<span class="spinner small"></span> This job is currently running' }));
+        else if (d.state === 'error') body.appendChild(h('div.gx-stateline.err', d.missing ? 'The file of this dataset is no longer stored in this browser.' : 'An error occurred with this dataset – click the ⓘ to see the error message'));
+        if (d.state === 'ok' || d.state === 'error') {
+          if (d.info) body.appendChild(h('div.gx-blurb', d.info));
+          body.appendChild(h('div.gx-fmt', { html: `format <b>${esc(d.ext)}</b>, database <b>${esc(d.dbkey)}</b>` }));
+          if (d.peek) body.appendChild(h('pre.gx-peek', d.peek));
+          const acts = h('div.gx-acts');
+          if (d.state === 'ok') acts.append(mk('download', 'Download', () => this.download(d.hid)));
+          acts.append(mk('info', 'Dataset details (how was this made?)', () => this.showDetails(d.hid)));
+          if (d.job && TOOL.get(d.job.toolId)) acts.append(mk('rerun', 'Run this job again', () => this.showTool(d.job.toolId, d.job)));
+          if (d.state === 'ok' && GENOMIC.includes(d.ext)) acts.append(mk('genome', 'Show in the Genome browser', () => this.toGenomeBrowser(d.hid)));
+          if (d.state === 'ok' && d.ext === 'pdb') acts.append(mk('cube', 'Open in the 3D viewer', () => this.toViewer(d.hid)));
+          if (d.state === 'ok') {
+            const cp = h('button.gx-link', { type: 'button', title: 'Copy this dataset into your home folder (~/galaxy), to use it in the Terminal or a notebook' }, 'copy to my files');
+            cp.addEventListener('click', (e) => {
+              e.stopPropagation();
+              this.copyToFiles(d.hid);
+            });
+            acts.appendChild(cp);
+          }
+          body.appendChild(acts);
+        }
+        row.appendChild(body);
+        if (openSet.has(d.hid) || (d.state !== 'ok' && !d.deleted)) row.classList.add('open');
+        const toggle = () => row.classList.toggle('open');
+        title.addEventListener('click', toggle);
+        title.addEventListener('keydown', (e) => (e.key === 'Enter' || e.key === ' ') && (e.preventDefault(), toggle()));
+        L2.appendChild(row);
+      });
+      if (!vis.length) L2.appendChild(h('div.gx-empty', h('p', 'This history is empty.'), h('p.muted.small', { html: 'Use <b>Upload Data</b> (top left) to bring in files – from your folders, your computer, or pasted text.' })));
+      this._saveSoon();
+    }
+    deleteDataset(hid) {
+      const d = this.ds(hid);
+      if (!d) return;
+      d.deleted = true;
+      this.renderHistory();
+      toast(`Deleted <b>${d.hid}: ${esc(d.name)}</b>. (⋯ in the history: show deleted datasets, to undelete it.)`, null, 4000);
+    }
+    purge(list) {
+      for (const d of list) {
+        if (this.fs.exists(d.path)) this.fs.remove(d.path);
+        if (this.fs.exists(d.path + '.bai')) this.fs.remove(d.path + '.bai');
+      }
+      const gone = new Set(list);
+      this.datasets = this.datasets.filter((d) => !gone.has(d));
+      this.renderHistory();
+    }
+    purgeDeleted() {
+      const del = this.datasets.filter((d) => d.deleted);
+      if (!del.length) return toast('There are no deleted datasets.', 'warn');
+      this.purge(del);
+      toast(`Purged ${del.length} dataset${del.length === 1 ? '' : 's'}: their files are gone.`, 'ok');
+    }
+    newHistory() {
+      const m = MG.modal('Start a new history?', `<p>The datasets of <b>${esc(this.historyName)}</b> (${this.datasets.length}) are removed, with their files. Your workflows stay. To keep a record of this history first: ⋯ → Download the history as a notebook.</p><div class="prompt-actions"><button class="btn" data-x="no" type="button">Cancel</button><button class="btn danger" data-x="yes" type="button">Start a new history</button></div>`);
+      m.box.querySelector('[data-x="no"]').addEventListener('click', () => m.close());
+      m.box.querySelector('[data-x="yes"]').addEventListener('click', () => {
+        m.close();
+        this.purge(this.datasets.slice());
+        this.jobs = [];
+        this.uploads = [];
+        this.invocations = [];
+        this.hid = 0;
+        this.historyName = 'Unnamed history';
+        this.renderHistory();
+        this.showHome();
+      });
+    }
+    fileName(d) {
+      return `Galaxy${d.hid}-[${d.name.replace(/[^A-Za-z0-9._-]+/g, '_').replace(/_+/g, '_').replace(/^_|_$/g, '')}].${DOWNLOAD_EXT[d.ext] || d.ext}`;
+    }
+    async download(hid) {
+      const d = this.ds(hid);
+      try {
+        MG.downloadBlob(await this.fs.toBlob(d.path), this.fileName(d));
+        bus.emit('gx:download', { hid, ext: d.ext });
+      } catch (e) {
+        toast('Could not download: ' + esc(e.message), 'error');
+      }
+    }
+    /** a copy of a dataset in ~/galaxy (with its index); → the path */
+    copyToFiles(hid, quietly) {
+      const d = this.ds(hid);
+      const dir = HOME() + '/galaxy';
+      this.fs.mkdirp(dir);
+      const target = dir + '/' + this.fileName(d);
+      this.fs.copy(d.path, target);
+      if (d.ext === 'bam' && this.fs.exists(d.path + '.bai')) this.fs.copy(d.path + '.bai', target + '.bai');
+      if (!quietly) toast(`Copied to <b>${esc(this.fs.pretty(target))}</b> – use it in the Terminal or a notebook.`, null, 5000);
+      bus.emit('gx:copy', { hid, ext: d.ext, path: target, tool: d.job ? d.job.toolId : null });
+      return target;
+    }
+    async toGenomeBrowser(hid) {
+      const d = this.ds(hid);
+      if (d.ext === 'bam' && !this.fs.exists(d.path + '.bai')) return toast('This BAM file has no index (it is not sorted by position?): sort it first.', 'warn');
+      const p = this.copyToFiles(hid, true);
+      toast(`Copied to <b>${esc(this.fs.pretty(p))}</b> and shown in the Genome browser.`, null, 4000);
+      await MG.app.igvLoad([p]);
+    }
+    async toViewer(hid) {
+      const p = this.copyToFiles(hid, true);
+      await MG.app.viewStructure(p);
+    }
+
+    /* ================= upload ================= */
+    showUpload(which) {
+      const C = this._center('upload');
+      this.setNav('home');
+      C.appendChild(h('h3', { html: MG.icon('upload') + ' Upload Data' }));
+      C.appendChild(h('p.muted', 'Bring files into your history: from your folders in the workbench, from your computer, or as pasted text. Compressed text files (.fastq.gz, .fa.gz …) are uncompressed on the way in.'));
+      const tabs = h('div.gx-uptabs', { role: 'tablist' });
+      const panes = {};
+      const body = h('div.gx-uppane');
+      const show = (k) => {
+        Object.entries(panes).forEach(([n, p]) => (p.hidden = n !== k));
+        tabs.querySelectorAll('button').forEach((b) => b.classList.toggle('on', b.dataset.k === k));
+      };
+      [['files', 'From your files'], ['computer', 'From your computer'], ['paste', 'Paste text']].forEach(([k, label]) => {
+        const b = h('button.gx-uptab', { type: 'button', role: 'tab', dataset: { k } }, label);
+        b.addEventListener('click', () => show(k));
+        tabs.appendChild(b);
+      });
+      const fmtSelect = (value) => {
+        const sel = h('select', { 'aria-label': 'Format' });
+        sel.appendChild(h('option', { value: 'auto' }, 'auto-detect'));
+        FORMATS.forEach(([v]) => sel.appendChild(h('option', { value: v }, v)));
+        sel.value = value || 'auto';
+        return sel;
+      };
+      /* ---- your files ---- */
+      {
+        const P = (panes.files = h('div'));
+        const filter = h('input.gx-search', { type: 'search', placeholder: 'filter, e.g. fastq or examples/reads', 'aria-label': 'Filter the files' });
+        const list = h('div.gx-uplist');
+        const files = [];
+        for (const [p, e] of this.fs.entries) {
+          if (e.kind === 'dir' || e.hidden) continue;
+          const mine = p.startsWith(HOME() + '/') && !/\/\./.test(p.slice(HOME().length));
+          const ex = p.startsWith('/data/examples/') && !/README\.md$/.test(p);
+          if (!mine && !ex) continue;
+          if (/\.(fai|bai|tbi|csi|ipynb|crai)$/.test(p) || /\/ai-agent\/run-\d+\/agent-record/.test(p)) continue;
+          files.push(p);
+        }
+        files.sort((a, b) => (a.startsWith('/data/') === b.startsWith('/data/') ? a.localeCompare(b) : a.startsWith('/data/') ? 1 : -1));
+        const rows = files.map((p) => {
+          const cb = h('input', { type: 'checkbox', value: p });
+          const sel = fmtSelect('auto');
+          const row = h('label.gx-uprow', cb, h('code', this.fs.pretty(p)), h('small.muted', MG.humanSize(this.fs.size(this.fs.get(p))) + 'B'), sel);
+          row.dataset.path = p.toLowerCase();
+          list.appendChild(row);
+          return row;
+        });
+        if (!rows.length) list.appendChild(h('p.muted', 'No files yet.'));
+        filter.addEventListener('input', () => {
+          const q = filter.value.trim().toLowerCase();
+          rows.forEach((r) => (r.hidden = !!q && !r.dataset.path.includes(q)));
+        });
+        const go = h('button.btn.primary', { type: 'button', html: MG.icon('upload') + '<span>Start</span>' });
+        go.addEventListener('click', () => {
+          const chosen = rows.filter((r) => !r.hidden && r.querySelector('input').checked);
+          if (!chosen.length) return toast('Tick at least one file.', 'warn');
+          chosen.forEach((r) => {
+            const f = r.querySelector('select').value;
+            this.upload(r.querySelector('input').value, f === 'auto' ? null : f);
+          });
+          this.showHome();
+        });
+        P.append(filter, list, h('div.gx-runrow', go));
+      }
+      /* ---- your computer ---- */
+      {
+        const P = (panes.computer = h('div'));
+        const inp = h('input', { type: 'file', multiple: true });
+        const drop = h('div.gx-drop', h('p', { html: MG.icon('upload') + ' Drop files here, or ' }), inp);
+        const list = h('div.gx-uplist');
+        let picked = [];
+        const showPicked = () => {
+          list.innerHTML = '';
+          picked.forEach((x) => list.appendChild(h('div.gx-uprow', h('code', x.file.name), h('small.muted', MG.humanSize(x.file.size) + 'B'), x.sel)));
+        };
+        const add = (fl) => {
+          picked = picked.concat(Array.from(fl || []).map((file) => ({ file, sel: fmtSelect('auto') })));
+          showPicked();
+        };
+        inp.addEventListener('change', () => add(inp.files));
+        drop.addEventListener('dragover', (e) => {
+          e.preventDefault();
+          drop.classList.add('over');
+        });
+        drop.addEventListener('dragleave', () => drop.classList.remove('over'));
+        drop.addEventListener('drop', (e) => {
+          e.preventDefault();
+          drop.classList.remove('over');
+          add(e.dataTransfer.files);
+        });
+        const go = h('button.btn.primary', { type: 'button', html: MG.icon('upload') + '<span>Start</span>' });
+        go.addEventListener('click', () => {
+          if (!picked.length) return toast('Choose at least one file.', 'warn');
+          picked.forEach((x) => this.uploadFile(x.file, x.sel.value === 'auto' ? null : x.sel.value));
+          this.showHome();
+        });
+        P.append(drop, list, h('p.muted.small', 'The files are copied into this browser (your history) – nothing is sent to a server. Never upload personal or patient data to a tool you have not been told you may use for it.'), h('div.gx-runrow', go));
+      }
+      /* ---- paste ---- */
+      {
+        const P = (panes.paste = h('div.gx-form'));
+        const name = h('input', { type: 'text', value: 'Pasted entry', 'aria-label': 'Name' });
+        const sel = fmtSelect('auto');
+        const ta = h('textarea.gx-paste', { rows: 10, spellcheck: 'false', placeholder: '>seq1\nACGTACGT…' });
+        const go = h('button.btn.primary', { type: 'button', html: MG.icon('upload') + '<span>Start</span>' });
+        go.addEventListener('click', () => {
+          if (!ta.value.trim()) return toast('Paste something first.', 'warn');
+          this.uploadText(name.value.trim() || 'Pasted entry', ta.value.replace(/\r\n?/g, '\n').replace(/\n*$/, '\n'), sel.value === 'auto' ? null : sel.value);
+          this.showHome();
+        });
+        P.append(field('Name', name), field('Format', sel), field('Text', ta), h('div.gx-runrow', go));
+      }
+      Object.values(panes).forEach((p) => body.appendChild(p));
+      C.append(tabs, body);
+      show(which || 'files');
+      bus.emit('gx:uploadform', {});
+    }
+    /** files of the workbench → the history (used by the Files tab: "Upload to Galaxy") */
+    async uploadPaths(paths) {
+      const ok = paths.filter((p) => this.fs.exists(p) && !this.fs.isDir(p));
+      ok.forEach((p) => this.upload(p, null));
+      if (ok.length) toast(`Uploading ${ok.length} file${ok.length === 1 ? '' : 's'} to your Galaxy history.`, null, 3000);
+      this.showHome();
+    }
+    /** queue an upload job: make() puts the bytes at the dataset's path */
+    _uploadJob(name, ext, params, make) {
+      const d = this.addDataset({ name, ext: ext || 'txt', state: 'queued' });
+      const job = { id: ++this.jobN, toolId: 'upload1', toolName: 'Upload File', version: '1.1.7', inputs: [], params, state: 'queued', created: new Date(), outputs: [d.hid] };
+      d.upload = job;
+      this.uploads.push(job);
+      this.queue = this.queue.then(async () => {
+        await sleep(250);
+        d.state = job.state = 'running';
+        this.renderHistory();
+        try {
+          const sniffed = await make(d);
+          if (!ext) d.ext = sniffed || 'txt';
+          job.params.file_type = d.ext;
+          d.size = this.fs.size(this.fs.get(d.path));
+          if (d.ext === 'bam') {
+            const r = await this.shell.exec(`samtools index '${d.path}'`, quiet(), { errexit: true });
+            if (r !== 0) d.note = 'not indexed: it is not sorted by position (sort it with Samtools sort first)';
+          }
+          await this._describe(d);
+          d.state = job.state = 'ok';
+        } catch (e) {
+          console.error(e);
+          d.state = job.state = 'error';
+          job.stderr = String((e && e.message) || e);
+        }
+        this.renderHistory();
+        bus.emit('gx:upload', { hid: d.hid, name, ext: d.ext });
+      });
+      return d;
+    }
+    upload(path, ext) {
+      const gz = GUNZIP.test(path);
+      const name = MG.path.basename(path).replace(gz ? /\.gz$/i : /$^/, '');
+      return this._uploadJob(name, ext || (gz ? sniff(name) : null), { file: path, from: this.fs.pretty(path), gunzip: gz }, async (d) => {
+        if (gz) {
+          const code = await this.shell.exec(`gzip -dc ${shq(path)} > ${shq(d.path)}`, quiet(), { errexit: true });
+          if (code !== 0) throw new Error('could not uncompress ' + path);
+        } else this.fs.copy(path, d.path);
+        return sniff(name, await this._head(d.path));
+      });
+    }
+    uploadFile(file, ext) {
+      const gz = GUNZIP.test(file.name);
+      const name = file.name.replace(gz ? /\.gz$/i : /$^/, '');
+      return this._uploadJob(name, ext || (gz ? sniff(name) : null), { file: null, from: 'your computer: ' + file.name, gunzip: gz }, async (d) => {
+        const bytes = new Uint8Array(await file.arrayBuffer());
+        if (gz) {
+          const tmp = `${GX_ROOT}/upload-${d.uuid}.gz`;
+          this.fs.put(tmp, { kind: 'blob', blob: new Blob([bytes]), size: bytes.length });
+          try {
+            const code = await this.shell.exec(`gzip -dc ${shq(tmp)} > ${shq(d.path)}`, quiet(), { errexit: true });
+            if (code !== 0) throw new Error('could not uncompress ' + file.name);
+          } finally {
+            this.fs.remove(tmp);
+          }
+        } else {
+          const text = MG.looksText(name, bytes);
+          this.fs.put(d.path, text != null ? { kind: 'text', text } : { kind: 'blob', blob: new Blob([bytes]), size: bytes.length });
+        }
+        return sniff(name, await this._head(d.path));
+      });
+    }
+    uploadText(name, text, ext) {
+      return this._uploadJob(name, ext, { file: null, from: 'pasted text', text: text.length <= 20000 ? text : null }, async (d) => {
+        this.fs.writeText(d.path, text);
+        return sniff(name, text.slice(0, 2000));
+      });
+    }
+    async _head(path) {
+      try {
+        const e = this.fs.get(path);
+        if (e && e.kind === 'text') return e.text.slice(0, 2000);
+        const b = await this.fs.readBytes(path);
+        return new TextDecoder().decode(b.slice(0, 2000));
+      } catch (e) {
+        return '';
+      }
+    }
+
+    /* ================= home ================= */
+    showHome() {
+      const C = this._center('home');
+      this.setNav('home');
+      C.append(
+        h('h3', 'Welcome to Galaxy'),
+        h('p', { html: 'This Galaxy works like <b>usegalaxy.org</b> and its sister servers: <b>tools</b> on the left, your <b>history</b> of datasets on the right, forms and results in the middle. Its jobs run the same programs as the Terminal – fastp, minimap2, Bowtie 2, samtools, bcftools, bedtools, seqtk and more – compiled to WebAssembly, in this browser.' }),
+        h('div.gx-cards',
+          card('upload', 'Get data', 'Upload Data (top left) brings in files from your folders, from your computer, or pasted text.'),
+          card('wrench', 'Run tools', 'Click a tool, choose its inputs from the history and press Run tool. New datasets appear at the top of the history: grey = queued, yellow = running, green = done.'),
+          card('workflow', 'Workflows', 'Build an analysis as a graph of tools – or extract it from your history – and run it again on new data with one click.'),
+          card('notebook', 'Keep a record', 'The ⓘ of each dataset shows how it was made. ⋯ in the history turns the whole history into a notebook that repeats every step.')
+        ),
+        h('p.muted.small', 'Your history is kept in this browser, with its files; download what you want to keep elsewhere. Help for Galaxy: the Help pane, “Galaxy”.')
+      );
+    }
+
+    /* ================= tool form ================= */
+    showTool(id, rerunJob) {
+      const t = TOOL.get(id);
+      if (!t) return;
+      const C = this._center('tool');
+      this.setNav('home');
+      C.appendChild(h('div.gx-toolh', h('h3', t.name), h('span.muted', `${t.desc} (Galaxy Version ${t.version})`)));
+      if (!available(t)) C.appendChild(h('p.warnline', `The program of this tool (${t.needs}) is not available in this browser.`));
+      const form = h('form.gx-form');
+      const values = {};
+      const prev = rerunJob || null;
+      t.inputs.forEach((inp) => {
+        const sel = h('select', { name: inp.name });
+        const cand = this.datasets.filter((d) => !d.deleted && d.state === 'ok' && inp.ext.includes(d.ext));
+        if (inp.optional) sel.appendChild(h('option', { value: '' }, '(nothing selected)'));
+        cand.slice().reverse().forEach((d) => sel.appendChild(h('option', { value: String(d.hid) }, `${d.hid}: ${d.name}`)));
+        if (!cand.length && !inp.optional) sel.appendChild(h('option', { value: '' }, `No ${inp.ext.join(' / ')} dataset in the history`));
+        if (prev && prev.inputs) {
+          const p = prev.inputs.find((x) => x.name === inp.name);
+          sel.value = p ? String(p.hid) : '';
+        } else if (inp.pick) {
+          const pick = cand.slice().reverse().find((d) => inp.pick.test(d.name));
+          if (pick) sel.value = String(pick.hid);
+          else if (inp.optional) sel.value = '';
+        }
+        values[inp.name] = sel;
+        form.appendChild(field(inp.label + (inp.optional ? ' (optional)' : ''), sel, inp.ext.join(', ')));
+      });
+      t.params.forEach((p) => {
+        const cur = prev && prev.params && p.name in prev.params ? prev.params[p.name] : p.default;
+        const ctl = control(p, cur);
+        values[p.name] = ctl;
+        form.appendChild(field(p.label, ctl, null, p.help));
+      });
+      const run = h('button.btn.primary', { type: 'submit', html: MG.icon('play') + '<span>Run tool</span>' });
+      form.appendChild(h('div.gx-runrow', run));
+      form.addEventListener('submit', (e) => {
+        e.preventDefault();
+        const inputs = t.inputs.map((inp) => ({ name: inp.name, hid: +values[inp.name].value || 0, optional: !!inp.optional })).filter((x) => x.hid || !x.optional);
+        if (inputs.some((x) => !x.hid)) return toast('Choose an input dataset for every input first.', 'warn');
+        const params = {};
+        t.params.forEach((p) => (params[p.name] = readControl(p, values[p.name])));
+        this.submit(t.id, inputs.map((x) => ({ name: x.name, hid: x.hid })), params);
+        C.innerHTML = '';
+        C.appendChild(h('div.gx-queued', h('h3', { html: MG.icon('check') + ' Job submitted' }), h('p', `${t.name} has been added to the queue. Its output appears at the top of your history.`)));
+      });
+      C.appendChild(form);
+      if (t.help) C.appendChild(h('div.gx-help', h('h4', 'What it does'), h('div', { html: t.help })));
+      bus.emit('gx:toolform', { tool: id });
+    }
+
+    /* ================= jobs ================= */
+    submit(toolId, inputs, params, opts = {}) {
+      const t = TOOL.get(toolId);
+      const inDs = inputs.map((x) => ({ name: x.name, hid: x.hid, ds: this.ds(x.hid) }));
+      const job = { id: ++this.jobN, toolId, toolShedId: t.toolId, toolName: t.name, version: t.version, inputs: inputs.map((x) => ({ name: x.name, hid: x.hid })), params, state: 'queued', created: new Date(), invocation: opts.invocation || null, step: opts.step || null };
+      const given = {};
+      inputs.forEach((x) => (given[x.name] = true));
+      const db = (inDs.find((x) => x.ds && x.ds.dbkey && x.ds.dbkey !== '?') || {}).ds;
+      const outs = t.outputs.filter((o) => !o.when || o.when(given, params)).map((o) => this.addDataset({ name: o.label(inDs, params), ext: runExt(o, params, inDs), state: 'queued', job, outName: o.name, dbkey: db ? db.dbkey : '?' }));
+      job.outputs = outs.map((d) => d.hid);
+      this.jobs.push(job);
+      const done = (this.queue = this.queue.then(() => this._runJob(job, t, inDs, outs)));
+      bus.emit('gx:submitted', { tool: toolId, job: job.id, invocation: job.invocation });
+      return { job, outs, done };
+    }
+    async _runJob(job, t, inDs, outs) {
+      if (inDs.some((x) => !x.ds || x.ds.state !== 'ok' || x.ds.deleted)) {
+        await Promise.resolve();
+        outs.forEach((d) => (d.state = 'error'));
+        job.state = 'error';
+        job.stderr = 'An input dataset is not ready (it is in the error state, was deleted, or was not made by an earlier step), so this job was not run.';
+        this.renderHistory();
+        bus.emit('gx:job', { tool: t.id, state: 'error', job: job.id, invocation: job.invocation });
+        return;
+      }
+      await sleep(300);
+      outs.forEach((d) => (d.state = 'running'));
+      job.state = 'running';
+      job.started = new Date();
+      this.renderHistory();
+      const jobDir = `${GX_ROOT}/jobs/000/${job.id}`;
+      const wd = `${jobDir}/working`;
+      this.fs.mkdirp(wd);
+      const links = [];
+      const paths = {};
+      inDs.forEach((x) => {
+        const inp = t.inputs.find((i) => i.name === x.name);
+        const nice = typeof inp.nice === 'function' ? inp.nice(x.ds) : inp.nice || x.name;
+        this.fs.copy(x.ds.path, wd + '/' + nice);
+        links.push(`ln -f -s '${x.ds.path}' '${nice}'`);
+        if (x.ds.ext === 'bam' && this.fs.exists(x.ds.path + '.bai')) {
+          this.fs.copy(x.ds.path + '.bai', wd + '/' + nice + '.bai');
+          links.push(`ln -f -s '${x.ds.path}.bai' '${nice}.bai'`);
+        }
+        paths[x.name] = nice;
+      });
+      const cmd = t.command(paths, job.params);
+      job.command = links.join(' && ') + (links.length ? ' && ' : '') + cmd;
+      let stdout = '', stderr = '';
+      const io = Object.assign(quiet(), { out: (x) => (stdout += typeof x === 'string' ? x : new TextDecoder().decode(x)), err: (x) => (stderr += x), colored: (x) => (stderr += x) });
+      const t0 = performance.now();
+      let code = 0;
+      this.gfs.cwd = wd;
+      try {
+        code = await this.shell.exec(cmd, io, { errexit: true, pipefail: true });
+      } catch (e) {
+        stderr += String(e && e.message ? e.message : e);
+        code = 1;
+      }
+      const el = performance.now() - t0;
+      if (el < 600) await sleep(600 - el);
+      job.stdout = stdout;
+      job.stderr = stderr.replace(/\/shared\/vfs/g, '');
+      job.exitCode = code;
+      job.finished = new Date();
+      job.runtime = (performance.now() - t0) / 1000;
+      const files = outs.map((d) => t.outputs.find((x) => x.name === d.outName).file);
+      const ok = code === 0 && files.every((f) => this.fs.exists(wd + '/' + f));
+      if (!ok) {
+        // (what a tool wrote into a log of its own – Bowtie 2's summary – belongs to the error message)
+        for (const f of files) {
+          const e = this.fs.get(wd + '/' + f);
+          if (e && e.kind === 'text' && e.text.trim() && e.text.length < 20000) job.stderr += `\n--- ${f} ---\n${e.text}`;
+        }
+        if (code === 0) job.stderr += `\nThe tool ended without an error, but did not write ${files.filter((f) => !this.fs.exists(wd + '/' + f)).join(', ')}.`;
+        job.state = 'error';
+        outs.forEach((d) => (d.state = 'error'));
+        this.fs.remove(jobDir);
+        this.renderHistory();
+        bus.emit('gx:job', { tool: t.id, state: 'error', job: job.id, invocation: job.invocation });
+        return;
+      }
+      for (const d of outs) {
+        const o = t.outputs.find((x) => x.name === d.outName);
+        this.fs.rename(wd + '/' + o.file, d.path);
+        d.size = this.fs.size(this.fs.get(d.path));
+        if (d.ext === 'bam') {
+          // Galaxy indexes BAM datasets itself (the index is kept as metadata of the dataset)
+          const r = await this.shell.exec(`samtools index '${d.path}'`, Object.assign(quiet(), { err: (x) => (job.stderr += x) }), { errexit: true });
+          if (r !== 0) d.note = 'not indexed: it is not sorted by position';
+        }
+        try {
+          await this._describe(d);
+        } catch (err) {
+          console.error(err);
+        }
+        d.state = 'ok';
+      }
+      this.fs.remove(jobDir);
+      job.state = 'ok';
+      this.renderHistory();
+      bus.emit('gx:job', { tool: t.id, state: 'ok', job: job.id, invocation: job.invocation });
+    }
+    /** the short summary and peek Galaxy shows under a dataset */
+    async _describe(d) {
+      const text = async (cmd) => {
+        let o = '';
+        await this.shell.exec(cmd, Object.assign(quiet(), { out: (x) => (o += typeof x === 'string' ? x : new TextDecoder().decode(x)) }), {});
+        return o;
+      };
+      const lines = (t, n = 4, w = 90) => t.split('\n').filter((l) => l !== '').slice(0, n).map((l) => (l.length > w ? l.slice(0, w) + '…' : l)).join('\n');
+      const read = async () => (await this.fs.readText(d.path)) || '';
+      try {
+        if (d.ext === 'fastqsanger') {
+          const t = await read();
+          const n = Math.floor(t.split('\n').filter(Boolean).length / 4);
+          d.info = `${MG.fmt(n)} sequences`;
+          d.peek = t.split('\n').slice(0, 4).join('\n');
+        } else if (d.ext === 'fasta') {
+          const t = await read();
+          const seqs = (t.match(/^>/gm) || []).length;
+          d.info = `${MG.fmt(seqs)} sequence${seqs === 1 ? '' : 's'}`;
+          d.peek = lines(t, 3, 60);
+        } else if (d.ext === 'bam') {
+          d.info = d.note ? `Alignments (${d.note})` : 'Alignments sorted by coordinate (indexed)';
+          d.peek = (await text(`samtools view '${d.path}' | head -n 2 | cut -f 1-6`)).trim();
+        } else if (d.ext === 'sam') {
+          const t = await read();
+          const n = t.split('\n').filter((l) => l && !l.startsWith('@')).length;
+          d.info = `${MG.fmt(n)} alignments`;
+          d.peek = lines(t.split('\n').filter((l) => l && !l.startsWith('@')).map((l) => l.split('\t').slice(0, 6).join('\t')).join('\n'));
+        } else if (d.ext === 'bcf') {
+          d.info = 'Variants or genotype likelihoods (binary BCF)';
+        } else if (d.ext === 'vcf_bgzip' || d.ext === 'vcf') {
+          const n = (await text(`bcftools view -H '${d.path}' | wc -l`)).trim();
+          d.info = `${n} variant sites`;
+          d.peek = (await text(`bcftools view -H '${d.path}' | head -n 3 | cut -f 1-6`)).trim();
+        } else if (d.ext === 'html') {
+          d.info = 'HTML file (👁 shows it)';
+        } else if (d.ext === 'json') {
+          const t = await read();
+          d.info = `JSON, ${MG.humanSize(t.length)}B`;
+          d.peek = lines(t, 4);
+        } else if (d.ext === 'newick') {
+          const t = await read();
+          d.info = `a tree of ${(t.match(/[(,]\s*[^(),:;\s]+/g) || []).length} leaves (👁 draws it)`;
+          d.peek = t.slice(0, 200) + (t.length > 200 ? '…' : '');
+        } else if (d.ext === 'pdb') {
+          const t = await read();
+          d.info = `${(t.match(/^ATOM  /gm) || []).length} atoms`;
+          d.peek = lines(t, 2);
+        } else {
+          const t = await read();
+          const L2 = t.split('\n').filter(Boolean);
+          const comments = L2.filter((l) => l.startsWith('#')).length;
+          d.info = `${MG.fmt(L2.length - comments)} lines${comments ? `, ${comments} comment line${comments === 1 ? '' : 's'}` : ''}`;
+          d.peek = lines(L2.filter((l) => !l.startsWith('##')).join('\n'));
+        }
+      } catch (e) {
+        /* the summary is optional */
+      }
+    }
+
+    /* ================= dataset views ================= */
+    async showDataset(hid) {
+      const d = this.ds(hid);
+      if (!d) return;
+      const C = this._center('dataset');
+      C.appendChild(h('div.gx-toolh', h('h3', `${d.hid}: ${d.name}`), h('span.muted', `${d.ext} · ${MG.humanSize(d.size || 0)}B`)));
+      bus.emit('gx:view', { hid, ext: d.ext });
+      const acts = h('div.gx-runrow');
+      const btn = (icon, label, fn) => {
+        const b = h('button.btn.small', { type: 'button', html: MG.icon(icon) + '<span>' + esc(label) + '</span>' });
+        b.addEventListener('click', fn);
+        acts.appendChild(b);
+      };
+      btn('download', 'Download', () => this.download(hid));
+      btn('folder', 'Copy to my files', () => this.copyToFiles(hid));
+      if (GENOMIC.includes(d.ext)) btn('genome', 'Show in the Genome browser', () => this.toGenomeBrowser(hid));
+      if (d.ext === 'pdb') btn('cube', 'Open in the 3D viewer', () => this.toViewer(hid));
+      C.appendChild(acts);
+      if (d.ext === 'bam' || d.ext === 'bcf') {
+        C.appendChild(h('p', `This is a binary ${d.ext.toUpperCase()} file, so Galaxy cannot show it as text. Its first records:`));
+        C.appendChild(h('pre.gx-pre', d.peek || '(binary)'));
+        return;
+      }
+      let text = '';
+      try {
+        if (d.ext === 'vcf_bgzip') await this.shell.exec(`bcftools view '${d.path}'`, Object.assign(quiet(), { out: (x) => (text += x) }), {});
+        else text = await this.fs.readText(d.path);
+      } catch (e) {
+        text = '(could not read the dataset)';
+      }
+      if (d.ext === 'html') {
+        // (no scripts: an HTML file could come from anywhere – reports such as fastp's work without them)
+        const fr = h('iframe.gx-frame', { sandbox: '', title: d.name });
+        fr.srcdoc = text;
+        C.appendChild(fr);
+        C.appendChild(h('p.muted.small', 'Shown without its scripts (for safety). To see it with everything, download it and open it in your browser.'));
+      } else if (d.ext === 'newick' && MG.treeSvg) C.appendChild(MG.treeSvg(text));
+      else if (d.ext === 'json') {
+        let pretty = text;
+        try {
+          pretty = JSON.stringify(JSON.parse(text), null, 2);
+        } catch (e) {
+          /* as it is */
+        }
+        C.appendChild(h('pre.gx-pre', pretty.length > 200000 ? pretty.slice(0, 200000) + '\n…' : pretty));
+      } else if (['vcf', 'vcf_bgzip', 'tabular', 'bed', 'bedgraph', 'gff3', 'gtf'].includes(d.ext)) C.appendChild(tsvTable(text, d.ext === 'vcf' || d.ext === 'vcf_bgzip' || d.ext === 'gff3'));
+      else if (d.ext === 'csv') C.appendChild(tsvTable(text.split('\n').map((l) => splitCsv(l).join('\t')).join('\n'), false));
+      else C.appendChild(h('pre.gx-pre', text.length > 200000 ? text.slice(0, 200000) + '\n…' : text));
+    }
+    showDetails(hid) {
+      const d = this.ds(hid);
+      if (!d) return;
+      const C = this._center('details');
+      C.appendChild(h('h3', 'Dataset Information'));
+      const tbl = h('table.table.small.gx-details');
+      const row = (k, v) => tbl.appendChild(h('tr', h('th', k), h('td', v instanceof Node ? v : String(v == null ? '' : v))));
+      row('Number', d.hid);
+      row('Name', d.name);
+      row('Created', d.created.toLocaleString('en-GB'));
+      row('Filesize', MG.humanSize(d.size || 0) + 'B');
+      row('Dbkey', d.dbkey);
+      row('Format', d.ext);
+      row('UUID', d.uuid);
+      row('Full Path', d.path);
+      C.appendChild(tbl);
+      const job = d.job || d.upload;
+      if (job) {
+        const t = TOOL.get(job.toolId);
+        C.appendChild(h('h4', 'Job Information'));
+        const jt = h('table.table.small.gx-details');
+        const jr = (k, v) => jt.appendChild(h('tr', h('th', k), h('td', v instanceof Node ? v : String(v == null ? '' : v))));
+        jr('Galaxy Tool ID', t ? t.toolId : job.toolId);
+        jr('Galaxy Tool Version', job.version);
+        jr('Job State', job.state);
+        if (job.exitCode != null) jr('Command Exit Code', job.exitCode);
+        if (job.runtime != null) jr('Job Runtime (Wall Clock)', job.runtime.toFixed(1) + ' seconds');
+        if (job.invocation) jr('Workflow Invocation', '#' + job.invocation);
+        C.appendChild(jt);
+        if (t) {
+          C.appendChild(h('h4', 'Dependencies'));
+          C.appendChild(h('p.muted.small', 'The exact software versions the tool ran with – Galaxy records them for every job.'));
+          const dt = h('table.table.small');
+          dt.appendChild(h('tr', h('th', 'Dependency'), h('th', 'Dependency Type'), h('th', 'Version')));
+          t.requirements.forEach(([n, v]) => dt.appendChild(h('tr', h('td', n), h('td', 'conda'), h('td', v))));
+          C.appendChild(dt);
+          C.appendChild(h('h4', 'Command Line'));
+          C.appendChild(h('p.muted.small', 'Galaxy writes a script for every job. This is the command it ran in the job’s working directory.'));
+          C.appendChild(h('pre.gx-cmd', job.command || ''));
+          C.appendChild(h('h4', 'Tool Parameters'));
+          const pt = h('table.table.small');
+          pt.appendChild(h('tr', h('th', 'Input Parameter'), h('th', 'Value')));
+          t.inputs.forEach((inp) => {
+            const x = job.inputs.find((i) => i.name === inp.name);
+            const src = x && this.ds(x.hid);
+            pt.appendChild(h('tr', h('td', inp.label), h('td', src ? `${src.hid}: ${src.name}` : inp.optional ? '(nothing selected)' : '')));
+          });
+          t.params.forEach((p) => pt.appendChild(h('tr', h('td', p.label), h('td', fmtParam(p, job.params[p.name])))));
+          C.appendChild(pt);
+          if ((job.stdout || '').trim()) {
+            C.appendChild(h('h4', 'Tool Standard Output'));
+            C.appendChild(h('pre.gx-pre.small', job.stdout.trim()));
+          }
+          C.appendChild(h('h4', 'Tool Standard Error'));
+          C.appendChild(h('pre.gx-pre.small', (job.stderr || '').trim() || '(empty)'));
+        } else {
+          C.appendChild(h('h4', 'Upload'));
+          C.appendChild(h('p', `Uploaded from ${job.params.from || job.params.file || 'a file'}${job.params.gunzip ? ' (uncompressed)' : ''} as ${job.params.file_type || d.ext}.`));
+          if (job.stderr) C.appendChild(h('pre.gx-pre.small', job.stderr));
+        }
+      }
+      bus.emit('gx:details', { hid, tool: job && job.toolId });
+    }
+
+    /* ================= the history as a notebook ================= */
+    historyNotebook() {
+      const fs = this.fs;
+      const slug = this.historyName.replace(/[^A-Za-z0-9._-]+/g, '-').replace(/^-+|-+$/g, '').toLowerCase() || 'history';
+      const dir = `~/galaxy-rerun/${slug}`;
+      const fname = (d) => `data${d.hid}.${DOWNLOAD_EXT[d.ext] || d.ext}`;
+      const cells = [
+        {
+          type: 'markdown',
+          source: `# Galaxy history: ${this.historyName}\n\nEvery step of this history, as commands. Each code cell starts with \`%%bash\`: run the cells from the top and they make the same datasets again, as files \`data1.fastq\`, \`data2.bam\` … (data N = dataset N of the history) in \`${dir}\`. They run in the Notebook tab of the workbench, and in Jupyter on a computer with the same programs (the versions are in each step).\n\nExported from the Bioinformatics workbench on ${new Date().toLocaleString('en-GB')}.`
+        }
+      ];
+      const steps = this.uploads.concat(this.jobs).filter((j) => j.state === 'ok').sort((a, b) => a.id - b.id);
+      let first = true;
+      const cd = () => {
+        const s = first ? `mkdir -p ${dir} && cd ${dir}` : `cd ${dir}`;
+        first = false;
+        return s;
+      };
+      for (const j of steps) {
+        if (j.toolId === 'upload1') {
+          const d = this.ds(j.outputs[0]);
+          if (!d) continue;
+          const src = j.params.file && fs.exists(j.params.file) ? j.params.file : d.path;
+          const fromText = j.params.text != null;
+          cells.push({ type: 'markdown', source: `## data ${d.hid}: ${d.name}\n\nUploaded from ${j.params.from || 'a file'}${j.params.gunzip ? ' (uncompressed on upload)' : ''}, as **${d.ext}**.` });
+          const body = fromText ? `cat > ${fname(d)} << 'GALAXY_PASTE_EOF'\n${j.params.text.replace(/\n$/, '')}\nGALAXY_PASTE_EOF` : j.params.gunzip ? `gzip -dc ${shq(src)} > ${fname(d)}` : `cp ${shq(src)} ${fname(d)}`;
+          cells.push({ type: 'code', source: `%%bash\n${cd()}\n${body}${d.ext === 'bam' ? `\nsamtools index ${fname(d)}` : ''}`, outputs: [] });
+          continue;
+        }
+        const t = TOOL.get(j.toolId);
+        if (!t) continue;
+        const paths = {};
+        j.inputs.forEach((x) => {
+          const d = this.ds(x.hid);
+          if (d) paths[x.name] = fname(d);
+        });
+        const outs = j.outputs.map((hid) => this.ds(hid)).filter(Boolean);
+        const mv = outs.map((d) => {
+          const o = t.outputs.find((x) => x.name === d.outName);
+          return o ? `mv ${o.file} ${fname(d)}` : null;
+        }).filter(Boolean);
+        const idx = outs.filter((d) => d.ext === 'bam').map((d) => `samtools index ${fname(d)}`);
+        const ins = j.inputs.map((x) => {
+          const d = this.ds(x.hid);
+          return `data ${x.hid}${d ? ` (${d.name})` : ''}`;
+        });
+        const ps = t.params.map((p) => `${p.short || p.label}: ${fmtParam(p, p.name in (j.params || {}) ? j.params[p.name] : p.default)}`);
+        cells.push({ type: 'markdown', source: `## ${t.name} – ${outs.map((d) => 'data ' + d.hid).join(', ')}\n\nGalaxy tool \`${t.toolId}\`, version ${t.version} (${t.requirements.map((r) => r.join(' ')).join(', ')}).\n\n- Inputs: ${ins.join(', ') || '–'}\n- Parameters: ${ps.join('; ') || '–'}\n- Outputs: ${outs.map((d) => `data ${d.hid} (${d.name}, ${d.ext})`).join(', ')}` });
+        const outputs = [];
+        if ((j.stdout || '').trim()) outputs.push({ type: 'stream', name: 'stdout', text: j.stdout });
+        if ((j.stderr || '').trim()) outputs.push({ type: 'stream', name: 'stderr', text: j.stderr });
+        cells.push({ type: 'code', source: `%%bash\n${cd()}\n${t.command(paths, j.params)}\n${mv.concat(idx).join('\n')}`.replace(/\n$/, ''), outputs, meta: { workbench: { galaxy_job: j.id, tool: t.toolId } } });
+      }
+      if (cells.length === 1) cells.push({ type: 'markdown', source: '*(This history has no finished datasets yet.)*' });
+      return MG.nbformat.make('python', cells, { workbench: { kind: 'galaxy-history', history: this.historyName } });
+    }
+    async historyToNotebook(open) {
+      const nb = this.historyNotebook();
+      const slug = this.historyName.replace(/[^A-Za-z0-9._-]+/g, '-').replace(/^-+|-+$/g, '').toLowerCase() || 'history';
+      const text = JSON.stringify(nb, null, 1);
+      if (!open) {
+        MG.downloadText(text, `galaxy-${slug}.ipynb`, 'application/x-ipynb+json');
+        return;
+      }
+      const dir = HOME() + '/notebooks';
+      this.fs.mkdirp(dir);
+      let path = `${dir}/galaxy-${slug}.ipynb`;
+      for (let n = 2; this.fs.exists(path); n++) path = `${dir}/galaxy-${slug}-${n}.ipynb`;
+      this.fs.writeText(path, text);
+      await MG.app.showWorkbench('notebook');
+      await MG.app.nbApp.open(path);
+      toast(`Saved as <b>${esc(this.fs.pretty(path))}</b>.`, 'ok', 4000);
+    }
+
+    /* ================= workflows ================= */
+    showWorkflows() {
+      const C = this._center('workflows');
+      this.setNav('wf');
+      C.appendChild(h('h3', 'Workflows'));
+      C.appendChild(h('p.muted', 'A workflow is a saved graph of tools: each step’s inputs are connected to the outputs of earlier steps, so the whole analysis can be run again – on the same or on new data – with one click.'));
+      if (this.workflows.length) {
+        const t = h('table.table.gx-wft');
+        t.appendChild(h('tr', h('th', 'Name'), h('th', 'Steps'), h('th', 'Updated'), h('th', '')));
+        this.workflows.forEach((w, i) => {
+          const b = (icon, label, fn, cls, tip) => {
+            const x = h('button.btn.small' + (cls || ''), { type: 'button', title: tip || label, html: MG.icon(icon) + '<span>' + label + '</span>' });
+            x.addEventListener('click', fn);
+            return x;
+          };
+          t.appendChild(h('tr',
+            h('td', h('b', w.name), h('div.muted.small', w.annotation || '')),
+            h('td', String(w.steps.length)),
+            h('td.small', w.updated ? new Date(w.updated).toLocaleString('en-GB') : ''),
+            h('td.nowrap', b('pencil', 'Edit', () => this.showEditor(i)), ' ', b('play', 'Run', () => this.showRunForm(i), '.primary'), ' ', b('download', '.ga', () => this.exportGa(i), '', 'Download as a Galaxy workflow file (.ga) – it imports into usegalaxy.org (steps with Kalign or MUSCLE, which have no Tool Shed counterpart, are missing there)'), ' ', b('save', 'to my files', () => this.saveGa(i), '', 'Save the .ga file in ~/galaxy/workflows'), ' ', b('trash', '', () => this.deleteWorkflow(i), '', 'Delete this workflow'))));
+        });
+        C.appendChild(t);
+      } else C.appendChild(h('p', h('i', 'You have no workflows yet.')));
+      const nw = h('button.btn.primary', { type: 'button', html: MG.icon('plus') + '<span>Create a new workflow</span>' });
+      nw.addEventListener('click', () => {
+        const w = { id: uid(), name: 'Unnamed workflow ' + (this.workflows.length + 1), annotation: '', steps: [], created: Date.now(), updated: Date.now() };
+        this.workflows.push(w);
+        this.save();
+        this.showEditor(this.workflows.length - 1);
+        bus.emit('gx:wfnew', { name: w.name });
+      });
+      const imp = h('button.btn', { type: 'button', html: MG.icon('upload') + '<span>Import a .ga file</span>' });
+      imp.addEventListener('click', () => this.importGa());
+      C.appendChild(h('div.gx-runrow', nw, ' ', imp));
+      bus.emit('gx:workflows', {});
+    }
+    deleteWorkflow(i) {
+      const w = this.workflows[i];
+      const m = MG.modal('Delete the workflow?', `<p>“${esc(w.name)}” will be deleted. Download it (.ga) first if you want to keep it.</p><div class="prompt-actions"><button class="btn" data-x="no" type="button">Cancel</button><button class="btn danger" data-x="yes" type="button">Delete</button></div>`);
+      m.box.querySelector('[data-x="no"]').addEventListener('click', () => m.close());
+      m.box.querySelector('[data-x="yes"]').addEventListener('click', () => {
+        m.close();
+        this.workflows.splice(i, 1);
+        this.save();
+        this.showWorkflows();
+      });
+    }
+
+    /* ---------- extract a workflow from the history ---------- */
+    extractWorkflow() {
+      const used = this.jobs.filter((j) => j.state === 'ok' && TOOL.has(j.toolId) && j.outputs.some((hid) => this.ds(hid) && !this.ds(hid).deleted));
+      if (!used.length) return toast('There are no finished tool jobs in this history yet – run some tools first.', 'warn');
+      const w = { id: uid(), name: 'Workflow constructed from history ‘' + this.historyName + '’', annotation: 'Extracted from the history on ' + new Date().toLocaleString('en-GB'), steps: [], created: Date.now(), updated: Date.now() };
+      const stepOfHid = {};
+      const inputOf = (hid) => {
+        if (stepOfHid[hid]) return stepOfHid[hid];
+        const d = this.ds(hid);
+        const st = { id: 's' + uid(), type: 'input', label: d ? d.name.replace(/\.[^.]+$/, '') : 'Input dataset', ext: [d ? d.ext : 'txt'], x: 0, y: 0 };
+        w.steps.push(st);
+        stepOfHid[hid] = { step: st.id, output: 'output' };
+        return stepOfHid[hid];
+      };
+      used.sort((a, b) => a.id - b.id).forEach((j) => {
+        const st = { id: 's' + uid(), type: 'tool', tool: j.toolId, params: Object.assign({}, j.params), connections: {}, x: 0, y: 0 };
+        j.inputs.forEach((inp) => {
+          const src = this.ds(inp.hid);
+          st.connections[inp.name] = src && src.job && stepOfHid[inp.hid] ? stepOfHid[inp.hid] : inputOf(inp.hid);
+        });
+        w.steps.push(st);
+        j.outputs.forEach((hid) => {
+          const d = this.ds(hid);
+          if (d && d.outName) stepOfHid[hid] = { step: st.id, output: d.outName };
+        });
+      });
+      autoLayout(w);
+      this.workflows.push(w);
+      this.save();
+      toast('Workflow extracted from your history – it opens in the editor.');
+      bus.emit('gx:extract', { steps: w.steps.length });
+      this.showEditor(this.workflows.length - 1);
+    }
+
+    /* ---------- the editor ---------- */
+    showEditor(i) {
+      const w = this.workflows[i];
+      const C = this._center('editor');
+      this.root.classList.add('gx-editing');
+      this.editing = w;
+      this.editingIndex = i;
+      this.setNav('wf');
+      const nameIn = h('input.gx-wfname', { type: 'text', value: w.name, 'aria-label': 'Workflow name' });
+      nameIn.addEventListener('input', () => {
+        w.name = nameIn.value;
+        this._touch();
+      });
+      const b = (icon, label, fn, cls) => {
+        const x = h('button.btn.small' + (cls || ''), { type: 'button', html: (icon ? MG.icon(icon) : '') + '<span>' + label + '</span>' });
+        x.addEventListener('click', fn);
+        return x;
+      };
+      const addIn = b('plus', 'Input dataset', () => {
+        const n = w.steps.filter((s) => s.type === 'input').length + 1;
+        w.steps.push({ id: 's' + uid(), type: 'input', label: 'Input dataset ' + n, ext: ['fastqsanger'], x: 16, y: 16 + 96 * (n - 1) });
+        this._touch();
+        this.drawEditor();
+        bus.emit('gx:addinput', {});
+      });
+      C.appendChild(h('div.gx-edbar', b('', '← Workflows', () => this.showWorkflows()), nameIn, h('span.grow'), addIn, b('', 'Tidy layout', () => {
+        autoLayout(w);
+        this._touch();
+        this.drawEditor();
+      }), b('download', '.ga', () => this.exportGa(i)), b('play', 'Run', () => this.showRunForm(i), '.primary')));
+      C.appendChild(h('p.muted.small.gx-edhint', { html: 'Add <b>Input dataset</b> boxes and click tools on the left to add steps. Drag from an <b>output</b> (dot on the right of a box) to an <b>input</b> (dot on the left) to connect them – only matching formats connect. Click a box to change its settings. Changes are saved as you go.' }));
+      this.canvas = h('div.gx-canvas');
+      // a click on the empty canvas deselects the step and shows the checks
+      this.canvas.addEventListener('click', (e) => {
+        if (!e.target.closest('.gx-node') && !e.target.closest('.gx-wire')) this.showStepSettings(null);
+      });
+      this.side = this.sideCol;
+      this.side.innerHTML = '';
+      C.appendChild(h('div.gx-edwrap', this.canvas));
+      this.drawEditor();
+      bus.emit('gx:editor', { name: w.name });
+    }
+    _touch() {
+      if (this.editing) this.editing.updated = Date.now();
+      this.save();
+    }
+    editorAddTool(id) {
+      const w = this.editing;
+      const t = TOOL.get(id);
+      const maxX = Math.max(0, ...w.steps.map((s) => s.x || 0));
+      const params = {};
+      t.params.forEach((p) => (params[p.name] = p.default));
+      const st = { id: 's' + uid(), type: 'tool', tool: id, params, connections: {}, x: Math.min(maxX + 220, 1100), y: 20 + (w.steps.length % 4) * 70 };
+      w.steps.push(st);
+      this._touch();
+      this.drawEditor();
+      this.showStepSettings(st);
+      // a reminder for the first few steps only, so toasts do not pile up
+      this._addedN = (this._addedN || 0) + 1;
+      if (this._addedN <= 2) toast(`Added <b>${esc(t.name)}</b> – now connect its input${t.inputs.length > 1 ? 's' : ''}: drag from an output dot (right of a box) to an input dot (left).`, null, 4000);
+      bus.emit('gx:added', { tool: id, steps: w.steps.length });
+    }
+    drawEditor() {
+      const w = this.editing;
+      const cv = this.canvas;
+      cv.innerHTML = '';
+      const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+      svg.setAttribute('class', 'gx-wires');
+      cv.appendChild(svg);
+      if (!w.steps.length) cv.appendChild(h('div.gx-canvas-empty', h('p', { html: 'An empty workflow. Start with <b>+ Input dataset</b> (above), then click tools on the left.' })));
+      w.steps.forEach((st) => {
+        const t = st.type === 'tool' ? TOOL.get(st.tool) : null;
+        const el = h('div.gx-node' + (st.type === 'input' ? '.input' : ''), { dataset: { id: st.id } });
+        el.style.left = (st.x || 0) + 'px';
+        el.style.top = (st.y || 0) + 'px';
+        const title = h('div.gx-node-t', h('span', st.type === 'input' ? st.label : t ? t.name : st.tool + ' (not installed)'));
+        const del = h('button.gx-node-x', { type: 'button', title: 'Remove this step', 'aria-label': 'Remove this step', html: MG.icon('x') });
+        del.addEventListener('pointerdown', (e) => e.stopPropagation());
+        del.addEventListener('click', (e) => {
+          e.stopPropagation();
+          w.steps = w.steps.filter((s) => s !== st);
+          w.steps.forEach((s) => Object.keys(s.connections || {}).forEach((k) => s.connections[k] && s.connections[k].step === st.id && delete s.connections[k]));
+          this._touch();
+          this.drawEditor();
+        });
+        title.appendChild(del);
+        el.appendChild(title);
+        const ins = st.type === 'input' || !t ? [] : t.inputs;
+        const outs = st.type === 'input' ? [{ name: 'output', ext: st.ext, label: st.ext.join('/') }] : t ? stepOutputs(st).map((o) => ({ name: o.name, ext: stepOutExts(w, st, o.name), label: o.short || o.name })) : [];
+        const portsIn = h('div.gx-ports.in');
+        ins.forEach((inp) => {
+          const connected = !!(st.connections || {})[inp.name];
+          portsIn.appendChild(h('div.gx-port.in' + (connected ? '.on' : ''), { dataset: { step: st.id, name: inp.name }, title: inp.label + ' – accepts ' + inp.ext.join(', ') + (inp.optional ? ' (optional)' : '') }, h('i.dot'), h('span', (inp.short || inp.name) + (inp.optional ? ' (opt.)' : '')), h('small', inp.ext.length > 3 ? inp.ext.slice(0, 3).join('/') + '…' : inp.ext.join('/'))));
+        });
+        const portsOut = h('div.gx-ports.out');
+        outs.forEach((o) => {
+          const p = h('div.gx-port.out', { dataset: { step: st.id, name: o.name, ext: o.ext.join(',') }, title: 'produces ' + o.ext.join(', ') + ' – drag from the dot to an input' }, h('small', o.ext.length > 3 ? o.ext.slice(0, 3).join('/') + '…' : o.ext.join('/')), h('span', o.label), h('i.dot'));
+          portsOut.appendChild(p);
+          p.querySelector('.dot').addEventListener('pointerdown', (e) => this._startWire(e, st, o, svg));
+        });
+        el.append(portsIn, portsOut);
+        this._draggable(el, st);
+        el.addEventListener('click', () => this.showStepSettings(st));
+        cv.appendChild(el);
+      });
+      const maxX = Math.max(640, ...w.steps.map((s) => (s.x || 0) + 230));
+      const maxY = Math.max(380, ...w.steps.map((s) => (s.y || 0) + 190));
+      cv.style.width = maxX + 'px';
+      cv.style.height = maxY + 'px';
+      svg.setAttribute('width', maxX);
+      svg.setAttribute('height', maxY);
+      requestAnimationFrame(() => this._drawWires(svg));
+      this.showStepSettings(this._selStep && w.steps.includes(this._selStep) ? this._selStep : null);
+    }
+    _portPos(stepId, name, dir) {
+      const el = this.canvas.querySelector(`.gx-port.${dir}[data-step="${stepId}"][data-name="${CSS.escape(name)}"] .dot`);
+      if (!el) return null;
+      const r = el.getBoundingClientRect();
+      const c = this.canvas.getBoundingClientRect();
+      return { x: r.left - c.left + r.width / 2, y: r.top - c.top + r.height / 2 };
+    }
+    _drawWires(svg) {
+      const w = this.editing;
+      if (!w || !svg) return;
+      Array.from(svg.querySelectorAll('path')).forEach((p) => p.remove());
+      w.steps.forEach((st) => {
+        Object.entries(st.connections || {}).forEach(([inName, c]) => {
+          if (!c) return;
+          const a = this._portPos(c.step, c.output, 'out');
+          const b = this._portPos(st.id, inName, 'in');
+          if (!a || !b) return;
+          const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+          const dx = Math.max(40, Math.abs(b.x - a.x) / 2);
+          path.setAttribute('d', `M${a.x} ${a.y} C${a.x + dx} ${a.y} ${b.x - dx} ${b.y} ${b.x} ${b.y}`);
+          path.setAttribute('class', 'gx-wire');
+          path.addEventListener('click', () => {
+            delete st.connections[inName];
+            this._touch();
+            this.drawEditor();
+          });
+          const tt = document.createElementNS('http://www.w3.org/2000/svg', 'title');
+          tt.textContent = 'Click to remove this connection';
+          path.appendChild(tt);
+          svg.appendChild(path);
+        });
+      });
+    }
+    _draggable(el, st) {
+      let start = null;
+      el.addEventListener('pointerdown', (e) => {
+        if (e.target.closest('.dot') || e.target.closest('button')) return;
+        start = { x: e.clientX, y: e.clientY, sx: st.x || 0, sy: st.y || 0, moved: false };
+        el.setPointerCapture(e.pointerId);
+      });
+      el.addEventListener('pointermove', (e) => {
+        if (!start) return;
+        const dx = e.clientX - start.x, dy = e.clientY - start.y;
+        if (Math.abs(dx) + Math.abs(dy) > 3) start.moved = true;
+        st.x = Math.max(0, start.sx + dx);
+        st.y = Math.max(0, start.sy + dy);
+        el.style.left = st.x + 'px';
+        el.style.top = st.y + 'px';
+        this._drawWires(this.canvas.querySelector('svg'));
+      });
+      el.addEventListener('pointerup', (e) => {
+        if (start && start.moved) {
+          e.stopPropagation();
+          this._touch();
+        }
+        start = null;
+      });
+    }
+    /** connect an output to an input (used by dragging, and by tests) */
+    connect(fromStep, outName, toStep, inName) {
+      const w = this.editing;
+      const a = w.steps.find((s) => s.id === fromStep);
+      const b = w.steps.find((s) => s.id === toStep);
+      if (!a || !b || a === b || b.type !== 'tool') return false;
+      const t = TOOL.get(b.tool);
+      const inp = t && t.inputs.find((i) => i.name === inName);
+      const outExt = stepOutExts(w, a, outName);
+      if (!inp || !outExt.some((x) => inp.ext.includes(x))) {
+        toast(`Can't connect: <b>${esc(t ? t.name : b.tool)}</b> needs <b>${esc(inp ? inp.ext.join(' or ') : '?')}</b>, but this output is <b>${esc(outExt.join(', '))}</b>.`, 'error', 6000);
+        bus.emit('gx:badwire', { from: a.tool || 'input', to: b.tool, need: inp ? inp.ext.join(',') : '', got: outExt.join(',') });
+        return false;
+      }
+      if (reaches(w, b.id, a.id)) {
+        toast('Can\'t connect: that would make a loop – a step cannot depend on its own output.', 'error', 5000);
+        return false;
+      }
+      b.connections = b.connections || {};
+      b.connections[inName] = { step: fromStep, output: outName };
+      this._touch();
+      this.drawEditor();
+      bus.emit('gx:wire', { from: a.tool || 'input', to: b.tool, input: inName, n: countWires(w) });
+      return true;
+    }
+    _startWire(e, st, out, svg) {
+      e.preventDefault();
+      e.stopPropagation();
+      const c = this.canvas.getBoundingClientRect();
+      const a = this._portPos(st.id, out.name, 'out');
+      const tmp = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+      tmp.setAttribute('class', 'gx-wire tmp');
+      svg.appendChild(tmp);
+      this.canvas.querySelectorAll('.gx-port.in').forEach((p) => {
+        const step = this.editing.steps.find((s) => s.id === p.dataset.step);
+        const t = step && TOOL.get(step.tool);
+        const inp = t && t.inputs.find((i) => i.name === p.dataset.name);
+        const ok = inp && out.ext.some((x) => inp.ext.includes(x)) && step.id !== st.id;
+        p.classList.add(ok ? 'ok' : 'bad');
+      });
+      const move = (ev) => {
+        const x = ev.clientX - c.left, y = ev.clientY - c.top;
+        const dx = Math.max(40, Math.abs(x - a.x) / 2);
+        tmp.setAttribute('d', `M${a.x} ${a.y} C${a.x + dx} ${a.y} ${x - dx} ${y} ${x} ${y}`);
+      };
+      const up = (ev) => {
+        window.removeEventListener('pointermove', move);
+        window.removeEventListener('pointerup', up);
+        tmp.remove();
+        this.canvas.querySelectorAll('.gx-port.in').forEach((p) => p.classList.remove('ok', 'bad'));
+        const target = document.elementFromPoint(ev.clientX, ev.clientY);
+        const port = target && target.closest('.gx-port.in');
+        if (!port) return;
+        this.connect(st.id, out.name, port.dataset.step, port.dataset.name);
+      };
+      window.addEventListener('pointermove', move);
+      window.addEventListener('pointerup', up);
+    }
+    showStepSettings(st) {
+      this._selStep = st;
+      if (st) bus.emit('gx:step', { tool: st.tool || 'input' });
+      const S = this.side;
+      if (!S || !this.canvas) return;
+      S.innerHTML = '';
+      this.canvas.querySelectorAll('.gx-node').forEach((n) => n.classList.toggle('sel', !!st && n.dataset.id === st.id));
+      if (!st) {
+        S.appendChild(h('div.gx-ph', 'Step settings'));
+        S.appendChild(h('p.muted.small.gx-pad', 'Click a step in the workflow to see and change its settings.'));
+        const probs = validateWorkflow(this.editing);
+        S.appendChild(h('div.gx-ph', 'Checks'));
+        S.appendChild(probs.length ? h('ul.gx-probs', ...probs.map((p) => h('li', p))) : h('p.okline.gx-pad', '✓ Every input is connected.'));
+        return;
+      }
+      if (st.type === 'input') {
+        S.appendChild(h('div.gx-ph', 'Input dataset'));
+        const lab = h('input', { type: 'text', value: st.label });
+        lab.addEventListener('input', () => {
+          st.label = lab.value;
+          const n = this.canvas.querySelector(`.gx-node[data-id="${st.id}"] .gx-node-t span`);
+          if (n) n.textContent = st.label;
+          this._touch();
+        });
+        const fmt = h('select');
+        FORMATS.forEach(([v, l]) => fmt.appendChild(h('option', { value: v }, l)));
+        fmt.value = st.ext[0];
+        fmt.addEventListener('change', () => {
+          st.ext = [fmt.value];
+          this._touch();
+          this.drawEditor();
+          bus.emit('gx:inputformat', { ext: fmt.value });
+        });
+        S.append(h('div.gx-pad', field('Label', lab), field('Format', fmt)));
+        return;
+      }
+      const t = TOOL.get(st.tool);
+      if (!t) {
+        S.appendChild(h('p.warnline.gx-pad', `The tool ${st.tool} is not installed here.`));
+        return;
+      }
+      S.appendChild(h('div.gx-ph', t.name));
+      const box = h('div.gx-pad');
+      box.appendChild(h('p.muted.small', t.desc + ' · version ' + t.version));
+      t.params.forEach((p) => {
+        const cur = st.params && p.name in st.params ? st.params[p.name] : p.default;
+        const ctl = control(p, cur);
+        ctl.addEventListener('change', () => {
+          st.params = st.params || {};
+          st.params[p.name] = readControl(p, ctl);
+          this._touch();
+          if (t.outputs.some((o) => typeof o.ext === 'function')) this.drawEditor();
+          bus.emit('gx:param', { tool: st.tool, name: p.name, value: st.params[p.name] });
+        });
+        box.appendChild(field(p.label, ctl, null, p.help));
+      });
+      const missing = t.inputs.filter((i) => !i.optional && !(st.connections || {})[i.name]);
+      if (missing.length) box.appendChild(h('p.warnline', `Not connected: ${missing.map((m) => m.short || m.name).join(', ')}`));
+      S.appendChild(box);
+    }
+
+    /* ---------- .ga export / import ---------- */
+    toGa(w) {
+      const order = orderSteps(w);
+      const idx = new Map(order.map((s, i) => [s.id, i]));
+      const steps = {};
+      order.forEach((s, i) => {
+        if (s.type === 'input') {
+          steps[i] = { annotation: '', content_id: null, errors: null, id: i, input_connections: {}, inputs: [{ description: '', name: s.label }], label: s.label, name: 'Input dataset', outputs: [], position: { left: s.x || 0, top: s.y || 0 }, tool_id: null, tool_state: JSON.stringify({ optional: false, format: s.ext, tag: null }), tool_version: null, type: 'data_input', uuid: uuid(), when: null, workflow_outputs: [] };
+        } else {
+          const t = TOOL.get(s.tool);
+          if (!t) return;
+          const conns = {};
+          Object.entries(s.connections || {}).forEach(([k, c]) => c && idx.has(c.step) && (conns[k] = { id: idx.get(c.step), output_name: c.output }));
+          const shed = t.toolId.includes('/repos/') ? { tool_shed_repository: { changeset_revision: 'workbench', name: t.toolId.split('/')[3], owner: t.toolId.split('/')[2], tool_shed: 'toolshed.g2.bx.psu.edu' } } : {};
+          steps[i] = Object.assign({ annotation: '', content_id: t.toolId, errors: null, id: i, input_connections: conns, inputs: [], label: null, name: t.name, outputs: stepOutputs(s).map((o) => ({ name: o.name, type: stepOutExts(w, s, o.name)[0] || 'data' })), position: { left: s.x || 0, top: s.y || 0 }, post_job_actions: {}, tool_id: t.toolId }, shed, { tool_state: JSON.stringify(Object.assign({}, s.params, { __page__: null, __rerun_remap_job_id__: null })), tool_version: t.version, type: 'tool', uuid: uuid(), when: null, workflow_outputs: [] });
+        }
+      });
+      return { a_galaxy_workflow: 'true', annotation: w.annotation || '', 'format-version': '0.1', name: w.name, steps, tags: [], uuid: uuid(), version: 1 };
+    }
+    exportGa(i) {
+      const w = this.workflows[i];
+      const ga = this.toGa(w);
+      MG.downloadText(JSON.stringify(ga, null, 4), `Galaxy-Workflow-${w.name.replace(/[^A-Za-z0-9._-]+/g, '_')}.ga`, 'application/json');
+      bus.emit('gx:export', { name: w.name, steps: w.steps.length });
+    }
+    /** keep the workflow among the user's files: ~/galaxy/workflows/NAME.ga */
+    saveGa(i) {
+      const w = this.workflows[i];
+      const text = JSON.stringify(this.toGa(w), null, 4);
+      const dir = HOME() + '/galaxy/workflows';
+      this.fs.mkdirp(dir);
+      const path = `${dir}/${w.name.replace(/[^A-Za-z0-9._-]+/g, '_').replace(/_+/g, '_').replace(/^_|_$/g, '') || 'workflow'}.ga`;
+      this.fs.writeText(path, text + '\n');
+      toast(`Saved <b>${esc(this.fs.pretty(path))}</b> – open it in the Files tab.`, null, 5000);
+      bus.emit('gx:export', { name: w.name, steps: w.steps.length, to: 'files', path });
+    }
+    importGa() {
+      const inp = h('input', { type: 'file', accept: '.ga,.json' });
+      inp.addEventListener('change', async () => {
+        const f = inp.files[0];
+        if (!f) return;
+        try {
+          const ga = JSON.parse(await f.text());
+          const w = fromGa(ga);
+          this.workflows.push(w);
+          this.save();
+          toast(`Imported <b>${esc(w.name)}</b>.`);
+          this.showEditor(this.workflows.length - 1);
+        } catch (e) {
+          toast('This is not a workflow that this Galaxy can read: ' + esc(e.message), 'error', 7000);
+        }
+      });
+      inp.click();
+    }
+
+    /* ---------- run a workflow ---------- */
+    showRunForm(i) {
+      const w = this.workflows[i];
+      const C = this._center('runform');
+      this.setNav('wf');
+      const problems = validateWorkflow(w);
+      C.appendChild(h('h3', 'Run workflow: ' + w.name));
+      if (problems.length) {
+        C.appendChild(h('div.callout.warn', h('div.co-t', 'This workflow is not ready to run'), h('ul', ...problems.map((p) => h('li', p)))));
+        const ed = h('button.btn', { type: 'button', text: 'Open it in the editor' });
+        ed.addEventListener('click', () => this.showEditor(i));
+        C.appendChild(ed);
+        bus.emit('gx:runblocked', { problems: problems.length });
+        return;
+      }
+      const form = h('form.gx-form');
+      const pickers = {};
+      orderSteps(w).filter((s) => s.type === 'input').forEach((s) => {
+        const sel = h('select');
+        const cand = this.datasets.filter((d) => !d.deleted && d.state === 'ok' && s.ext.includes(d.ext));
+        cand.slice().reverse().forEach((d) => sel.appendChild(h('option', { value: String(d.hid) }, `${d.hid}: ${d.name}`)));
+        if (!cand.length) sel.appendChild(h('option', { value: '' }, `No ${s.ext.join('/')} dataset in the history`));
+        const words = s.label.toLowerCase().split(/[^a-z0-9]+/).filter((x) => x.length > 1);
+        const guess = cand.find((d) => words.some((wd) => d.name.toLowerCase().includes(wd))) || (/(forward|_1|r1)/i.test(s.label) && cand.find((d) => /_1|R1/.test(d.name))) || (/(reverse|_2|r2)/i.test(s.label) && cand.find((d) => /_2|R2/.test(d.name)));
+        if (guess) sel.value = String(guess.hid);
+        pickers[s.id] = sel;
+        form.appendChild(field(s.label, sel, s.ext.join(', ')));
+      });
+      const summary = h('ol.gx-steps');
+      orderSteps(w).filter((s) => s.type === 'tool').forEach((s) => {
+        const t = TOOL.get(s.tool);
+        const ps = t.params.map((p) => `${p.short || p.label}: ${fmtParam(p, s.params && p.name in s.params ? s.params[p.name] : p.default)}`).join(' · ');
+        summary.appendChild(h('li', h('b', t.name), ps ? h('span.muted.small', ' – ' + ps) : null));
+      });
+      form.appendChild(h('div.gx-field', h('label', 'Steps that will run'), summary));
+      const run = h('button.btn.primary', { type: 'submit', html: MG.icon('play') + '<span>Run workflow</span>' });
+      form.appendChild(h('div.gx-runrow', run));
+      form.addEventListener('submit', (e) => {
+        e.preventDefault();
+        const inputs = {};
+        for (const [sid, sel] of Object.entries(pickers)) {
+          if (!sel.value) return toast('Choose a dataset for every input.', 'warn');
+          inputs[sid] = +sel.value;
+        }
+        this.invoke(w, inputs);
+      });
+      C.appendChild(form);
+      bus.emit('gx:runform', { workflow: w.name });
+    }
+    invoke(w, inputs) {
+      const inv = { id: this.invocations.length + 1, workflow: w.name, created: new Date(), items: [], state: 'scheduled' };
+      this.invocations.push(inv);
+      const produced = {};
+      Object.entries(inputs).forEach(([sid, hid]) => (produced[sid] = { output: hid }));
+      const steps = orderSteps(w).filter((s) => s.type === 'tool' && TOOL.has(s.tool));
+      steps.forEach((s) => {
+        const t = TOOL.get(s.tool);
+        const ins = t.inputs
+          .map((inp) => {
+            const c = s.connections[inp.name];
+            if (!c) return inp.optional ? null : { name: inp.name, hid: 0 };
+            return { name: inp.name, hid: (produced[c.step] && produced[c.step][c.output]) || 0 };
+          })
+          .filter(Boolean);
+        const params = {};
+        t.params.forEach((p) => (params[p.name] = s.params && p.name in s.params ? s.params[p.name] : p.default));
+        const { job, outs } = this.submit(t.id, ins, params, { invocation: inv.id, step: s.id });
+        produced[s.id] = {};
+        outs.forEach((d) => (produced[s.id][d.outName] = d.hid));
+        inv.items.push({ tool: t.name, job });
+      });
+      bus.emit('gx:invoked', { inv: inv.id, workflow: w.name, steps: steps.length });
+      this.showInvocation(inv.id);
+      this._saveSoon();
+      const watch = setInterval(() => {
+        const done = inv.items.filter((x) => x.job.state === 'ok' || x.job.state === 'error').length;
+        if (done === inv.items.length) {
+          clearInterval(watch);
+          inv.state = inv.items.every((x) => x.job.state === 'ok') ? 'ok' : 'error';
+          this._saveSoon();
+          if (this.view === 'invocation' && this._invShown === inv.id) this.showInvocation(inv.id);
+          bus.emit('gx:invocation', { inv: inv.id, ok: inv.state === 'ok', steps: inv.items.length, workflow: w.name });
+        } else if (this.view === 'invocation' && this._invShown === inv.id) this._invStates(inv);
+      }, 500);
+    }
+    showInvocations() {
+      const C = this._center('invocations');
+      this.setNav('inv');
+      C.appendChild(h('h3', 'Workflow Invocations'));
+      if (!this.invocations.length) return C.appendChild(h('p.muted', 'No workflow has been run yet.'));
+      const t = h('table.table.small');
+      t.appendChild(h('tr', h('th', '#'), h('th', 'Workflow'), h('th', 'Invoked'), h('th', 'State'), h('th', '')));
+      this.invocations.slice().reverse().forEach((inv) => {
+        const b = h('button.btn.small', { type: 'button' }, 'View');
+        b.addEventListener('click', () => this.showInvocation(inv.id));
+        t.appendChild(h('tr', h('td', String(inv.id)), h('td', inv.workflow), h('td', inv.created.toLocaleString('en-GB')), h('td', inv.state), h('td', b)));
+      });
+      C.appendChild(t);
+    }
+    showInvocation(id) {
+      const inv = this.invocations.find((x) => x.id === id);
+      const C = this._center('invocation');
+      this._invShown = id;
+      this.setNav('inv');
+      C.appendChild(h('h3', { html: MG.icon('workflow') + ' Workflow invocation #' + inv.id }));
+      C.appendChild(h('p', `“${inv.workflow}” – ${inv.items.length} jobs, invoked ${inv.created.toLocaleString('en-GB')}. The outputs appear in your history: grey (queued) → yellow (running) → green (done).`));
+      const list = h('ol.gx-inv');
+      inv.items.forEach((x) => {
+        const st = h('span.gx-invstate.' + x.job.state, x.job.state);
+        const li = h('li', h('b', x.tool), ' ', st);
+        x.el = st;
+        list.appendChild(li);
+      });
+      C.appendChild(list);
+      if (inv.state === 'ok') C.appendChild(h('p.okline', '✓ All steps finished. Open the datasets in your history – the ⓘ of each one shows exactly how it was made.'));
+      else if (inv.state === 'error') C.appendChild(h('p.warnline', 'Some steps failed – open the ⓘ of the red dataset to see why.'));
+    }
+    _invStates(inv) {
+      inv.items.forEach((x) => {
+        if (x.el) {
+          x.el.textContent = x.job.state;
+          x.el.className = 'gx-invstate ' + x.job.state;
+        }
+      });
+    }
+  }
+
+  /* ================= helpers ================= */
+  function control(p, cur) {
+    let ctl;
+    if (p.type === 'select') {
+      ctl = h('select');
+      p.options.forEach(([v, l]) => ctl.appendChild(h('option', { value: v }, l)));
+      ctl.value = cur;
+    } else if (p.type === 'bool') {
+      ctl = h('input', { type: 'checkbox' });
+      ctl.checked = !!cur;
+    } else {
+      ctl = h('input', { type: p.type === 'text' ? 'text' : 'number', step: p.type === 'float' ? 'any' : '1', spellcheck: 'false' });
+      ctl.value = cur;
+    }
+    return ctl;
+  }
+  function readControl(p, c) {
+    return p.type === 'bool' ? c.checked : p.type === 'int' ? int(c.value, p.default) : p.type === 'float' ? (Number.isFinite(parseFloat(c.value)) ? parseFloat(c.value) : p.default) : c.value;
+  }
+  function fmtParam(p, v) {
+    if (p.type === 'select') return (p.options.find((o) => o[0] === v) || [v, v])[1];
+    if (p.type === 'bool') return v ? 'Yes' : 'No';
+    return String(v);
+  }
+  function field(label, ctl, ext, help) {
+    const f = h('div.gx-field');
+    f.appendChild(h('label', label));
+    f.appendChild(ctl);
+    if (ext) f.appendChild(h('small.muted', 'Format: ' + ext));
+    if (help) f.appendChild(h('small.gx-fhelp', help));
+    return f;
+  }
+  function card(ic, title, text) {
+    return h('div.gx-card', h('div.gx-card-t', { html: MG.icon(ic) + '<b>' + esc(title) + '</b>' }), h('p', text));
+  }
+  /** one line of a CSV file → its fields (quotes understood) */
+  function splitCsv(line) {
+    const out = [];
+    let cur = '', q = false;
+    for (let i = 0; i < line.length; i++) {
+      const c = line[i];
+      if (q) {
+        if (c === '"' && line[i + 1] === '"') (cur += '"'), i++;
+        else if (c === '"') q = false;
+        else cur += c;
+      } else if (c === '"') q = true;
+      else if (c === ',') out.push(cur), (cur = '');
+      else cur += c;
+    }
+    out.push(cur);
+    return out.map((x) => x.replace(/\t/g, ' '));
+  }
+  function tsvTable(text, meta2) {
+    const L2 = text.split('\n').filter(Boolean);
+    const meta = meta2 ? L2.filter((l) => l.startsWith('##')) : [];
+    const rows = L2.filter((l) => !meta2 || !l.startsWith('##'));
+    const wrap = h('div.gx-tablewrap');
+    if (meta.length) {
+      const d = h('details');
+      d.appendChild(h('summary', `${meta.length} header lines (##) – click to show`));
+      d.appendChild(h('pre.gx-pre.small', meta.join('\n')));
+      wrap.appendChild(d);
+    }
+    const t = h('table.table.small.mono');
+    rows.slice(0, 500).forEach((r, i) => {
+      const tr = h('tr');
+      r.split('\t').forEach((c) => tr.appendChild(h(i === 0 && r.startsWith('#') ? 'th' : 'td', c.length > 60 ? c.slice(0, 57) + '…' : c)));
+      t.appendChild(tr);
+    });
+    wrap.appendChild(h('div.ch-table-scroll', t));
+    if (rows.length > 500) wrap.appendChild(h('p.muted.small', `Showing the first 500 of ${rows.length} lines.`));
+    return wrap;
+  }
+  function orderSteps(w) {
+    const done = new Set();
+    const out = [];
+    let guard = 0;
+    while (out.length < w.steps.length && guard++ < 200) {
+      w.steps.forEach((s) => {
+        if (done.has(s.id)) return;
+        const deps = Object.values(s.connections || {}).filter(Boolean).map((c) => c.step);
+        if (deps.every((d) => done.has(d) || !w.steps.some((x) => x.id === d))) {
+          done.add(s.id);
+          out.push(s);
+        }
+      });
+    }
+    w.steps.forEach((s) => !done.has(s.id) && out.push(s));
+    return out;
+  }
+  /** does step `from` lead (through its outputs) to step `to`? */
+  function reaches(w, from, to) {
+    const seen = new Set();
+    const go = (id) => {
+      if (id === to) return true;
+      if (seen.has(id)) return false;
+      seen.add(id);
+      return w.steps.filter((s) => Object.values(s.connections || {}).some((c) => c && c.step === id)).some((s) => go(s.id));
+    };
+    return go(from);
+  }
+  function countWires(w) {
+    return w.steps.reduce((n, s) => n + Object.values(s.connections || {}).filter(Boolean).length, 0);
+  }
+  function validateWorkflow(w) {
+    const probs = [];
+    if (!w.steps.some((s) => s.type === 'input')) probs.push('It has no input dataset.');
+    if (!w.steps.some((s) => s.type === 'tool')) probs.push('It has no tool steps.');
+    w.steps.forEach((s) => {
+      if (s.type !== 'tool') return;
+      const t = TOOL.get(s.tool);
+      if (!t) return probs.push(`The tool ${s.tool} is not installed here.`);
+      if (!available(t)) probs.push(`${t.name}: its program (${t.needs}) is not available in this browser.`);
+      t.inputs.forEach((i) => {
+        const c = (s.connections || {})[i.name];
+        if (!c) {
+          if (!i.optional) probs.push(`${t.name}: “${i.short || i.name}” is not connected.`);
+          return;
+        }
+        const src = w.steps.find((x) => x.id === c.step);
+        if (!src) probs.push(`${t.name}: “${i.short || i.name}” is connected to a step that was removed.`);
+        else if (src.type === 'tool' && !stepOutputs(src).some((o) => o.name === c.output)) probs.push(`${t.name}: “${i.short || i.name}” is connected to an output that ${TOOL.get(src.tool) ? TOOL.get(src.tool).name : 'its step'} does not make with these inputs.`);
+      });
+    });
+    return probs;
+  }
+  function autoLayout(w) {
+    const depth = {};
+    orderSteps(w).forEach((s) => {
+      const deps = Object.values(s.connections || {}).filter(Boolean).map((c) => depth[c.step] || 0);
+      depth[s.id] = deps.length ? Math.max(...deps) + 1 : 0;
+    });
+    const cols = {};
+    w.steps.forEach((s) => {
+      const d = depth[s.id] || 0;
+      cols[d] = (cols[d] || 0) + 1;
+      s.x = 16 + d * 222;
+      s.y = 16 + (cols[d] - 1) * 132;
+    });
+  }
+  function fromGa(ga) {
+    if (!ga || ga.a_galaxy_workflow !== 'true' || !ga.steps) throw new Error('no a_galaxy_workflow / steps');
+    const w = { id: uid(), name: ga.name || 'Imported workflow', annotation: ga.annotation || '', steps: [], created: Date.now(), updated: Date.now() };
+    const ids = {};
+    Object.values(ga.steps).forEach((s) => (ids[s.id] = 's' + uid()));
+    const repo = (id) => String(id).split('/').slice(0, -1).join('/');
+    Object.values(ga.steps).forEach((s) => {
+      if (s.type === 'data_input') {
+        let fmt = ['fastqsanger'];
+        try {
+          const st = JSON.parse(s.tool_state || '{}');
+          if (st.format && st.format.length) fmt = [].concat(st.format);
+        } catch (e) {
+          /* the default */
+        }
+        w.steps.push({ id: ids[s.id], type: 'input', label: s.label || (s.inputs && s.inputs[0] && s.inputs[0].name) || 'Input dataset', ext: fmt, x: (s.position && s.position.left) || 0, y: (s.position && s.position.top) || 0 });
+      } else if (s.type === 'tool') {
+        const t = TOOLS.find((x) => x.toolId === s.tool_id || (x.toolId.includes('/repos/') && repo(x.toolId) === repo(s.tool_id)) || x.id === s.tool_id);
+        if (!t) throw new Error(`the tool ${s.tool_id} is not installed on this server`);
+        let params = {};
+        try {
+          params = JSON.parse(s.tool_state || '{}');
+        } catch (e) {
+          /* the defaults */
+        }
+        const clean = {};
+        t.params.forEach((p) => (clean[p.name] = p.name in params && params[p.name] != null && typeof params[p.name] !== 'object' ? params[p.name] : p.default));
+        const conns = {};
+        Object.entries(s.input_connections || {}).forEach(([k, c]) => {
+          const cc = Array.isArray(c) ? c[0] : c;
+          if (cc && ids[cc.id]) conns[k] = { step: ids[cc.id], output: cc.output_name };
+        });
+        w.steps.push({ id: ids[s.id], type: 'tool', tool: t.id, params: clean, connections: conns, x: (s.position && s.position.left) || 0, y: (s.position && s.position.top) || 0 });
+      }
+    });
+    return w;
+  }
+
+  MG.GalaxyApp = GalaxyApp;
+  MG.galaxyUtil = { TOOLS, FORMATS, sniff, orderSteps, validateWorkflow, autoLayout, fromGa, stepOutExts };
+})();
