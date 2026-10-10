@@ -1,0 +1,14 @@
+seq-align 2017.10.18: needleman_wunsch, smith_waterman, lcs
+Licence: public domain (the Unlicense; LICENSE in this folder)
+Upstream source: https://github.com/noporpoise/seq-align (commit dc419887c246e6da4f21847cbd6c48edab446e14)
+WebAssembly build: Biowasm (https://biowasm.com/), downloaded from
+  https://biowasm.com/cdn/v3/seq-align/2017.10.18/ on 2026-10-10
+Build recipes: https://github.com/biowasm/biowasm (a pinned copy is in ../../../licenses/biowasm-build/)
+
+Three programs of seq-align: needleman_wunsch (global alignment), smith_waterman (local alignment)
+and lcs (longest common substrings). They read compressed input through zlib.
+
+Local change to the JavaScript loaders: exit(status) is recorded as Module.__exitStatus, so that the
+terminal of the workbench keeps the exit status of a failed command.
+Modified files: needleman_wunsch.js, smith_waterman.js, lcs.js
+needleman_wunsch.wasm, smith_waterman.wasm, lcs.wasm are unmodified.

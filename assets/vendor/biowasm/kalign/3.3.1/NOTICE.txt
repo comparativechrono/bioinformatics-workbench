@@ -1,0 +1,14 @@
+kalign 3.3.1
+Licence: GNU GPL version 3 (LICENSE in this folder)
+Upstream source: https://github.com/TimoLassmann/kalign/tree/v3.3.1 (commit 1d0bfe30d42c1d970f003c09cbf2b43ce9d3871e)
+WebAssembly build: Biowasm (https://biowasm.com/), downloaded from
+  https://biowasm.com/cdn/v3/kalign/3.3.1/ on 2026-10-10
+Build recipes: https://github.com/biowasm/biowasm (a pinned copy is in ../../../licenses/biowasm-build/)
+
+The source of this version (git archive of the commit above) is ../../../licenses/sources/kalign-3.3.1.tar.xz;
+the Biowasm recipe (configure, a patch that resets getopt between runs) is in ../../../licenses/biowasm-build/tools/kalign/.
+
+Local change to the JavaScript loader: exit(status) is recorded as Module.__exitStatus, so that the
+terminal of the workbench keeps the exit status of a failed command.
+Modified file: kalign.js
+kalign.wasm is unmodified.
