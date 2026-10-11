@@ -1,0 +1,24 @@
+BWA-MEM2 2.2.1: bwa-mem2 (index, mem, version)
+Licence: MIT (LICENSE in this folder). Built with safestringlib (MIT: LICENSE.safestringlib,
+LICENSE-COPYING.safestringlib.txt) and zlib 1.3.1 (LICENSE.zlib); the loader is Emscripten's runtime (MIT and
+NCSA: LICENSE.emscripten).
+Upstream source: https://github.com/bwa-mem2/bwa-mem2/tree/bf3d376e95f4321b0d37a27d7ff1c77da4d289ff
+(safestringlib: https://github.com/intel/safestringlib/tree/245c4b8cff1d2e7338b7f3a82828fc8e72b29549)
+
+Compiled to WebAssembly by the genomics-wasm project (https://github.com/comparativechrono/genomics-wasm,
+commit e8c3e15): Emscripten 3.1.64, BWA-MEM2's SSE4.1 code as WebAssembly SIMD, one thread. Everything
+needed to build it again is described in ../../../licenses/genomics-wasm-build/ (the patch, the build
+script, the source lock with the archives' SHA-256, and how it was linked for this site).
+
+Changes to the source (tools/bwa-mem2/browser.patch there): the work of the threads runs in order, in
+BWA-MEM2's own blocks of reads; -t accepts only 1; CPU cycle counters are replaced by a clock; 64-bit types
+where the source counts with "unsigned long" (32 bits in WebAssembly) – the index files stay as on Linux;
+files are opened locally only. The loader (bwa-mem2.js) was linked for the program runner of this site and
+records the exit status; the module stops with "out of memory" rather than going on without memory.
+
+In the workbench's terminal, bwa-mem2 mem -t N (N > 1) is left out with a note. BWA-MEM2 needs a few
+hundred MB of memory even for a small reference.
+
+Checked against BWA-MEM2 2.2.1 built natively from the same source (genomics-wasm's comparison: 24 of 24
+cases with human and yeast reads; and in the workbench with the example data): the same five index files,
+byte for byte, and the same SAM records and tags (apart from the command line in the @PG header).

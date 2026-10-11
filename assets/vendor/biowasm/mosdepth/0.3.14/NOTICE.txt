@@ -1,0 +1,24 @@
+mosdepth 0.3.14: mosdepth
+Licence: MIT (LICENSE in this folder). Written in Nim (Nim 2.2.12 runtime: LICENSE.nim) with hts-nim
+(LICENSE.hts-nim), docopt.nim (LICENSE.docopt), nim-regex (LICENSE.regex), nim-unicodedb (LICENSE.unicodedb,
+LICENSE.unicode), HTSlib 1.24 with htscodecs (LICENSE.htslib, LICENSE.htscodecs) and zlib 1.3.1
+(LICENSE.zlib); the loader is Emscripten's runtime (LICENSE.emscripten). THIRD_PARTY_LICENSES.txt lists them.
+Upstream source: https://github.com/brentp/mosdepth/tree/v0.3.14
+
+Compiled to WebAssembly by the genomics-wasm project (https://github.com/comparativechrono/genomics-wasm,
+commit e8c3e15): Nim 2.2.12 and Emscripten 3.1.64, 64-bit values kept and lowered to 32-bit WebAssembly
+(MEMORY64=2), Nim's ORC memory manager, HTSlib without bzip2, LZMA, libdeflate, libcurl and plugins.
+Everything needed to build it again is described in ../../../licenses/genomics-wasm-build/.
+
+Changes to the source (tools/mosdepth/browser.patch and hts-nim.patch there): file names stay alive while
+HTSlib uses them; files that cannot be opened are reported (status 2) instead of crashing; four HTSlib
+function signatures as in HTSlib's headers; --threads must be 0 and --d4 is not available. Depth and
+statistics are unchanged. The loader (mosdepth.js) was linked for the program runner of this site and
+records the exit status.
+
+In the workbench's terminal, mosdepth -t N (N > 0) is left out with a note. mosdepth keeps an array as long
+as the longest sequence in the BAM header: whole human chromosomes need more memory than a browser gives.
+
+Checked against mosdepth 0.3.14 built natively from the same source (genomics-wasm's comparison: 28 of 28
+cases with human and yeast RNA-seq alignments, BAM and CRAM; and in the workbench with the example data):
+the same summary, distribution, per-base and window depths.

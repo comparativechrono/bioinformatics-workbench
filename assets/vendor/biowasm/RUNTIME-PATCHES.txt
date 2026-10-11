@@ -134,9 +134,11 @@ file system in the first one, and the programs that are started afresh must not 
 In the loader of every program, exit(status) is recorded as Module.__exitStatus. (The loaders of
 the programs that were compiled for the course – Bowtie 2, diff, cmp – get this from their
 build scripts; diff and cmp are also given their names there, with which their messages begin.
-BWA, HISAT2 and FreeBayes get it from finish-loader.py, when they are linked for this runner –
-../licenses/genomics-wasm-build/workbench/. base.js, the loader of the base module, runs no
-program and is as downloaded.)
+BWA, HISAT2 and FreeBayes – and BWA-MEM2, StringTie, kallisto and mosdepth, since 11 October 2026 –
+get it from finish-loader.py, when they are linked for this runner – ../licenses/genomics-wasm-build/
+workbench/. base.js, the loader of the base module, runs no program and is as downloaded.
+featureCounts and Salmon do not run in this runner: they work on several threads, and run in a
+worker of their own – ../genomics-wasm/ and assets/js/threads-worker.mjs.)
 
 One more change, in coreutils/8.32/date.js and gawk/5.1.0/gawk.js: the day of the year. These
 loaders worked it out from the milliseconds that have passed since 1 January, local time. In a

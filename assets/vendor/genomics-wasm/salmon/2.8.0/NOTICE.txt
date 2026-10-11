@@ -1,0 +1,29 @@
+Salmon 2.8.0 (the Rust implementation of Salmon): salmon (index, quant)
+Licence: BSD 3-Clause (LICENSE in this folder). It is built from 426 Rust crates (THIRD_PARTY_LICENSES.txt lists
+each with its licence – MIT, Apache 2.0 and other permissive ones; CRATE-NOTICES.txt holds their licence and notice
+files) and Rust's standard library (COPYRIGHT.rust, LICENSE.rust-apache, LICENSE.rust-mit); the loader is
+Emscripten's runtime, with a small change of the genomics-wasm port (MIT and NCSA: LICENSE.emscripten).
+Upstream source: https://github.com/COMBINE-lab/salmon/releases/tag/v2.8.0 (source.tar.gz); the crates from
+crates.io, each pinned by its SHA-256 in genomics-wasm's tools/salmon/sources.lock.json (in
+../../../licenses/genomics-wasm-build/tools/salmon/).
+
+Compiled to WebAssembly by the genomics-wasm project (https://github.com/comparativechrono/genomics-wasm,
+commit e8c3e15): Rust nightly-2026-09-25 with its standard library rebuilt for threads, Emscripten 3.1.64,
+pthreads in shared WebAssembly memory; the build machine's folders were mapped out of the panic messages
+(--remap-path-prefix). The module (salmon.mjs, salmon.wasm) is used here as that project built it: the page runs
+each command in a worker of its own (assets/js/threads-worker.mjs), which needs a cross-origin isolated page.
+How it was built is described in ../../../licenses/genomics-wasm-build/.
+
+Changes to the source (tools/salmon/browser.patch there): 64-bit storage where Salmon's index packs values that
+do not fit 32 bits; checked multiplications of memory budgets; no thread priorities in the browser; the system
+allocator; one compute worker (-p 1; Salmon's own helper threads still run); Emscripten's message mailbox of the
+main runtime worker (mailbox.js). Mapping and quantification are unchanged. Salmon's indexes record the width of
+the computer's numbers: an index made on a 64-bit computer cannot be read here, nor one made here there.
+
+In the workbench's terminal, salmon -p N (N > 1) is left out with a note. Salmon colours its log (as on Linux,
+also in a file); the terminal shows the colours. In its messages the number of a system error is given as Linux
+gives it ("No such file or directory (os error 2)"; WebAssembly's C library numbers them otherwise).
+
+Checked against Salmon 2.8.0 built natively from the same source, unchanged and with the port's changes
+(genomics-wasm's comparison: 31 of 31 cases with human and yeast reads; and in the workbench with the example
+data): the same quant.sf, paired and single-end, and the same library type and counts in lib_format_counts.json.

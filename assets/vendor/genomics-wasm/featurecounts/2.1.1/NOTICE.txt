@@ -1,0 +1,24 @@
+featureCounts 2.1.1 (Subread 2.1.1): featureCounts
+Licence: GPL-3.0-or-later (LICENSE in this folder). Built with zlib 1.3.1 (LICENSE.zlib); the loader is
+Emscripten's runtime, with a small change of the genomics-wasm port (MIT and NCSA: LICENSE.emscripten).
+THIRD_PARTY_LICENSES.txt lists them.
+Upstream source: https://subread.sourceforge.net/ (subread-2.1.1-source.tar.gz – in ../../../licenses/sources/)
+
+Compiled to WebAssembly by the genomics-wasm project (https://github.com/comparativechrono/genomics-wasm,
+commit e8c3e15): Emscripten 3.1.64, with threads (pthreads in shared WebAssembly memory). The module
+(featurecounts.mjs, featurecounts.wasm) is used here as that project built it: the page runs each command in
+a worker of its own (assets/js/threads-worker.mjs), which needs a cross-origin isolated page. Everything
+needed to build it again is described in ../../../licenses/genomics-wasm-build/.
+
+Changes to the source (tools/featurecounts/browser.patch there): at most four counting threads (-T 1 to 4);
+standard file functions in place of Linux's fopen64; integer formats of the right widths; the counters of
+junctions and splice sites stop the program (status 2) rather than overflow on 32-bit WebAssembly. Counting
+is unchanged.
+
+In the workbench's terminal, featureCounts -T N (N > 4) counts on four threads, with a note. Emscripten's
+note "warning: unsupported syscall: __syscall_prlimit64" (featureCounts asks for its limit of open files) is
+left out of the messages.
+
+Checked against featureCounts 2.1.1 built natively from the same source (genomics-wasm's comparison: 30 of
+30 cases with human and yeast RNA-seq alignments; and in the workbench with the example data): the same
+count tables and summaries (apart from the command line in the table's first line).
