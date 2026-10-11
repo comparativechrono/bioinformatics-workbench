@@ -60,8 +60,8 @@
 <section><h2><svg class="ic" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M4 17l6-5-6-5M12 19h8"/></svg>Terminal and programs</h2><ul>
 <li><a href="#h-terminal">The terminal<small>bash, the programs, keys, saving a session</small></a></li>
 <li><a href="#h-reads">Reads: quality, trimming, simulation<small>fastp, seqtk, wgsim</small></a></li>
-<li><a href="#h-mapping">Mapping reads<small>minimap2, Bowtie 2, samtools</small></a></li>
-<li><a href="#h-variants">Variant calling<small>bcftools mpileup, call, filter, query; bgzip, tabix</small></a></li>
+<li><a href="#h-mapping">Mapping reads<small>minimap2, Bowtie 2, BWA, HISAT2, samtools</small></a></li>
+<li><a href="#h-variants">Variant calling<small>bcftools mpileup, call, filter, query; FreeBayes; bgzip, tabix</small></a></li>
 <li><a href="#h-intervals">Intervals and annotation<small>bedtools, gffread, BED and GFF files</small></a></li>
 <li><a href="#h-alignment">Alignments and trees<small>pairwise, multiple alignment, phylogenetic trees</small></a></li>
 <li><a href="#h-text">Text tools<small>grep, sed, awk, sort, cut, jq, curl, archives</small></a></li>
@@ -97,6 +97,7 @@
 </ul></section>
 <section><h2><svg class="ic" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M9 3h6M10 3v6l-5 9a2 2 0 0 0 1.7 3h10.6a2 2 0 0 0 1.7-3l-5-9V3"/><path d="M7.5 15h9"/></svg>Recipes</h2><ul>
 <li><a href="#h-recipe-variants">Reads to variants, in a notebook<small>QC, mapping, calling, a table of the variants, VEP, the genome browser</small></a></li>
+<li><a href="#h-recipe-rnaseq">RNA-seq: reads to differential expression<small>HISAT2, spliced reads in the genome browser, DESeq2 and edgeR</small></a></li>
 <li><a href="#h-recipe-protein">From a protein to its structure<small>UniProt, Biopython, a PDB file, an AlphaFold model, superposition</small></a></li>
 <li><a href="#h-recipe-table">A table, in Python and in R<small>Read, summarise, plot and test the yeast gene table</small></a></li>
 <li><a href="#h-recipe-api">Databases from code<small>requests, batches and loops, retries, Biopython&#x27;s Entrez, part of a big file, R</small></a></li>
@@ -303,18 +304,31 @@ print(gene["id"], gene["seq_region_name"], gene["start"], gene["end"], gene["bio
   <li><code>input()</code> does not work in a notebook: put the values in a variable instead.</li>
 </ul>
 </article>
-<article class="help-page" id="h-r" data-title="R" data-group="Notebooks: Python and R" data-group-page="h-notebook" data-keys="r rstats webr ggplot2 dplyr tidyverse tidyr readr bioconductor biostrings genomicranges limma deseq2 install.packages library rscript plot data frame" hidden>
+<article class="help-page" id="h-r" data-title="R" data-group="Notebooks: Python and R" data-group-page="h-notebook" data-keys="r rstats webr ggplot2 dplyr tidyverse tidyr readr bioconductor biostrings genomicranges limma deseq2 edger locfit differential expression rna-seq install.packages library rscript plot data frame" hidden>
 <h1><svg class="ic" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><ellipse cx="11" cy="10" rx="9" ry="6"/><path d="M9 21V8h5a2.5 2.5 0 0 1 0 5H9M13 13l4 8"/></svg>R</h1>
 <p class="lede">R 4.6 (webR), running in this page. Packages are downloaded the first time you load them; base graphics and ggplot2 plots appear under the cell.</p>
 <div class="tryrow"><button class="do" type="button" data-new-nb="r">New R notebook</button> <button class="do" type="button" data-open-nb="~/notebooks/welcome-r.ipynb">Open the R welcome notebook</button></div>
 
 <h2>Packages</h2>
 <p><code>library(NAME)</code> downloads a package the first time it is used in a visit, from the builds of CRAN packages for the browser (repo.r-wasm.org) and of Bioconductor packages on r-universe. <code>install.packages("NAME")</code> works too, and so does <code>BiocManager::install("NAME")</code>. The first <code>library(ggplot2)</code> or <code>library(dplyr)</code> takes half a minute; packages last until the page is reloaded.</p>
-<p>Tested in October 2026: ggplot2, dplyr, tidyr, readr, stringr, ape, seqinr, pheatmap, and from Bioconductor Biostrings, GenomicRanges and limma. DESeq2 and edgeR do not load yet (a package they need, locfit, has no build for the browser).</p>
+<p>Tested in October 2026: ggplot2, dplyr, tidyr, readr, stringr, ape, seqinr, pheatmap, and from Bioconductor Biostrings, GenomicRanges, limma, DESeq2 and edgeR. Bioconductor packages come from its current release. DESeq2 and edgeR need the package locfit, which the repositories have not built for the browser: the workbench brings its own build of it, and R finds it there.</p>
 <pre class="code" data-run="r"><code>library(Biostrings)
 myo <- readAAStringSet("/data/examples/sequences/myoglobins.fasta")
 width(myo)
 alphabetFrequency(myo)[, c("A", "G", "L", "K")]</code></pre>
+
+<h2>Differential expression: DESeq2 and edgeR</h2>
+<p>The example counts are a real RNA-seq experiment: four cell lines of airway smooth muscle, each with and without the steroid dexamethasone. The first <code>library(DESeq2)</code> downloads about 40 packages – a minute; <code>DESeq()</code> on 22,000 genes takes another.</p>
+<pre class="code" data-run="r"><code>library(DESeq2)
+counts <- as.matrix(read.delim("/data/examples/rnaseq/airway_counts.tsv", row.names = 1, check.names = FALSE))
+samples <- read.delim("/data/examples/rnaseq/airway_samples.tsv", row.names = 1)
+samples$cell <- factor(samples$cell)
+samples$dex <- factor(samples$dex, levels = c("untrt", "trt"))
+dds <- DESeqDataSetFromMatrix(counts, samples, design = ~ cell + dex)
+dds <- DESeq(dds[rowSums(counts(dds)) >= 10, ])
+res <- results(dds, contrast = c("dex", "trt", "untrt"), alpha = 0.05)
+summary(res)</code></pre>
+<p>The <a href="#h-recipe-rnaseq">RNA-seq recipe</a> goes further: plots, the top genes, the same with edgeR – and mapping RNA-seq reads with HISAT2 first.</p>
 
 <h2>Data frames and plots</h2>
 <pre class="code" data-run="r"><code>library(dplyr)
@@ -385,8 +399,8 @@ done</code></pre>
 <table>
 <tr><th>For</th><th>Programs</th><th>Guide</th></tr>
 <tr><td>reads</td><td>fastp, seqtk, wgsim</td><td><a href="#h-reads">Reads</a></td></tr>
-<tr><td>mapping</td><td>minimap2, bowtie2, samtools</td><td><a href="#h-mapping">Mapping reads</a></td></tr>
-<tr><td>variants</td><td>bcftools, bgzip, tabix</td><td><a href="#h-variants">Variant calling</a></td></tr>
+<tr><td>mapping</td><td>minimap2, bowtie2, bwa, hisat2 (RNA-seq), samtools</td><td><a href="#h-mapping">Mapping reads</a></td></tr>
+<tr><td>variants</td><td>bcftools, freebayes, bgzip, tabix</td><td><a href="#h-variants">Variant calling</a></td></tr>
 <tr><td>intervals and annotation</td><td>bedtools, gffread</td><td><a href="#h-intervals">Intervals</a></td></tr>
 <tr><td>alignments and trees</td><td>needleman_wunsch, smith_waterman, kalign, muscle, fasttree, lastz</td><td><a href="#h-alignment">Alignments and trees</a></td></tr>
 <tr><td>text and data</td><td>grep, sed, awk, sort, cut, jq, curl …</td><td><a href="#h-text">Text tools</a></td></tr>
@@ -456,9 +470,9 @@ seqtk comp /data/examples/sequences/myoglobins.fasta | cut -f 1,2</code></pre>
 head -4 sim_R1.fastq</code></pre>
 <p><code>-N</code> pairs, <code>-1</code>/<code>-2</code> read lengths, <code>-e</code> error rate, <code>-r</code> mutation rate, <code>-d</code>/<code>-s</code> fragment length and spread, <code>-S</code> seed. A read's name says where it came from (<code>human_CYP2C19_12642_13173_…</code>). This build does not print the list of mutations it made.</p>
 </article>
-<article class="help-page" id="h-mapping" data-title="Mapping reads" data-group="Terminal and programs" data-group-page="h-terminal" data-keys="map mapping align alignment reads reference minimap2 bowtie2 bowtie2-build samtools sam bam sort index flagstat stats depth view faidx coverage tview" hidden>
+<article class="help-page" id="h-mapping" data-title="Mapping reads" data-group="Terminal and programs" data-group-page="h-terminal" data-keys="map mapping align alignment reads reference minimap2 bowtie2 bowtie2-build bwa bwa-mem bwa-index hisat2 hisat2-build hisat2-inspect rna-seq rnaseq spliced splicing intron samtools sam bam sort index flagstat stats depth view faidx coverage tview" hidden>
 <h1><svg class="ic" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M4 6h16M4 10h11M4 14h16M4 18h9"/></svg>Mapping reads</h1>
-<p class="lede">Mapping finds where each read comes from in a reference sequence. <b>minimap2</b> and <b>Bowtie 2</b> map; <b>samtools</b> sorts, indexes, filters and counts the alignments.</p>
+<p class="lede">Mapping finds where each read comes from in a reference sequence. <b>minimap2</b>, <b>Bowtie 2</b> and <b>BWA</b> map DNA reads, <b>HISAT2</b> maps RNA-seq reads across introns; <b>samtools</b> sorts, indexes, filters and counts the alignments.</p>
 <p>The examples work in a folder of your own: <button class="do" type="button" data-term-run="mkdir -p ~/mapping && cd ~/mapping">mkdir -p ~/mapping &amp;&amp; cd ~/mapping</button></p>
 
 <h2>The reference</h2>
@@ -482,6 +496,22 @@ samtools index bt2.bam
 cat bowtie2.log</code></pre>
 <p><code>bowtie2-build</code> makes the index (six <code>.bt2</code> files) once. The summary of the mapping goes to the standard error – here into <code>bowtie2.log</code>. Presets: <code>--very-fast</code> … <code>--very-sensitive</code>, and <code>--local</code> for local alignment.</p>
 
+<h2>BWA</h2>
+<pre class="code" data-run="term"><code>bwa index reference.fa
+bwa mem -R '@RG\tID:NA12878\tSM:NA12878' reference.fa /data/examples/reads/NA12878_R1.fastq /data/examples/reads/NA12878_R2.fastq 2> bwa.log | samtools sort -o bwa.bam -
+samtools index bwa.bam
+samtools flagstat bwa.bam</code></pre>
+<p><code>bwa index</code> makes the index once: five files (<code>.amb .ann .bwt .pac .sa</code>) next to the FASTA file – so the FASTA file must be in a folder of your own, not in the read-only examples. <code>bwa mem</code> is BWA's aligner for reads of 70 bases and more; it reads <code>.fastq.gz</code> files too. Its messages go to the standard error (here <code>bwa.log</code>); the CPU times in them are not measured in the browser – the real times are.</p>
+
+<h2 id="hisat2">HISAT2, for RNA-seq reads</h2>
+<p>A read from a spliced RNA can span an intron: its first part matches one exon, the rest the next. <b>HISAT2</b> splits such reads across the intron. The example reads are 256 pairs of yeast RNA-seq reads; the reference is chromosome I of yeast.</p>
+<pre class="code" data-run="term"><code>hisat2-build /data/examples/rnaseq/yeast_chrI.fa yeast_chrI > /dev/null 2>&1
+hisat2 -x yeast_chrI -1 /data/examples/rnaseq/SRR6357070_1.fastq -2 /data/examples/rnaseq/SRR6357070_2.fastq 2> hisat2.log | samtools sort -o rnaseq.bam -
+samtools index rnaseq.bam
+cat hisat2.log
+samtools view rnaseq.bam | awk '$6 ~ /N/ {print $3, $4, $6}' | head -3</code></pre>
+<p><code>hisat2-build</code> writes eight <code>.ht2</code> files; <code>-x</code> names them without the ending. A spliced read has an <code>N</code> in its CIGAR string: <code>94M113N7M</code> is 94 bases on the genome, an intron of 113 bases skipped, then 7 more. Known introns can help: <code>--known-splicesite-infile /data/examples/rnaseq/yeast_chrI.splice_sites.tsv</code>; for DNA reads use <code>--no-spliced-alignment</code>. <code>hisat2</code> unpacks <code>.gz</code> read files first, as its wrapper script does; <code>--un</code> and <code>--al</code> (also done by the wrapper) are not available – <code>samtools fastq -f 4</code> gets the unmapped reads. The <a href="#h-recipe-rnaseq">RNA-seq recipe</a> goes on to differential expression.</p>
+
 <h2>samtools</h2>
 <table>
 <tr><th>Command</th><th>What it does</th></tr>
@@ -501,9 +531,9 @@ samtools depth -a -r human_CYP2C19:11610-11620 mapped.bam</code></pre>
 <p>To see the reads, <code>igv mapped.bam</code> opens them in the <a href="#h-genome">Genome browser</a>.</p>
 <div class="callout info"><div class="co-t"><svg class="ic" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7.5h.01"/></svg>SAM flags</div><p>The second column of a SAM line is a sum of bits: 1 paired, 2 properly paired, 4 unmapped, 16 reverse strand, 256 secondary, 1024 duplicate, 2048 supplementary. <code>-f</code> keeps reads that have all the given bits, <code>-F</code> drops reads that have any of them.</p></div>
 </article>
-<article class="help-page" id="h-variants" data-title="Variant calling" data-group="Terminal and programs" data-group-page="h-terminal" data-keys="variants snp indel vcf bcf bcftools mpileup call filter view query stats norm bgzip tabix genotype calling" hidden>
+<article class="help-page" id="h-variants" data-title="Variant calling" data-group="Terminal and programs" data-group-page="h-terminal" data-keys="variants snp indel mnp vcf bcf bcftools mpileup call filter view query stats norm isec freebayes haplotype bgzip tabix genotype calling" hidden>
 <h1><svg class="ic" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M20.6 13.4l-7.2 7.2a2 2 0 0 1-2.8 0L3 13V3h10l7.6 7.6a2 2 0 0 1 0 2.8z"/><circle cx="7.5" cy="7.5" r="1.4"/></svg>Variant calling</h1>
-<p class="lede"><b>bcftools</b> finds the positions where the reads differ from the reference, decides the genotypes, filters the calls and turns VCF files into tables. <b>bgzip</b> and <b>tabix</b> compress and index them.</p>
+<p class="lede"><b>bcftools</b> finds the positions where the reads differ from the reference, decides the genotypes, filters the calls and turns VCF files into tables. <b>FreeBayes</b> is a second caller, which looks at haplotypes rather than single positions. <b>bgzip</b> and <b>tabix</b> compress and index the VCF files.</p>
 <p>The examples work in a folder of your own: <button class="do" type="button" data-term-run="mkdir -p ~/variants && cd ~/variants">mkdir -p ~/variants &amp;&amp; cd ~/variants</button></p>
 
 <h2>From a BAM file to variants</h2>
@@ -532,6 +562,18 @@ bcftools stats filtered.vcf.gz | grep -E "^SN|^TSTV"</code></pre>
 head calls.tsv</code></pre>
 <p>A table like this reads straight into pandas or R (<code>pd.read_csv("calls.tsv", sep="\t")</code>). A known position, such as the CYP2C19*2 variant (rs4244285, G&gt;A) at position 11,616 of <code>human_CYP2C19</code> – NA12878 carries it on one chromosome (0/1):</p>
 <pre class="code" data-run="term"><code>bcftools view -H -r human_CYP2C19:11616 filtered.vcf.gz | cut -f 1-10</code></pre>
+
+<h2>FreeBayes</h2>
+<p>FreeBayes reads the same sorted BAM file and the reference (which needs its <code>.fai</code> index – <code>samtools faidx</code>; FreeBayes makes one if it is missing) and writes a VCF file:</p>
+<pre class="code" data-run="term"><code>freebayes -f /data/examples/reads/reference.fa mapped.bam > freebayes.vcf
+bcftools view -H freebayes.vcf | wc -l
+bcftools filter -i 'QUAL>=20' -Oz -o freebayes.filtered.vcf.gz freebayes.vcf
+bcftools index freebayes.filtered.vcf.gz
+bcftools view -H -r human_CYP2C19:11616 freebayes.filtered.vcf.gz | cut -f 1-6</code></pre>
+<p>FreeBayes also writes the sites it considered and does not believe – QUAL near 0, genotype 0/0 – so filter on QUAL. Its INFO fields differ from bcftools': <code>DP</code> depth, <code>RO</code> and <code>AO</code> the reads with the reference and the other allele, <code>TYPE</code> snp, mnp, ins, del or complex. Useful options: <code>-r human_CYP2C19:11000-12500</code> (one region; needs the BAM index), <code>-p 1</code> (a haploid organism), <code>-C 3</code> (at least three reads for an allele), <code>--min-mapping-quality 20</code>. Which calls do the two callers share?</p>
+<pre class="code" data-run="term"><code>bcftools isec -n=2 -w1 filtered.vcf.gz freebayes.filtered.vcf.gz | grep -vc "^#"
+bcftools isec -C -w1 filtered.vcf.gz freebayes.filtered.vcf.gz | grep -v "^#" | cut -f 1-5</code></pre>
+<p><code>-n=2</code> keeps the sites in both files, <code>-C</code> the sites of the first file only. Positions where the callers disagree are worth a look in the genome browser.</p>
 
 <h2>bgzip and tabix</h2>
 <p>A VCF file that tools read by region must be compressed with <code>bgzip</code> (not plain <code>gzip</code>) and indexed:</p>
@@ -795,7 +837,7 @@ ls -l ~/example-reads</code></pre>
 <h2>Start afresh</h2>
 <p><b>My files → Start afresh</b> deletes all your files, Galaxy's history and the workbench's settings in this browser – after you have downloaded what you want to keep. The settings of the AI assistant and of the help pane are kept.</p>
 </article>
-<article class="help-page" id="h-galaxy" data-title="Galaxy" data-group="Galaxy" data-group-page="h-galaxy" data-keys="galaxy history dataset upload tool run job provenance usegalaxy datatype format fastqsanger rerun delete purge notebook export" hidden>
+<article class="help-page" id="h-galaxy" data-title="Galaxy" data-group="Galaxy" data-group-page="h-galaxy" data-keys="galaxy history dataset upload tool run job provenance usegalaxy bwa-mem hisat2 freebayes datatype format fastqsanger rerun delete purge notebook export" hidden>
 <h1><svg class="ic" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><rect x="3" y="3" width="6" height="5" rx="1"/><rect x="15" y="16" width="6" height="5" rx="1"/><rect x="15" y="3" width="6" height="5" rx="1"/><path d="M9 5.5h6M18 8v8M9 5.5c3 0 3 13 6 13"/></svg>Galaxy</h1>
 <p class="lede">Galaxy runs analysis tools from forms, keeps every result in a <b>history</b> with a record of how it was made, and joins tools into <b>workflows</b>. This one works like usegalaxy.org and its sister servers – and runs in your browser, with the same programs as the terminal.</p>
 <div class="tryrow"><button class="do" type="button" data-bench="galaxy">Open Galaxy</button></div>
@@ -829,9 +871,9 @@ ls -l ~/example-reads</code></pre>
 <table>
 <tr><th>Section</th><th>Tools</th></tr>
 <tr><td>Quality control</td><td>fastp, seqtk_comp</td></tr>
-<tr><td>Mapping</td><td>Map with minimap2, Bowtie2 (both single- or paired-end)</td></tr>
+<tr><td>Mapping</td><td>Map with minimap2, Bowtie2, Map with BWA-MEM, HISAT2 (RNA-seq reads, across introns) – each single- or paired-end</td></tr>
 <tr><td>SAM/BAM</td><td>Samtools flagstat, stats, idxstats, depth, view (filter)</td></tr>
-<tr><td>Variant calling</td><td>bcftools mpileup, call, filter, view, query, stats</td></tr>
+<tr><td>Variant calling</td><td>bcftools mpileup, call, filter, view, query, stats; FreeBayes</td></tr>
 <tr><td>Intervals</td><td>bedtools Genome Coverage, Intersect intervals</td></tr>
 <tr><td>FASTA/FASTQ</td><td>seqtk_seq (FASTQ to FASTA), seqtk_sample</td></tr>
 <tr><td>Alignments and trees</td><td>Kalign, MUSCLE, FastTree</td></tr>
@@ -1565,6 +1607,83 @@ vep</code></pre>
 <h2>Keep it</h2>
 <p>Restart Python and run the notebook from the top: if every cell runs, the notebook is a complete record. <b>Download → Jupyter notebook (.ipynb)</b> keeps it; the files it made are in <code>~/recipe-variants</code>. The same steps as Galaxy tools: <a href="#h-galaxy">Galaxy</a>; as a Snakemake pipeline: <a href="#h-scripts">Scripts and pipelines</a>.</p>
 </article>
+<article class="help-page" id="h-recipe-rnaseq" data-title="RNA-seq: reads to differential expression" data-group="Recipes" data-group-page="h-recipe-variants" data-keys="recipe rna-seq rnaseq transcriptome expression differential deseq2 edger limma locfit hisat2 splice spliced intron cigar counts airway dexamethasone volcano ma pca vst normalisation normalization fold change padj fdr yeast" hidden>
+<h1><svg class="ic" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M9 3h6M10 3v6l-5 9a2 2 0 0 0 1.7 3h10.6a2 2 0 0 0 1.7-3l-5-9V3"/><path d="M7.5 15h9"/></svg>RNA-seq: reads to differential expression</h1>
+<p class="lede">Two halves of an RNA-seq analysis. First, map real RNA-seq reads with HISAT2 and see reads split across an intron. Then, from the gene counts of a published experiment, find the genes that a drug switches on or off – with DESeq2, and with edgeR for comparison.</p>
+<div class="tryrow"><button class="do" type="button" data-recipe="r">Open this recipe as an R notebook</button> <button class="do" type="button" data-open="/data/examples/rnaseq/airway_samples.tsv">Show the samples</button></div>
+<p>The button writes the steps below into a new R notebook in <code>~/notebooks</code>; the terminal's steps become <code>%%bash</code> cells. Run the cells from the top.</p>
+
+<h2>1. A folder for the work</h2>
+<p><code>setwd()</code> makes it the folder of the notebook's R code and of its <code>%%bash</code> cells.</p>
+<pre class="code" data-run="r"><code>dir.create("~/recipe-rnaseq", showWarnings = FALSE)
+setwd("~/recipe-rnaseq")</code></pre>
+
+<h2>2. Map RNA-seq reads with HISAT2</h2>
+<p>256 pairs of reads from yeast RNA (study GSE110004), and chromosome I of the yeast genome as the reference. <code>hisat2-build</code> indexes the reference once; <code>hisat2</code> maps the reads and reports how many it placed.</p>
+<pre class="code" data-run="term"><code>hisat2-build /data/examples/rnaseq/yeast_chrI.fa yeast_chrI > /dev/null 2>&1
+hisat2 -x yeast_chrI -1 /data/examples/rnaseq/SRR6357070_1.fastq -2 /data/examples/rnaseq/SRR6357070_2.fastq \
+       2> hisat2.log | samtools sort -o rnaseq.bam -
+samtools index rnaseq.bam
+cat hisat2.log</code></pre>
+
+<h2>3. Reads across an intron</h2>
+<p>A read from a spliced RNA can start in one exon and end in the next. HISAT2 splits it: an <code>N</code> in the CIGAR string is the intron that the read skips. <code>80M366N21M</code> means 80 bases on the genome, 366 skipped, then 21 more. How many reads skip an intron, and how long are the introns they skip?</p>
+<pre class="code" data-run="term"><code>samtools view rnaseq.bam | awk '$6 ~ /N/' | wc -l
+samtools view rnaseq.bam | awk '$6 ~ /N/ {match($6, /[0-9]+N/); print substr($6, RSTART, RLENGTH)}' | sort | uniq -c | sort -rn</code></pre>
+<p>Most of them skip the same 366 bases: the intron of <i>EFB1</i> (YAL003W), a yeast gene at I:142,174–143,160, whose intron holds a small nucleolar RNA gene (snR18). <button class="do" type="button" data-term-run="cd ~/recipe-rnaseq && igv --genome /data/examples/rnaseq/yeast_chrI.fa /data/examples/rnaseq/yeast_chrI.gtf rnaseq.bam --locus I:141900-143300">Show them in the genome browser</button> – the reads are drawn with a thin line across the intron, under the gene's exons.</p>
+
+<h2>4. The counts of a whole experiment</h2>
+<p>Differential expression starts from a table: how many reads each gene got in each sample. For whole genomes such tables are made on a server (featureCounts, HTSeq or salmon); this one is from the Bioconductor package <i>airway</i>: human airway smooth muscle cells, four cell lines (<code>cell</code>), each untreated and treated with the steroid dexamethasone (<code>dex</code>) – Himes et al., <i>PLoS ONE</i> 2014.</p>
+<pre class="code" data-run="r"><code>counts <- as.matrix(read.delim("/data/examples/rnaseq/airway_counts.tsv", row.names = 1, check.names = FALSE))
+samples <- read.delim("/data/examples/rnaseq/airway_samples.tsv", row.names = 1)
+samples <- samples[colnames(counts), ]
+samples$cell <- factor(samples$cell)
+samples$dex <- factor(samples$dex, levels = c("untrt", "trt"))
+dim(counts)
+samples[, c("cell", "dex")]
+colSums(counts) / 1e6   # reads per sample, in millions</code></pre>
+
+<h2>5. DESeq2</h2>
+<p>The design <code>~ cell + dex</code> compares treated with untreated cells of the same cell line. Genes with almost no reads are left out first. The first <code>library(DESeq2)</code> downloads about 40 packages – give it a minute; <code>DESeq()</code> takes about as long.</p>
+<pre class="code" data-run="r"><code>library(DESeq2)
+dds <- DESeqDataSetFromMatrix(countData = counts, colData = samples, design = ~ cell + dex)
+dds <- dds[rowSums(counts(dds)) >= 10, ]
+dds <- DESeq(dds)
+res <- results(dds, contrast = c("dex", "trt", "untrt"), alpha = 0.05)
+summary(res)</code></pre>
+<p><code>DESeq()</code> normalises for the depth of each sample (size factors), estimates how much each gene varies between replicates (dispersion), and tests every gene. <code>padj</code> is the p-value adjusted for testing thousands of genes: a cut-off of 0.05 keeps the false discoveries near 5%.</p>
+
+<h2>6. The genes that changed most</h2>
+<pre class="code" data-run="r"><code>top <- as.data.frame(res[order(res$padj), ])
+head(top[, c("baseMean", "log2FoldChange", "padj")], 10)
+write.csv(top, "deseq2_dex_vs_untreated.csv")</code></pre>
+<p>A log2 fold change of 2 is four times as much RNA in treated cells; −2 a quarter. Third in the list is <i>DUSP1</i> (ENSG00000120129), a well-known target of steroids such as dexamethasone. Search an ID in the Databases tab (Ensembl card) to see the gene's name.</p>
+
+<h2>7. Plots</h2>
+<p>The MA plot shows every gene: its mean count and its fold change, the significant ones in colour. The PCA plot of variance-stabilised counts shows which samples resemble each other – by treatment first, then by cell line.</p>
+<pre class="code" data-run="r"><code>plotMA(res, ylim = c(-5, 5))</code></pre>
+<pre class="code" data-run="r"><code>vsd <- vst(dds, blind = FALSE)
+plotPCA(vsd, intgroup = c("dex", "cell"))</code></pre>
+<pre class="code" data-run="r"><code>plotCounts(dds, gene = "ENSG00000120129", intgroup = c("dex", "cell"))</code></pre>
+
+<h2>8. The same with edgeR</h2>
+<p>edgeR models the counts in a similar way, and tests them with quasi-likelihood F-tests. How many of DESeq2's genes does it find too? (edgeR loads limma, whose <code>plotMA</code> hides DESeq2's: after this step, write <code>DESeq2::plotMA(res)</code>.)</p>
+<pre class="code" data-run="r"><code>library(edgeR)
+y <- DGEList(counts = counts, samples = samples)
+keep <- filterByExpr(y, group = samples$dex)
+y <- normLibSizes(y[keep, , keep.lib.sizes = FALSE])
+design <- model.matrix(~ cell + dex, data = samples)
+y <- estimateDisp(y, design)
+fit <- glmQLFit(y, design)
+qlf <- glmQLFTest(fit, coef = "dextrt")
+summary(decideTests(qlf))
+
+edger_genes <- rownames(topTags(qlf, n = Inf, p.value = 0.05))
+deseq2_genes <- rownames(top)[which(top$padj < 0.05)]
+c(DESeq2 = length(deseq2_genes), edgeR = length(edger_genes), both = length(intersect(deseq2_genes, edger_genes)))</code></pre>
+
+<div class="callout info"><div class="co-t"><svg class="ic" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7.5h.01"/></svg>Good to know</div><p>DESeq2 and edgeR need raw counts – whole numbers, not normalised values – and biological replicates. In the browser they run as on a computer: locfit, a package they need, was built for the workbench, and a check against R on Linux gave the same results. Download the notebook to run it in RStudio or Jupyter: <code>BiocManager::install(c("DESeq2", "edgeR"))</code> there.</p></div>
+</article>
 <article class="help-page" id="h-recipe-protein" data-title="From a protein to its structure" data-group="Recipes" data-group-page="h-recipe-variants" data-keys="recipe protein uniprot sequence protparam molecular weight isoelectric point structure pdb biopython bio.pdb distance haem heme histidine alphafold plddt superimposer rmsd myoglobin" hidden>
 <h1><svg class="ic" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M9 3h6M10 3v6l-5 9a2 2 0 0 0 1.7 3h10.6a2 2 0 0 0 1.7-3l-5-9V3"/><path d="M7.5 15h9"/></svg>From a protein to its structure</h1>
 <p class="lede">Sperm whale myoglobin, from its UniProt entry to its structure: the sequence and its properties, the haem pocket of the experimental structure 1MBN measured with Biopython, and the AlphaFold model compared with the experiment.</p>
@@ -1886,23 +2005,25 @@ echo "minimap2 $(minimap2 --version)"</code></pre>
 <p>A downloaded notebook opens in Jupyter, JupyterLab, VS Code and Google Colab (R notebooks need the R kernel, IRkernel). What the other computer needs:</p>
 <ul>
   <li><b>The data</b>, at the paths the notebook uses. <code>/data/examples</code> exists only here: download it (Files tab: the ⋯ of <i>Examples (read-only)</i> → <i>Download as a .zip</i>) and change the paths.</li>
-  <li><b>The packages</b>: <code>pip install pandas matplotlib biopython requests scipy</code>; in R, <code>install.packages(c("ggplot2", "jsonlite"))</code>.</li>
+  <li><b>The packages</b>: <code>pip install pandas matplotlib biopython requests scipy</code>; in R, <code>install.packages(c("ggplot2", "jsonlite"))</code>, and from Bioconductor <code>BiocManager::install(c("DESeq2", "edgeR"))</code>.</li>
   <li><b>The programs</b> of <code>%%bash</code> cells – with conda, from Bioconda, in the versions used here (or the nearest ones Bioconda has):</li>
 </ul>
 <pre class="code"><code>conda create -n workbench -c conda-forge -c bioconda \
     samtools=1.17 minimap2=2.22 bowtie2=2.4.2 fastp=0.20.1 \
     seqtk=1.4 bedtools=2.31.0 kalign3=3.3.2 muscle=3.8.1551 fasttree=2.1.11
 conda create -n workbench-bcftools -c conda-forge -c bioconda bcftools=1.10
+conda create -n workbench-freebayes -c conda-forge -c bioconda freebayes=1.3.6
+conda create -n workbench-bwa -c conda-forge -c bioconda bwa=0.7.19 hisat2=2.2.2 samtools
 conda activate workbench</code></pre>
-<p>bcftools 1.10 needs an older htslib than samtools 1.17, so it has an environment of its own (or take a current bcftools into the first one – its output can differ in details). Bioconda has no Kalign 3.3.1; 3.3.2 is the nearest.</p>
+<p>bcftools 1.10 needs an older htslib than samtools 1.17, so it has an environment of its own (or take a current bcftools into the first one – its output can differ in details); Bioconda's BWA 0.7.19 needs a newer zlib than samtools 1.17 and FreeBayes 1.3.6, so it goes with a current samtools. Bioconda has no Kalign 3.3.1; 3.3.2 is the nearest.</p>
 <p>Lines that only the workbench understands – <code>igv</code>, <code>open</code>, <code>download</code> – do nothing useful elsewhere: leave them out.</p>
 </article>
-<article class="help-page" id="h-programs" data-title="Programs and versions" data-group="Reference" data-group-page="h-programs" data-keys="programs versions list fastp seqtk wgsim minimap2 bowtie2 samtools bcftools htslib bedtools gffread kalign muscle fasttree seq-align lastz jq coreutils grep sed awk python pyodide numpy pandas matplotlib biopython scipy r webr snakemake graphviz conda igv ngl" hidden>
+<article class="help-page" id="h-programs" data-title="Programs and versions" data-group="Reference" data-group-page="h-programs" data-keys="programs versions list fastp seqtk wgsim minimap2 bowtie2 bwa hisat2 freebayes samtools bcftools htslib bedtools gffread kalign muscle fasttree seq-align lastz jq coreutils grep sed awk python pyodide numpy pandas matplotlib biopython scipy r webr snakemake graphviz conda igv ngl deseq2 edger locfit" hidden>
 <h1><svg class="ic" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M8 6h13M8 12h13M8 18h13M3.5 6h.01M3.5 12h.01M3.5 18h.01"/></svg>Programs and versions</h1>
 <p class="lede">Results depend on versions: cite the ones you used. <code>help</code> in the terminal prints this list too; <code>NAME --version</code> one program's.</p>
 
 <h2>The terminal's bioinformatics programs</h2>
-<p>The real programs, compiled to WebAssembly (most by the Biowasm project). Galaxy runs the same ones.</p>
+<p>The real programs, compiled to WebAssembly (most by the Biowasm project; BWA, HISAT2 and FreeBayes by the genomics-wasm project). Galaxy runs the same ones.</p>
 <table>
 <tr><th>Program</th><th>Version</th><th>For</th></tr>
 <tr><td>fastp</td><td>0.20.1</td><td>read quality control and trimming</td></tr>
@@ -1910,8 +2031,11 @@ conda activate workbench</code></pre>
 <tr><td>wgsim</td><td>0.3.1-r13</td><td>simulating reads</td></tr>
 <tr><td>minimap2</td><td>2.22</td><td>mapping reads (short and long), aligning sequences</td></tr>
 <tr><td>Bowtie 2 (<code>bowtie2</code>, <code>bowtie2-build</code>)</td><td>2.4.2</td><td>mapping short reads</td></tr>
+<tr><td>BWA (<code>bwa index</code>, <code>bwa mem</code>)</td><td>0.7.19</td><td>mapping short reads</td></tr>
+<tr><td>HISAT2 (<code>hisat2</code>, <code>hisat2-build</code>, <code>hisat2-inspect</code>)</td><td>2.2.2</td><td>mapping RNA-seq reads across introns</td></tr>
 <tr><td>SAMtools</td><td>1.17</td><td>SAM/BAM files: sort, index, view, statistics, depth, faidx</td></tr>
 <tr><td>BCFtools</td><td>1.10</td><td>variant calling and VCF/BCF files</td></tr>
+<tr><td>FreeBayes</td><td>1.3.6</td><td>variant calling (haplotype-based)</td></tr>
 <tr><td>HTSlib (<code>bgzip</code>, <code>tabix</code>)</td><td>1.17</td><td>compressing and indexing</td></tr>
 <tr><td>bedtools</td><td>2.31.0</td><td>genomic intervals</td></tr>
 <tr><td>gffread</td><td>0.12.7</td><td>GFF/GTF files; transcript and protein sequences</td></tr>
@@ -1941,7 +2065,7 @@ conda activate workbench</code></pre>
 <table>
 <tr><th>Language</th><th>Version</th><th>With</th></tr>
 <tr><td>Python (Pyodide 0.29.5)</td><td>3.13.2</td><td>NumPy 2.2.5, pandas 2.3.3, Matplotlib 3.8.4 when it starts; on import: Biopython 1.85, SciPy 1.14.1, scikit-learn 1.7.0, statsmodels 0.14.4, NetworkX 3.4.2, requests 2.32.4 and the other Pyodide packages; <code>%pip install</code>: pure-Python packages from PyPI</td></tr>
-<tr><td>R (webR 0.6.0)</td><td>4.6.0</td><td>packages on first use, from the webR repository (CRAN) and r-universe (Bioconductor) – see <a href="#h-r">R</a></td></tr>
+<tr><td>R (webR 0.6.0)</td><td>4.6.0</td><td>packages on first use, from the webR repository (CRAN) and r-universe (Bioconductor, the current release: DESeq2 1.52, edgeR 4.10, limma 3.68 in October 2026), and locfit 1.5-9.12, built for this site – see <a href="#h-r">R</a></td></tr>
 </table>
 <p>In a notebook, <code>%pip list</code> (Python) and <code>sessionInfo()</code> (R) show what is loaded.</p>
 
@@ -2032,7 +2156,7 @@ conda activate workbench</code></pre>
 
 <h2>Speed and memory</h2>
 <ul>
-  <li>Each program runs on <b>one processor core</b>; options for threads (<code>-t</code>, <code>-@</code>, <code>--threads</code>) are ignored, with a note. Programs run more slowly than on a server, and the speed depends on your computer: keep the data small.</li>
+  <li>Each program runs on <b>one processor core</b>; options for threads (<code>-t</code>, <code>-p</code>, <code>-@</code>, <code>--threads</code>) are ignored, with a note. Programs run more slowly than on a server, and the speed depends on your computer: keep the data small.</li>
   <li>A program, Python and R each have <b>a few gigabytes of memory</b> at most (WebAssembly is 32-bit: 4 GB is the ceiling, and browsers often allow less). Mapping reads to a whole human genome does not fit; regions, a few genes, bacterial and viral genomes do.</li>
   <li>Python has no threads, no <code>multiprocessing</code> and no <code>subprocess</code>; <code>input()</code> does not work in a notebook. R cannot run <code>system()</code>: use a <code>%%bash</code> cell.</li>
 </ul>
@@ -2048,7 +2172,7 @@ conda activate workbench</code></pre>
 <ul>
   <li>No <code>sudo</code>, <code>apt</code> or background jobs (<code>&amp;</code>). Programs cannot be added to the terminal – <code>conda install</code> there only models environments.</li>
   <li>Python packages install with <code>%pip install</code> (pure-Python packages, and those Pyodide has built); R packages with <code>install.packages()</code> (those built for webR). Both last until the page is reloaded.</li>
-  <li>Some packages have no build for the browser yet – among them DESeq2 and edgeR in R.</li>
+  <li>Some packages have no build for the browser yet – mostly those that need system libraries; the error says so. (DESeq2 and edgeR work: locfit, which they need, comes with the workbench.)</li>
 </ul>
 
 <h2>The internet</h2>
@@ -2158,7 +2282,7 @@ conda activate workbench</code></pre>
 <div class="callout warn"><div class="co-t"><svg class="ic" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M12 3l10 18H2z"/><path d="M12 10v5M12 18h.01"/></svg>Personal and patient data</div>
 <p>The workbench is for learning, with public data. Never put personal or patient data into it – not into the Databases tab, not into an AI tool, not into your files here. Data you have been given for your studies stays within the rules you were given with it.</p></div>
 </article>
-<article class="help-page" id="h-credits" data-title="Credits and licences" data-group="Reference" data-group-page="h-programs" data-keys="credits licences licenses copyright open source biowasm pyodide webr igv ngl codemirror marked dompurify jszip viz graphviz gpl mit data sources cite citation" hidden>
+<article class="help-page" id="h-credits" data-title="Credits and licences" data-group="Reference" data-group-page="h-programs" data-keys="credits licences licenses copyright open source biowasm genomics-wasm pyodide webr igv ngl codemirror marked dompurify jszip viz graphviz gpl mit data sources cite citation" hidden>
 <h1><svg class="ic" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M4 4h6a3 3 0 0 1 3 3v13a2 2 0 0 0-2-2H4zM20 4h-6a3 3 0 0 0-3 3v13a2 2 0 0 1 2-2h7z"/></svg>Credits and licences</h1>
 <p class="lede">The workbench is built from open-source software and open data, each under its own licence. The full list, with the licence texts and the source code of the GPL programs, is in <a href="THIRD_PARTY.md" target="_blank" rel="noopener">THIRD_PARTY.md</a> and the folder <code>assets/vendor/licenses/</code> of the site.</p>
 
@@ -2169,11 +2293,14 @@ conda activate workbench</code></pre>
 <tr><td>fastp, seqtk, wgsim, minimap2, SAMtools, BCFtools, HTSlib, bedtools, LASTZ, jq</td><td>MIT (HTSlib also modified BSD)</td></tr>
 <tr><td>gffread (with GCLib)</td><td>MIT (GCLib: Artistic 2.0)</td></tr>
 <tr><td>Bowtie 2, Kalign</td><td>GNU GPL 3</td></tr>
+<tr><td>BWA, HISAT2 – compiled for the browser by the genomics-wasm project</td><td>GNU GPL 3</td></tr>
+<tr><td>FreeBayes – compiled for the browser by the genomics-wasm project</td><td>MIT; it contains code under the GNU GPL 2 or later, so the program is distributed under the GPL</td></tr>
 <tr><td>FastTree</td><td>GNU GPL 2 or later</td></tr>
 <tr><td>MUSCLE 3.8, seq-align</td><td>public domain</td></tr>
 <tr><td>GNU coreutils, grep, sed, gawk, diffutils</td><td>GNU GPL 3 or later</td></tr>
 <tr><td>Pyodide (CPython for the browser) and its packages</td><td>MPL 2.0 (Python: PSF licence; each package its own)</td></tr>
 <tr><td>webR (R for the browser)</td><td>GNU GPL 3 (R: GNU GPL 2 and 3); its JavaScript: MIT</td></tr>
+<tr><td>locfit (R package, built for this site with genomics-wasm's recipe); DESeq2, edgeR and the other R packages are downloaded when used</td><td>locfit: GNU GPL 2 or later; DESeq2: LGPL 3 or later; edgeR: GNU GPL 2 or later; each package its own</td></tr>
 <tr><td>Graphviz, through Viz.js</td><td>EPL 1.0 (Viz.js: MIT)</td></tr>
 </table>
 
@@ -2191,7 +2318,7 @@ conda activate workbench</code></pre>
 
 <h2>Data and services</h2>
 <ul>
-  <li>The example reads: the 1000 Genomes Project (sample NA12878, run SRR098401); the reference slices: UCSC (hg19); the genes: Ensembl (GRCh37); sequences: NCBI GenBank and UniProt; the yeast table: SGD, PaxDb, BioGRID, UniProt and AlphaFold DB; the structure 1MBN: RCSB PDB. Details: <code>/data/examples/README.md</code>.</li>
+  <li>The example reads: the 1000 Genomes Project (sample NA12878, run SRR098401); the reference slices: UCSC (hg19); the genes: Ensembl (GRCh37); sequences: NCBI GenBank and UniProt; the yeast table: SGD, PaxDb, BioGRID, UniProt and AlphaFold DB; the structure 1MBN: RCSB PDB; the RNA-seq reads and yeast chromosome: nf-core/test-datasets (run SRR6357070); the airway counts: the Bioconductor package airway (Himes et al. 2014). Details: <code>/data/examples/README.md</code>.</li>
   <li>The Databases tab uses the public services of EMBL-EBI (UniProt, AlphaFold DB with Google DeepMind, InterPro, Ensembl, ENA, BLAST, QuickGO, OLS, Europe PMC), NCBI (E-utilities, PubChem), RCSB PDB, UCSC, STRING and Reactome. Cite the databases you use in your work: each names the paper to cite on its web site.</li>
 </ul>
 <div class="tryrow"><button class="do" type="button" data-open="/data/examples/README.md">Open the README of the examples</button></div>
@@ -2229,7 +2356,7 @@ conda activate workbench</code></pre>
 
 <noscript><p style="padding:20px">This page needs JavaScript.</p></noscript>
 
-<script>window.WB_EXAMPLES = [{"p":"README.md","s":4140},{"p":"annotation/cyp2c_exons.bed","s":1100},{"p":"annotation/cyp2c_slices.gff3","s":11587},{"p":"reads/NA12878_R1.fastq","s":626445},{"p":"reads/NA12878_R2.fastq","s":626445},{"p":"reads/provenance.json","s":4102},{"p":"reads/reference.fa","s":56963},{"p":"reads/reference.fa.fai","s":60},{"p":"sequences/myoglobins.fasta","s":1325},{"p":"sequences/pBR322.fasta","s":4485},{"p":"sequences/tRNA-Thr.afa","s":582},{"p":"sequences/unknown_myoglobin.fasta","s":157},{"p":"structures/1mbn.pdb","s":147420},{"p":"tables/yeast_genes.csv","s":2010502},{"p":"variants/NA12878.calls.vcf.gz","s":1787},{"p":"variants/NA12878.calls.vcf.gz.tbi","s":156}];
+<script>window.WB_EXAMPLES = [{"p":"README.md","s":5334},{"p":"annotation/cyp2c_exons.bed","s":1100},{"p":"annotation/cyp2c_slices.gff3","s":11587},{"p":"reads/NA12878_R1.fastq","s":626445},{"p":"reads/NA12878_R2.fastq","s":626445},{"p":"reads/provenance.json","s":4102},{"p":"reads/reference.fa","s":56963},{"p":"reads/reference.fa.fai","s":60},{"p":"rnaseq/NOTICE.txt","s":2321},{"p":"rnaseq/SRR6357070_1.fastq","s":65464},{"p":"rnaseq/SRR6357070_2.fastq","s":65464},{"p":"rnaseq/airway_counts.tsv","s":2287691},{"p":"rnaseq/airway_samples.tsv","s":786},{"p":"rnaseq/provenance.json","s":4080},{"p":"rnaseq/yeast_chrI.fa","s":234058},{"p":"rnaseq/yeast_chrI.fa.fai","s":17},{"p":"rnaseq/yeast_chrI.gtf","s":203927},{"p":"rnaseq/yeast_chrI.splice_sites.tsv","s":88},{"p":"sequences/myoglobins.fasta","s":1325},{"p":"sequences/pBR322.fasta","s":4485},{"p":"sequences/tRNA-Thr.afa","s":582},{"p":"sequences/unknown_myoglobin.fasta","s":157},{"p":"structures/1mbn.pdb","s":147420},{"p":"tables/yeast_genes.csv","s":2010502},{"p":"variants/NA12878.calls.vcf.gz","s":1787},{"p":"variants/NA12878.calls.vcf.gz.tbi","s":156}];
 window.WB_STARTERS = [{"p":"notebooks/welcome-python.ipynb"},{"p":"notebooks/welcome-r.ipynb"}];</script>
 <script src="assets/js/config.js"></script>
 <script src="assets/js/core.js"></script>

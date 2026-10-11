@@ -4,7 +4,7 @@
 
 <h2>Speed and memory</h2>
 <ul>
-  <li>Each program runs on <b>one processor core</b>; options for threads (<code>-t</code>, <code>-@</code>, <code>--threads</code>) are ignored, with a note. Programs run more slowly than on a server, and the speed depends on your computer: keep the data small.</li>
+  <li>Each program runs on <b>one processor core</b>; options for threads (<code>-t</code>, <code>-p</code>, <code>-@</code>, <code>--threads</code>) are ignored, with a note. Programs run more slowly than on a server, and the speed depends on your computer: keep the data small.</li>
   <li>A program, Python and R each have <b>a few gigabytes of memory</b> at most (WebAssembly is 32-bit: 4 GB is the ceiling, and browsers often allow less). Mapping reads to a whole human genome does not fit; regions, a few genes, bacterial and viral genomes do.</li>
   <li>Python has no threads, no <code>multiprocessing</code> and no <code>subprocess</code>; <code>input()</code> does not work in a notebook. R cannot run <code>system()</code>: use a <code>%%bash</code> cell.</li>
 </ul>
@@ -20,7 +20,7 @@
 <ul>
   <li>No <code>sudo</code>, <code>apt</code> or background jobs (<code>&amp;</code>). Programs cannot be added to the terminal – <code>conda install</code> there only models environments.</li>
   <li>Python packages install with <code>%pip install</code> (pure-Python packages, and those Pyodide has built); R packages with <code>install.packages()</code> (those built for webR). Both last until the page is reloaded.</li>
-  <li>Some packages have no build for the browser yet – among them DESeq2 and edgeR in R.</li>
+  <li>Some packages have no build for the browser yet – mostly those that need system libraries; the error says so. (DESeq2 and edgeR work: locfit, which they need, comes with the workbench.)</li>
 </ul>
 
 <h2>The internet</h2>

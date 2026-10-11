@@ -1,4 +1,4 @@
-<!-- id: h-galaxy | title: Galaxy | group: Galaxy | summary: Upload, run tools, the history, dataset details | keys: galaxy history dataset upload tool run job provenance usegalaxy datatype format fastqsanger rerun delete purge notebook export -->
+<!-- id: h-galaxy | title: Galaxy | group: Galaxy | summary: Upload, run tools, the history, dataset details | keys: galaxy history dataset upload tool run job provenance usegalaxy bwa-mem hisat2 freebayes datatype format fastqsanger rerun delete purge notebook export -->
 <h1><!--ICON:workflow-->Galaxy</h1>
 <p class="lede">Galaxy runs analysis tools from forms, keeps every result in a <b>history</b> with a record of how it was made, and joins tools into <b>workflows</b>. This one works like usegalaxy.org and its sister servers – and runs in your browser, with the same programs as the terminal.</p>
 <div class="tryrow"><button class="do" type="button" data-bench="galaxy">Open Galaxy</button></div>
@@ -32,9 +32,9 @@
 <table>
 <tr><th>Section</th><th>Tools</th></tr>
 <tr><td>Quality control</td><td>fastp, seqtk_comp</td></tr>
-<tr><td>Mapping</td><td>Map with minimap2, Bowtie2 (both single- or paired-end)</td></tr>
+<tr><td>Mapping</td><td>Map with minimap2, Bowtie2, Map with BWA-MEM, HISAT2 (RNA-seq reads, across introns) – each single- or paired-end</td></tr>
 <tr><td>SAM/BAM</td><td>Samtools flagstat, stats, idxstats, depth, view (filter)</td></tr>
-<tr><td>Variant calling</td><td>bcftools mpileup, call, filter, view, query, stats</td></tr>
+<tr><td>Variant calling</td><td>bcftools mpileup, call, filter, view, query, stats; FreeBayes</td></tr>
 <tr><td>Intervals</td><td>bedtools Genome Coverage, Intersect intervals</td></tr>
 <tr><td>FASTA/FASTQ</td><td>seqtk_seq (FASTQ to FASTA), seqtk_sample</td></tr>
 <tr><td>Alignments and trees</td><td>Kalign, MUSCLE, FastTree</td></tr>

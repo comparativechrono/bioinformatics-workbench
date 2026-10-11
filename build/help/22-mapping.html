@@ -1,6 +1,6 @@
-<!-- id: h-mapping | title: Mapping reads | group: Terminal and programs | summary: minimap2, Bowtie 2, samtools | keys: map mapping align alignment reads reference minimap2 bowtie2 bowtie2-build samtools sam bam sort index flagstat stats depth view faidx coverage tview -->
+<!-- id: h-mapping | title: Mapping reads | group: Terminal and programs | summary: minimap2, Bowtie 2, BWA, HISAT2, samtools | keys: map mapping align alignment reads reference minimap2 bowtie2 bowtie2-build bwa bwa-mem bwa-index hisat2 hisat2-build hisat2-inspect rna-seq rnaseq spliced splicing intron samtools sam bam sort index flagstat stats depth view faidx coverage tview -->
 <h1><!--ICON:align-->Mapping reads</h1>
-<p class="lede">Mapping finds where each read comes from in a reference sequence. <b>minimap2</b> and <b>Bowtie 2</b> map; <b>samtools</b> sorts, indexes, filters and counts the alignments.</p>
+<p class="lede">Mapping finds where each read comes from in a reference sequence. <b>minimap2</b>, <b>Bowtie 2</b> and <b>BWA</b> map DNA reads, <b>HISAT2</b> maps RNA-seq reads across introns; <b>samtools</b> sorts, indexes, filters and counts the alignments.</p>
 <p>The examples work in a folder of your own: <button class="do" type="button" data-term-run="mkdir -p ~/mapping && cd ~/mapping">mkdir -p ~/mapping &amp;&amp; cd ~/mapping</button></p>
 
 <h2>The reference</h2>
@@ -23,6 +23,22 @@ bowtie2 -x refindex -1 /data/examples/reads/NA12878_R1.fastq -2 /data/examples/r
 samtools index bt2.bam
 cat bowtie2.log</code></pre>
 <p><code>bowtie2-build</code> makes the index (six <code>.bt2</code> files) once. The summary of the mapping goes to the standard error – here into <code>bowtie2.log</code>. Presets: <code>--very-fast</code> … <code>--very-sensitive</code>, and <code>--local</code> for local alignment.</p>
+
+<h2>BWA</h2>
+<pre class="code" data-run="term"><code>bwa index reference.fa
+bwa mem -R '@RG\tID:NA12878\tSM:NA12878' reference.fa /data/examples/reads/NA12878_R1.fastq /data/examples/reads/NA12878_R2.fastq 2> bwa.log | samtools sort -o bwa.bam -
+samtools index bwa.bam
+samtools flagstat bwa.bam</code></pre>
+<p><code>bwa index</code> makes the index once: five files (<code>.amb .ann .bwt .pac .sa</code>) next to the FASTA file – so the FASTA file must be in a folder of your own, not in the read-only examples. <code>bwa mem</code> is BWA's aligner for reads of 70 bases and more; it reads <code>.fastq.gz</code> files too. Its messages go to the standard error (here <code>bwa.log</code>); the CPU times in them are not measured in the browser – the real times are.</p>
+
+<h2 id="hisat2">HISAT2, for RNA-seq reads</h2>
+<p>A read from a spliced RNA can span an intron: its first part matches one exon, the rest the next. <b>HISAT2</b> splits such reads across the intron. The example reads are 256 pairs of yeast RNA-seq reads; the reference is chromosome I of yeast.</p>
+<pre class="code" data-run="term"><code>hisat2-build /data/examples/rnaseq/yeast_chrI.fa yeast_chrI > /dev/null 2>&1
+hisat2 -x yeast_chrI -1 /data/examples/rnaseq/SRR6357070_1.fastq -2 /data/examples/rnaseq/SRR6357070_2.fastq 2> hisat2.log | samtools sort -o rnaseq.bam -
+samtools index rnaseq.bam
+cat hisat2.log
+samtools view rnaseq.bam | awk '$6 ~ /N/ {print $3, $4, $6}' | head -3</code></pre>
+<p><code>hisat2-build</code> writes eight <code>.ht2</code> files; <code>-x</code> names them without the ending. A spliced read has an <code>N</code> in its CIGAR string: <code>94M113N7M</code> is 94 bases on the genome, an intron of 113 bases skipped, then 7 more. Known introns can help: <code>--known-splicesite-infile /data/examples/rnaseq/yeast_chrI.splice_sites.tsv</code>; for DNA reads use <code>--no-spliced-alignment</code>. <code>hisat2</code> unpacks <code>.gz</code> read files first, as its wrapper script does; <code>--un</code> and <code>--al</code> (also done by the wrapper) are not available – <code>samtools fastq -f 4</code> gets the unmapped reads. The <a href="#h-recipe-rnaseq">RNA-seq recipe</a> goes on to differential expression.</p>
 
 <h2>samtools</h2>
 <table>

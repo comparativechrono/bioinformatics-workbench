@@ -16,6 +16,11 @@ Read-only copies that come with the workbench. To change one, copy it into your 
 | | `tRNA-Thr.afa` | six human threonine tRNAs, aligned (FASTA) |
 | `tables/` | `yeast_genes.csv` | 5,481 yeast (S. cerevisiae) genes × 19 columns: essential or not, protein length, GC content, abundance, interaction partners, structure confidence … (SGD, PaxDb, BioGRID, UniProt, AlphaFold DB; downloaded 30 September 2026) |
 | `structures/` | `1mbn.pdb` | sperm whale myoglobin, the first protein structure solved at high resolution (RCSB PDB 1MBN) |
+| `rnaseq/` | `yeast_chrI.fa`, `yeast_chrI.fa.fai` | chromosome I of baker's yeast (*S. cerevisiae* S288C, R64-1-1, Ensembl; 230,218 bases; the sequence is named `I`) and its index |
+| | `yeast_chrI.gtf`, `yeast_chrI.splice_sites.tsv` | its genes, transcripts and exons (Ensembl), and its 5 annotated introns in HISAT2's format (`hisat2 --known-splicesite-infile`) |
+| | `SRR6357070_1.fastq`, `SRR6357070_2.fastq` | 256 pairs of 101-base RNA-seq reads of wild-type yeast (SRA run SRR6357070, GEO GSE110004), all from chromosome I; 128 of the pairs were chosen because they span an annotated intron |
+| | `airway_counts.tsv`, `airway_samples.tsv` | the gene counts of a published RNA-seq experiment – 63,677 genes (Ensembl 75, GRCh37) × 8 samples: airway smooth muscle cells of four cell lines, untreated and treated with dexamethasone (Himes et al. 2014, GEO GSE52778) – and the table of the samples, for DESeq2 and edgeR |
+| | `provenance.json`, `NOTICE.txt` | where these files came from, and their licences |
 
 Positions on the slices: add 96,530,000 (human_CYP2C19) or 96,699,000 (human_CYP2C9) to get the GRCh37
 chromosome 10 position. The variant *CYP2C19\*2* (rs4244285, hg19 chr10:96,541,616) is at position 11,616 of
@@ -24,7 +29,9 @@ features that reach beyond a slice are cut at its ends and marked `partial=true`
 
 All of it is public data: NA12878 is the widely used public reference sample (Coriell cell line GM12878); no
 patient data is included. Sources: 1000 Genomes Project; UCSC (genome sequence); Ensembl GRCh37
-(annotation, from grch37.rest.ensembl.org); NCBI GenBank; UniProt (CC BY 4.0); SGD (CC BY 4.0) and the other databases named above; RCSB PDB (CC0).
+(annotation, from grch37.rest.ensembl.org); NCBI GenBank; UniProt (CC BY 4.0); SGD (CC BY 4.0) and the other databases named above; RCSB PDB (CC0);
+for `rnaseq/`, nf-core/test-datasets (MIT licence) and the Bioconductor package airway 1.26.0 (LGPL), both as prepared by the
+genomics-wasm project – see `rnaseq/NOTICE.txt`.
 
 ## The columns of `tables/yeast_genes.csv`
 

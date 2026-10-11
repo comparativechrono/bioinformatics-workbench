@@ -1,0 +1,43 @@
+Notices for the files in this folder
+====================================
+
+yeast_chrI.fa, yeast_chrI.gtf, yeast_chrI.splice_sites.tsv, SRR6357070_1.fastq, SRR6357070_2.fastq
+come from nf-core/test-datasets (https://github.com/nf-core/test-datasets, commit cad884e7), by way
+of the test data of genomics-wasm (https://github.com/comparativechrono/genomics-wasm). The reads
+themselves are public data of the INSDC (ENA/SRA run SRR6357070; Wu et al. 2018, Molecular Cell).
+The licence of nf-core/test-datasets:
+
+MIT License
+
+Copyright (c) 2018 nf-core
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+
+airway_counts.tsv and airway_samples.tsv are the counts and the sample table of the Bioconductor
+data package airway 1.26.0 (https://bioconductor.org/packages/airway), by Michael Love, unchanged.
+Licence of the package: LGPL (no version given). Please cite the experiment:
+
+  Himes BE, Jiang X, Wagner P, Hu R, Wang Q, Klanderman B, Whitaker RM, Duan Q, Lasky-Su J,
+  Nikolos C, Jester W, Johnson M, Panettieri R Jr, Tantisira KG, Weiss ST, Lu Q. RNA-Seq
+  transcriptome profiling identifies CRISPLD2 as a glucocorticoid responsive gene that modulates
+  cytokine function in airway smooth muscle cells. PLoS ONE 2014; 9(6): e99625.
+  doi:10.1371/journal.pone.0099625. GEO: GSE52778.
+
+Where every file came from, and its SHA-256: provenance.json.

@@ -1,9 +1,9 @@
-<!-- id: h-programs | title: Programs and versions | group: Reference | summary: Every program, language and library, with its version | keys: programs versions list fastp seqtk wgsim minimap2 bowtie2 samtools bcftools htslib bedtools gffread kalign muscle fasttree seq-align lastz jq coreutils grep sed awk python pyodide numpy pandas matplotlib biopython scipy r webr snakemake graphviz conda igv ngl -->
+<!-- id: h-programs | title: Programs and versions | group: Reference | summary: Every program, language and library, with its version | keys: programs versions list fastp seqtk wgsim minimap2 bowtie2 bwa hisat2 freebayes samtools bcftools htslib bedtools gffread kalign muscle fasttree seq-align lastz jq coreutils grep sed awk python pyodide numpy pandas matplotlib biopython scipy r webr snakemake graphviz conda igv ngl deseq2 edger locfit -->
 <h1><!--ICON:list-->Programs and versions</h1>
 <p class="lede">Results depend on versions: cite the ones you used. <code>help</code> in the terminal prints this list too; <code>NAME --version</code> one program's.</p>
 
 <h2>The terminal's bioinformatics programs</h2>
-<p>The real programs, compiled to WebAssembly (most by the Biowasm project). Galaxy runs the same ones.</p>
+<p>The real programs, compiled to WebAssembly (most by the Biowasm project; BWA, HISAT2 and FreeBayes by the genomics-wasm project). Galaxy runs the same ones.</p>
 <table>
 <tr><th>Program</th><th>Version</th><th>For</th></tr>
 <tr><td>fastp</td><td>0.20.1</td><td>read quality control and trimming</td></tr>
@@ -11,8 +11,11 @@
 <tr><td>wgsim</td><td>0.3.1-r13</td><td>simulating reads</td></tr>
 <tr><td>minimap2</td><td>2.22</td><td>mapping reads (short and long), aligning sequences</td></tr>
 <tr><td>Bowtie 2 (<code>bowtie2</code>, <code>bowtie2-build</code>)</td><td>2.4.2</td><td>mapping short reads</td></tr>
+<tr><td>BWA (<code>bwa index</code>, <code>bwa mem</code>)</td><td>0.7.19</td><td>mapping short reads</td></tr>
+<tr><td>HISAT2 (<code>hisat2</code>, <code>hisat2-build</code>, <code>hisat2-inspect</code>)</td><td>2.2.2</td><td>mapping RNA-seq reads across introns</td></tr>
 <tr><td>SAMtools</td><td>1.17</td><td>SAM/BAM files: sort, index, view, statistics, depth, faidx</td></tr>
 <tr><td>BCFtools</td><td>1.10</td><td>variant calling and VCF/BCF files</td></tr>
+<tr><td>FreeBayes</td><td>1.3.6</td><td>variant calling (haplotype-based)</td></tr>
 <tr><td>HTSlib (<code>bgzip</code>, <code>tabix</code>)</td><td>1.17</td><td>compressing and indexing</td></tr>
 <tr><td>bedtools</td><td>2.31.0</td><td>genomic intervals</td></tr>
 <tr><td>gffread</td><td>0.12.7</td><td>GFF/GTF files; transcript and protein sequences</td></tr>
@@ -42,7 +45,7 @@
 <table>
 <tr><th>Language</th><th>Version</th><th>With</th></tr>
 <tr><td>Python (Pyodide 0.29.5)</td><td>3.13.2</td><td>NumPy 2.2.5, pandas 2.3.3, Matplotlib 3.8.4 when it starts; on import: Biopython 1.85, SciPy 1.14.1, scikit-learn 1.7.0, statsmodels 0.14.4, NetworkX 3.4.2, requests 2.32.4 and the other Pyodide packages; <code>%pip install</code>: pure-Python packages from PyPI</td></tr>
-<tr><td>R (webR 0.6.0)</td><td>4.6.0</td><td>packages on first use, from the webR repository (CRAN) and r-universe (Bioconductor) – see <a href="#h-r">R</a></td></tr>
+<tr><td>R (webR 0.6.0)</td><td>4.6.0</td><td>packages on first use, from the webR repository (CRAN) and r-universe (Bioconductor, the current release: DESeq2 1.52, edgeR 4.10, limma 3.68 in October 2026), and locfit 1.5-9.12, built for this site – see <a href="#h-r">R</a></td></tr>
 </table>
 <p>In a notebook, <code>%pip list</code> (Python) and <code>sessionInfo()</code> (R) show what is loaded.</p>
 

@@ -5,7 +5,8 @@
 - assets/vendor/biowasm/: the four files at its top (the runner, its licence, the two descriptions of the
   local changes);
 - assets/vendor/licenses/: every file below it, the source archives in sources/ too (which may be handed
-  over separately: they are listed all the same).
+  over separately: they are listed all the same);
+- assets/vendor/r-packages/: every file below it (the R packages built for the site, and their index).
 
 Run:  python3 build/vendor_sums.py
 """
@@ -59,7 +60,8 @@ def main():
     top = [f for f in ('aioli.js', 'LICENSE.txt', 'RUNTIME-PATCHES.txt', 'execio-source.txt') if os.path.exists(os.path.join(bw, f))]
     write(bw, top)
     k = write(os.path.join(V, 'licenses'), every_file(os.path.join(V, 'licenses')))
-    print(f'SHA256SUMS written: {n} program folders, biowasm/ ({len(top)} files), licenses/ ({k} files)')
+    r = write(os.path.join(V, 'r-packages'), every_file(os.path.join(V, 'r-packages'))) if os.path.isdir(os.path.join(V, 'r-packages')) else 0
+    print(f'SHA256SUMS written: {n} program folders, biowasm/ ({len(top)} files), licenses/ ({k} files), r-packages/ ({r} files)')
 
 
 if __name__ == '__main__':

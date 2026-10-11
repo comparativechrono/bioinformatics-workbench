@@ -1,15 +1,28 @@
-<!-- id: h-r | title: R | group: Notebooks: Python and R | summary: webR: packages, Bioconductor, plots, files | keys: r rstats webr ggplot2 dplyr tidyverse tidyr readr bioconductor biostrings genomicranges limma deseq2 install.packages library rscript plot data frame -->
+<!-- id: h-r | title: R | group: Notebooks: Python and R | summary: webR: packages, Bioconductor, plots, files | keys: r rstats webr ggplot2 dplyr tidyverse tidyr readr bioconductor biostrings genomicranges limma deseq2 edger locfit differential expression rna-seq install.packages library rscript plot data frame -->
 <h1><!--ICON:rlang-->R</h1>
 <p class="lede">R 4.6 (webR), running in this page. Packages are downloaded the first time you load them; base graphics and ggplot2 plots appear under the cell.</p>
 <div class="tryrow"><button class="do" type="button" data-new-nb="r">New R notebook</button> <button class="do" type="button" data-open-nb="~/notebooks/welcome-r.ipynb">Open the R welcome notebook</button></div>
 
 <h2>Packages</h2>
 <p><code>library(NAME)</code> downloads a package the first time it is used in a visit, from the builds of CRAN packages for the browser (repo.r-wasm.org) and of Bioconductor packages on r-universe. <code>install.packages("NAME")</code> works too, and so does <code>BiocManager::install("NAME")</code>. The first <code>library(ggplot2)</code> or <code>library(dplyr)</code> takes half a minute; packages last until the page is reloaded.</p>
-<p>Tested in October 2026: ggplot2, dplyr, tidyr, readr, stringr, ape, seqinr, pheatmap, and from Bioconductor Biostrings, GenomicRanges and limma. DESeq2 and edgeR do not load yet (a package they need, locfit, has no build for the browser).</p>
+<p>Tested in October 2026: ggplot2, dplyr, tidyr, readr, stringr, ape, seqinr, pheatmap, and from Bioconductor Biostrings, GenomicRanges, limma, DESeq2 and edgeR. Bioconductor packages come from its current release. DESeq2 and edgeR need the package locfit, which the repositories have not built for the browser: the workbench brings its own build of it, and R finds it there.</p>
 <pre class="code" data-run="r"><code>library(Biostrings)
 myo <- readAAStringSet("/data/examples/sequences/myoglobins.fasta")
 width(myo)
 alphabetFrequency(myo)[, c("A", "G", "L", "K")]</code></pre>
+
+<h2>Differential expression: DESeq2 and edgeR</h2>
+<p>The example counts are a real RNA-seq experiment: four cell lines of airway smooth muscle, each with and without the steroid dexamethasone. The first <code>library(DESeq2)</code> downloads about 40 packages – a minute; <code>DESeq()</code> on 22,000 genes takes another.</p>
+<pre class="code" data-run="r"><code>library(DESeq2)
+counts <- as.matrix(read.delim("/data/examples/rnaseq/airway_counts.tsv", row.names = 1, check.names = FALSE))
+samples <- read.delim("/data/examples/rnaseq/airway_samples.tsv", row.names = 1)
+samples$cell <- factor(samples$cell)
+samples$dex <- factor(samples$dex, levels = c("untrt", "trt"))
+dds <- DESeqDataSetFromMatrix(counts, samples, design = ~ cell + dex)
+dds <- DESeq(dds[rowSums(counts(dds)) >= 10, ])
+res <- results(dds, contrast = c("dex", "trt", "untrt"), alpha = 0.05)
+summary(res)</code></pre>
+<p>The <a href="#h-recipe-rnaseq">RNA-seq recipe</a> goes further: plots, the top genes, the same with edgeR – and mapping RNA-seq reads with HISAT2 first.</p>
 
 <h2>Data frames and plots</h2>
 <pre class="code" data-run="r"><code>library(dplyr)

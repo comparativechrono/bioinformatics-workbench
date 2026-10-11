@@ -1,0 +1,68 @@
+{
+ "schemaVersion": 1,
+ "about": "Small real RNA-seq examples: yeast reads with a yeast chromosome for HISAT2, and the gene counts of the airway experiment for DESeq2 and edgeR. Taken from the test data of the genomics-wasm project (github.com/comparativechrono/genomics-wasm, commit 0e5df1fba226dbfd606f719600336aeeccbe754a: datasets/rna-yeast and datasets/deseq2-airway, where rna-manifest.json and deseq2-manifest.json record every source and step).",
+ "yeast": {
+  "organism": "Saccharomyces cerevisiae (S288C reference genome R64-1-1, Ensembl)",
+  "reads": {
+   "run": "SRR6357070",
+   "experiment": "SRX3453465",
+   "study": "SRP126328",
+   "geo": "GSE110004 (GSM2879618)",
+   "sample": "wild-type total RNA-seq, biological replicate 1",
+   "instrument": "Illumina HiSeq 2500",
+   "readLength": 101,
+   "publication": "Wu et al. (2018) Molecular Cell, doi:10.1016/j.molcel.2018.10.018",
+   "source": "nf-core/test-datasets, commit cad884e7fbe5617dcd55bdd07d9ddf65b54febe4 (testdata/GSE110004/SRR6357070_1.fastq.gz and _2.fastq.gz: 50,000 pairs that nf-core selected for chromosome I)",
+   "selection": "256 complete pairs with unique alignments on chromosome I (in nf-core's STAR alignments): the first 128 names, in alphabetical order, of pairs with a splice that matches an annotated intron, and the first 128 of the others. The FASTQ records are copied unchanged, in their original order."
+  },
+  "reference": "nf-core/test-datasets reference/genome.fa (chromosome I, 230,218 bases), unchanged; the index (.fai) made for the workbench",
+  "annotation": "nf-core/test-datasets reference/genes.gtf (Ensembl), without its one test line on a sequence named not_in_genome",
+  "spliceSites": "the 5 introns between consecutive exons of the same transcript in that annotation, in HISAT2's format (0-based last base of the left exon, 0-based first base of the right exon)",
+  "licence": "nf-core/test-datasets: MIT licence (see NOTICE.txt). The reads are public INSDC data (ENA/SRA)."
+ },
+ "airway": {
+  "organism": "Homo sapiens",
+  "experiment": "RNA-seq of airway smooth muscle cells: four cell lines, each untreated and treated with 1 µM dexamethasone for 18 hours",
+  "geo": "GSE52778",
+  "sra": "SRP033351",
+  "publication": "Himes BE et al. (2014) RNA-Seq transcriptome profiling identifies CRISPLD2 as a glucocorticoid responsive gene that modulates cytokine function in airway smooth muscle cells. PLoS ONE 9(6): e99625, doi:10.1371/journal.pone.0099625",
+  "source": "Bioconductor data package airway 1.26.0 (Bioconductor 3.20; the counts assay of its RangedSummarizedExperiment: reads counted per gene of Ensembl release 75, GRCh37)",
+  "counts": "integer read counts, unchanged: 63,677 genes (rows, Ensembl gene IDs) × 8 samples (columns, SRA run IDs), in the package's order",
+  "samples": "the package's sample table, with sample_id first: cell (cell line), dex (untrt/trt), albut (all untrt), Run, avgLength, Experiment, Sample, BioSample",
+  "licence": "LGPL (the package names no version; see NOTICE.txt)"
+ },
+ "files": {
+  "SRR6357070_1.fastq": {
+   "bytes": 65464,
+   "sha256": "98d6e4d70c64a1cd75a388f4fa1fa794b1890a6388bd18e41ff67cb762e7cd45"
+  },
+  "SRR6357070_2.fastq": {
+   "bytes": 65464,
+   "sha256": "abdc1e3e6167435ae8f77631568d23c95b1d84c5e53c683d3e80418a8112055e"
+  },
+  "airway_counts.tsv": {
+   "bytes": 2287691,
+   "sha256": "407b9f8dfe619580b3b0bbaa0464aad7943e10deff4bae0e57c8a42f63ba5bb6"
+  },
+  "airway_samples.tsv": {
+   "bytes": 786,
+   "sha256": "333516592a6c278e248998cd91043f0d619698214a0cb89bfe602676e68497b5"
+  },
+  "yeast_chrI.fa": {
+   "bytes": 234058,
+   "sha256": "df70973809f672aa58a414fef3f01e0e465bf26f10159174a616b0dee2d458e1"
+  },
+  "yeast_chrI.fa.fai": {
+   "bytes": 17,
+   "sha256": "f177fac1d46d4e8837d6ac39f1a3da111e0588432566df74e4954e2d5c04715c"
+  },
+  "yeast_chrI.gtf": {
+   "bytes": 203927,
+   "sha256": "3274bed81a0f5c5217e4c98eaf56cf8f3a34544c14fb54003dd72c4e98b5fa61"
+  },
+  "yeast_chrI.splice_sites.tsv": {
+   "bytes": 88,
+   "sha256": "e737f3c8c6271ea39b04867d713fb6c0b81f3e74504585b6fbd225d10b84c6f8"
+  }
+ }
+}

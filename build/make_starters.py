@@ -109,7 +109,7 @@ stay on your computer.
 
 * Run a cell with ▶ or **Shift+Enter**. R starts in the background when this notebook opens; the first run waits for it – a few seconds.
 * Packages: `install.packages("ggplot2")`, or simply `library(ggplot2)` – packages are downloaded the first
-  time they are used in a visit (CRAN from repo.r-wasm.org, Bioconductor from bioc.r-universe.dev).
+  time they are used in a visit (CRAN from repo.r-wasm.org, Bioconductor from bioc-release.r-universe.dev).
 * Download the notebook (`.ipynb`) to open it in Jupyter with the R kernel (IRkernel).'''),
     code('''x <- c(4, 8, 15, 16, 23, 42)
 mean(x)
@@ -150,7 +150,8 @@ myo
 ```
 
 Copy it into a new cell to try it. Packages that need compiled system libraries may not exist for the
-browser (DESeq2, for one, does not yet); the Help pane lists what to expect.'''),
+browser; the Help pane lists what to expect. DESeq2 and edgeR do work – the recipe
+**RNA-seq: reads to differential expression** in the Help pane is a whole analysis with them.'''),
 ])
 
 

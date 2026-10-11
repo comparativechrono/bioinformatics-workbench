@@ -1,0 +1,76 @@
+<!-- id: h-recipe-rnaseq | title: RNA-seq: reads to differential expression | group: Recipes | summary: HISAT2, spliced reads in the genome browser, DESeq2 and edgeR | keys: recipe rna-seq rnaseq transcriptome expression differential deseq2 edger limma locfit hisat2 splice spliced intron cigar counts airway dexamethasone volcano ma pca vst normalisation normalization fold change padj fdr yeast -->
+<h1><!--ICON:flask-->RNA-seq: reads to differential expression</h1>
+<p class="lede">Two halves of an RNA-seq analysis. First, map real RNA-seq reads with HISAT2 and see reads split across an intron. Then, from the gene counts of a published experiment, find the genes that a drug switches on or off – with DESeq2, and with edgeR for comparison.</p>
+<div class="tryrow"><button class="do" type="button" data-recipe="r">Open this recipe as an R notebook</button> <button class="do" type="button" data-open="/data/examples/rnaseq/airway_samples.tsv">Show the samples</button></div>
+<p>The button writes the steps below into a new R notebook in <code>~/notebooks</code>; the terminal's steps become <code>%%bash</code> cells. Run the cells from the top.</p>
+
+<h2>1. A folder for the work</h2>
+<p><code>setwd()</code> makes it the folder of the notebook's R code and of its <code>%%bash</code> cells.</p>
+<pre class="code" data-run="r"><code>dir.create("~/recipe-rnaseq", showWarnings = FALSE)
+setwd("~/recipe-rnaseq")</code></pre>
+
+<h2>2. Map RNA-seq reads with HISAT2</h2>
+<p>256 pairs of reads from yeast RNA (study GSE110004), and chromosome I of the yeast genome as the reference. <code>hisat2-build</code> indexes the reference once; <code>hisat2</code> maps the reads and reports how many it placed.</p>
+<pre class="code" data-run="term"><code>hisat2-build /data/examples/rnaseq/yeast_chrI.fa yeast_chrI > /dev/null 2>&1
+hisat2 -x yeast_chrI -1 /data/examples/rnaseq/SRR6357070_1.fastq -2 /data/examples/rnaseq/SRR6357070_2.fastq \
+       2> hisat2.log | samtools sort -o rnaseq.bam -
+samtools index rnaseq.bam
+cat hisat2.log</code></pre>
+
+<h2>3. Reads across an intron</h2>
+<p>A read from a spliced RNA can start in one exon and end in the next. HISAT2 splits it: an <code>N</code> in the CIGAR string is the intron that the read skips. <code>80M366N21M</code> means 80 bases on the genome, 366 skipped, then 21 more. How many reads skip an intron, and how long are the introns they skip?</p>
+<pre class="code" data-run="term"><code>samtools view rnaseq.bam | awk '$6 ~ /N/' | wc -l
+samtools view rnaseq.bam | awk '$6 ~ /N/ {match($6, /[0-9]+N/); print substr($6, RSTART, RLENGTH)}' | sort | uniq -c | sort -rn</code></pre>
+<p>Most of them skip the same 366 bases: the intron of <i>EFB1</i> (YAL003W), a yeast gene at I:142,174–143,160, whose intron holds a small nucleolar RNA gene (snR18). <button class="do" type="button" data-term-run="cd ~/recipe-rnaseq && igv --genome /data/examples/rnaseq/yeast_chrI.fa /data/examples/rnaseq/yeast_chrI.gtf rnaseq.bam --locus I:141900-143300">Show them in the genome browser</button> – the reads are drawn with a thin line across the intron, under the gene's exons.</p>
+
+<h2>4. The counts of a whole experiment</h2>
+<p>Differential expression starts from a table: how many reads each gene got in each sample. For whole genomes such tables are made on a server (featureCounts, HTSeq or salmon); this one is from the Bioconductor package <i>airway</i>: human airway smooth muscle cells, four cell lines (<code>cell</code>), each untreated and treated with the steroid dexamethasone (<code>dex</code>) – Himes et al., <i>PLoS ONE</i> 2014.</p>
+<pre class="code" data-run="r"><code>counts <- as.matrix(read.delim("/data/examples/rnaseq/airway_counts.tsv", row.names = 1, check.names = FALSE))
+samples <- read.delim("/data/examples/rnaseq/airway_samples.tsv", row.names = 1)
+samples <- samples[colnames(counts), ]
+samples$cell <- factor(samples$cell)
+samples$dex <- factor(samples$dex, levels = c("untrt", "trt"))
+dim(counts)
+samples[, c("cell", "dex")]
+colSums(counts) / 1e6   # reads per sample, in millions</code></pre>
+
+<h2>5. DESeq2</h2>
+<p>The design <code>~ cell + dex</code> compares treated with untreated cells of the same cell line. Genes with almost no reads are left out first. The first <code>library(DESeq2)</code> downloads about 40 packages – give it a minute; <code>DESeq()</code> takes about as long.</p>
+<pre class="code" data-run="r"><code>library(DESeq2)
+dds <- DESeqDataSetFromMatrix(countData = counts, colData = samples, design = ~ cell + dex)
+dds <- dds[rowSums(counts(dds)) >= 10, ]
+dds <- DESeq(dds)
+res <- results(dds, contrast = c("dex", "trt", "untrt"), alpha = 0.05)
+summary(res)</code></pre>
+<p><code>DESeq()</code> normalises for the depth of each sample (size factors), estimates how much each gene varies between replicates (dispersion), and tests every gene. <code>padj</code> is the p-value adjusted for testing thousands of genes: a cut-off of 0.05 keeps the false discoveries near 5%.</p>
+
+<h2>6. The genes that changed most</h2>
+<pre class="code" data-run="r"><code>top <- as.data.frame(res[order(res$padj), ])
+head(top[, c("baseMean", "log2FoldChange", "padj")], 10)
+write.csv(top, "deseq2_dex_vs_untreated.csv")</code></pre>
+<p>A log2 fold change of 2 is four times as much RNA in treated cells; −2 a quarter. Third in the list is <i>DUSP1</i> (ENSG00000120129), a well-known target of steroids such as dexamethasone. Search an ID in the Databases tab (Ensembl card) to see the gene's name.</p>
+
+<h2>7. Plots</h2>
+<p>The MA plot shows every gene: its mean count and its fold change, the significant ones in colour. The PCA plot of variance-stabilised counts shows which samples resemble each other – by treatment first, then by cell line.</p>
+<pre class="code" data-run="r"><code>plotMA(res, ylim = c(-5, 5))</code></pre>
+<pre class="code" data-run="r"><code>vsd <- vst(dds, blind = FALSE)
+plotPCA(vsd, intgroup = c("dex", "cell"))</code></pre>
+<pre class="code" data-run="r"><code>plotCounts(dds, gene = "ENSG00000120129", intgroup = c("dex", "cell"))</code></pre>
+
+<h2>8. The same with edgeR</h2>
+<p>edgeR models the counts in a similar way, and tests them with quasi-likelihood F-tests. How many of DESeq2's genes does it find too? (edgeR loads limma, whose <code>plotMA</code> hides DESeq2's: after this step, write <code>DESeq2::plotMA(res)</code>.)</p>
+<pre class="code" data-run="r"><code>library(edgeR)
+y <- DGEList(counts = counts, samples = samples)
+keep <- filterByExpr(y, group = samples$dex)
+y <- normLibSizes(y[keep, , keep.lib.sizes = FALSE])
+design <- model.matrix(~ cell + dex, data = samples)
+y <- estimateDisp(y, design)
+fit <- glmQLFit(y, design)
+qlf <- glmQLFTest(fit, coef = "dextrt")
+summary(decideTests(qlf))
+
+edger_genes <- rownames(topTags(qlf, n = Inf, p.value = 0.05))
+deseq2_genes <- rownames(top)[which(top$padj < 0.05)]
+c(DESeq2 = length(deseq2_genes), edgeR = length(edger_genes), both = length(intersect(deseq2_genes, edger_genes)))</code></pre>
+
+<div class="callout info"><div class="co-t"><!--ICON:info-->Good to know</div><p>DESeq2 and edgeR need raw counts – whole numbers, not normalised values – and biological replicates. In the browser they run as on a computer: locfit, a package they need, was built for the workbench, and a check against R on Linux gave the same results. Download the notebook to run it in RStudio or Jupyter: <code>BiocManager::install(c("DESeq2", "edgeR"))</code> there.</p></div>

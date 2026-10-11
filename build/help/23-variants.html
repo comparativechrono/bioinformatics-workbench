@@ -1,6 +1,6 @@
-<!-- id: h-variants | title: Variant calling | group: Terminal and programs | summary: bcftools mpileup, call, filter, query; bgzip, tabix | keys: variants snp indel vcf bcf bcftools mpileup call filter view query stats norm bgzip tabix genotype calling -->
+<!-- id: h-variants | title: Variant calling | group: Terminal and programs | summary: bcftools mpileup, call, filter, query; FreeBayes; bgzip, tabix | keys: variants snp indel mnp vcf bcf bcftools mpileup call filter view query stats norm isec freebayes haplotype bgzip tabix genotype calling -->
 <h1><!--ICON:tag-->Variant calling</h1>
-<p class="lede"><b>bcftools</b> finds the positions where the reads differ from the reference, decides the genotypes, filters the calls and turns VCF files into tables. <b>bgzip</b> and <b>tabix</b> compress and index them.</p>
+<p class="lede"><b>bcftools</b> finds the positions where the reads differ from the reference, decides the genotypes, filters the calls and turns VCF files into tables. <b>FreeBayes</b> is a second caller, which looks at haplotypes rather than single positions. <b>bgzip</b> and <b>tabix</b> compress and index the VCF files.</p>
 <p>The examples work in a folder of your own: <button class="do" type="button" data-term-run="mkdir -p ~/variants && cd ~/variants">mkdir -p ~/variants &amp;&amp; cd ~/variants</button></p>
 
 <h2>From a BAM file to variants</h2>
@@ -29,6 +29,18 @@ bcftools stats filtered.vcf.gz | grep -E "^SN|^TSTV"</code></pre>
 head calls.tsv</code></pre>
 <p>A table like this reads straight into pandas or R (<code>pd.read_csv("calls.tsv", sep="\t")</code>). A known position, such as the CYP2C19*2 variant (rs4244285, G&gt;A) at position 11,616 of <code>human_CYP2C19</code> – NA12878 carries it on one chromosome (0/1):</p>
 <pre class="code" data-run="term"><code>bcftools view -H -r human_CYP2C19:11616 filtered.vcf.gz | cut -f 1-10</code></pre>
+
+<h2>FreeBayes</h2>
+<p>FreeBayes reads the same sorted BAM file and the reference (which needs its <code>.fai</code> index – <code>samtools faidx</code>; FreeBayes makes one if it is missing) and writes a VCF file:</p>
+<pre class="code" data-run="term"><code>freebayes -f /data/examples/reads/reference.fa mapped.bam > freebayes.vcf
+bcftools view -H freebayes.vcf | wc -l
+bcftools filter -i 'QUAL>=20' -Oz -o freebayes.filtered.vcf.gz freebayes.vcf
+bcftools index freebayes.filtered.vcf.gz
+bcftools view -H -r human_CYP2C19:11616 freebayes.filtered.vcf.gz | cut -f 1-6</code></pre>
+<p>FreeBayes also writes the sites it considered and does not believe – QUAL near 0, genotype 0/0 – so filter on QUAL. Its INFO fields differ from bcftools': <code>DP</code> depth, <code>RO</code> and <code>AO</code> the reads with the reference and the other allele, <code>TYPE</code> snp, mnp, ins, del or complex. Useful options: <code>-r human_CYP2C19:11000-12500</code> (one region; needs the BAM index), <code>-p 1</code> (a haploid organism), <code>-C 3</code> (at least three reads for an allele), <code>--min-mapping-quality 20</code>. Which calls do the two callers share?</p>
+<pre class="code" data-run="term"><code>bcftools isec -n=2 -w1 filtered.vcf.gz freebayes.filtered.vcf.gz | grep -vc "^#"
+bcftools isec -C -w1 filtered.vcf.gz freebayes.filtered.vcf.gz | grep -v "^#" | cut -f 1-5</code></pre>
+<p><code>-n=2</code> keeps the sites in both files, <code>-C</code> the sites of the first file only. Positions where the callers disagree are worth a look in the genome browser.</p>
 
 <h2>bgzip and tabix</h2>
 <p>A VCF file that tools read by region must be compressed with <code>bgzip</code> (not plain <code>gzip</code>) and indexed:</p>

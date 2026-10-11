@@ -44,13 +44,15 @@ echo "minimap2 $(minimap2 --version)"</code></pre>
 <p>A downloaded notebook opens in Jupyter, JupyterLab, VS Code and Google Colab (R notebooks need the R kernel, IRkernel). What the other computer needs:</p>
 <ul>
   <li><b>The data</b>, at the paths the notebook uses. <code>/data/examples</code> exists only here: download it (Files tab: the ⋯ of <i>Examples (read-only)</i> → <i>Download as a .zip</i>) and change the paths.</li>
-  <li><b>The packages</b>: <code>pip install pandas matplotlib biopython requests scipy</code>; in R, <code>install.packages(c("ggplot2", "jsonlite"))</code>.</li>
+  <li><b>The packages</b>: <code>pip install pandas matplotlib biopython requests scipy</code>; in R, <code>install.packages(c("ggplot2", "jsonlite"))</code>, and from Bioconductor <code>BiocManager::install(c("DESeq2", "edgeR"))</code>.</li>
   <li><b>The programs</b> of <code>%%bash</code> cells – with conda, from Bioconda, in the versions used here (or the nearest ones Bioconda has):</li>
 </ul>
 <pre class="code"><code>conda create -n workbench -c conda-forge -c bioconda \
     samtools=1.17 minimap2=2.22 bowtie2=2.4.2 fastp=0.20.1 \
     seqtk=1.4 bedtools=2.31.0 kalign3=3.3.2 muscle=3.8.1551 fasttree=2.1.11
 conda create -n workbench-bcftools -c conda-forge -c bioconda bcftools=1.10
+conda create -n workbench-freebayes -c conda-forge -c bioconda freebayes=1.3.6
+conda create -n workbench-bwa -c conda-forge -c bioconda bwa=0.7.19 hisat2=2.2.2 samtools
 conda activate workbench</code></pre>
-<p>bcftools 1.10 needs an older htslib than samtools 1.17, so it has an environment of its own (or take a current bcftools into the first one – its output can differ in details). Bioconda has no Kalign 3.3.1; 3.3.2 is the nearest.</p>
+<p>bcftools 1.10 needs an older htslib than samtools 1.17, so it has an environment of its own (or take a current bcftools into the first one – its output can differ in details); Bioconda's BWA 0.7.19 needs a newer zlib than samtools 1.17 and FreeBayes 1.3.6, so it goes with a current samtools. Bioconda has no Kalign 3.3.1; 3.3.2 is the nearest.</p>
 <p>Lines that only the workbench understands – <code>igv</code>, <code>open</code>, <code>download</code> – do nothing useful elsewhere: leave them out.</p>

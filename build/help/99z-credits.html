@@ -1,4 +1,4 @@
-<!-- id: h-credits | title: Credits and licences | group: Reference | summary: The software and data the workbench is built from | keys: credits licences licenses copyright open source biowasm pyodide webr igv ngl codemirror marked dompurify jszip viz graphviz gpl mit data sources cite citation -->
+<!-- id: h-credits | title: Credits and licences | group: Reference | summary: The software and data the workbench is built from | keys: credits licences licenses copyright open source biowasm genomics-wasm pyodide webr igv ngl codemirror marked dompurify jszip viz graphviz gpl mit data sources cite citation -->
 <h1><!--ICON:book-->Credits and licences</h1>
 <p class="lede">The workbench is built from open-source software and open data, each under its own licence. The full list, with the licence texts and the source code of the GPL programs, is in <a href="THIRD_PARTY.md" target="_blank" rel="noopener">THIRD_PARTY.md</a> and the folder <code>assets/vendor/licenses/</code> of the site.</p>
 
@@ -9,11 +9,14 @@
 <tr><td>fastp, seqtk, wgsim, minimap2, SAMtools, BCFtools, HTSlib, bedtools, LASTZ, jq</td><td>MIT (HTSlib also modified BSD)</td></tr>
 <tr><td>gffread (with GCLib)</td><td>MIT (GCLib: Artistic 2.0)</td></tr>
 <tr><td>Bowtie 2, Kalign</td><td>GNU GPL 3</td></tr>
+<tr><td>BWA, HISAT2 – compiled for the browser by the genomics-wasm project</td><td>GNU GPL 3</td></tr>
+<tr><td>FreeBayes – compiled for the browser by the genomics-wasm project</td><td>MIT; it contains code under the GNU GPL 2 or later, so the program is distributed under the GPL</td></tr>
 <tr><td>FastTree</td><td>GNU GPL 2 or later</td></tr>
 <tr><td>MUSCLE 3.8, seq-align</td><td>public domain</td></tr>
 <tr><td>GNU coreutils, grep, sed, gawk, diffutils</td><td>GNU GPL 3 or later</td></tr>
 <tr><td>Pyodide (CPython for the browser) and its packages</td><td>MPL 2.0 (Python: PSF licence; each package its own)</td></tr>
 <tr><td>webR (R for the browser)</td><td>GNU GPL 3 (R: GNU GPL 2 and 3); its JavaScript: MIT</td></tr>
+<tr><td>locfit (R package, built for this site with genomics-wasm's recipe); DESeq2, edgeR and the other R packages are downloaded when used</td><td>locfit: GNU GPL 2 or later; DESeq2: LGPL 3 or later; edgeR: GNU GPL 2 or later; each package its own</td></tr>
 <tr><td>Graphviz, through Viz.js</td><td>EPL 1.0 (Viz.js: MIT)</td></tr>
 </table>
 
@@ -31,7 +34,7 @@
 
 <h2>Data and services</h2>
 <ul>
-  <li>The example reads: the 1000 Genomes Project (sample NA12878, run SRR098401); the reference slices: UCSC (hg19); the genes: Ensembl (GRCh37); sequences: NCBI GenBank and UniProt; the yeast table: SGD, PaxDb, BioGRID, UniProt and AlphaFold DB; the structure 1MBN: RCSB PDB. Details: <code>/data/examples/README.md</code>.</li>
+  <li>The example reads: the 1000 Genomes Project (sample NA12878, run SRR098401); the reference slices: UCSC (hg19); the genes: Ensembl (GRCh37); sequences: NCBI GenBank and UniProt; the yeast table: SGD, PaxDb, BioGRID, UniProt and AlphaFold DB; the structure 1MBN: RCSB PDB; the RNA-seq reads and yeast chromosome: nf-core/test-datasets (run SRR6357070); the airway counts: the Bioconductor package airway (Himes et al. 2014). Details: <code>/data/examples/README.md</code>.</li>
   <li>The Databases tab uses the public services of EMBL-EBI (UniProt, AlphaFold DB with Google DeepMind, InterPro, Ensembl, ENA, BLAST, QuickGO, OLS, Europe PMC), NCBI (E-utilities, PubChem), RCSB PDB, UCSC, STRING and Reactome. Cite the databases you use in your work: each names the paper to cite on its web site.</li>
 </ul>
 <div class="tryrow"><button class="do" type="button" data-open="/data/examples/README.md">Open the README of the examples</button></div>
