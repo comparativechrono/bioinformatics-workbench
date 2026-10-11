@@ -42,9 +42,11 @@ a. A method execIO was added to Aioli's worker. It runs one program with standar
    - After main() returns, fflush(0) is called where the program exports it (fastp).
    - "2>&1" opens standard output and standard error on the same file for appending.
    - Each program gets a link /home/student -> the shared folder that holds the student's
-     files. Paths in the student's home therefore reach the programs as they were typed, and
-     the programs print and record them as typed (md5sum's output, @PG lines of SAM files,
-     the command lines in VCF headers).
+     files, and a link /data -> the shared folder that holds the example data. Paths in the
+     student's home and in /data therefore reach the programs as they were typed, and the
+     programs print and record them as typed (md5sum's output, @PG lines of SAM files, the
+     command lines in VCF headers). (The links are made by execIO from the list the page hands
+     over – io.links, see assets/js/tools-wasm.js; the link /data was added on 11 October 2026.)
    - A run reports how much of its standard input the program read: where the program left
      the input (stdinPos – after "head -n 1": behind the first line) and the furthest byte it
      read (stdinMax – what a program takes from a pipe, where it cannot go back). The shell
@@ -132,7 +134,9 @@ file system in the first one, and the programs that are started afresh must not 
 In the loader of every program, exit(status) is recorded as Module.__exitStatus. (The loaders of
 the programs that were compiled for the course – Bowtie 2, diff, cmp – get this from their
 build scripts; diff and cmp are also given their names there, with which their messages begin.
-base.js, the loader of the base module, runs no program and is as downloaded.)
+BWA, HISAT2 and FreeBayes get it from finish-loader.py, when they are linked for this runner –
+../licenses/genomics-wasm-build/workbench/. base.js, the loader of the base module, runs no
+program and is as downloaded.)
 
 One more change, in coreutils/8.32/date.js and gawk/5.1.0/gawk.js: the day of the year. These
 loaders worked it out from the milliseconds that have passed since 1 January, local time. In a

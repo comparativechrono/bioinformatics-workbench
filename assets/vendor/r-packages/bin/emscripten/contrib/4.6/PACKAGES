@@ -1,0 +1,10 @@
+Package: locfit
+Version: 1.5-9.12
+Depends: R (>= 4.1.0)
+Imports: lattice
+Suggests: interp, gam
+License: GPL (>= 2)
+MD5sum: 621fc440fcc7b583ca500eabda8b881c
+Built: R 4.6.0; wasm32-unknown-emscripten; 2026-10-11 08:07:32 UTC;
+        unix
+File: locfit_1.5-9.12.tgz

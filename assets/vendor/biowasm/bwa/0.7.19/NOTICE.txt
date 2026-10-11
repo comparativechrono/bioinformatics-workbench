@@ -1,0 +1,21 @@
+BWA 0.7.19 (0.7.19-r1273): bwa
+Licence: GPL-3.0 (COPYING in this folder). Built with zlib 1.3.1 (ZLIB-LICENSE).
+Upstream source: https://github.com/lh3/bwa/tree/b92993c1161e73167181558856567ef2f367e3f0
+
+Compiled to WebAssembly by the genomics-wasm project (https://github.com/comparativechrono/genomics-wasm,
+commit 0e5df1fb): Emscripten 3.1.64, one thread, BWA's own scalar code in place of SSE2. Everything needed
+to build it again is in ../../../licenses/: sources/ (BWA and zlib, as pinned) and genomics-wasm-build/
+(the patch, the replaced files, the build script, and how it was linked for this site – see its README.txt).
+
+Changes to the source (tools/bwa/browser.patch there): work that BWA would hand to threads runs in order;
+-t accepts only 1; files are opened locally only (no URLs, no "<(command)" inputs); bwa shm is not
+available; two corrections for 32-bit WebAssembly (a function declaration, and the 64-bit interval of the
+suffix array – the index files stay as on Linux). The loader (bwa.js) was linked for the program runner of
+this site and records the exit status (workbench/relink-for-workbench.sh, finish-loader.py).
+
+In the workbench's terminal, bwa -t N (N > 1) is left out with a note. The CPU times in bwa's messages are
+not measured in WebAssembly (the C library gives fixed values); the real times are right.
+
+Checked against BWA 0.7.19 built natively from the same source (genomics-wasm's comparison: 16 of 16
+cases; and in the workbench with the example data): the same index files, byte for byte, and the same
+SAM records (apart from the command line in the @PG header).

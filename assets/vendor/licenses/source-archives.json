@@ -88,5 +88,59 @@
   "bytes": 1348048,
   "upstream": "https://ftp.gnu.org/gnu/sed/sed-4.8.tar.xz",
   "origin": "official release archive, retrieved 2026-09-30"
+ },
+ {
+  "package": "bwa-0.7.19",
+  "licence": "GPL-3.0",
+  "file": "sources/bwa-b92993c1161e73167181558856567ef2f367e3f0.tar.gz",
+  "sha256": "aa00b8c6f33e9064b6d17e3155af79245fe533b24759fe8faa93424f5caa01cf",
+  "bytes": 238721,
+  "upstream": "https://github.com/lh3/bwa/tree/b92993c1161e73167181558856567ef2f367e3f0",
+  "origin": "the archive pinned by genomics-wasm (tools/bwa/sources.lock.json): GitHub's archive of commit b92993c (BWA 0.7.19-r1273), made again with git archive | gzip -n -6, byte for byte, 2026-10-11"
+ },
+ {
+  "package": "zlib-1.3.1",
+  "licence": "Zlib",
+  "file": "sources/zlib-1.3.1.tar.gz",
+  "sha256": "9a93b2b7dfdac77ceba5a558a580e74667dd6fede4585b91eefb60f03b72df23",
+  "bytes": 1512791,
+  "upstream": "https://zlib.net/fossils/zlib-1.3.1.tar.gz",
+  "origin": "official release archive, pinned by genomics-wasm; part of the BWA and FreeBayes programs"
+ },
+ {
+  "package": "hisat2-2.2.2",
+  "licence": "GPL-3.0",
+  "file": "sources/hisat2-99583d7536b9ee017ac07de8834017a3bf99a2fe.tar.gz",
+  "sha256": "8b2d4f6683eeea2b856756c2287a9b4c56ce74d4620fc756e0dbb26b0c1b1039",
+  "bytes": 6981429,
+  "upstream": "https://github.com/DaehwanKimLab/hisat2/tree/99583d7536b9ee017ac07de8834017a3bf99a2fe",
+  "origin": "the archive pinned by genomics-wasm (tools/hisat2/sources.lock.json): GitHub's archive of commit 99583d7 (HISAT2 2.2.2), made again with git archive | gzip -n -6, byte for byte, 2026-10-11"
+ },
+ {
+  "package": "freebayes-1.3.6",
+  "licence": "MIT (FreeBayes); GPL-2.0-or-later (libdisorder in vcflib) and others – see ../biowasm/freebayes/1.3.6/LICENSES/",
+  "file": "sources/freebayes-1.3.6-recursive.tar.xz",
+  "sha256": "adebd4417859924f814c9e06adb14f9f261bf0c13c1013b03a8606b941f3759d",
+  "bytes": 15288424,
+  "upstream": "https://github.com/freebayes/freebayes/tree/084dce52e54af5adbd1e2b0a67f3733dd8bfddc0",
+  "origin": "git ls-files --recurse-submodules of a clone of FreeBayes at commit 084dce52 with its submodules at the commits of genomics-wasm's tools/freebayes/upstream.lock.json, as tar | xz, 2026-10-11; left out: vcflib/paper/ (the figures and LaTeX files of the vcflib publication)"
+ },
+ {
+  "package": "simde-0.8.2",
+  "licence": "MIT",
+  "file": "sources/simde-0.8.2.tar.gz",
+  "sha256": "72b2c14a487560b7eb203795f2c2fead5c7499662e639944cca2a9bb19f09029",
+  "bytes": 7481259,
+  "upstream": "https://github.com/simd-everywhere/simde/tree/71fd833d9666141edcd1d3c109a80e228303d8d7",
+  "origin": "the archive pinned by genomics-wasm (tools/freebayes/upstream.lock.json): GitHub's archive of commit 71fd833 (SIMDe 0.8.2); its headers are part of the FreeBayes program"
+ },
+ {
+  "package": "locfit-1.5-9.12",
+  "licence": "GPL-2.0-or-later",
+  "file": "sources/locfit_1.5-9.12.tar.gz",
+  "sha256": "fa31b9d407f3557a6fcb7105cbd7b16a32a6fb868a7c60bc38a3e33cb7a39343",
+  "bytes": 207112,
+  "upstream": "https://cran.r-project.org/src/contrib/locfit_1.5-9.12.tar.gz",
+  "origin": "the CRAN source package, pinned by genomics-wasm (tools/deseq2/locfit.lock.json), retrieved 2026-10-11; built into ../../r-packages/"
  }
 ]

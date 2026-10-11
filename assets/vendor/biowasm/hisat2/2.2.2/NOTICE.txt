@@ -1,0 +1,26 @@
+HISAT2 2.2.2: hisat2-build, hisat2-align and hisat2-inspect, as one program (hisat2.wasm)
+Licence: GPL-3.0 (LICENSE in this folder; the notices of the parts it contains: THIRD_PARTY_LICENSES.txt).
+Upstream source: https://github.com/DaehwanKimLab/hisat2/tree/99583d7536b9ee017ac07de8834017a3bf99a2fe
+
+Compiled to WebAssembly by the genomics-wasm project (https://github.com/comparativechrono/genomics-wasm,
+commit 0e5df1fb): Emscripten 3.1.64, WebAssembly SIMD for HISAT2's SSE2 code, one thread, C++ exceptions.
+Everything needed to build it again is in ../../../licenses/: sources/ (HISAT2, as pinned) and
+genomics-wasm-build/ (the patch, dispatch.cpp, the build script, and how it was linked for this site).
+
+Changes to the source (tools/hisat2/browser.patch there): the SSE2 code compiles to WebAssembly SIMD and a
+compiler built-in counts bits; alignment and indexing run on one thread; one subtraction of reference
+positions uses a signed 64-bit type (on 32-bit WebAssembly it wrapped and changed template lengths); the
+three programs share one module – "hisat2 build ARGS", "hisat2 inspect ARGS", and the aligner otherwise
+(dispatch.cpp). Only small indexes (.ht2). The loader (hisat2.js) was linked for the program runner of this
+site and records the exit status.
+
+In the workbench's terminal, hisat2, hisat2-build and hisat2-inspect run this program with --wrapper basic-0,
+as HISAT2's wrapper scripts (perl, python) do; the scripts themselves are not here. The terminal does what
+they do that a person meets: it checks for the read files ("(ERR): Read file 'X' doesn't exist") and for the
+index ("(ERR): "NAME" does not exist") and ends with status 255; it unpacks .gz read files first; it adds
+"(ERR): hisat2-align exited with value N" when the aligner fails. --un, --al, --un-conc and --al-conc are done
+by the wrapper and are not available; -p N (N > 1) is left out with a note.
+
+Checked against HISAT2 built natively from the same source (genomics-wasm's comparison: 45 of 45 cases with
+human and yeast RNA-seq reads; and in the workbench with the example data): the same eight index files,
+byte for byte, and the same SAM records (apart from the command line in the @PG header).

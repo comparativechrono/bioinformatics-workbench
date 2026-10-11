@@ -1,0 +1,23 @@
+FreeBayes 1.3.6 (commit 084dce52): freebayes
+Licences: FreeBayes is MIT-licensed. The program also contains HTSlib (MIT/Expat), htscodecs (BSD), SeqLib
+(Apache-2.0), vcflib, tabixpp, fastahack, multichoose, smithwaterman, intervaltree and SSW (MIT), TTMath (BSD),
+SIMDe (MIT), zlib, and libdisorder (GPL-2.0-or-later) – because of libdisorder the program as a whole is
+distributed under the GNU GPL. Their notices are in LICENSES/ (with that of filevercmp, GPL-3.0-or-later, which
+is part of the source tree; its code is not compiled into the program).
+Upstream source: https://github.com/freebayes/freebayes/tree/084dce52e54af5adbd1e2b0a67f3733dd8bfddc0
+
+Compiled to WebAssembly by the genomics-wasm project (https://github.com/comparativechrono/genomics-wasm,
+commit 0e5df1fb): Emscripten 3.1.64, WebAssembly SIMD, one thread. For this site it was compiled again with
+-ffile-prefix-map, so that its assert messages name the source files without the build machine's folders
+(workbench/freebayes-prefix-map.patch); nothing else differs. Everything needed to build it again is in
+../../../licenses/: sources/ (FreeBayes with all its submodules, zlib, SIMDe) and genomics-wasm-build/.
+
+Changes to the source (tools/freebayes/patches there): no native backtraces (execinfo); 64-bit file offsets
+with the standard off_t type; TTMath's portable C++ code with 64-bit words in place of x86 assembly.
+CRAM, remote files and the freebayes-parallel wrapper are not supported. The loader (freebayes.js) was
+linked for the program runner of this site and records the exit status.
+
+Checked against FreeBayes built natively from the same source (genomics-wasm's comparison, 9 of 9 cases,
+with this very build; and in the workbench, on reads mapped with bwa mem): the same VCF records, apart from
+QUAL values near zero – below 1e-13 they can differ by about 1e-14, because x86 and WebAssembly compute
+long double with different precision (see tools/freebayes/README.md of genomics-wasm).
