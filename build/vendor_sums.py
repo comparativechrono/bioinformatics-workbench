@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 """Write the checksum lists (SHA256SUMS) of site/assets/vendor/ again – after any change to the files there.
 
-- each program folder, assets/vendor/biowasm/NAME/VERSION/: every file in it;
+- each program folder, assets/vendor/biowasm/NAME/VERSION/ and assets/vendor/genomics-wasm/NAME/VERSION/ (the
+  programs that work on several threads): every file in it;
 - assets/vendor/biowasm/: the four files at its top (the runner, its licence, the two descriptions of the
   local changes);
 - assets/vendor/licenses/: every file below it, the source archives in sources/ too (which may be handed
@@ -48,15 +49,18 @@ def every_file(folder):
 def main():
     bw = os.path.join(V, 'biowasm')
     n = 0
-    for prog in sorted(os.listdir(bw)):
-        p = os.path.join(bw, prog)
-        if not os.path.isdir(p):
+    for base in (bw, os.path.join(V, 'genomics-wasm')):
+        if not os.path.isdir(base):
             continue
-        for ver in sorted(os.listdir(p)):
-            folder = os.path.join(p, ver)
-            if os.path.isdir(folder):
-                write(folder, every_file(folder))
-                n += 1
+        for prog in sorted(os.listdir(base)):
+            p = os.path.join(base, prog)
+            if not os.path.isdir(p):
+                continue
+            for ver in sorted(os.listdir(p)):
+                folder = os.path.join(p, ver)
+                if os.path.isdir(folder):
+                    write(folder, every_file(folder))
+                    n += 1
     top = [f for f in ('aioli.js', 'LICENSE.txt', 'RUNTIME-PATCHES.txt', 'execio-source.txt') if os.path.exists(os.path.join(bw, f))]
     write(bw, top)
     k = write(os.path.join(V, 'licenses'), every_file(os.path.join(V, 'licenses')))

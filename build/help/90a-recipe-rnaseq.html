@@ -1,6 +1,6 @@
-<!-- id: h-recipe-rnaseq | title: RNA-seq: reads to differential expression | group: Recipes | summary: HISAT2, spliced reads in the genome browser, DESeq2 and edgeR | keys: recipe rna-seq rnaseq transcriptome expression differential deseq2 edger limma locfit hisat2 splice spliced intron cigar counts airway dexamethasone volcano ma pca vst normalisation normalization fold change padj fdr yeast -->
+<!-- id: h-recipe-rnaseq | title: RNA-seq: reads to differential expression | group: Recipes | summary: HISAT2, spliced reads in the genome browser, featureCounts, DESeq2 and edgeR | keys: recipe rna-seq rnaseq featurecounts count strand stranded transcriptome expression differential deseq2 edger limma locfit hisat2 splice spliced intron cigar counts airway dexamethasone volcano ma pca vst normalisation normalization fold change padj fdr yeast -->
 <h1><!--ICON:flask-->RNA-seq: reads to differential expression</h1>
-<p class="lede">Two halves of an RNA-seq analysis. First, map real RNA-seq reads with HISAT2 and see reads split across an intron. Then, from the gene counts of a published experiment, find the genes that a drug switches on or off – with DESeq2, and with edgeR for comparison.</p>
+<p class="lede">Two halves of an RNA-seq analysis. First, map real RNA-seq reads with HISAT2, see reads split across an intron, and count the reads of each gene with featureCounts. Then, from the gene counts of a published experiment, find the genes that a drug switches on or off – with DESeq2, and with edgeR for comparison.</p>
 <div class="tryrow"><button class="do" type="button" data-recipe="r">Open this recipe as an R notebook</button> <button class="do" type="button" data-open="/data/examples/rnaseq/airway_samples.tsv">Show the samples</button></div>
 <p>The button writes the steps below into a new R notebook in <code>~/notebooks</code>; the terminal's steps become <code>%%bash</code> cells. Run the cells from the top.</p>
 
@@ -23,8 +23,17 @@ cat hisat2.log</code></pre>
 samtools view rnaseq.bam | awk '$6 ~ /N/ {match($6, /[0-9]+N/); print substr($6, RSTART, RLENGTH)}' | sort | uniq -c | sort -rn</code></pre>
 <p>Most of them skip the same 366 bases: the intron of <i>EFB1</i> (YAL003W), a yeast gene at I:142,174–143,160, whose intron holds a small nucleolar RNA gene (snR18). <button class="do" type="button" data-term-run="cd ~/recipe-rnaseq && igv --genome /data/examples/rnaseq/yeast_chrI.fa /data/examples/rnaseq/yeast_chrI.gtf rnaseq.bam --locus I:141900-143300">Show them in the genome browser</button> – the reads are drawn with a thin line across the intron, under the gene's exons.</p>
 
-<h2>4. The counts of a whole experiment</h2>
-<p>Differential expression starts from a table: how many reads each gene got in each sample. For whole genomes such tables are made on a server (featureCounts, HTSeq or salmon); this one is from the Bioconductor package <i>airway</i>: human airway smooth muscle cells, four cell lines (<code>cell</code>), each untreated and treated with the steroid dexamethasone (<code>dex</code>) – Himes et al., <i>PLoS ONE</i> 2014.</p>
+<h2>4. Count the reads of each gene</h2>
+<p><b>featureCounts</b> counts the read pairs that fall in each gene of the annotation. <code>-s</code> says which strand the reads come from: these were made with a reverse-stranded kit (<code>-s 2</code>). Compare the summaries – with the wrong strand, <code>-s 1</code>, hardly a pair finds its gene.</p>
+<pre class="code" data-run="term"><code>featureCounts -p --countReadPairs -s 2 -a /data/examples/rnaseq/yeast_chrI.gtf -o counts.txt rnaseq.bam 2> featurecounts.log
+awk '$2 > 0' counts.txt.summary
+tail -n +3 counts.txt | sort -k7,7nr | head -5 | cut -f 1,7
+featureCounts -p --countReadPairs -s 1 -a /data/examples/rnaseq/yeast_chrI.gtf -o counts_s1.txt rnaseq.bam 2> /dev/null
+awk '$2 > 0' counts_s1.txt.summary</code></pre>
+<p><i>EFB1</i> (YAL003W) has the most: 120 of the 239 pairs that were counted. A table like this, with a column for each sample, is where differential expression starts. With one sample of 256 read pairs there is nothing to compare – the next steps take the counts of a published experiment. (<a href="#h-rnaseq-quant">RNA-seq: counts and abundances</a> does the same with StringTie, kallisto and Salmon.)</p>
+
+<h2>5. The counts of a whole experiment</h2>
+<p>Differential expression starts from a table: how many reads each gene got in each sample. For whole genomes and tens of millions of reads such tables are made on a server (featureCounts, as above, or Salmon); this one is from the Bioconductor package <i>airway</i>: human airway smooth muscle cells, four cell lines (<code>cell</code>), each untreated and treated with the steroid dexamethasone (<code>dex</code>) – Himes et al., <i>PLoS ONE</i> 2014.</p>
 <pre class="code" data-run="r"><code>counts <- as.matrix(read.delim("/data/examples/rnaseq/airway_counts.tsv", row.names = 1, check.names = FALSE))
 samples <- read.delim("/data/examples/rnaseq/airway_samples.tsv", row.names = 1)
 samples <- samples[colnames(counts), ]
@@ -34,7 +43,7 @@ dim(counts)
 samples[, c("cell", "dex")]
 colSums(counts) / 1e6   # reads per sample, in millions</code></pre>
 
-<h2>5. DESeq2</h2>
+<h2>6. DESeq2</h2>
 <p>The design <code>~ cell + dex</code> compares treated with untreated cells of the same cell line. Genes with almost no reads are left out first. The first <code>library(DESeq2)</code> downloads about 40 packages – give it a minute; <code>DESeq()</code> takes about as long.</p>
 <pre class="code" data-run="r"><code>library(DESeq2)
 dds <- DESeqDataSetFromMatrix(countData = counts, colData = samples, design = ~ cell + dex)
@@ -44,20 +53,20 @@ res <- results(dds, contrast = c("dex", "trt", "untrt"), alpha = 0.05)
 summary(res)</code></pre>
 <p><code>DESeq()</code> normalises for the depth of each sample (size factors), estimates how much each gene varies between replicates (dispersion), and tests every gene. <code>padj</code> is the p-value adjusted for testing thousands of genes: a cut-off of 0.05 keeps the false discoveries near 5%.</p>
 
-<h2>6. The genes that changed most</h2>
+<h2>7. The genes that changed most</h2>
 <pre class="code" data-run="r"><code>top <- as.data.frame(res[order(res$padj), ])
 head(top[, c("baseMean", "log2FoldChange", "padj")], 10)
 write.csv(top, "deseq2_dex_vs_untreated.csv")</code></pre>
 <p>A log2 fold change of 2 is four times as much RNA in treated cells; −2 a quarter. Third in the list is <i>DUSP1</i> (ENSG00000120129), a well-known target of steroids such as dexamethasone. Search an ID in the Databases tab (Ensembl card) to see the gene's name.</p>
 
-<h2>7. Plots</h2>
+<h2>8. Plots</h2>
 <p>The MA plot shows every gene: its mean count and its fold change, the significant ones in colour. The PCA plot of variance-stabilised counts shows which samples resemble each other – by treatment first, then by cell line.</p>
 <pre class="code" data-run="r"><code>plotMA(res, ylim = c(-5, 5))</code></pre>
 <pre class="code" data-run="r"><code>vsd <- vst(dds, blind = FALSE)
 plotPCA(vsd, intgroup = c("dex", "cell"))</code></pre>
 <pre class="code" data-run="r"><code>plotCounts(dds, gene = "ENSG00000120129", intgroup = c("dex", "cell"))</code></pre>
 
-<h2>8. The same with edgeR</h2>
+<h2>9. The same with edgeR</h2>
 <p>edgeR models the counts in a similar way, and tests them with quasi-likelihood F-tests. How many of DESeq2's genes does it find too? (edgeR loads limma, whose <code>plotMA</code> hides DESeq2's: after this step, write <code>DESeq2::plotMA(res)</code>.)</p>
 <pre class="code" data-run="r"><code>library(edgeR)
 y <- DGEList(counts = counts, samples = samples)

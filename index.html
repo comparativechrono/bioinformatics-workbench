@@ -6,6 +6,7 @@
 <title>Bioinformatics workbench</title>
 <meta name="description" content="A bioinformatics workbench in the browser: a Python and R notebook, a Linux terminal with real bioinformatics programs, Galaxy, database APIs, a 3D protein viewer, a genome browser and an AI assistant. Nothing to install.">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%2310263a'/%3E%3Cpath d='M10 7c0 6 12 6 12 12s-12 6-12 6M22 7c0 6-12 6-12 12' fill='none' stroke='%237fd6c2' stroke-width='2.4' stroke-linecap='round'/%3E%3C/svg%3E">
+<script src="assets/js/isolation.js"></script>
 <link rel="stylesheet" href="assets/vendor/codemirror/codemirror.css">
 <link rel="stylesheet" href="assets/css/app.css">
 <link rel="stylesheet" href="assets/css/genomics.css">
@@ -60,7 +61,8 @@
 <section><h2><svg class="ic" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M4 17l6-5-6-5M12 19h8"/></svg>Terminal and programs</h2><ul>
 <li><a href="#h-terminal">The terminal<small>bash, the programs, keys, saving a session</small></a></li>
 <li><a href="#h-reads">Reads: quality, trimming, simulation<small>fastp, seqtk, wgsim</small></a></li>
-<li><a href="#h-mapping">Mapping reads<small>minimap2, Bowtie 2, BWA, HISAT2, samtools</small></a></li>
+<li><a href="#h-mapping">Mapping reads<small>minimap2, Bowtie 2, BWA, BWA-MEM2, HISAT2, samtools, mosdepth</small></a></li>
+<li><a href="#h-rnaseq-quant">RNA-seq: counts and abundances<small>featureCounts, StringTie, kallisto, Salmon</small></a></li>
 <li><a href="#h-variants">Variant calling<small>bcftools mpileup, call, filter, query; FreeBayes; bgzip, tabix</small></a></li>
 <li><a href="#h-intervals">Intervals and annotation<small>bedtools, gffread, BED and GFF files</small></a></li>
 <li><a href="#h-alignment">Alignments and trees<small>pairwise, multiple alignment, phylogenetic trees</small></a></li>
@@ -97,7 +99,7 @@
 </ul></section>
 <section><h2><svg class="ic" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M9 3h6M10 3v6l-5 9a2 2 0 0 0 1.7 3h10.6a2 2 0 0 0 1.7-3l-5-9V3"/><path d="M7.5 15h9"/></svg>Recipes</h2><ul>
 <li><a href="#h-recipe-variants">Reads to variants, in a notebook<small>QC, mapping, calling, a table of the variants, VEP, the genome browser</small></a></li>
-<li><a href="#h-recipe-rnaseq">RNA-seq: reads to differential expression<small>HISAT2, spliced reads in the genome browser, DESeq2 and edgeR</small></a></li>
+<li><a href="#h-recipe-rnaseq">RNA-seq: reads to differential expression<small>HISAT2, spliced reads in the genome browser, featureCounts, DESeq2 and edgeR</small></a></li>
 <li><a href="#h-recipe-protein">From a protein to its structure<small>UniProt, Biopython, a PDB file, an AlphaFold model, superposition</small></a></li>
 <li><a href="#h-recipe-table">A table, in Python and in R<small>Read, summarise, plot and test the yeast gene table</small></a></li>
 <li><a href="#h-recipe-api">Databases from code<small>requests, batches and loops, retries, Biopython&#x27;s Entrez, part of a big file, R</small></a></li>
@@ -399,7 +401,8 @@ done</code></pre>
 <table>
 <tr><th>For</th><th>Programs</th><th>Guide</th></tr>
 <tr><td>reads</td><td>fastp, seqtk, wgsim</td><td><a href="#h-reads">Reads</a></td></tr>
-<tr><td>mapping</td><td>minimap2, bowtie2, bwa, hisat2 (RNA-seq), samtools</td><td><a href="#h-mapping">Mapping reads</a></td></tr>
+<tr><td>mapping</td><td>minimap2, bowtie2, bwa, bwa-mem2, hisat2 (RNA-seq), samtools, mosdepth</td><td><a href="#h-mapping">Mapping reads</a></td></tr>
+<tr><td>RNA-seq counts</td><td>featureCounts, stringtie, kallisto, salmon</td><td><a href="#h-rnaseq-quant">RNA-seq: counts and abundances</a></td></tr>
 <tr><td>variants</td><td>bcftools, freebayes, bgzip, tabix</td><td><a href="#h-variants">Variant calling</a></td></tr>
 <tr><td>intervals and annotation</td><td>bedtools, gffread</td><td><a href="#h-intervals">Intervals</a></td></tr>
 <tr><td>alignments and trees</td><td>needleman_wunsch, smith_waterman, kalign, muscle, fasttree, lastz</td><td><a href="#h-alignment">Alignments and trees</a></td></tr>
@@ -470,9 +473,9 @@ seqtk comp /data/examples/sequences/myoglobins.fasta | cut -f 1,2</code></pre>
 head -4 sim_R1.fastq</code></pre>
 <p><code>-N</code> pairs, <code>-1</code>/<code>-2</code> read lengths, <code>-e</code> error rate, <code>-r</code> mutation rate, <code>-d</code>/<code>-s</code> fragment length and spread, <code>-S</code> seed. A read's name says where it came from (<code>human_CYP2C19_12642_13173_…</code>). This build does not print the list of mutations it made.</p>
 </article>
-<article class="help-page" id="h-mapping" data-title="Mapping reads" data-group="Terminal and programs" data-group-page="h-terminal" data-keys="map mapping align alignment reads reference minimap2 bowtie2 bowtie2-build bwa bwa-mem bwa-index hisat2 hisat2-build hisat2-inspect rna-seq rnaseq spliced splicing intron samtools sam bam sort index flagstat stats depth view faidx coverage tview" hidden>
+<article class="help-page" id="h-mapping" data-title="Mapping reads" data-group="Terminal and programs" data-group-page="h-terminal" data-keys="map mapping align alignment reads reference minimap2 bowtie2 bowtie2-build bwa bwa-mem bwa-index bwa-mem2 bwamem2 hisat2 hisat2-build hisat2-inspect rna-seq rnaseq spliced splicing intron samtools sam bam sort index flagstat stats depth view faidx coverage tview mosdepth depth coverage windows thresholds" hidden>
 <h1><svg class="ic" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M4 6h16M4 10h11M4 14h16M4 18h9"/></svg>Mapping reads</h1>
-<p class="lede">Mapping finds where each read comes from in a reference sequence. <b>minimap2</b>, <b>Bowtie 2</b> and <b>BWA</b> map DNA reads, <b>HISAT2</b> maps RNA-seq reads across introns; <b>samtools</b> sorts, indexes, filters and counts the alignments.</p>
+<p class="lede">Mapping finds where each read comes from in a reference sequence. <b>minimap2</b>, <b>Bowtie 2</b>, <b>BWA</b> and <b>BWA-MEM2</b> map DNA reads, <b>HISAT2</b> maps RNA-seq reads across introns; <b>samtools</b> sorts, indexes, filters and counts the alignments, and <b>mosdepth</b> measures the depth.</p>
 <p>The examples work in a folder of your own: <button class="do" type="button" data-term-run="mkdir -p ~/mapping && cd ~/mapping">mkdir -p ~/mapping &amp;&amp; cd ~/mapping</button></p>
 
 <h2>The reference</h2>
@@ -503,6 +506,13 @@ samtools index bwa.bam
 samtools flagstat bwa.bam</code></pre>
 <p><code>bwa index</code> makes the index once: five files (<code>.amb .ann .bwt .pac .sa</code>) next to the FASTA file – so the FASTA file must be in a folder of your own, not in the read-only examples. <code>bwa mem</code> is BWA's aligner for reads of 70 bases and more; it reads <code>.fastq.gz</code> files too. Its messages go to the standard error (here <code>bwa.log</code>); the CPU times in them are not measured in the browser – the real times are.</p>
 
+<h2 id="bwa-mem2">BWA-MEM2</h2>
+<pre class="code" data-run="term"><code>bwa-mem2 index reference.fa > /dev/null 2>&1
+bwa-mem2 mem -R '@RG\tID:NA12878\tSM:NA12878' reference.fa /data/examples/reads/NA12878_R1.fastq /data/examples/reads/NA12878_R2.fastq 2> bwamem2.log | samtools sort -o bwamem2.bam -
+samtools index bwamem2.bam
+samtools flagstat bwamem2.bam</code></pre>
+<p>BWA-MEM2 is <code>bwa mem</code>'s algorithm, rewritten to use the vector instructions of modern processors: on a server it maps several times faster than BWA, with the same alignments as <code>bwa mem</code> 0.7.17. It needs an index of its own – <code>bwa-mem2 index</code> writes <code>.0123 .amb .ann .bwt.2bit.64 .pac</code>; one made by <code>bwa index</code> does not do. In the browser it is not faster than BWA, and it takes a few hundred MB of memory even for a small reference. Compare the two: <code>samtools view bwa.bam | cut -f 1-6 | head</code> and the same for <code>bwamem2.bam</code>.</p>
+
 <h2 id="hisat2">HISAT2, for RNA-seq reads</h2>
 <p>A read from a spliced RNA can span an intron: its first part matches one exon, the rest the next. <b>HISAT2</b> splits such reads across the intron. The example reads are 256 pairs of yeast RNA-seq reads; the reference is chromosome I of yeast.</p>
 <pre class="code" data-run="term"><code>hisat2-build /data/examples/rnaseq/yeast_chrI.fa yeast_chrI > /dev/null 2>&1
@@ -529,7 +539,71 @@ samtools view rnaseq.bam | awk '$6 ~ /N/ {print $3, $4, $6}' | head -3</code></p
 samtools view -c mapped.bam human_CYP2C19:11000-12000
 samtools depth -a -r human_CYP2C19:11610-11620 mapped.bam</code></pre>
 <p>To see the reads, <code>igv mapped.bam</code> opens them in the <a href="#h-genome">Genome browser</a>.</p>
+
+<h2 id="mosdepth">Depth with mosdepth</h2>
+<p><code>samtools depth</code> prints a line for every position; <b>mosdepth</b> summarises the depth of a whole BAM file at once – per sequence, in windows, or in the regions of a BED file – and writes compressed BED files that the genome browser can show. It needs the index of the BAM file (<code>samtools index</code>).</p>
+<pre class="code" data-run="term"><code>mosdepth cyp2c mapped.bam
+cat cyp2c.mosdepth.summary.txt
+mosdepth -n --by /data/examples/annotation/cyp2c_exons.bed --thresholds 1,10,20 exons mapped.bam
+zcat exons.regions.bed.gz | head -5
+zcat exons.thresholds.bed.gz | head -5</code></pre>
+<p>The summary has the length of each sequence, the bases covered by reads, and the mean, smallest and largest depth. <code>cyp2c.mosdepth.global.dist.txt</code> tells which share of the bases has at least each depth – the usual "90% of the exome at 20×". <code>-n</code> leaves out the per-base file; <code>--by 1000</code> gives windows of 1000 bases instead of a BED file; <code>-Q 20</code> counts only reads with a mapping quality of 20 or more. mosdepth keeps an array as long as the longest sequence in the BAM file: yeast chromosomes and the example slices are fine, a whole human chromosome is too big for a browser.</p>
 <div class="callout info"><div class="co-t"><svg class="ic" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7.5h.01"/></svg>SAM flags</div><p>The second column of a SAM line is a sum of bits: 1 paired, 2 properly paired, 4 unmapped, 16 reverse strand, 256 secondary, 1024 duplicate, 2048 supplementary. <code>-f</code> keeps reads that have all the given bits, <code>-F</code> drops reads that have any of them.</p></div>
+</article>
+<article class="help-page" id="h-rnaseq-quant" data-title="RNA-seq: counts and abundances" data-group="Terminal and programs" data-group-page="h-terminal" data-keys="rna-seq rnaseq count counts count table expression quantification quantify abundance abundances featurecounts subread stringtie transcript assembly gtf kallisto pseudoalignment salmon selective alignment quant.sf abundance.tsv tpm fpkm est_counts numreads strand stranded library type isr dutp gffread transcripts deseq2 edger threads" hidden>
+<h1><svg class="ic" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M9 3h6M10 3v6l-5 9a2 2 0 0 0 1.7 3h10.6a2 2 0 0 0 1.7-3l-5-9V3"/><path d="M7.5 15h9"/></svg>RNA-seq: counts and abundances</h1>
+<p class="lede">After mapping, RNA-seq reads are counted. <b>featureCounts</b> counts the reads that fall in each gene; <b>StringTie</b> assembles the transcripts that the alignments show and estimates their abundance. <b>kallisto</b> and <b>Salmon</b> need no alignments to the genome: they estimate the abundance of each transcript from the reads and the transcript sequences.</p>
+<p>The examples use the 256 pairs of yeast RNA-seq reads and chromosome I of yeast, and work in a folder of their own: <button class="do" type="button" data-term-run="mkdir -p ~/rnaseq && cd ~/rnaseq">mkdir -p ~/rnaseq &amp;&amp; cd ~/rnaseq</button></p>
+
+<h2>The alignments</h2>
+<p>featureCounts and StringTie work on a BAM file sorted by position. <code>--dta</code> makes HISAT2 report alignments for transcript assembly (it wants longer anchors across introns, as StringTie does).</p>
+<pre class="code" data-run="term"><code>hisat2-build /data/examples/rnaseq/yeast_chrI.fa yeast_chrI > /dev/null 2>&1
+hisat2 --dta -x yeast_chrI -1 /data/examples/rnaseq/SRR6357070_1.fastq -2 /data/examples/rnaseq/SRR6357070_2.fastq 2> hisat2.log | samtools sort -o rnaseq.bam -
+samtools index rnaseq.bam</code></pre>
+
+<h2 id="featurecounts">featureCounts: reads per gene</h2>
+<pre class="code" data-run="term"><code>featureCounts -p --countReadPairs -a /data/examples/rnaseq/yeast_chrI.gtf -o counts.txt rnaseq.bam 2> featurecounts.log
+cat counts.txt.summary | awk '$2 > 0'
+tail -n +3 counts.txt | sort -k7,7nr | head -5 | cut -f 1,6,7</code></pre>
+<p><code>counts.txt</code> has a line per gene: its ID, where its exons are, its length and the count – a column for each BAM file, so <code>featureCounts … -o counts.txt s1.bam s2.bam s3.bam</code> makes the table of a whole experiment, the input of DESeq2 or edgeR. The summary says why reads were not counted: <code>Unassigned_NoFeatures</code> (no gene there), <code>Unassigned_Ambiguity</code> (more than one gene), <code>Unassigned_MultiMapping</code> (the read maps to several places; <code>-M</code> counts it anyway). Its report goes to the standard error – here <code>featurecounts.log</code>.</p>
+<ul>
+  <li><code>-p --countReadPairs</code>: the reads are pairs, and each pair (each fragment) counts once. featureCounts 2.1 stops with "Paired-end reads were detected in single-end read library" if <code>-p</code> is missing for paired reads.</li>
+  <li><code>-s 1</code> or <code>-s 2</code>: a stranded library, where the reads come from one strand of the RNA. Most RNA-seq kits today are reverse-stranded (<code>-s 2</code>); Salmon tells which (below).</li>
+  <li><code>-t exon -g gene_id</code> (the defaults): count over the exons, and add them up by gene. <code>-f</code> counts each exon by itself.</li>
+</ul>
+<p>featureCounts counts on several threads – <code>-T 2</code> to <code>-T 4</code> here; one if not asked for more. That needs a cross-origin isolated page, which the workbench makes its page when it starts – see <a href="#h-limits/threads">programs on several threads</a>.</p>
+
+<h2 id="stringtie">StringTie: transcripts and their abundance</h2>
+<pre class="code" data-run="term"><code>stringtie rnaseq.bam -G /data/examples/rnaseq/yeast_chrI.gtf -o stringtie.gtf -A gene_abundance.tsv
+awk '$3 == "transcript"' stringtie.gtf | wc -l
+sort -t $'\t' -k9,9gr gene_abundance.tsv | head -5 | cut -f 1,2,7-9</code></pre>
+<p>StringTie builds the transcripts that the reads show, guided by the annotation (<code>-G</code>). Each is called <code>STRG.N.M</code>; one that matches an annotated transcript names it (<code>reference_id</code>, <code>ref_gene_name</code>). For each it gives the coverage, FPKM and TPM (in the GTF file); <code>-A</code> writes a table per gene. <code>-e</code> leaves out new transcripts and only estimates the known ones; <code>-B</code> adds the tables that the R package Ballgown reads. Assemblies of several samples are joined with <code>stringtie --merge -G genes.gtf -o merged.gtf s1.gtf s2.gtf</code>.</p>
+
+<h2 id="kallisto">kallisto and Salmon: abundances without a BAM file</h2>
+<p>Both need the sequences of the transcripts. <code>gffread</code> cuts them out of the genome, as the annotation describes them:</p>
+<pre class="code" data-run="term"><code>gffread -w transcripts.fa -g /data/examples/rnaseq/yeast_chrI.fa /data/examples/rnaseq/yeast_chrI.gtf
+grep -c '>' transcripts.fa</code></pre>
+<p><b>kallisto</b> finds, for each read pair, which transcripts it could come from (pseudoalignment: compatible k-mers, no base-by-base alignment), and shares the reads out among the transcripts with an EM algorithm:</p>
+<pre class="code" data-run="term"><code>kallisto index -i transcripts.idx transcripts.fa > /dev/null 2>&1
+kallisto quant -i transcripts.idx -o kallisto_out /data/examples/rnaseq/SRR6357070_1.fastq /data/examples/rnaseq/SRR6357070_2.fastq 2> kallisto.log
+sort -t $'\t' -k4,4gr kallisto_out/abundance.tsv | head -5</code></pre>
+<p><b>Salmon</b> maps the reads to the transcripts (selective alignment), learns the lengths of the fragments and the strand of the reads, and shares the reads out among the transcripts:</p>
+<pre class="code" data-run="term"><code>salmon index -t transcripts.fa -i salmon_index > /dev/null 2>&1
+salmon quant -i salmon_index -l A -1 /data/examples/rnaseq/SRR6357070_1.fastq -2 /data/examples/rnaseq/SRR6357070_2.fastq -o salmon_out 2> salmon.log
+sort -t $'\t' -k5,5gr salmon_out/quant.sf | head -5
+grep expected_format salmon_out/lib_format_counts.json</code></pre>
+<p><code>abundance.tsv</code> (kallisto) and <code>quant.sf</code> (Salmon) give for each transcript its length, its effective length, the estimated number of reads (<code>est_counts</code>, <code>NumReads</code>) and TPM. <code>-l A</code> lets Salmon find out how the library was made: here <code>ISR</code> – inward pairs, read 1 from the reverse strand. That is a reverse-stranded library: <code>featureCounts -s 2</code>, <code>stringtie --rf</code>, <code>kallisto quant --rf-stranded</code>. Try the counts with <code>-s 2</code>, and with <code>-s 1</code>.</p>
+<p>Do the four agree? Join the counts of the genes – yeast genes here have one transcript each, named like the gene:</p>
+<pre class="code" data-run="term"><code>tail -n +3 counts.txt | cut -f 1,7 | sort > fc.tsv
+tail -n +2 kallisto_out/abundance.tsv | cut -f 1,4 | sort > kallisto.tsv
+tail -n +2 salmon_out/quant.sf | cut -f 1,5 | sort > salmon.tsv
+join fc.tsv kallisto.tsv | join - salmon.tsv | sort -k2,2nr | head -8</code></pre>
+
+<div class="callout info"><div class="co-t"><svg class="ic" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7.5h.01"/></svg>Good to know</div><ul>
+<li>Counts are what DESeq2 and edgeR need: featureCounts' table as it is; for kallisto and Salmon, R's <i>tximport</i> sums the transcripts of each gene. TPM is for comparing genes within a sample, not for testing.</li>
+<li>Indexes belong to the program that made them: <code>bwa index</code>, <code>hisat2-build</code>, <code>kallisto index</code> and <code>salmon index</code> each make their own. An index that Salmon made on a 64-bit computer cannot be read here, nor one made here there.</li>
+<li>With thousands of reads the numbers here are an exercise, not biology: real samples have millions.</li>
+</ul></div>
 </article>
 <article class="help-page" id="h-variants" data-title="Variant calling" data-group="Terminal and programs" data-group-page="h-terminal" data-keys="variants snp indel mnp vcf bcf bcftools mpileup call filter view query stats norm isec freebayes haplotype bgzip tabix genotype calling" hidden>
 <h1><svg class="ic" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M20.6 13.4l-7.2 7.2a2 2 0 0 1-2.8 0L3 13V3h10l7.6 7.6a2 2 0 0 1 0 2.8z"/><circle cx="7.5" cy="7.5" r="1.4"/></svg>Variant calling</h1>
@@ -837,7 +911,7 @@ ls -l ~/example-reads</code></pre>
 <h2>Start afresh</h2>
 <p><b>My files → Start afresh</b> deletes all your files, Galaxy's history and the workbench's settings in this browser – after you have downloaded what you want to keep. The settings of the AI assistant and of the help pane are kept.</p>
 </article>
-<article class="help-page" id="h-galaxy" data-title="Galaxy" data-group="Galaxy" data-group-page="h-galaxy" data-keys="galaxy history dataset upload tool run job provenance usegalaxy bwa-mem hisat2 freebayes datatype format fastqsanger rerun delete purge notebook export" hidden>
+<article class="help-page" id="h-galaxy" data-title="Galaxy" data-group="Galaxy" data-group-page="h-galaxy" data-keys="galaxy history dataset upload tool run job provenance usegalaxy bwa-mem bwa-mem2 hisat2 freebayes featurecounts stringtie kallisto salmon mosdepth datatype format fastqsanger rerun delete purge notebook export" hidden>
 <h1><svg class="ic" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><rect x="3" y="3" width="6" height="5" rx="1"/><rect x="15" y="16" width="6" height="5" rx="1"/><rect x="15" y="3" width="6" height="5" rx="1"/><path d="M9 5.5h6M18 8v8M9 5.5c3 0 3 13 6 13"/></svg>Galaxy</h1>
 <p class="lede">Galaxy runs analysis tools from forms, keeps every result in a <b>history</b> with a record of how it was made, and joins tools into <b>workflows</b>. This one works like usegalaxy.org and its sister servers – and runs in your browser, with the same programs as the terminal.</p>
 <div class="tryrow"><button class="do" type="button" data-bench="galaxy">Open Galaxy</button></div>
@@ -871,15 +945,16 @@ ls -l ~/example-reads</code></pre>
 <table>
 <tr><th>Section</th><th>Tools</th></tr>
 <tr><td>Quality control</td><td>fastp, seqtk_comp</td></tr>
-<tr><td>Mapping</td><td>Map with minimap2, Bowtie2, Map with BWA-MEM, HISAT2 (RNA-seq reads, across introns) – each single- or paired-end</td></tr>
-<tr><td>SAM/BAM</td><td>Samtools flagstat, stats, idxstats, depth, view (filter)</td></tr>
+<tr><td>Mapping</td><td>Map with minimap2, Bowtie2, Map with BWA-MEM, HISAT2 (RNA-seq reads, across introns), Map with BWA-MEM2 – each single- or paired-end</td></tr>
+<tr><td>SAM/BAM</td><td>Samtools flagstat, stats, idxstats, depth, view (filter); mosdepth</td></tr>
+<tr><td>RNA-seq</td><td>featureCounts, StringTie, Kallisto quant, Salmon quant</td></tr>
 <tr><td>Variant calling</td><td>bcftools mpileup, call, filter, view, query, stats; FreeBayes</td></tr>
 <tr><td>Intervals</td><td>bedtools Genome Coverage, Intersect intervals</td></tr>
 <tr><td>FASTA/FASTQ</td><td>seqtk_seq (FASTQ to FASTA), seqtk_sample</td></tr>
 <tr><td>Alignments and trees</td><td>Kalign, MUSCLE, FastTree</td></tr>
 <tr><td>Text manipulation</td><td>Select lines, Cut columns, Sort, Line/Word/Character count, Concatenate</td></tr>
 </table>
-<p>The tool IDs and versions are those of the Galaxy Tool Shed, so a workflow made here opens on usegalaxy.org (see <a href="#h-galaxy-workflows">Workflows</a>) – except Kalign and MUSCLE: the Tool Shed has no tool for the versions here, so a server shows those steps as missing and you choose its own alignment tool there.</p>
+<p>The tool IDs and versions are those of the Galaxy Tool Shed, so a workflow made here opens on usegalaxy.org (see <a href="#h-galaxy-workflows">Workflows</a>) – except Kalign and MUSCLE: the Tool Shed has no tool for the versions here, so a server shows those steps as missing and you choose its own alignment tool there. Kallisto quant and Salmon quant carry the IDs of the newest tools of the Tool Shed, which run kallisto 0.48.0 and Salmon 1.10.1; here they run the terminal's kallisto 0.52.0 and Salmon 2.8.0, so a server's results can differ a little. featureCounts and Salmon quant count on several threads: they need the page to be cross-origin isolated (see <a href="#h-limits/threads">Limits</a>).</p>
 
 <h2>How was this made? Dataset details</h2>
 <p>The <svg class="ic" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7.5h.01"/></svg> of a dataset shows Galaxy's record of it: the tool and its version, the versions of the programs (dependencies), the <b>command line</b> that ran, every parameter, and the program's messages. That record is why Galaxy analyses can be repeated – and the first place to look when a dataset is red. <svg class="ic" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M20 11a8 8 0 1 0-2.3 5.7"/><path d="M20 4v7h-7"/></svg> opens the tool again with the same inputs and settings.</p>
@@ -1607,9 +1682,9 @@ vep</code></pre>
 <h2>Keep it</h2>
 <p>Restart Python and run the notebook from the top: if every cell runs, the notebook is a complete record. <b>Download → Jupyter notebook (.ipynb)</b> keeps it; the files it made are in <code>~/recipe-variants</code>. The same steps as Galaxy tools: <a href="#h-galaxy">Galaxy</a>; as a Snakemake pipeline: <a href="#h-scripts">Scripts and pipelines</a>.</p>
 </article>
-<article class="help-page" id="h-recipe-rnaseq" data-title="RNA-seq: reads to differential expression" data-group="Recipes" data-group-page="h-recipe-variants" data-keys="recipe rna-seq rnaseq transcriptome expression differential deseq2 edger limma locfit hisat2 splice spliced intron cigar counts airway dexamethasone volcano ma pca vst normalisation normalization fold change padj fdr yeast" hidden>
+<article class="help-page" id="h-recipe-rnaseq" data-title="RNA-seq: reads to differential expression" data-group="Recipes" data-group-page="h-recipe-variants" data-keys="recipe rna-seq rnaseq featurecounts count strand stranded transcriptome expression differential deseq2 edger limma locfit hisat2 splice spliced intron cigar counts airway dexamethasone volcano ma pca vst normalisation normalization fold change padj fdr yeast" hidden>
 <h1><svg class="ic" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M9 3h6M10 3v6l-5 9a2 2 0 0 0 1.7 3h10.6a2 2 0 0 0 1.7-3l-5-9V3"/><path d="M7.5 15h9"/></svg>RNA-seq: reads to differential expression</h1>
-<p class="lede">Two halves of an RNA-seq analysis. First, map real RNA-seq reads with HISAT2 and see reads split across an intron. Then, from the gene counts of a published experiment, find the genes that a drug switches on or off – with DESeq2, and with edgeR for comparison.</p>
+<p class="lede">Two halves of an RNA-seq analysis. First, map real RNA-seq reads with HISAT2, see reads split across an intron, and count the reads of each gene with featureCounts. Then, from the gene counts of a published experiment, find the genes that a drug switches on or off – with DESeq2, and with edgeR for comparison.</p>
 <div class="tryrow"><button class="do" type="button" data-recipe="r">Open this recipe as an R notebook</button> <button class="do" type="button" data-open="/data/examples/rnaseq/airway_samples.tsv">Show the samples</button></div>
 <p>The button writes the steps below into a new R notebook in <code>~/notebooks</code>; the terminal's steps become <code>%%bash</code> cells. Run the cells from the top.</p>
 
@@ -1632,8 +1707,17 @@ cat hisat2.log</code></pre>
 samtools view rnaseq.bam | awk '$6 ~ /N/ {match($6, /[0-9]+N/); print substr($6, RSTART, RLENGTH)}' | sort | uniq -c | sort -rn</code></pre>
 <p>Most of them skip the same 366 bases: the intron of <i>EFB1</i> (YAL003W), a yeast gene at I:142,174–143,160, whose intron holds a small nucleolar RNA gene (snR18). <button class="do" type="button" data-term-run="cd ~/recipe-rnaseq && igv --genome /data/examples/rnaseq/yeast_chrI.fa /data/examples/rnaseq/yeast_chrI.gtf rnaseq.bam --locus I:141900-143300">Show them in the genome browser</button> – the reads are drawn with a thin line across the intron, under the gene's exons.</p>
 
-<h2>4. The counts of a whole experiment</h2>
-<p>Differential expression starts from a table: how many reads each gene got in each sample. For whole genomes such tables are made on a server (featureCounts, HTSeq or salmon); this one is from the Bioconductor package <i>airway</i>: human airway smooth muscle cells, four cell lines (<code>cell</code>), each untreated and treated with the steroid dexamethasone (<code>dex</code>) – Himes et al., <i>PLoS ONE</i> 2014.</p>
+<h2>4. Count the reads of each gene</h2>
+<p><b>featureCounts</b> counts the read pairs that fall in each gene of the annotation. <code>-s</code> says which strand the reads come from: these were made with a reverse-stranded kit (<code>-s 2</code>). Compare the summaries – with the wrong strand, <code>-s 1</code>, hardly a pair finds its gene.</p>
+<pre class="code" data-run="term"><code>featureCounts -p --countReadPairs -s 2 -a /data/examples/rnaseq/yeast_chrI.gtf -o counts.txt rnaseq.bam 2> featurecounts.log
+awk '$2 > 0' counts.txt.summary
+tail -n +3 counts.txt | sort -k7,7nr | head -5 | cut -f 1,7
+featureCounts -p --countReadPairs -s 1 -a /data/examples/rnaseq/yeast_chrI.gtf -o counts_s1.txt rnaseq.bam 2> /dev/null
+awk '$2 > 0' counts_s1.txt.summary</code></pre>
+<p><i>EFB1</i> (YAL003W) has the most: 120 of the 239 pairs that were counted. A table like this, with a column for each sample, is where differential expression starts. With one sample of 256 read pairs there is nothing to compare – the next steps take the counts of a published experiment. (<a href="#h-rnaseq-quant">RNA-seq: counts and abundances</a> does the same with StringTie, kallisto and Salmon.)</p>
+
+<h2>5. The counts of a whole experiment</h2>
+<p>Differential expression starts from a table: how many reads each gene got in each sample. For whole genomes and tens of millions of reads such tables are made on a server (featureCounts, as above, or Salmon); this one is from the Bioconductor package <i>airway</i>: human airway smooth muscle cells, four cell lines (<code>cell</code>), each untreated and treated with the steroid dexamethasone (<code>dex</code>) – Himes et al., <i>PLoS ONE</i> 2014.</p>
 <pre class="code" data-run="r"><code>counts <- as.matrix(read.delim("/data/examples/rnaseq/airway_counts.tsv", row.names = 1, check.names = FALSE))
 samples <- read.delim("/data/examples/rnaseq/airway_samples.tsv", row.names = 1)
 samples <- samples[colnames(counts), ]
@@ -1643,7 +1727,7 @@ dim(counts)
 samples[, c("cell", "dex")]
 colSums(counts) / 1e6   # reads per sample, in millions</code></pre>
 
-<h2>5. DESeq2</h2>
+<h2>6. DESeq2</h2>
 <p>The design <code>~ cell + dex</code> compares treated with untreated cells of the same cell line. Genes with almost no reads are left out first. The first <code>library(DESeq2)</code> downloads about 40 packages – give it a minute; <code>DESeq()</code> takes about as long.</p>
 <pre class="code" data-run="r"><code>library(DESeq2)
 dds <- DESeqDataSetFromMatrix(countData = counts, colData = samples, design = ~ cell + dex)
@@ -1653,20 +1737,20 @@ res <- results(dds, contrast = c("dex", "trt", "untrt"), alpha = 0.05)
 summary(res)</code></pre>
 <p><code>DESeq()</code> normalises for the depth of each sample (size factors), estimates how much each gene varies between replicates (dispersion), and tests every gene. <code>padj</code> is the p-value adjusted for testing thousands of genes: a cut-off of 0.05 keeps the false discoveries near 5%.</p>
 
-<h2>6. The genes that changed most</h2>
+<h2>7. The genes that changed most</h2>
 <pre class="code" data-run="r"><code>top <- as.data.frame(res[order(res$padj), ])
 head(top[, c("baseMean", "log2FoldChange", "padj")], 10)
 write.csv(top, "deseq2_dex_vs_untreated.csv")</code></pre>
 <p>A log2 fold change of 2 is four times as much RNA in treated cells; −2 a quarter. Third in the list is <i>DUSP1</i> (ENSG00000120129), a well-known target of steroids such as dexamethasone. Search an ID in the Databases tab (Ensembl card) to see the gene's name.</p>
 
-<h2>7. Plots</h2>
+<h2>8. Plots</h2>
 <p>The MA plot shows every gene: its mean count and its fold change, the significant ones in colour. The PCA plot of variance-stabilised counts shows which samples resemble each other – by treatment first, then by cell line.</p>
 <pre class="code" data-run="r"><code>plotMA(res, ylim = c(-5, 5))</code></pre>
 <pre class="code" data-run="r"><code>vsd <- vst(dds, blind = FALSE)
 plotPCA(vsd, intgroup = c("dex", "cell"))</code></pre>
 <pre class="code" data-run="r"><code>plotCounts(dds, gene = "ENSG00000120129", intgroup = c("dex", "cell"))</code></pre>
 
-<h2>8. The same with edgeR</h2>
+<h2>9. The same with edgeR</h2>
 <p>edgeR models the counts in a similar way, and tests them with quasi-likelihood F-tests. How many of DESeq2's genes does it find too? (edgeR loads limma, whose <code>plotMA</code> hides DESeq2's: after this step, write <code>DESeq2::plotMA(res)</code>.)</p>
 <pre class="code" data-run="r"><code>library(edgeR)
 y <- DGEList(counts = counts, samples = samples)
@@ -2013,17 +2097,20 @@ echo "minimap2 $(minimap2 --version)"</code></pre>
     seqtk=1.4 bedtools=2.31.0 kalign3=3.3.2 muscle=3.8.1551 fasttree=2.1.11
 conda create -n workbench-bcftools -c conda-forge -c bioconda bcftools=1.10
 conda create -n workbench-freebayes -c conda-forge -c bioconda freebayes=1.3.6
-conda create -n workbench-bwa -c conda-forge -c bioconda bwa=0.7.19 hisat2=2.2.2 samtools
+conda create -n workbench-bwa -c conda-forge -c bioconda bwa=0.7.19 bwa-mem2=2.2.1 hisat2=2.2.2 samtools
+conda create -n workbench-rnaseq -c conda-forge -c bioconda subread=2.1.1 kallisto=0.52.0 salmon=2.8.0
+conda create -n workbench-stringtie -c conda-forge -c bioconda stringtie=3.0.3
+conda create -n workbench-mosdepth -c conda-forge -c bioconda mosdepth=0.3.14
 conda activate workbench</code></pre>
-<p>bcftools 1.10 needs an older htslib than samtools 1.17, so it has an environment of its own (or take a current bcftools into the first one – its output can differ in details); Bioconda's BWA 0.7.19 needs a newer zlib than samtools 1.17 and FreeBayes 1.3.6, so it goes with a current samtools. Bioconda has no Kalign 3.3.1; 3.3.2 is the nearest.</p>
+<p>bcftools 1.10 needs an older htslib than samtools 1.17, so it has an environment of its own (or take a current bcftools into the first one – its output can differ in details); Bioconda's BWA 0.7.19 needs a newer zlib than samtools 1.17 and FreeBayes 1.3.6, so it goes with a current samtools. featureCounts is in the package <code>subread</code>. StringTie 3.0.3 and mosdepth 0.3.14 each need their own newer HTSlib, and so an environment each. Bioconda has no Kalign 3.3.1; 3.3.2 is the nearest.</p>
 <p>Lines that only the workbench understands – <code>igv</code>, <code>open</code>, <code>download</code> – do nothing useful elsewhere: leave them out.</p>
 </article>
-<article class="help-page" id="h-programs" data-title="Programs and versions" data-group="Reference" data-group-page="h-programs" data-keys="programs versions list fastp seqtk wgsim minimap2 bowtie2 bwa hisat2 freebayes samtools bcftools htslib bedtools gffread kalign muscle fasttree seq-align lastz jq coreutils grep sed awk python pyodide numpy pandas matplotlib biopython scipy r webr snakemake graphviz conda igv ngl deseq2 edger locfit" hidden>
+<article class="help-page" id="h-programs" data-title="Programs and versions" data-group="Reference" data-group-page="h-programs" data-keys="programs versions list fastp seqtk wgsim minimap2 bowtie2 bwa bwa-mem2 hisat2 freebayes stringtie kallisto salmon featurecounts subread mosdepth samtools bcftools htslib bedtools gffread kalign muscle fasttree seq-align lastz jq coreutils grep sed awk python pyodide numpy pandas matplotlib biopython scipy r webr snakemake graphviz conda igv ngl deseq2 edger locfit" hidden>
 <h1><svg class="ic" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M8 6h13M8 12h13M8 18h13M3.5 6h.01M3.5 12h.01M3.5 18h.01"/></svg>Programs and versions</h1>
 <p class="lede">Results depend on versions: cite the ones you used. <code>help</code> in the terminal prints this list too; <code>NAME --version</code> one program's.</p>
 
 <h2>The terminal's bioinformatics programs</h2>
-<p>The real programs, compiled to WebAssembly (most by the Biowasm project; BWA, HISAT2 and FreeBayes by the genomics-wasm project). Galaxy runs the same ones.</p>
+<p>The real programs, compiled to WebAssembly (most by the Biowasm project; BWA, BWA-MEM2, HISAT2, FreeBayes, featureCounts, StringTie, kallisto, Salmon and mosdepth by the genomics-wasm project). Galaxy runs the same ones.</p>
 <table>
 <tr><th>Program</th><th>Version</th><th>For</th></tr>
 <tr><td>fastp</td><td>0.20.1</td><td>read quality control and trimming</td></tr>
@@ -2032,8 +2119,14 @@ conda activate workbench</code></pre>
 <tr><td>minimap2</td><td>2.22</td><td>mapping reads (short and long), aligning sequences</td></tr>
 <tr><td>Bowtie 2 (<code>bowtie2</code>, <code>bowtie2-build</code>)</td><td>2.4.2</td><td>mapping short reads</td></tr>
 <tr><td>BWA (<code>bwa index</code>, <code>bwa mem</code>)</td><td>0.7.19</td><td>mapping short reads</td></tr>
+<tr><td>BWA-MEM2 (<code>bwa-mem2 index</code>, <code>bwa-mem2 mem</code>)</td><td>2.2.1</td><td>mapping short reads (bwa mem's algorithm, rewritten for speed)</td></tr>
 <tr><td>HISAT2 (<code>hisat2</code>, <code>hisat2-build</code>, <code>hisat2-inspect</code>)</td><td>2.2.2</td><td>mapping RNA-seq reads across introns</td></tr>
+<tr><td>featureCounts (Subread)</td><td>2.1.1</td><td>counting RNA-seq reads per gene (several threads)</td></tr>
+<tr><td>StringTie</td><td>3.0.3</td><td>assembling transcripts from RNA-seq alignments, and their abundance</td></tr>
+<tr><td>kallisto</td><td>0.52.0</td><td>transcript abundances by pseudoalignment</td></tr>
+<tr><td>Salmon</td><td>2.8.0</td><td>transcript abundances by selective alignment (several threads)</td></tr>
 <tr><td>SAMtools</td><td>1.17</td><td>SAM/BAM files: sort, index, view, statistics, depth, faidx</td></tr>
+<tr><td>mosdepth</td><td>0.3.14</td><td>read depth per base, window or region</td></tr>
 <tr><td>BCFtools</td><td>1.10</td><td>variant calling and VCF/BCF files</td></tr>
 <tr><td>FreeBayes</td><td>1.3.6</td><td>variant calling (haplotype-based)</td></tr>
 <tr><td>HTSlib (<code>bgzip</code>, <code>tabix</code>)</td><td>1.17</td><td>compressing and indexing</td></tr>
@@ -2150,15 +2243,23 @@ conda activate workbench</code></pre>
 <tr><td><kbd>Shift</kbd>+<kbd>Enter</kbd></td><td>a new line in the message</td></tr>
 </table>
 </article>
-<article class="help-page" id="h-limits" data-title="What is different in the browser" data-group="Reference" data-group-page="h-programs" data-keys="limits limitation browser webassembly memory ram speed slow core thread storage quota large file internet cors offline install sudo apt background job gpu mobile phone tablet" hidden>
+<article class="help-page" id="h-limits" data-title="What is different in the browser" data-group="Reference" data-group-page="h-programs" data-keys="limits limitation browser webassembly memory ram speed slow core thread threads storage quota large file internet cors offline install sudo apt background job gpu mobile phone tablet cross-origin isolated isolation sharedarraybuffer service worker featurecounts salmon" hidden>
 <h1><svg class="ic" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7.5h.01"/></svg>What is different in the browser</h1>
 <p class="lede">Everything in the workbench runs on your own computer, inside this web page: the programs are the real ones, compiled to WebAssembly, and Python and R are the real languages. That brings some limits a server would not have.</p>
 
 <h2>Speed and memory</h2>
 <ul>
-  <li>Each program runs on <b>one processor core</b>; options for threads (<code>-t</code>, <code>-p</code>, <code>-@</code>, <code>--threads</code>) are ignored, with a note. Programs run more slowly than on a server, and the speed depends on your computer: keep the data small.</li>
+  <li>Each program runs on <b>one processor core</b>; options for threads (<code>-t</code>, <code>-p</code>, <code>-@</code>, <code>--threads</code>) are ignored, with a note. Two programs are different: <b>featureCounts</b> counts on up to four threads (<code>-T 1</code> to <code>-T 4</code>), and <b>Salmon</b> runs its own helper threads – see <a href="#h-limits/threads">programs on several threads</a>. Programs run more slowly than on a server, and the speed depends on your computer: keep the data small.</li>
   <li>A program, Python and R each have <b>a few gigabytes of memory</b> at most (WebAssembly is 32-bit: 4 GB is the ceiling, and browsers often allow less). Mapping reads to a whole human genome does not fit; regions, a few genes, bacterial and viral genomes do.</li>
   <li>Python has no threads, no <code>multiprocessing</code> and no <code>subprocess</code>; <code>input()</code> does not work in a notebook. R cannot run <code>system()</code>: use a <code>%%bash</code> cell.</li>
+</ul>
+
+<h2 id="threads">Programs on several threads</h2>
+<p>featureCounts and Salmon start threads that share the program's memory. A browser allows that only in a page that is <b>cross-origin isolated</b>: the page and its workers come with two headers, <code>Cross-Origin-Opener-Policy</code> and <code>Cross-Origin-Embedder-Policy</code>, which also keep pictures of other sites out unless those sites allow them. Static hosting (GitHub Pages) cannot send the headers, so the workbench adds them itself with a small service worker (<code>isolation-sw.js</code>; it stores nothing): the first time you open the workbench, the page loads once more, at once. <code>serve.py</code> sends the headers itself.</p>
+<ul>
+  <li>If featureCounts or Salmon say that the page is not isolated, reload the page. It cannot be isolated when it was not opened over <b>https</b> (or from <code>localhost</code>), or when the browser does not allow service workers there – some private windows do not.</li>
+  <li>The other programs, Python and R do not need isolation, and work either way.</li>
+  <li>To turn isolation off – if a picture of another site does not show, say – open the workbench with <code>?isolation=off</code> at the end of its address; open it without that to turn it on again.</li>
 </ul>
 
 <h2>Files</h2>
@@ -2192,7 +2293,7 @@ conda activate workbench</code></pre>
 </ul>
 <p>Use a current Chrome, Edge, Firefox or Safari.</p>
 </article>
-<article class="help-page" id="h-troubleshoot" data-title="When something goes wrong" data-group="Reference" data-group-page="h-programs" data-keys="troubleshoot problem error help not working slow stuck crash files gone lost storage full quota not found no such file network failed to fetch cors 429 genome browser empty galaxy red ai key locked terminal out of memory reload" hidden>
+<article class="help-page" id="h-troubleshoot" data-title="When something goes wrong" data-group="Reference" data-group-page="h-programs" data-keys="troubleshoot problem error help isolated isolation cross-origin featurecounts salmon threads not working slow stuck crash files gone lost storage full quota not found no such file network failed to fetch cors 429 genome browser empty galaxy red ai key locked terminal out of memory reload" hidden>
 <h1><svg class="ic" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="9"/><path d="M9.2 9a2.9 2.9 0 0 1 5.6 1c0 2-2.8 2.6-2.8 4"/><path d="M12 17.5h.01"/></svg>When something goes wrong</h1>
 <p class="lede">The usual problems, and what to do about them. Error messages in the notebook and the terminal often carry a hint of their own – and <b>Ask the AI assistant about this error</b> explains them (<a href="#h-ai">AI assistant</a>).</p>
 
@@ -2222,6 +2323,8 @@ conda activate workbench</code></pre>
 <dl>
   <dt>"command not found"</dt>
   <dd>The program is not in the workbench: <code>help</code> lists what is. Python packages: <code>%pip install NAME</code>; R packages: <code>install.packages("NAME")</code>.</dd>
+  <dt>featureCounts or salmon: "… this page is not" cross-origin isolated</dt>
+  <dd>These two programs work on several threads, which a browser allows only in a cross-origin isolated page. Reload the page: the workbench isolates it as it starts. It cannot when the page was not opened over https (or from localhost), or in a browser window that allows no service workers (some private windows) – see <a href="#h-limits/threads">programs on several threads</a>.</dd>
   <dt>A program says it is out of memory, or stops without a message</dt>
   <dd>The data is too big for the browser: take a part of it (<code>samtools view</code> of a region, <code>seqtk sample</code>) – see <a href="#h-limits">What is different in the browser</a>.</dd>
   <dt>Python or R forgot my variables</dt>
@@ -2282,7 +2385,7 @@ conda activate workbench</code></pre>
 <div class="callout warn"><div class="co-t"><svg class="ic" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M12 3l10 18H2z"/><path d="M12 10v5M12 18h.01"/></svg>Personal and patient data</div>
 <p>The workbench is for learning, with public data. Never put personal or patient data into it – not into the Databases tab, not into an AI tool, not into your files here. Data you have been given for your studies stays within the rules you were given with it.</p></div>
 </article>
-<article class="help-page" id="h-credits" data-title="Credits and licences" data-group="Reference" data-group-page="h-programs" data-keys="credits licences licenses copyright open source biowasm genomics-wasm pyodide webr igv ngl codemirror marked dompurify jszip viz graphviz gpl mit data sources cite citation" hidden>
+<article class="help-page" id="h-credits" data-title="Credits and licences" data-group="Reference" data-group-page="h-programs" data-keys="credits licences licenses copyright open source biowasm genomics-wasm featurecounts subread salmon kallisto stringtie mosdepth bwa-mem2 pyodide webr igv ngl codemirror marked dompurify jszip viz graphviz gpl mit data sources cite citation" hidden>
 <h1><svg class="ic" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M4 4h6a3 3 0 0 1 3 3v13a2 2 0 0 0-2-2H4zM20 4h-6a3 3 0 0 0-3 3v13a2 2 0 0 1 2-2h7z"/></svg>Credits and licences</h1>
 <p class="lede">The workbench is built from open-source software and open data, each under its own licence. The full list, with the licence texts and the source code of the GPL programs, is in <a href="THIRD_PARTY.md" target="_blank" rel="noopener">THIRD_PARTY.md</a> and the folder <code>assets/vendor/licenses/</code> of the site.</p>
 
@@ -2294,7 +2397,11 @@ conda activate workbench</code></pre>
 <tr><td>gffread (with GCLib)</td><td>MIT (GCLib: Artistic 2.0)</td></tr>
 <tr><td>Bowtie 2, Kalign</td><td>GNU GPL 3</td></tr>
 <tr><td>BWA, HISAT2 – compiled for the browser by the genomics-wasm project</td><td>GNU GPL 3</td></tr>
+<tr><td>featureCounts (Subread) – compiled for the browser by the genomics-wasm project</td><td>GNU GPL 3 or later</td></tr>
 <tr><td>FreeBayes – compiled for the browser by the genomics-wasm project</td><td>MIT; it contains code under the GNU GPL 2 or later, so the program is distributed under the GPL</td></tr>
+<tr><td>BWA-MEM2, StringTie, mosdepth (with Nim's runtime) – compiled for the browser by the genomics-wasm project</td><td>MIT (their parts: MIT, BSD, zlib – see each program's folder)</td></tr>
+<tr><td>kallisto (with Bifrost) – compiled for the browser by the genomics-wasm project</td><td>BSD 2-Clause</td></tr>
+<tr><td>Salmon (with its Rust crates and Rust's standard library) – compiled for the browser by the genomics-wasm project</td><td>BSD 3-Clause; the crates MIT, Apache 2.0 and other permissive licences – listed with the program</td></tr>
 <tr><td>FastTree</td><td>GNU GPL 2 or later</td></tr>
 <tr><td>MUSCLE 3.8, seq-align</td><td>public domain</td></tr>
 <tr><td>GNU coreutils, grep, sed, gawk, diffutils</td><td>GNU GPL 3 or later</td></tr>
@@ -2356,7 +2463,7 @@ conda activate workbench</code></pre>
 
 <noscript><p style="padding:20px">This page needs JavaScript.</p></noscript>
 
-<script>window.WB_EXAMPLES = [{"p":"README.md","s":5334},{"p":"annotation/cyp2c_exons.bed","s":1100},{"p":"annotation/cyp2c_slices.gff3","s":11587},{"p":"reads/NA12878_R1.fastq","s":626445},{"p":"reads/NA12878_R2.fastq","s":626445},{"p":"reads/provenance.json","s":4102},{"p":"reads/reference.fa","s":56963},{"p":"reads/reference.fa.fai","s":60},{"p":"rnaseq/NOTICE.txt","s":2321},{"p":"rnaseq/SRR6357070_1.fastq","s":65464},{"p":"rnaseq/SRR6357070_2.fastq","s":65464},{"p":"rnaseq/airway_counts.tsv","s":2287691},{"p":"rnaseq/airway_samples.tsv","s":786},{"p":"rnaseq/provenance.json","s":4080},{"p":"rnaseq/yeast_chrI.fa","s":234058},{"p":"rnaseq/yeast_chrI.fa.fai","s":17},{"p":"rnaseq/yeast_chrI.gtf","s":203927},{"p":"rnaseq/yeast_chrI.splice_sites.tsv","s":88},{"p":"sequences/myoglobins.fasta","s":1325},{"p":"sequences/pBR322.fasta","s":4485},{"p":"sequences/tRNA-Thr.afa","s":582},{"p":"sequences/unknown_myoglobin.fasta","s":157},{"p":"structures/1mbn.pdb","s":147420},{"p":"tables/yeast_genes.csv","s":2010502},{"p":"variants/NA12878.calls.vcf.gz","s":1787},{"p":"variants/NA12878.calls.vcf.gz.tbi","s":156}];
+<script>window.WB_EXAMPLES = [{"p":"README.md","s":5501},{"p":"annotation/cyp2c_exons.bed","s":1100},{"p":"annotation/cyp2c_slices.gff3","s":11587},{"p":"reads/NA12878_R1.fastq","s":626445},{"p":"reads/NA12878_R2.fastq","s":626445},{"p":"reads/provenance.json","s":4102},{"p":"reads/reference.fa","s":56963},{"p":"reads/reference.fa.fai","s":60},{"p":"rnaseq/NOTICE.txt","s":2321},{"p":"rnaseq/SRR6357070_1.fastq","s":65464},{"p":"rnaseq/SRR6357070_2.fastq","s":65464},{"p":"rnaseq/airway_counts.tsv","s":2287691},{"p":"rnaseq/airway_samples.tsv","s":786},{"p":"rnaseq/provenance.json","s":4080},{"p":"rnaseq/yeast_chrI.fa","s":234058},{"p":"rnaseq/yeast_chrI.fa.fai","s":17},{"p":"rnaseq/yeast_chrI.gtf","s":203927},{"p":"rnaseq/yeast_chrI.splice_sites.tsv","s":88},{"p":"sequences/myoglobins.fasta","s":1325},{"p":"sequences/pBR322.fasta","s":4485},{"p":"sequences/tRNA-Thr.afa","s":582},{"p":"sequences/unknown_myoglobin.fasta","s":157},{"p":"structures/1mbn.pdb","s":147420},{"p":"tables/yeast_genes.csv","s":2010502},{"p":"variants/NA12878.calls.vcf.gz","s":1787},{"p":"variants/NA12878.calls.vcf.gz.tbi","s":156}];
 window.WB_STARTERS = [{"p":"notebooks/welcome-python.ipynb"},{"p":"notebooks/welcome-r.ipynb"}];</script>
 <script src="assets/js/config.js"></script>
 <script src="assets/js/core.js"></script>

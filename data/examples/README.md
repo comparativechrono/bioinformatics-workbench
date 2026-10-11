@@ -18,7 +18,7 @@ Read-only copies that come with the workbench. To change one, copy it into your 
 | `structures/` | `1mbn.pdb` | sperm whale myoglobin, the first protein structure solved at high resolution (RCSB PDB 1MBN) |
 | `rnaseq/` | `yeast_chrI.fa`, `yeast_chrI.fa.fai` | chromosome I of baker's yeast (*S. cerevisiae* S288C, R64-1-1, Ensembl; 230,218 bases; the sequence is named `I`) and its index |
 | | `yeast_chrI.gtf`, `yeast_chrI.splice_sites.tsv` | its genes, transcripts and exons (Ensembl), and its 5 annotated introns in HISAT2's format (`hisat2 --known-splicesite-infile`) |
-| | `SRR6357070_1.fastq`, `SRR6357070_2.fastq` | 256 pairs of 101-base RNA-seq reads of wild-type yeast (SRA run SRR6357070, GEO GSE110004), all from chromosome I; 128 of the pairs were chosen because they span an annotated intron |
+| | `SRR6357070_1.fastq`, `SRR6357070_2.fastq` | 256 pairs of 101-base RNA-seq reads of wild-type yeast (SRA run SRR6357070, GEO GSE110004), all from chromosome I; 128 of the pairs were chosen because they span an annotated intron. The library is reverse-stranded (Salmon finds `ISR`: `featureCounts -s 2`). With `gffread -w` the GTF file gives the 124 transcript sequences for kallisto and Salmon |
 | | `airway_counts.tsv`, `airway_samples.tsv` | the gene counts of a published RNA-seq experiment – 63,677 genes (Ensembl 75, GRCh37) × 8 samples: airway smooth muscle cells of four cell lines, untreated and treated with dexamethasone (Himes et al. 2014, GEO GSE52778) – and the table of the samples, for DESeq2 and edgeR |
 | | `provenance.json`, `NOTICE.txt` | where these files came from, and their licences |
 

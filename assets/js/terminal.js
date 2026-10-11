@@ -145,14 +145,63 @@
         } else this._lineBudget -= n;
       }
       const last = this.outEl.lastElementChild;
-      if (last && last.dataset.cls === cls && !last.classList.contains('cmdline') && last.textContent.length < 20000) last.textContent += text;
-      else {
+      // (colours and the like of a terminal – ESC [ … m – are shown as such: see _ansi)
+      const ansi = text.indexOf('\x1b') >= 0 || !!(this._sgr && Object.keys(this._sgr).length);
+      if (last && last.dataset.cls === cls && !last.classList.contains('cmdline') && last.textContent.length < 20000) {
+        if (ansi) this._ansi(last, text);
+        else last.appendChild(document.createTextNode(text));
+      } else {
         const el = h('div.tl.' + cls);
         el.dataset.cls = cls;
-        el.textContent = text;
+        if (ansi) this._ansi(el, text);
+        else el.textContent = text;
         this.outEl.appendChild(el);
       }
       this._scroll();
+    }
+    /* Control sequences in what programs print. Salmon colours its log; printf '\e[31m…\e[0m' colours text. The
+       sequences of colour and style (ESC [ … m: colours 30–37 and 90–97, bold, dim, italic, underline, reset) are shown
+       as a terminal shows them – the state lasts from one piece of output to the next, until the next command; other
+       sequences (moving the cursor, clearing the screen) are left out. What is copied, saved or read by the AI agent is
+       the text without them. */
+    _ansi(target, text) {
+      const re = /\x1b\[([0-9;?]*)([A-Za-z])/g;
+      let at = 0;
+      let m;
+      const put = (piece) => {
+        if (!piece) return;
+        const st = this._sgr || {};
+        const names = Object.entries(st).map(([k, v]) => (k === 'fg' ? 'ansi-' + v : 'ansi-' + k));
+        if (!names.length) return target.appendChild(document.createTextNode(piece));
+        const span = document.createElement('span');
+        span.className = names.join(' ');
+        span.textContent = piece;
+        target.appendChild(span);
+      };
+      while ((m = re.exec(text))) {
+        put(text.slice(at, m.index));
+        at = re.lastIndex;
+        if (m[2] !== 'm') continue;
+        const st = this._sgr || (this._sgr = {});
+        const codes = m[1] === '' ? [0] : m[1].split(';').map(Number);
+        for (let k = 0; k < codes.length; k++) {
+          const c = codes[k];
+          if (c === 0) for (const key of Object.keys(st)) delete st[key];
+          else if (c === 1) st.b = 1;
+          else if (c === 2) st.d = 1;
+          else if (c === 3) st.i = 1;
+          else if (c === 4) st.u = 1;
+          else if (c === 22) { delete st.b; delete st.d; }
+          else if (c === 23) delete st.i;
+          else if (c === 24) delete st.u;
+          else if (c >= 30 && c <= 37) st.fg = c - 30;
+          else if (c >= 90 && c <= 97) st.fg = c - 90 + 8;
+          else if (c === 39) delete st.fg;
+          // (256 colours and RGB: 38;5;N and 38;2;R;G;B – the plain colour of the text; backgrounds likewise)
+          else if (c === 38 || c === 48) k += codes[k + 1] === 5 ? 2 : codes[k + 1] === 2 ? 4 : 0;
+        }
+      }
+      put(text.slice(at));
     }
     out(text) {
       this._append('out', String(text));
@@ -312,7 +361,8 @@
         this.cancelled = true;
         const program = MG.wasm.running;
         const lost = MG.wasm.kill(this.fs);
-        this.note(`${program} was stopped by force, and the programs were started again.`);
+        // (featureCounts and Salmon run in a worker of their own: only that one is stopped)
+        this.note(MG.wasm.lastKill === 'threads' ? `${program} was stopped by force.` : `${program} was stopped by force, and the programs were started again.`);
         // files that programs had written lived in the stopped programs' memory: the copies kept in the browser come back.
         // (Not here for a command of the AI agent: there the files come back as they were before the command, when what
         // the command changed is put back – see undoOutside in assistant.js – and the agent's card says what was lost.)
@@ -407,6 +457,7 @@
       if (!opts.echoed) this._echo(line);
       const first = this.outEl.children.length;
       if (!line.trim()) return 0;
+      this._sgr = null;
       this._cwdBefore = this.fs.cwd;
       this.busy = true;
       this.agentCmd = !!opts.agent; // what this command does (programs, scripts, files) is the agent's doing, not the student's

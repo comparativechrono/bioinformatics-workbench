@@ -1,7 +1,10 @@
 /* Real, pinned programs compiled to WebAssembly (Biowasm builds; Bowtie 2, diff and cmp built for
- * this practical; BWA, HISAT2 and FreeBayes from the genomics-wasm ports). One shared filesystem backs the terminal and the AI agent. Pipes use
+ * this practical; BWA, BWA-MEM2, HISAT2, FreeBayes, StringTie, kallisto, mosdepth, featureCounts and Salmon from the
+ * genomics-wasm ports). One shared filesystem backs the terminal and the AI agent. Pipes use
  * byte-preserving temporary files (run one after another, not as concurrent processes).
  * Aioli's local execIO patch binds real file descriptors and reports each exit status.
+ * featureCounts and Salmon count on several threads: each command runs in a worker of its own (threads-worker.mjs),
+ * with the files it needs, and what it writes comes back into the shared file system (see execThreaded).
  */
 (function () {
   'use strict';
@@ -44,11 +47,18 @@
     if(!(st&&st.envEmptied))out.push('_='+(name.includes('/')?name:'/usr/bin/'+name));
     return out;
   }
+  /* Programs that count on several threads (Emscripten pthreads, SharedArrayBuffer): their modules as genomics-wasm
+     built them, in assets/vendor/genomics-wasm/. outputs: the options whose value the program writes (a file, or a
+     folder) – it is not handed over (salmon quant -o OUT: OUT may hold the results of an earlier run). */
+  const THREADED={
+    featurecounts:{name:'featureCounts',module:'featurecounts/2.1.1/featurecounts.mjs',outputs:()=>['-o','--tmpDir']},
+    salmon:{name:'salmon',module:'salmon/2.8.0/salmon.mjs',outputs:a=>a[0]==='index'?['-i','--index','-o','--output','--tmpdir']:['-o','--output','--auxDir','--tmpdir']}
+  };
   const W = {
     ready:false, loading:null, cli:null, pipeN:0, mountN:0,
     synced:new Map(), placed:new Map(), managed:new Set(), dirs:new Set(), gone:[], denied:[], refused:[],
     gen:0, kept:new Map(), keepN:0,
-    versions:{fastp:'0.20.1',minimap2:'2.22',bowtie2:'2.4.2',bwa:'0.7.19',hisat2:'2.2.2',freebayes:'1.3.6',samtools:'1.17',bcftools:'1.10',htslib:'1.17',seqtk:'1.4',bedtools:'2.31.0',jq:'1.7',gawk:'5.1.0',grep:'3.7',sed:'4.8',coreutils:'8.32',diffutils:'3.10',kalign:'3.3.1',muscle:'3.8.1551',fasttree:'2.1.11','seq-align':'2017.10.18',wgsim:'0.3.1-r13',gffread:'0.12.7',lastz:'1.04.52'},
+    versions:{fastp:'0.20.1',minimap2:'2.22',bowtie2:'2.4.2',bwa:'0.7.19','bwa-mem2':'2.2.1',hisat2:'2.2.2',freebayes:'1.3.6',stringtie:'3.0.3',kallisto:'0.52.0',mosdepth:'0.3.14',featurecounts:'2.1.1',salmon:'2.8.0',samtools:'1.17',bcftools:'1.10',htslib:'1.17',seqtk:'1.4',bedtools:'2.31.0',jq:'1.7',gawk:'5.1.0',grep:'3.7',sed:'4.8',coreutils:'8.32',diffutils:'3.10',kalign:'3.3.1',muscle:'3.8.1551',fasttree:'2.1.11','seq-align':'2017.10.18',wgsim:'0.3.1-r13',gffread:'0.12.7',lastz:'1.04.52'},
     apath(abs) { return ROOT+abs; },
     ensure(status) {
       if(this.ready)return Promise.resolve(this.cli);
@@ -58,7 +68,7 @@
         if(!window.Aioli)await loadScript(base+'/aioli.js');
         status?.('Starting the local WebAssembly filesystem…');
         // 'base' holds the shared file system and never runs a program: a tool that aborts is replaced without losing the files
-        const specs=[['base','1.0.0'],['samtools','1.17'],['bcftools','1.10'],['htslib','1.17','bgzip'],['htslib','1.17','tabix'],['minimap2','2.22'],['bowtie2','2.4.2','bowtie2-align-s'],['bowtie2','2.4.2','bowtie2-build-s'],['bwa','0.7.19'],['hisat2','2.2.2'],['freebayes','1.3.6'],['fastp','0.20.1'],['seqtk','1.4'],['bedtools','2.31.0'],['jq','1.7'],['gawk','5.1.0'],['grep','3.7'],['grep','3.11','grep-perl'],['sed','4.8'],['diffutils','3.10','diff'],['diffutils','3.10','cmp'],['kalign','3.3.1'],['muscle','3.8.1551'],['fasttree','2.1.11'],['seq-align','2017.10.18','needleman_wunsch'],['seq-align','2017.10.18','smith_waterman'],['seq-align','2017.10.18','lcs'],['wgsim','2011.10.17'],['gffread','0.12.7'],['lastz','1.04.52'],...CORE.map(p=>['coreutils','8.32',p])];
+        const specs=[['base','1.0.0'],['samtools','1.17'],['bcftools','1.10'],['htslib','1.17','bgzip'],['htslib','1.17','tabix'],['minimap2','2.22'],['bowtie2','2.4.2','bowtie2-align-s'],['bowtie2','2.4.2','bowtie2-build-s'],['bwa','0.7.19'],['bwa-mem2','2.2.1'],['hisat2','2.2.2'],['freebayes','1.3.6'],['stringtie','3.0.3'],['kallisto','0.52.0'],['mosdepth','0.3.14'],['fastp','0.20.1'],['seqtk','1.4'],['bedtools','2.31.0'],['jq','1.7'],['gawk','5.1.0'],['grep','3.7'],['grep','3.11','grep-perl'],['sed','4.8'],['diffutils','3.10','diff'],['diffutils','3.10','cmp'],['kalign','3.3.1'],['muscle','3.8.1551'],['fasttree','2.1.11'],['seq-align','2017.10.18','needleman_wunsch'],['seq-align','2017.10.18','smith_waterman'],['seq-align','2017.10.18','lcs'],['wgsim','2011.10.17'],['gffread','0.12.7'],['lastz','1.04.52'],...CORE.map(p=>['coreutils','8.32',p])];
         const tools=specs.map(([tool,version,program])=>({tool,version,program:program||tool,urlPrefix:`${base}/${tool}/${version}`,loading:'lazy',features:{}}));
         this.cli=await new window.Aioli(tools,{printInterleaved:false,urlCDN:base,debug:false});
         await mkdirp(this.cli,TMP); await mkdirp(this.cli,KEEP); this.ready=true; MG.bus.emit('wasm:ready',{}); return this.cli;
@@ -420,8 +430,10 @@
       const timer=setInterval(()=>status(`${program} · ${((performance.now()-start)/1000).toFixed(0)} s`),1000);
       let result;
       const killed=new Promise((_,reject)=>{this._killed=reject;});
-      this.running=program;
-      try{result=await Promise.race([cli.execIO(program,a,{stdin,stdout:stdoutPath,stderr:ctx.mergeStderr?stdoutPath:stderrPath,merge:!!ctx.mergeStderr,links:[[this.apath(home),home],[this.apath('/data'),'/data']],lines,fifo,env:envOf(ctx,program,fs),...clock}),killed]);}
+      this.running=THREADED[program]?THREADED[program].name:program;
+      const job=THREADED[program]?this.execThreaded(program,a,{stdin,stdout:stdoutPath,stderr:stderrPath,merge:!!ctx.mergeStderr,fs,before})
+        :cli.execIO(program,a,{stdin,stdout:stdoutPath,stderr:ctx.mergeStderr?stdoutPath:stderrPath,merge:!!ctx.mergeStderr,links:[[this.apath(home),home],[this.apath('/data'),'/data']],lines,fifo,env:envOf(ctx,program,fs),...clock});
+      try{result=await Promise.race([job,killed]);}
       catch(e){
         // not a forced stop (then there is nothing left to look at): the page's file system must still learn what was written.
         // No program is running any more: a forced stop that came now would end the worker under this very call.
@@ -494,11 +506,87 @@
       const stdinUsed=stdin&&!inherit?(devUsed.has(stdin)?Infinity:Math.max(result.stdinMax||0,result.stdinPos||0)):null;
       return {stdout,stderr:stderr+tail,parts,tail,stdoutPath,stdoutSize:outStat?.size||0,created,secs:(performance.now()-start)/1000,code:code||(undone?1:0),statusKnown:result.code!=null,stdinUsed};
     },
+    /* featureCounts and Salmon (see THREADED): the command runs in a worker of its own (threads-worker.mjs). It gets
+       the files that its arguments name – of a folder, everything in it; not what it is told to write (-o) – at the
+       paths they have in the programs' file system, the links /home/student and /data, every folder (it may write into
+       any of them), its working folder and its input. What it wrote is put into the programs' file system, and the run
+       goes on as for any other program: importChanges finds the new files. The answer has the form of execIO's. */
+    threadedWorker:null,
+    async execThreaded(program,args,{stdin,stdout,stderr,merge,fs,before}){
+      const T=THREADED[program],cli=this.cli,home=fs.home,cwd=this.apath(fs.isDir(fs.cwd)?fs.cwd:fs.home);
+      const outs=T.outputs(args);
+      const toProg=v=>{
+        if(!v||v==='-')return null;
+        if(v===ROOT||v.startsWith(ROOT+'/'))return MG.path.norm(v);
+        if(v.startsWith('/'))return v===home||v.startsWith(home+'/')||v==='/data'||v.startsWith('/data/')?ROOT+MG.path.norm(v):null;
+        return MG.path.norm(cwd+'/'+v);
+      };
+      const want=new Set();
+      for(let i=0;i<args.length;i++){
+        const v=args[i];
+        if(i&&outs.includes(args[i-1]))continue;
+        const m=/^(--?[^=]+)=(.*)$/.exec(v);
+        if(m&&outs.includes(m[1]))continue;
+        const p=toProg(m?m[2]:v);
+        // (the files of pipes – /dev/stdin, <(COMMAND) – are not in the list of the programs' files: asked for one by one)
+        const st=!p?null:p.startsWith(TMP+'/')?await stat(cli,p):before.get(p);
+        if(!st)continue;
+        if(!st.isDir){want.add(p);continue;}
+        for(const [q,t] of before)if(!t.isDir&&q.startsWith(p+'/'))want.add(q);
+      }
+      const files=[];
+      for(const p of want){
+        const e=fs.entries.get(p.slice(ROOT.length));
+        files.push({path:p,data:await cli.fs.readFile(p),readonly:!!(e&&(e.readonly||e.protected))});
+      }
+      const dirs=[ROOT,TMP,...Array.from(before).filter(([p,t])=>t.isDir&&!p.startsWith(TMP)).map(([p])=>p),cwd];
+      const input=stdin?await cli.fs.readFile(stdin):null;
+      const base=new URL(String(MG.config.threadsBase||'assets/vendor/genomics-wasm').replace(/\/?$/,'/'),location.href);
+      const worker=new Worker(new URL('assets/js/threads-worker.mjs',location.href),{type:'module',name:T.name});
+      this.threadedWorker=worker;
+      let r;
+      try{
+        r=await new Promise((resolve,reject)=>{
+          this._threadedStop=reject;
+          worker.onmessage=e=>{const m=e.data||{};if(m.type==='result')resolve(m.result);else reject(new Error((m.error&&m.error.message)||'the program gave no answer'));};
+          worker.onerror=e=>{if(e.preventDefault)e.preventDefault();reject(new Error(e.message||'the program could not be started'));};
+          const buffers=new Set(files.map(f=>f.data.buffer));if(input)buffers.add(input.buffer);
+          worker.postMessage({moduleUrl:new URL(T.module,base).href,args,thisProgram:T.name,cwd,dirs,files,links:[[ROOT+home,home],[ROOT+'/data','/data']],stdin:input,roots:[ROOT]},[...buffers]);
+        });
+      }finally{this._threadedStop=null;if(this.threadedWorker===worker)this.threadedWorker=null;try{worker.terminate();}catch(e){}}
+      for(const d of r.dirs)if(!before.has(d))await mkdirp(cli,d);
+      // (-o /dev/stdout: the program wrote into the file that stands for its output – it joins what it printed)
+      const join=(a,b)=>{const all=new Uint8Array(a.length+b.length);all.set(a);all.set(b,a.length);return all;};
+      for(const f of r.files){
+        if(f.path===stdout){r.stdout=join(r.stdout,f.data);if(r.order.length)r.order.push(1,f.data.length);continue;}
+        if(f.path===stderr){r.stderr=join(r.stderr,f.data);if(r.order.length)r.order.push(2,f.data.length);continue;}
+        await place(cli,f.path,f.data);
+      }
+      if(merge){
+        // 2>&1: the two outputs in one file, in the order in which they were written
+        const all=new Uint8Array(r.stdout.length+r.stderr.length);let o=0,i1=0,i2=0;
+        for(let k=0;k<r.order.length;k+=2){const n=r.order[k+1];if(r.order[k]===1){all.set(r.stdout.subarray(i1,i1+n),o);i1+=n;}else{all.set(r.stderr.subarray(i2,i2+n),o);i2+=n;}o+=n;}
+        await cli.fs.writeFile(stdout,all);
+      }else{await cli.fs.writeFile(stdout,r.stdout);await cli.fs.writeFile(stderr,r.stderr);}
+      return {code:r.exitCode,error:r.error?`${T.name}: stopped – ${r.error}`:null,order:merge?[]:r.order,stdinPos:r.stdinPos||0,stdinMax:r.stdinPos||0};
+    },
     /* A program that does not end blocks every later command. kill() stops the worker that runs the
        programs; the next command starts a new one. What programs had written lived in that worker's
-       memory and is lost (returned as a list); the course data and text files are not. */
+       memory and is lost (returned as a list); the course data and text files are not.
+       featureCounts and Salmon run in a worker of their own: stopping one loses nothing else (lastKill 'threads'). */
+    lastKill:'',
     kill(fs){
       fs=real(fs);
+      if(this.threadedWorker){
+        const program=this.running,err=Object.assign(new Error('Killed'),{userMessage:`${program||'program'}: Killed`,code:137});
+        try{this.threadedWorker.terminate();}catch(e){}
+        this.threadedWorker=null;this.lastKill='threads';
+        if(this._threadedStop)this._threadedStop(err);
+        if(this._killed)this._killed(err);
+        MG.bus.emit('wasm:killed',{program,lost:0});
+        return [];
+      }
+      this.lastKill='runner';
       const w=window.Aioli&&window.Aioli.lastWorker;
       if(!this.cli||!w)return [];
       const program=this.running;
@@ -641,7 +729,14 @@
   }
   /* Messages of the programs: paths as the student sees them, and the program's name where the
      WebAssembly build has none ("(null): cannot open …"). */
-  function tidy(text,name){return text.replace(/\/shared\/vfs/g,'').replace(/^\(null\):/gm,name+':');}
+  function tidy(text,name){
+    text=text.replace(/\/shared\/vfs/g,'').replace(/^\(null\):/gm,name+':');
+    // Salmon (Rust) adds the number of a system error to its message: "No such file or directory (os error 44)" – the
+    // numbering of WebAssembly's C library (WASI). Linux's number is put in its place (ENOENT is 2 there).
+    if(name==='salmon')text=text.replace(/\(os error (\d+)\)/g,(x,n)=>`(os error ${LINUX_ERRNO[n]||n})`);
+    return text;
+  }
+  const LINUX_ERRNO={63:1,44:2,29:5,8:9,48:12,2:13,20:17,54:20,31:21,28:22,33:24,22:27,51:28,70:29,69:30,64:32,37:36,55:39};
   async function runReal(ctx,program,opts={}){
     // this build of jq does not know its own version number
     if(program==='jq'&&ctx.args.length===1&&(ctx.args[0]==='--version'||ctx.args[0]==='-V')){ctx.out('jq-'+W.versions.jq+'\n');return 0;}
@@ -698,15 +793,23 @@
   /* A browser tab runs these programs on one thread. Asked for more, these builds stop (minimap2, BWA, HISAT2) or
      abort (samtools, bcftools), so the option is left out – and the terminal says so.
      short/long: the options that ask for threads; one: the values that ask for no more than there is (the option then
-     stays as it was written); when: only for these subcommands (bwa index has no -t). */
+     stays as it was written); when: only for these subcommands (bwa index has no -t); why: the reason the note gives;
+     cap: instead of leaving the option out, ask for this many (featureCounts counts on up to four threads here). */
   const THREADS={
     samtools:{short:'-@',long:'--threads',one:v=>v==='0'},
     bcftools:{long:'--threads',one:v=>v==='0'},
     minimap2:{short:'-t',one:v=>v==='1'},
     bgzip:{short:'-@',long:'--threads',one:v=>v==='0'||v==='1'},
     bwa:{short:'-t',one:v=>v==='1',when:a=>/^(mem|aln|bwasw)$/.test(a[0]||'')},
+    'bwa-mem2':{short:'-t',one:v=>v==='1',when:a=>a[0]==='mem'},
     hisat2:{short:'-p',long:'--threads',one:v=>v==='1'},
-    'hisat2-build':{short:'-p',long:'--threads',one:v=>v==='1'}
+    'hisat2-build':{short:'-p',long:'--threads',one:v=>v==='1'},
+    stringtie:{short:'-p',one:v=>v==='1'},
+    kallisto:{short:'-t',long:'--threads',one:v=>v==='1',when:a=>/^(index|quant)$/.test(a[0]||'')},
+    // (mosdepth's -t: threads that unpack the BAM file besides the main one – 0, its default, is the only value here)
+    mosdepth:{short:'-t',long:'--threads',one:v=>v==='0'},
+    featureCounts:{short:'-T',one:v=>/^[1-4]$/.test(v),cap:'4',why:'in the browser featureCounts counts on four threads at most'},
+    salmon:{short:'-p',long:'--threads',one:v=>v==='1',when:a=>/^(index|quant)$/.test(a[0]||''),why:'in the browser Salmon runs one worker thread'}
   };
   function oneThread(name,args,io){
     const t=THREADS[name];
@@ -717,11 +820,11 @@
       const a=args[i];
       if(a==='--'){out.push(...args.slice(i));break;}
       const sep=a===t.short||a===t.long,g=sep?null:glued(a);
-      if(sep){if(t.one(args[i+1])){out.push(a,args[++i]);}else{dropped=a+' '+(args[i+1]||'');i++;}continue;}
-      if(g!=null){if(t.one(g))out.push(a);else dropped=a;continue;}
+      if(sep){if(t.one(args[i+1])){out.push(a,args[++i]);}else{dropped=a+' '+(args[i+1]||'');if(t.cap&&/^\d+$/.test(args[i+1]||''))out.push(a,t.cap);i++;}continue;}
+      if(g!=null){if(t.one(g))out.push(a);else{dropped=a;if(t.cap)out.push(t.short,t.cap);}continue;}
       out.push(a);
     }
-    if(dropped&&io&&io.note)io.note(`${name}: ${dropped.trim()} left out – in the browser every program runs on one thread.`);
+    if(dropped&&io&&io.note)io.note(t.cap?`${name}: ${dropped.trim()} is ${t.short} ${t.cap} here – ${t.why}.`:`${name}: ${dropped.trim()} left out – ${t.why||'in the browser every program runs on one thread'}.`);
     return out;
   }
   /* Run with other arguments on the same context object: the shell reads what a program did
@@ -760,6 +863,12 @@
     hisat2:['hisat2','2.2.2','HISAT2: maps RNA-seq reads, across splice junctions (needs an index from hisat2-build)',"hisat2-build /data/examples/rnaseq/yeast_chrI.fa yeast_chrI\nhisat2 -x yeast_chrI -1 /data/examples/rnaseq/SRR6357070_1.fastq -2 /data/examples/rnaseq/SRR6357070_2.fastq -S rnaseq.sam\nhisat2 -x yeast_chrI -U reads.fastq -S out.sam --no-unal                (single reads; leave out the reads that do not map)\nhisat2 ... --known-splicesite-infile /data/examples/rnaseq/yeast_chrI.splice_sites.tsv    (known junctions)\n\n.gz files are unpacked first, as hisat2's wrapper script does. hisat2 -p N: one thread in the browser."],
     'hisat2-build':['hisat2','2.2.2','Builds a HISAT2 index from a FASTA file (eight .ht2 files)','hisat2-build /data/examples/rnaseq/yeast_chrI.fa yeast_chrI\n(writes yeast_chrI.1.ht2 … yeast_chrI.8.ht2; hisat2 -x yeast_chrI uses them)'],
     'hisat2-inspect':['hisat2','2.2.2','Shows what is in a HISAT2 index','hisat2-inspect -s yeast_chrI       (a summary: the sequences and their lengths)\nhisat2-inspect -n yeast_chrI       (the names of the sequences)'],
+    'bwa-mem2':['bwa-mem2','2.2.1','BWA-MEM2: bwa mem\'s algorithm, rewritten for speed – indexes a reference and maps short reads (bwa-mem2 index, bwa-mem2 mem)',"cp /data/examples/reads/reference.fa .        (bwa-mem2 index writes five files next to the FASTA file)\nbwa-mem2 index reference.fa\nbwa-mem2 mem reference.fa /data/examples/reads/NA12878_R1.fastq /data/examples/reads/NA12878_R2.fastq > bwamem2.sam\nbwa-mem2 mem -R '@RG\\tID:NA12878\\tSM:NA12878' reference.fa R1.fastq R2.fastq > bwamem2.sam    (with a read group)\n\nbwa-mem2 needs an index of its own (.0123, .amb, .ann, .bwt.2bit.64, .pac): one made by bwa index does not do.\nIt takes a few hundred MB of memory even for a small reference, and in the browser it is not faster than bwa.\nbwa-mem2 mem -t N: one thread in the browser."],
+    stringtie:['stringtie','3.0.3','StringTie: assembles transcripts from RNA-seq alignments and estimates their abundance (BAM sorted by position)',"stringtie rnaseq.bam -G /data/examples/rnaseq/yeast_chrI.gtf -o transcripts.gtf -A gene_abundance.tsv\nstringtie -e -B rnaseq.bam -G /data/examples/rnaseq/yeast_chrI.gtf -o ballgown/rnaseq/rnaseq.gtf   (-e: the annotated transcripts only; -B: the tables of Ballgown)\nstringtie --merge -G /data/examples/rnaseq/yeast_chrI.gtf -o merged.gtf sample1.gtf sample2.gtf\n\nMap the reads with hisat2 --dta (alignments made for transcript assembly) and sort them (samtools sort).\nstringtie -p N: one thread in the browser."],
+    kallisto:['kallisto','0.52.0','kallisto: transcript abundances from RNA-seq reads by pseudoalignment – no alignments, no BAM file',"gffread -w transcripts.fa -g /data/examples/rnaseq/yeast_chrI.fa /data/examples/rnaseq/yeast_chrI.gtf   (the transcript sequences)\nkallisto index -i transcripts.idx transcripts.fa\nkallisto quant -i transcripts.idx -o kallisto_out /data/examples/rnaseq/SRR6357070_1.fastq /data/examples/rnaseq/SRR6357070_2.fastq\nhead kallisto_out/abundance.tsv      (est_counts and tpm of every transcript)\nkallisto quant -i transcripts.idx -o single --single -l 200 -s 20 reads.fastq    (single reads: give the fragment length and its spread)\n\nThe results are abundance.tsv and run_info.json: this build writes no .h5 file and no BAM file (bootstraps: -b N --plaintext).\nkallisto -t N: one thread in the browser."],
+    mosdepth:['mosdepth','0.3.14','mosdepth: read depth (coverage) of a BAM file – per base, in windows or in regions, with a summary',"samtools index rnaseq.bam                    (mosdepth needs the index of the BAM file, .bai)\nmosdepth yeast rnaseq.bam                    (yeast.mosdepth.summary.txt, yeast.mosdepth.global.dist.txt, yeast.per-base.bed.gz)\ncat yeast.mosdepth.summary.txt               (the length, the bases and the mean depth of each sequence)\nmosdepth -n --by 1000 windows rnaseq.bam     (the mean depth in windows of 1000 bp; -n: no per-base file)\nmosdepth --by /data/examples/annotation/cyp2c_exons.bed --thresholds 1,10,20 exons mapped.bam   (the regions of a BED file)\nzcat yeast.per-base.bed.gz | head\n\nmosdepth keeps an array as long as the longest sequence of the BAM file: fine for yeast chromosomes and the example\nslices, too big for a whole human chromosome in a browser. mosdepth -t N: not in the browser."],
+    featureCounts:['featurecounts','2.1.1','featureCounts (Subread): counts the reads in each gene of an annotation – the count table for DESeq2 or edgeR',"featureCounts -p --countReadPairs -a /data/examples/rnaseq/yeast_chrI.gtf -o counts.txt rnaseq.bam   (paired reads: a count per fragment)\ntail -n +3 counts.txt | sort -k7,7nr | head        (the genes with the most reads)\ncat counts.txt.summary      (why reads were not counted: Unassigned_NoFeatures, _Ambiguity, _MultiMapping …)\nfeatureCounts -a genes.gtf -o counts.txt single.bam                       (single reads)\nfeatureCounts -s 2 -p --countReadPairs -a genes.gtf -o counts.txt s1.bam s2.bam s3.bam   (a reverse-stranded library; a column per file)\n\nPaired reads need -p: without it featureCounts 2.1 stops (\"Paired-end reads were detected in single-end read library\").\nfeatureCounts counts on several threads (-T 1 to 4; one unless asked for more). That needs a page that is\ncross-origin isolated, which the workbench makes its page as it starts – see Limits in the help."],
+    salmon:['salmon','2.8.0','Salmon: transcript abundances from RNA-seq reads, by selective alignment to the transcript sequences',"gffread -w transcripts.fa -g /data/examples/rnaseq/yeast_chrI.fa /data/examples/rnaseq/yeast_chrI.gtf   (the transcript sequences)\nsalmon index -t transcripts.fa -i salmon_index\nsalmon quant -i salmon_index -l A -1 /data/examples/rnaseq/SRR6357070_1.fastq -2 /data/examples/rnaseq/SRR6357070_2.fastq -o salmon_out\nhead salmon_out/quant.sf        (NumReads and TPM of every transcript)\nsalmon quant -i salmon_index -l U -r reads.fastq --fldMean 200 --fldSD 20 -o single    (single reads)\n\n-l A: Salmon works out the library type (salmon_out/lib_format_counts.json says which).\nAn index made by Salmon on a 64-bit computer cannot be read here, nor one made here there: make it where you use it.\nsalmon -p N: one worker thread in the browser. Like featureCounts, Salmon needs a cross-origin isolated page."],
     freebayes:['freebayes','1.3.6','FreeBayes: haplotype-based variant caller – SNPs, indels and MNPs from aligned reads (BAM)','freebayes -f /data/examples/reads/reference.fa mapped.bam > freebayes.vcf\nfreebayes -f /data/examples/reads/reference.fa -r human_CYP2C19:11000-12500 mapped.bam    (one region: needs mapped.bam.bai – samtools index mapped.bam)\nfreebayes -f /data/examples/reads/reference.fa --min-alternate-count 3 --min-mapping-quality 20 mapped.bam > strict.vcf\n\nThe reads must be sorted by position (samtools sort); the reference needs its .fai index (samtools faidx).']
   };
   for(const [name,[program,version,summary,man]] of Object.entries(definitions))T[name]={version,summary,man:`${name} ${version} · compiled program, running in your browser\n\n${man}`,run:ctx=>{
@@ -781,8 +890,21 @@
     if(name==='hisat2')return hisat2Run(ctx,here);
     if(name==='hisat2-build'||name==='hisat2-inspect')return hisat2Tool(ctx,name,here);
     if(name==='samtools')seedNote(ctx);
+    if(THREADED[program]&&!window.crossOriginIsolated)return notIsolated(ctx,name);
     return withArgs(ctx,oneThread(name,ctx.args,ctx.io),program);
   }};
+  /* featureCounts and Salmon outside a cross-origin isolated page: why they cannot run here, and what to do */
+  function notIsolated(ctx,name){
+    const why=(window.WB_ISOLATION||{}).reason||'';
+    const how=why==='insecure'?'Only a page opened over https, or from localhost, can be isolated – this one was not.'
+      :why==='no-service-worker'?'The workbench isolates its page with a service worker, which this browser does not allow here (a private window can be the reason).'
+      :why==='off'?'Isolation is turned off: the address of the page has ?isolation=off. Open the workbench without it.'
+      :'The workbench isolates its page as it starts: reload the page.';
+    ctx.err(`${name}: this program counts on several threads that share their memory, and a browser allows that only in a page that is cross-origin isolated – this page is not. ${how} (See Limits in the help.)\n`);
+    // (once, also as a note – which is seen where the program's messages go into a file: 2> log.txt)
+    if(!W.isolationNoted&&ctx.io&&ctx.io.note){W.isolationNoted=true;ctx.io.note(`featureCounts and salmon cannot run in this page: it is not cross-origin isolated. ${how}`);}
+    return 1;
+  }
   /* bowtie2 is a wrapper script (perl) around the aligner, bowtie2-align-s. This terminal runs the aligner itself –
      and does here the two things of the wrapper that a script or a person meets:
      - before anything else it looks for the index (-x NAME: any file NAME*.bt2 or NAME*.bt2l, also below

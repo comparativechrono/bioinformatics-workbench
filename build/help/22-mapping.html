@@ -1,6 +1,6 @@
-<!-- id: h-mapping | title: Mapping reads | group: Terminal and programs | summary: minimap2, Bowtie 2, BWA, HISAT2, samtools | keys: map mapping align alignment reads reference minimap2 bowtie2 bowtie2-build bwa bwa-mem bwa-index hisat2 hisat2-build hisat2-inspect rna-seq rnaseq spliced splicing intron samtools sam bam sort index flagstat stats depth view faidx coverage tview -->
+<!-- id: h-mapping | title: Mapping reads | group: Terminal and programs | summary: minimap2, Bowtie 2, BWA, BWA-MEM2, HISAT2, samtools, mosdepth | keys: map mapping align alignment reads reference minimap2 bowtie2 bowtie2-build bwa bwa-mem bwa-index bwa-mem2 bwamem2 hisat2 hisat2-build hisat2-inspect rna-seq rnaseq spliced splicing intron samtools sam bam sort index flagstat stats depth view faidx coverage tview mosdepth depth coverage windows thresholds -->
 <h1><!--ICON:align-->Mapping reads</h1>
-<p class="lede">Mapping finds where each read comes from in a reference sequence. <b>minimap2</b>, <b>Bowtie 2</b> and <b>BWA</b> map DNA reads, <b>HISAT2</b> maps RNA-seq reads across introns; <b>samtools</b> sorts, indexes, filters and counts the alignments.</p>
+<p class="lede">Mapping finds where each read comes from in a reference sequence. <b>minimap2</b>, <b>Bowtie 2</b>, <b>BWA</b> and <b>BWA-MEM2</b> map DNA reads, <b>HISAT2</b> maps RNA-seq reads across introns; <b>samtools</b> sorts, indexes, filters and counts the alignments, and <b>mosdepth</b> measures the depth.</p>
 <p>The examples work in a folder of your own: <button class="do" type="button" data-term-run="mkdir -p ~/mapping && cd ~/mapping">mkdir -p ~/mapping &amp;&amp; cd ~/mapping</button></p>
 
 <h2>The reference</h2>
@@ -31,6 +31,13 @@ samtools index bwa.bam
 samtools flagstat bwa.bam</code></pre>
 <p><code>bwa index</code> makes the index once: five files (<code>.amb .ann .bwt .pac .sa</code>) next to the FASTA file – so the FASTA file must be in a folder of your own, not in the read-only examples. <code>bwa mem</code> is BWA's aligner for reads of 70 bases and more; it reads <code>.fastq.gz</code> files too. Its messages go to the standard error (here <code>bwa.log</code>); the CPU times in them are not measured in the browser – the real times are.</p>
 
+<h2 id="bwa-mem2">BWA-MEM2</h2>
+<pre class="code" data-run="term"><code>bwa-mem2 index reference.fa > /dev/null 2>&1
+bwa-mem2 mem -R '@RG\tID:NA12878\tSM:NA12878' reference.fa /data/examples/reads/NA12878_R1.fastq /data/examples/reads/NA12878_R2.fastq 2> bwamem2.log | samtools sort -o bwamem2.bam -
+samtools index bwamem2.bam
+samtools flagstat bwamem2.bam</code></pre>
+<p>BWA-MEM2 is <code>bwa mem</code>'s algorithm, rewritten to use the vector instructions of modern processors: on a server it maps several times faster than BWA, with the same alignments as <code>bwa mem</code> 0.7.17. It needs an index of its own – <code>bwa-mem2 index</code> writes <code>.0123 .amb .ann .bwt.2bit.64 .pac</code>; one made by <code>bwa index</code> does not do. In the browser it is not faster than BWA, and it takes a few hundred MB of memory even for a small reference. Compare the two: <code>samtools view bwa.bam | cut -f 1-6 | head</code> and the same for <code>bwamem2.bam</code>.</p>
+
 <h2 id="hisat2">HISAT2, for RNA-seq reads</h2>
 <p>A read from a spliced RNA can span an intron: its first part matches one exon, the rest the next. <b>HISAT2</b> splits such reads across the intron. The example reads are 256 pairs of yeast RNA-seq reads; the reference is chromosome I of yeast.</p>
 <pre class="code" data-run="term"><code>hisat2-build /data/examples/rnaseq/yeast_chrI.fa yeast_chrI > /dev/null 2>&1
@@ -57,4 +64,13 @@ samtools view rnaseq.bam | awk '$6 ~ /N/ {print $3, $4, $6}' | head -3</code></p
 samtools view -c mapped.bam human_CYP2C19:11000-12000
 samtools depth -a -r human_CYP2C19:11610-11620 mapped.bam</code></pre>
 <p>To see the reads, <code>igv mapped.bam</code> opens them in the <a href="#h-genome">Genome browser</a>.</p>
+
+<h2 id="mosdepth">Depth with mosdepth</h2>
+<p><code>samtools depth</code> prints a line for every position; <b>mosdepth</b> summarises the depth of a whole BAM file at once – per sequence, in windows, or in the regions of a BED file – and writes compressed BED files that the genome browser can show. It needs the index of the BAM file (<code>samtools index</code>).</p>
+<pre class="code" data-run="term"><code>mosdepth cyp2c mapped.bam
+cat cyp2c.mosdepth.summary.txt
+mosdepth -n --by /data/examples/annotation/cyp2c_exons.bed --thresholds 1,10,20 exons mapped.bam
+zcat exons.regions.bed.gz | head -5
+zcat exons.thresholds.bed.gz | head -5</code></pre>
+<p>The summary has the length of each sequence, the bases covered by reads, and the mean, smallest and largest depth. <code>cyp2c.mosdepth.global.dist.txt</code> tells which share of the bases has at least each depth – the usual "90% of the exome at 20×". <code>-n</code> leaves out the per-base file; <code>--by 1000</code> gives windows of 1000 bases instead of a BED file; <code>-Q 20</code> counts only reads with a mapping quality of 20 or more. mosdepth keeps an array as long as the longest sequence in the BAM file: yeast chromosomes and the example slices are fine, a whole human chromosome is too big for a browser.</p>
 <div class="callout info"><div class="co-t"><!--ICON:info-->SAM flags</div><p>The second column of a SAM line is a sum of bits: 1 paired, 2 properly paired, 4 unmapped, 16 reverse strand, 256 secondary, 1024 duplicate, 2048 supplementary. <code>-f</code> keeps reads that have all the given bits, <code>-F</code> drops reads that have any of them.</p></div>

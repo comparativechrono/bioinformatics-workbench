@@ -27,6 +27,12 @@
 .term-out .tl.note { color: #9fd1ff; font-family: var(--font); font-size: 12.5px; background: rgba(79, 157, 222, 0.1); border-left: 3px solid #4f9dde; padding: 4px 8px; margin: 4px 0; border-radius: 0 6px 6px 0; white-space: pre-wrap; }
 .term-out .tl.note::before { content: 'ℹ '; }
 .term-out .tl.progress { color: #e3b341; }
+/* colours of programs that colour their output (ESC [ … m; see _ansi in terminal.js) – on the terminal's dark background */
+.term-out .ansi-0 { color: #8b949e; } .term-out .ansi-1 { color: #ff7b72; } .term-out .ansi-2 { color: #7ee787; } .term-out .ansi-3 { color: #e3c96b; }
+.term-out .ansi-4 { color: #79c0ff; } .term-out .ansi-5 { color: #d2a8ff; } .term-out .ansi-6 { color: #76e3ea; } .term-out .ansi-7 { color: #dbe4ee; }
+.term-out .ansi-8 { color: #a1a9b3; } .term-out .ansi-9 { color: #ffa198; } .term-out .ansi-10 { color: #a8f0b0; } .term-out .ansi-11 { color: #f2dc8a; }
+.term-out .ansi-12 { color: #a5d6ff; } .term-out .ansi-13 { color: #e2c5ff; } .term-out .ansi-14 { color: #b3f0ff; } .term-out .ansi-15 { color: #ffffff; }
+.term-out .ansi-b { font-weight: 700; } .term-out .ansi-d { opacity: 0.68; } .term-out .ansi-i { font-style: italic; } .term-out .ansi-u { text-decoration: underline; }
 .term-out .tl.html a { color: #9fd1ff; }
 .term-prompt .pu, .tl.cmdline .pu { color: #7ee787; font-weight: 600; }
 .term-prompt .pp, .tl.cmdline .pp { color: #79c0ff; font-weight: 600; }

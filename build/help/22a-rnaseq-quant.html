@@ -1,0 +1,54 @@
+<!-- id: h-rnaseq-quant | title: RNA-seq: counts and abundances | group: Terminal and programs | summary: featureCounts, StringTie, kallisto, Salmon | keys: rna-seq rnaseq count counts count table expression quantification quantify abundance abundances featurecounts subread stringtie transcript assembly gtf kallisto pseudoalignment salmon selective alignment quant.sf abundance.tsv tpm fpkm est_counts numreads strand stranded library type isr dutp gffread transcripts deseq2 edger threads -->
+<h1><!--ICON:flask-->RNA-seq: counts and abundances</h1>
+<p class="lede">After mapping, RNA-seq reads are counted. <b>featureCounts</b> counts the reads that fall in each gene; <b>StringTie</b> assembles the transcripts that the alignments show and estimates their abundance. <b>kallisto</b> and <b>Salmon</b> need no alignments to the genome: they estimate the abundance of each transcript from the reads and the transcript sequences.</p>
+<p>The examples use the 256 pairs of yeast RNA-seq reads and chromosome I of yeast, and work in a folder of their own: <button class="do" type="button" data-term-run="mkdir -p ~/rnaseq && cd ~/rnaseq">mkdir -p ~/rnaseq &amp;&amp; cd ~/rnaseq</button></p>
+
+<h2>The alignments</h2>
+<p>featureCounts and StringTie work on a BAM file sorted by position. <code>--dta</code> makes HISAT2 report alignments for transcript assembly (it wants longer anchors across introns, as StringTie does).</p>
+<pre class="code" data-run="term"><code>hisat2-build /data/examples/rnaseq/yeast_chrI.fa yeast_chrI > /dev/null 2>&1
+hisat2 --dta -x yeast_chrI -1 /data/examples/rnaseq/SRR6357070_1.fastq -2 /data/examples/rnaseq/SRR6357070_2.fastq 2> hisat2.log | samtools sort -o rnaseq.bam -
+samtools index rnaseq.bam</code></pre>
+
+<h2 id="featurecounts">featureCounts: reads per gene</h2>
+<pre class="code" data-run="term"><code>featureCounts -p --countReadPairs -a /data/examples/rnaseq/yeast_chrI.gtf -o counts.txt rnaseq.bam 2> featurecounts.log
+cat counts.txt.summary | awk '$2 > 0'
+tail -n +3 counts.txt | sort -k7,7nr | head -5 | cut -f 1,6,7</code></pre>
+<p><code>counts.txt</code> has a line per gene: its ID, where its exons are, its length and the count – a column for each BAM file, so <code>featureCounts … -o counts.txt s1.bam s2.bam s3.bam</code> makes the table of a whole experiment, the input of DESeq2 or edgeR. The summary says why reads were not counted: <code>Unassigned_NoFeatures</code> (no gene there), <code>Unassigned_Ambiguity</code> (more than one gene), <code>Unassigned_MultiMapping</code> (the read maps to several places; <code>-M</code> counts it anyway). Its report goes to the standard error – here <code>featurecounts.log</code>.</p>
+<ul>
+  <li><code>-p --countReadPairs</code>: the reads are pairs, and each pair (each fragment) counts once. featureCounts 2.1 stops with "Paired-end reads were detected in single-end read library" if <code>-p</code> is missing for paired reads.</li>
+  <li><code>-s 1</code> or <code>-s 2</code>: a stranded library, where the reads come from one strand of the RNA. Most RNA-seq kits today are reverse-stranded (<code>-s 2</code>); Salmon tells which (below).</li>
+  <li><code>-t exon -g gene_id</code> (the defaults): count over the exons, and add them up by gene. <code>-f</code> counts each exon by itself.</li>
+</ul>
+<p>featureCounts counts on several threads – <code>-T 2</code> to <code>-T 4</code> here; one if not asked for more. That needs a cross-origin isolated page, which the workbench makes its page when it starts – see <a href="#h-limits/threads">programs on several threads</a>.</p>
+
+<h2 id="stringtie">StringTie: transcripts and their abundance</h2>
+<pre class="code" data-run="term"><code>stringtie rnaseq.bam -G /data/examples/rnaseq/yeast_chrI.gtf -o stringtie.gtf -A gene_abundance.tsv
+awk '$3 == "transcript"' stringtie.gtf | wc -l
+sort -t $'\t' -k9,9gr gene_abundance.tsv | head -5 | cut -f 1,2,7-9</code></pre>
+<p>StringTie builds the transcripts that the reads show, guided by the annotation (<code>-G</code>). Each is called <code>STRG.N.M</code>; one that matches an annotated transcript names it (<code>reference_id</code>, <code>ref_gene_name</code>). For each it gives the coverage, FPKM and TPM (in the GTF file); <code>-A</code> writes a table per gene. <code>-e</code> leaves out new transcripts and only estimates the known ones; <code>-B</code> adds the tables that the R package Ballgown reads. Assemblies of several samples are joined with <code>stringtie --merge -G genes.gtf -o merged.gtf s1.gtf s2.gtf</code>.</p>
+
+<h2 id="kallisto">kallisto and Salmon: abundances without a BAM file</h2>
+<p>Both need the sequences of the transcripts. <code>gffread</code> cuts them out of the genome, as the annotation describes them:</p>
+<pre class="code" data-run="term"><code>gffread -w transcripts.fa -g /data/examples/rnaseq/yeast_chrI.fa /data/examples/rnaseq/yeast_chrI.gtf
+grep -c '>' transcripts.fa</code></pre>
+<p><b>kallisto</b> finds, for each read pair, which transcripts it could come from (pseudoalignment: compatible k-mers, no base-by-base alignment), and shares the reads out among the transcripts with an EM algorithm:</p>
+<pre class="code" data-run="term"><code>kallisto index -i transcripts.idx transcripts.fa > /dev/null 2>&1
+kallisto quant -i transcripts.idx -o kallisto_out /data/examples/rnaseq/SRR6357070_1.fastq /data/examples/rnaseq/SRR6357070_2.fastq 2> kallisto.log
+sort -t $'\t' -k4,4gr kallisto_out/abundance.tsv | head -5</code></pre>
+<p><b>Salmon</b> maps the reads to the transcripts (selective alignment), learns the lengths of the fragments and the strand of the reads, and shares the reads out among the transcripts:</p>
+<pre class="code" data-run="term"><code>salmon index -t transcripts.fa -i salmon_index > /dev/null 2>&1
+salmon quant -i salmon_index -l A -1 /data/examples/rnaseq/SRR6357070_1.fastq -2 /data/examples/rnaseq/SRR6357070_2.fastq -o salmon_out 2> salmon.log
+sort -t $'\t' -k5,5gr salmon_out/quant.sf | head -5
+grep expected_format salmon_out/lib_format_counts.json</code></pre>
+<p><code>abundance.tsv</code> (kallisto) and <code>quant.sf</code> (Salmon) give for each transcript its length, its effective length, the estimated number of reads (<code>est_counts</code>, <code>NumReads</code>) and TPM. <code>-l A</code> lets Salmon find out how the library was made: here <code>ISR</code> – inward pairs, read 1 from the reverse strand. That is a reverse-stranded library: <code>featureCounts -s 2</code>, <code>stringtie --rf</code>, <code>kallisto quant --rf-stranded</code>. Try the counts with <code>-s 2</code>, and with <code>-s 1</code>.</p>
+<p>Do the four agree? Join the counts of the genes – yeast genes here have one transcript each, named like the gene:</p>
+<pre class="code" data-run="term"><code>tail -n +3 counts.txt | cut -f 1,7 | sort > fc.tsv
+tail -n +2 kallisto_out/abundance.tsv | cut -f 1,4 | sort > kallisto.tsv
+tail -n +2 salmon_out/quant.sf | cut -f 1,5 | sort > salmon.tsv
+join fc.tsv kallisto.tsv | join - salmon.tsv | sort -k2,2nr | head -8</code></pre>
+
+<div class="callout info"><div class="co-t"><!--ICON:info-->Good to know</div><ul>
+<li>Counts are what DESeq2 and edgeR need: featureCounts' table as it is; for kallisto and Salmon, R's <i>tximport</i> sums the transcripts of each gene. TPM is for comparing genes within a sample, not for testing.</li>
+<li>Indexes belong to the program that made them: <code>bwa index</code>, <code>hisat2-build</code>, <code>kallisto index</code> and <code>salmon index</code> each make their own. An index that Salmon made on a 64-bit computer cannot be read here, nor one made here there.</li>
+<li>With thousands of reads the numbers here are an exercise, not biology: real samples have millions.</li>
+</ul></div>

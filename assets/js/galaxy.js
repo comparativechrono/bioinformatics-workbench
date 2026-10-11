@@ -193,6 +193,24 @@
       },
       help: '<p>Builds a HISAT2 index of the reference, aligns RNA-seq reads – a read may span an intron, and is then split across the exons (an N in its CIGAR string) – and sorts the alignments by position. The second output is HISAT2\'s summary of how many reads aligned.</p>'
     },
+    {
+      id: 'bwa_mem2', toolId: `${TS}/iuc/bwa_mem2/bwa_mem2/2.2.1+galaxy4`, name: 'Map with BWA-MEM2', desc: '- map medium and long reads (> 100 bp) against reference genome', version: '2.2.1+galaxy4', section: 'Mapping', needs: 'bwa-mem2',
+      requirements: [['bwa-mem2', '2.2.1'], ['samtools', '1.17']],
+      inputs: [
+        { name: 'reference', short: 'reference', label: 'Use the following dataset as the reference sequence (from the history; it is indexed first)', ext: ['fasta'], nice: 'reference.fa' },
+        { name: 'fastq1', short: 'reads 1', label: 'Select first set of reads (forward reads, or single-end reads)', ext: ['fastqsanger'], nice: 'input_f.fastq', pick: /_1\b|R1|forward/i },
+        { name: 'fastq2', short: 'reads 2', label: 'Select second set of reads (reverse reads; leave empty for single-end)', ext: ['fastqsanger'], nice: 'input_r.fastq', pick: /_2\b|R2|reverse/i, optional: true }
+      ],
+      params: [
+        { name: 'rg_id', short: 'read group ID', label: 'Read group identifier (ID)', type: 'text', default: 'sample1' },
+        { name: 'rg_sm', short: 'sample (SM)', label: 'Read group sample name (SM)', type: 'text', default: 'sample1' },
+        { name: 'min_seed', short: 'min seed', label: 'Minimum seed length (-k)', type: 'int', default: 19 },
+        { name: 'min_score', short: 'min score', label: 'Minimum score to output (-T)', type: 'int', default: 30 }
+      ],
+      outputs: [{ name: 'bam_output', short: 'BAM', ext: 'bam', file: 'output.bam', label: (ins) => L('Map with BWA-MEM2', ins, 'mapped reads in BAM format') }],
+      command: (i, p) => `bwa-mem2 index -p localref.fa ${i.reference} > /dev/null && bwa-mem2 mem -t 1 -v 1 -k ${int(p.min_seed, 19)} -T ${int(p.min_score, 30)} -R '@RG\\tID:${rgSafe(p.rg_id)}\\tSM:${rgSafe(p.rg_sm)}' localref.fa ${i.fastq1}${i.fastq2 ? ' ' + i.fastq2 : ''} | samtools sort -o output.bam -`,
+      help: '<p>The same as <b>Map with BWA-MEM</b>, with BWA-MEM2: bwa mem\'s algorithm rewritten to be faster on modern processors (in the browser it is not faster). It indexes the reference with <b>bwa-mem2 index</b> (an index of its own), aligns the reads and sorts the alignments by position.</p>'
+    },
     /* ---------- SAM/BAM ---------- */
     {
       id: 'samtools_flagstat', toolId: `${TS}/devteam/samtools_flagstat/samtools_flagstat/2.0.5`, name: 'Samtools flagstat', desc: 'tabulate descriptive stats for BAM datset', version: '2.0.5', section: 'SAM/BAM', needs: 'samtools',
@@ -247,6 +265,134 @@
       outputs: [{ name: 'outputsam', short: 'filtered', ext: (p) => (p.fmt === 'sam' ? 'sam' : 'bam'), file: 'output', label: (ins) => L('Samtools view', ins, 'filtered data') }],
       command: (i, p) => `samtools view ${p.fmt === 'sam' ? '-h' : '-b'} -q ${int(p.mapq, 0)} -f ${int(p.require, 0)} -F ${int(p.exclude, 0)} -o output ${i.input}${String(p.region || '').trim() ? ' ' + shq(String(p.region).trim()) : ''}`,
       help: '<p>Keeps the alignments that pass the filters: a region (needs an indexed BAM, which Galaxy has), a minimum mapping quality, and SAM flag bits that must or must not be set.</p>'
+    },
+    {
+      id: 'mosdepth', toolId: `${TS}/iuc/mosdepth/mosdepth/0.3.14+galaxy0`, name: 'mosdepth', desc: 'compute depth of BAM/CRAM files', version: '0.3.14+galaxy0', section: 'SAM/BAM', needs: 'mosdepth',
+      requirements: [['mosdepth', '0.3.14']],
+      inputs: [
+        { name: 'input', short: 'BAM', label: 'BAM file (sorted by position)', ext: ['bam'], nice: 'input.bam' },
+        { name: 'by_bed', short: 'regions', label: 'Regions: the mean depth of each interval of this BED file (optional)', ext: ['bed'], nice: 'regions.bed', optional: true }
+      ],
+      params: [
+        { name: 'window', short: 'window', label: 'Or: the mean depth in windows of this many bases (--by; 0 for none, and when a BED file is given)', type: 'int', default: 0 },
+        { name: 'mapq', short: 'min MAPQ', label: 'Only count reads with mapping quality at least (-Q)', type: 'int', default: 0 },
+        { name: 'thresholds', short: 'thresholds', label: 'For each region, how many bases reach each of these depths (--thresholds, e.g. 1,10,20; empty for none)', type: 'text', default: '' }
+      ],
+      outputs: [
+        { name: 'output_summary', short: 'summary', ext: 'tabular', file: 'summary.tsv', label: (ins) => L('mosdepth', ins, 'summary') },
+        { name: 'output_dist', short: 'distribution', ext: 'tabular', file: 'global.dist.tsv', label: (ins) => L('mosdepth', ins, 'cumulative distribution') },
+        { name: 'output_per_base', short: 'per base', ext: 'bedgraph', file: 'per-base.bedgraph', label: (ins) => L('mosdepth', ins, 'per-base depth') },
+        { name: 'output_regions', short: 'regions', ext: 'bedgraph', file: 'regions.bedgraph', when: (i, p) => !!i.by_bed || int(p.window, 0) > 0, label: (ins) => L('mosdepth', ins, 'mean depth of the regions') },
+        { name: 'output_thresholds', short: 'thresholds', ext: 'tabular', file: 'thresholds.tsv', when: (i, p) => (!!i.by_bed || int(p.window, 0) > 0) && /^\s*\d+(\s*,\s*\d+)*\s*$/.test(String(p.thresholds || '')), label: (ins) => L('mosdepth', ins, 'bases at each depth') }
+      ],
+      command: (i, p) => {
+        const by = i.by_bed ? ` --by ${i.by_bed}` : int(p.window, 0) > 0 ? ` --by ${int(p.window, 0)}` : '';
+        const th = by && /^\s*\d+(\s*,\s*\d+)*\s*$/.test(String(p.thresholds || '')) ? ` --thresholds ${String(p.thresholds).replace(/\s+/g, '')}` : '';
+        return `mosdepth -Q ${int(p.mapq, 0)}${by}${th} out ${i.input} && cp out.mosdepth.summary.txt summary.tsv && cp out.mosdepth.global.dist.txt global.dist.tsv && zcat out.per-base.bed.gz > per-base.bedgraph`
+          + (by ? ' && zcat out.regions.bed.gz > regions.bedgraph' : '') + (th ? ' && zcat out.thresholds.bed.gz > thresholds.tsv' : '');
+      },
+      help: '<p>The read depth (coverage) along the reference: for each run of bases with the same depth (per-base), the mean of each region or window, a summary per sequence (length, bases covered, mean, minimum and maximum depth) and the cumulative distribution (which proportion of the bases has at least each depth). mosdepth needs the BAM file\'s index, which Galaxy keeps with the dataset.</p>'
+    },
+    /* ---------- RNA-seq ---------- */
+    {
+      id: 'featurecounts', toolId: `${TS}/iuc/featurecounts/featurecounts/2.1.1+galaxy1`, name: 'featureCounts', desc: 'Measure gene expression in RNA-Seq experiments from SAM or BAM files', version: '2.1.1+galaxy1', section: 'RNA-seq', needs: 'featureCounts',
+      requirements: [['subread', '2.1.1']],
+      inputs: [
+        { name: 'alignment', short: 'BAM', label: 'Alignment file (BAM)', ext: ['bam'], nice: 'input.bam' },
+        { name: 'anno', short: 'annotation', label: 'Gene annotation file: in your history (GTF)', ext: ['gtf'], nice: 'annotation.gtf' }
+      ],
+      params: [
+        { name: 'strand', short: 'strand', label: 'Specify strand information (-s)', type: 'select', default: '0', options: [['0', 'Unstranded'], ['1', 'Stranded (Forward)'], ['2', 'Stranded (Reverse)']], help: 'Which strand of the transcript the reads come from: the library protocol tells (a dUTP library is reverse).' },
+        { name: 'pairs', short: 'paired', label: 'Paired-end reads (-p)', type: 'select', default: 'fragments', options: [['fragments', 'Paired-end: count fragments (-p --countReadPairs)'], ['reads', 'Paired-end: count reads (-p)'], ['single', 'Single-end reads']], help: 'For paired reads featureCounts needs -p; without it, it stops ("Paired-end reads were detected in single-end read library").' },
+        { name: 'multi', short: 'multimapping', label: 'Count multi-mapping reads (-M)', type: 'bool', default: false },
+        { name: 'mapq', short: 'min MAPQ', label: 'Minimum mapping quality (-Q)', type: 'int', default: 0 },
+        { name: 'feature', short: 'feature', label: 'GFF feature type filter (-t)', type: 'text', default: 'exon' },
+        { name: 'attr', short: 'gene ID', label: 'GFF gene identifier (-g)', type: 'text', default: 'gene_id' }
+      ],
+      outputs: [
+        { name: 'output_short', short: 'counts', ext: 'tabular', file: 'counts.tsv', label: (ins) => L('featureCounts', ins, 'Counts') },
+        { name: 'output_summary', short: 'summary', ext: 'tabular', file: 'summary.tsv', label: (ins) => L('featureCounts', ins, 'Summary') },
+        { name: 'output_feature_lengths', short: 'lengths', ext: 'tabular', file: 'lengths.tsv', label: (ins) => L('featureCounts', ins, 'Feature lengths') }
+      ],
+      command: (i, p) => {
+        const word = (v, d) => (/^[\w.-]+$/.test(String(v || '').trim()) ? String(v).trim() : d);
+        const pe = p.pairs === 'fragments' ? ' -p --countReadPairs' : p.pairs === 'reads' ? ' -p' : '';
+        return `featureCounts -T 1 -s ${['0', '1', '2'].includes(String(p.strand)) ? p.strand : 0}${pe}${p.multi ? ' -M' : ''} -Q ${int(p.mapq, 0)} -t ${word(p.feature, 'exon')} -g ${word(p.attr, 'gene_id')} -a ${i.anno} -o output ${i.alignment}`
+          + ` && tail -n +2 output | cut -f 1,7 > counts.tsv && cp output.summary summary.tsv && tail -n +2 output | cut -f 1,6 > lengths.tsv`;
+      },
+      help: '<p>Counts the reads (or, for paired reads, the fragments) that overlap each gene of the annotation: the input for differential expression with DESeq2 or edgeR. The <b>Counts</b> table has a column of gene IDs and a column of counts; the <b>Summary</b> says how many reads were counted and why the others were not (no gene there, more than one gene, multi-mapping). featureCounts counts on several threads, which needs a cross-origin isolated page (see Limits in the help).</p>'
+    },
+    {
+      id: 'stringtie', toolId: `${TS}/iuc/stringtie/stringtie/3.0.3+galaxy2`, name: 'StringTie', desc: 'transcript assembly and quantification', version: '3.0.3+galaxy2', section: 'RNA-seq', needs: 'stringtie',
+      requirements: [['stringtie', '3.0.3']],
+      inputs: [
+        { name: 'input_bam', short: 'BAM', label: 'Input short mapped reads (BAM, sorted by position)', ext: ['bam'], nice: 'input.bam' },
+        { name: 'guide_gff', short: 'guide', label: 'Use a reference file to guide assembly: GTF from your history (optional)', ext: ['gtf', 'gff3'], nice: (d) => 'guide.' + DOWNLOAD_EXT[d.ext], optional: true }
+      ],
+      params: [
+        { name: 'strand', short: 'strand', label: 'Specify strand information', type: 'select', default: 'none', options: [['none', 'Unstranded'], ['--fr', 'Forward (FR)'], ['--rf', 'Reverse (RF)']] },
+        { name: 'estimate', short: '-e', label: 'Use the reference transcripts only – no new ones (-e; needs a guide)', type: 'bool', default: false },
+        { name: 'min_tlen', short: 'min length', label: 'Minimum transcript length (-m)', type: 'int', default: 200 },
+        { name: 'min_cov', short: 'min coverage', label: 'Minimum read coverage of a transcript (-c)', type: 'float', default: 1 }
+      ],
+      outputs: [
+        { name: 'output_gtf', short: 'transcripts', ext: 'gtf', file: 'output.gtf', label: (ins) => L('StringTie', ins, 'Assembled transcripts') },
+        { name: 'gene_abundance_estimation', short: 'gene abundances', ext: 'tabular', file: 'gene_abundance.tsv', label: (ins) => L('StringTie', ins, 'Gene abundance estimates') }
+      ],
+      command: (i, p) => {
+        const c = Number.isFinite(+p.min_cov) && String(p.min_cov).trim() !== '' ? +p.min_cov : 1;
+        return `stringtie ${i.input_bam}${i.guide_gff ? ` -G ${i.guide_gff}` : ''}${i.guide_gff && p.estimate ? ' -e' : ''}${p.strand === '--fr' || p.strand === '--rf' ? ' ' + p.strand : ''} -m ${int(p.min_tlen, 200)} -c ${c} -p 1 -o output.gtf -A gene_abundance.tsv`;
+      },
+      help: '<p>Assembles the transcripts that the alignments show – guided by a reference annotation, if one is given – and estimates how abundant each is (coverage, FPKM and TPM in the GTF output; a table per gene). For spliced reads StringTie needs the strand tag (XS), which HISAT2 writes: map with HISAT2 and give the sorted BAM.</p>'
+    },
+    {
+      id: 'kallisto_quant', toolId: `${TS}/iuc/kallisto_quant/kallisto_quant/0.48.0+galaxy1`, name: 'Kallisto quant', desc: '- quantify abundances of RNA-Seq transcripts', version: '0.48.0+galaxy1', section: 'RNA-seq', needs: 'kallisto',
+      requirements: [['kallisto', '0.52.0']],
+      inputs: [
+        { name: 'transcripts', short: 'transcripts', label: 'Transcript sequences: a FASTA file from your history (it is indexed first)', ext: ['fasta'], nice: 'transcripts.fa' },
+        { name: 'reads1', short: 'reads 1', label: 'FASTQ file (forward reads, or single-end reads)', ext: ['fastqsanger'], nice: 'reads_1.fastq', pick: /_1\b|R1|forward/i },
+        { name: 'reads2', short: 'reads 2', label: 'FASTQ file (reverse reads; leave empty for single-end)', ext: ['fastqsanger'], nice: 'reads_2.fastq', pick: /_2\b|R2|reverse/i, optional: true }
+      ],
+      params: [
+        { name: 'strand', short: 'strand', label: 'Strand-specific reads', type: 'select', default: 'none', options: [['none', 'Unstranded'], ['--fr-stranded', 'First read forward (--fr-stranded)'], ['--rf-stranded', 'First read reverse (--rf-stranded)']] },
+        { name: 'frag_len', short: 'fragment length', label: 'Single-end reads: estimated average fragment length (-l)', type: 'float', default: 200 },
+        { name: 'frag_sd', short: 'fragment sd', label: 'Single-end reads: estimated standard deviation of the fragment length (-s)', type: 'float', default: 20 },
+        { name: 'bias', short: 'bias', label: 'Perform sequence based bias correction (--bias)', type: 'bool', default: false }
+      ],
+      outputs: [
+        { name: 'abundance_tab', short: 'abundances', ext: 'tabular', file: 'abundance.tsv', label: (ins) => L('Kallisto quant', ins, 'abundances') },
+        { name: 'run_info', short: 'run info', ext: 'json', file: 'run_info.json', label: (ins) => L('Kallisto quant', ins, 'run info') }
+      ],
+      command: (i, p) => {
+        const num = (v, d) => (Number.isFinite(+v) && String(v).trim() !== '' && +v > 0 ? +v : d);
+        const single = i.reads2 ? '' : ` --single -l ${num(p.frag_len, 200)} -s ${num(p.frag_sd, 20)}`;
+        return `kallisto index -i transcripts.idx ${i.transcripts} && kallisto quant -i transcripts.idx -o out -t 1${single}${p.strand === '--fr-stranded' || p.strand === '--rf-stranded' ? ' ' + p.strand : ''}${p.bias ? ' --bias' : ''} ${i.reads1}${i.reads2 ? ' ' + i.reads2 : ''} && mv out/abundance.tsv abundance.tsv && mv out/run_info.json run_info.json`;
+      },
+      help: '<p>Pseudoaligns the reads to the transcript sequences – it finds which transcripts each read could come from, without aligning it base by base – and estimates the abundance of each transcript: estimated counts and TPM. Make the transcript sequences from a genome and its annotation with gffread. (Galaxy\'s tool of this version runs kallisto 0.48.0; here it runs kallisto 0.52.0, the program of the terminal.)</p>'
+    },
+    {
+      id: 'salmon', toolId: `${TS}/bgruening/salmon/salmon/1.10.1+galaxy5`, name: 'Salmon quant', desc: 'Perform dual-phase, selective alignment-based estimation of transcript abundance from RNA-seq reads', version: '1.10.1+galaxy5', section: 'RNA-seq', needs: 'salmon',
+      requirements: [['salmon', '2.8.0']],
+      inputs: [
+        { name: 'transcripts', short: 'transcripts', label: 'Transcripts FASTA file from your history (it is indexed first)', ext: ['fasta'], nice: 'transcripts.fa' },
+        { name: 'reads1', short: 'reads 1', label: 'FASTQ file (forward reads, or single-end reads)', ext: ['fastqsanger'], nice: 'reads_1.fastq', pick: /_1\b|R1|forward/i },
+        { name: 'reads2', short: 'reads 2', label: 'FASTQ file (reverse reads; leave empty for single-end)', ext: ['fastqsanger'], nice: 'reads_2.fastq', pick: /_2\b|R2|reverse/i, optional: true }
+      ],
+      params: [
+        { name: 'libtype', short: 'library type', label: 'Specify the strandedness and orientation of the reads (-l)', type: 'select', default: 'A', options: [['A', 'Automatically infer the library type (A)'], ['IU', 'Paired, inward, unstranded (IU)'], ['ISF', 'Paired, inward, read 1 from the forward strand (ISF)'], ['ISR', 'Paired, inward, read 1 from the reverse strand (ISR)'], ['U', 'Single-end, unstranded (U)'], ['SF', 'Single-end, forward strand (SF)'], ['SR', 'Single-end, reverse strand (SR)']] },
+        { name: 'fld_mean', short: 'fragment length', label: 'Single-end reads: mean fragment length (--fldMean)', type: 'int', default: 250 },
+        { name: 'fld_sd', short: 'fragment sd', label: 'Single-end reads: standard deviation of the fragment length (--fldSD)', type: 'int', default: 25 }
+      ],
+      outputs: [
+        { name: 'output_quant', short: 'quantification', ext: 'tabular', file: 'quant.tsv', label: (ins) => L('Salmon quant', ins, 'Quantification') },
+        { name: 'output_libformat', short: 'library type', ext: 'json', file: 'lib_format_counts.json', label: (ins) => L('Salmon quant', ins, 'library format counts') }
+      ],
+      command: (i, p) => {
+        const lib = ['A', 'IU', 'ISF', 'ISR', 'U', 'SF', 'SR'].includes(p.libtype) ? p.libtype : 'A';
+        const reads = i.reads2 ? `-1 ${i.reads1} -2 ${i.reads2}` : `-r ${i.reads1} --fldMean ${int(p.fld_mean, 250)} --fldSD ${int(p.fld_sd, 25)}`;
+        return `salmon index -t ${i.transcripts} -i index -p 1 && salmon quant -i index -l ${lib} ${reads} -p 1 -o out && mv out/quant.sf quant.tsv && mv out/lib_format_counts.json lib_format_counts.json`;
+      },
+      help: '<p>Indexes the transcript sequences, maps the reads to them (selective alignment) and estimates the abundance of each transcript: the number of reads (NumReads) and TPM. Library type A lets Salmon work out how the reads were made; the second output says what it found. Salmon works on several threads, which needs a cross-origin isolated page (see Limits in the help). (Galaxy\'s tool of this version runs Salmon 1.10.1; here it runs Salmon 2.8.0, the program of the terminal.)</p>'
     },
     /* ---------- Variant calling ---------- */
     {

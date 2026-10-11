@@ -2,7 +2,8 @@
    A model of conda for the browser practical.
 
    The programs here are real (WebAssembly builds of minimap2, samtools,
-   bcftools, htslib, BWA, HISAT2, FreeBayes, Graphviz, and Python 3.13 with
+   bcftools, htslib, BWA, BWA-MEM2, HISAT2, FreeBayes, StringTie, kallisto,
+   mosdepth, featureCounts (Subread), Salmon, Graphviz, and Python 3.13 with
    pandas and matplotlib from Pyodide), but only one version of each exists
    in the browser.
    Environments decide which of them a command can use, exactly as on a
@@ -30,6 +31,14 @@
     bwa: { v: '0.7.19', build: 'h577a1d6_1', ch: 'bioconda', prog: ['bwa'], deps: ['libzlib'] },
     hisat2: { v: '2.2.2', build: 'h503566f_0', ch: 'bioconda', prog: ['hisat2', 'hisat2-build', 'hisat2-inspect'], deps: ['python'] },
     freebayes: { v: '1.3.6', build: 'hb0f3ef8_7', ch: 'bioconda', prog: ['freebayes'], deps: ['htslib', 'samtools'], needs: { htslib: ['1.17', '1.18'] } },
+    // (bioconda's newest builds of these versions. The HTSlib that bioconda's stringtie and mosdepth need – 1.22 and 1.24 –
+    // is not modelled: in the browser each has its own, built in)
+    'bwa-mem2': { v: '2.2.1', build: 'he70b90d_8', ch: 'bioconda', prog: ['bwa-mem2'], deps: ['libzlib'] },
+    stringtie: { v: '3.0.3', build: 'h29c0135_0', ch: 'bioconda', prog: ['stringtie'], deps: ['libzlib', 'python'] },
+    kallisto: { v: '0.52.0', build: 'hd638d68_1', ch: 'bioconda', prog: ['kallisto'], deps: ['libzlib'] },
+    mosdepth: { v: '0.3.14', build: 'h87be163_2', ch: 'bioconda', prog: ['mosdepth'], deps: ['libzlib'] },
+    subread: { v: '2.1.1', build: 'h577a1d6_0', ch: 'bioconda', prog: ['featureCounts'], deps: ['libzlib'] },
+    salmon: { v: '2.8.0', build: 'hfa8f182_0', ch: 'bioconda', prog: ['salmon'] },
     tabix: { v: '1.17', build: 'h81da01d_2', ch: 'bioconda', prog: ['tabix', 'bgzip'], alias: 'htslib' },
     graphviz: { v: '16.1.0', build: 'wasm_viz3.31', ch: 'conda-forge', prog: ['dot'] },
     python: { v: '3.13.2', build: 'pyodide_0.29', ch: 'conda-forge', prog: ['python', 'python3'], py: true, deps: ['pip'], needs313: { libzlib: ['1.3.1', '2'] } },
@@ -46,6 +55,8 @@
     libzlib: { v: '1.3.1', build: 'hb9d3cd8_2', ch: 'conda-forge', dep: true, alt: { '1.2.13': 'h4ab18f5_6' } },
     ncurses: { v: '6.5', build: 'h2d0b736_3', ch: 'conda-forge', dep: true }
   };
+  /* names of programs that are not the names of their packages */
+  const INSTEAD = { featurecounts: 'featureCounts is in the package subread: conda install subread' };
   /* programs whose availability depends on the environment */
   const MANAGED = new Set(); // the workbench: every program is always available (environments only record what a pipeline needs)
 
@@ -141,7 +152,7 @@
         const want = m[3] || '';
         const c = CATALOGUE[name];
         if (!c) {
-          problems.push(`  - ${spec}  (${name} cannot run inside this web browser)`);
+          problems.push(`  - ${spec}  (${INSTEAD[name] || name + ' cannot run inside this web browser'})`);
           continue;
         }
         const versions = [c.v].concat(Object.keys(c.alt || {}));

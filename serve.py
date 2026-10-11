@@ -1,6 +1,9 @@
 #!/usr/bin/env python3
 """Serve this folder on http://localhost:PORT with HTTP range requests
-(needed to read the BAM and reference files in pieces, as GitHub Pages does).
+(needed to read the BAM and reference files in pieces, as GitHub Pages does),
+and with the headers that make the page cross-origin isolated (featureCounts
+and Salmon run on several threads, which a browser allows only then; on GitHub
+Pages the service worker isolation-sw.js adds them).
 usage:  python3 serve.py [PORT]"""
 import os, re, sys, http.server, socketserver
 
@@ -47,6 +50,9 @@ class Handler(http.server.SimpleHTTPRequestHandler):
 
     def end_headers(self):
         self.send_header('Accept-Ranges', 'bytes')
+        self.send_header('Cross-Origin-Opener-Policy', 'same-origin')
+        self.send_header('Cross-Origin-Embedder-Policy', 'require-corp')
+        self.send_header('Cross-Origin-Resource-Policy', 'same-origin')
         super().end_headers()
 
 class Server(socketserver.ThreadingMixIn, http.server.HTTPServer):
