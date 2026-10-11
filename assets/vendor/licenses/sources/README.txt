@@ -1,20 +1,20 @@
 The source code of the bundled programs that are under the GNU General Public License
 ====================================================================================
-Sixteen archives belong in this folder (../README.txt and ../source-archives.json describe them):
+Seventeen archives belong in this folder (../README.txt and ../source-archives.json describe them):
 
   bowtie2-2.4.2.tar.xz    coreutils-8.32.tar.xz   diffutils-3.10.tar.xz   FastTree-2.1.11.c.xz
   gawk-5.1.0.tar.xz       grep-3.7.tar.xz         grep-3.11.tar.xz        kalign-3.3.1.tar.xz
   pcre2-10.42.tar.bz2     sed-4.8.tar.xz
   bwa-b92993c1161e73167181558856567ef2f367e3f0.tar.gz      zlib-1.3.1.tar.gz
   hisat2-99583d7536b9ee017ac07de8834017a3bf99a2fe.tar.gz   freebayes-1.3.6-recursive.tar.xz
-  simde-0.8.2.tar.gz      locfit_1.5-9.12.tar.gz
+  simde-0.8.2.tar.gz      locfit_1.5-9.12.tar.gz           subread-2.1.1-source.tar.gz (featureCounts)
 
 The GNU General Public License asks whoever passes these programs on – and a public web site does –
 to offer their source code with them. Keep the archives here, with the site. (zlib, SIMDe and PCRE2
-are not GPL themselves; they are part of GPL programs here – BWA, FreeBayes and grep -P.)
+are not GPL themselves; they are part of GPL programs here – BWA, featureCounts, FreeBayes and grep -P.)
 
 If this folder holds only this file: the workbench was handed over as two zip files, because the
-archives are large (56 MB together). They are in bioinformatics-workbench-sources.zip. Unzip it and
-move the sixteen archives into this folder. Their checksums are in ../SHA256SUMS:
+archives are large (82 MB together). They are in bioinformatics-workbench-sources.zip. Unzip it and
+move the seventeen archives into this folder. Their checksums are in ../SHA256SUMS:
 
   cd .. && sha256sum -c SHA256SUMS

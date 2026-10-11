@@ -142,5 +142,14 @@
   "bytes": 207112,
   "upstream": "https://cran.r-project.org/src/contrib/locfit_1.5-9.12.tar.gz",
   "origin": "the CRAN source package, pinned by genomics-wasm (tools/deseq2/locfit.lock.json), retrieved 2026-10-11; built into ../../r-packages/"
+ },
+ {
+  "package": "subread-2.1.1",
+  "licence": "GPL-3.0-or-later",
+  "file": "sources/subread-2.1.1-source.tar.gz",
+  "sha256": "6392d7c66831cdd767e58251892a79a51b6fab8ed0ba9671ad5e85ff1ab01eaa",
+  "bytes": 26095717,
+  "upstream": "https://subread.sourceforge.net/ (https://downloads.sourceforge.net/project/subread/subread-2.1.1/subread-2.1.1-source.tar.gz)",
+  "origin": "official release archive, as pinned by genomics-wasm tools/featurecounts/sources.lock.json (SHA-256 checked), retrieved 2026-10-11; featureCounts is compiled from it"
  }
 ]
