@@ -21,9 +21,12 @@ window.MG_CONFIG = {
 
   /* R in the browser (webR). R packages are downloaded when a notebook asks for them
      (install.packages("ggplot2")): CRAN packages from the webR repository, Bioconductor
-     packages from r-universe. */
+     packages (the current release) from r-universe. */
   webrBase: 'https://webr.r-wasm.org/v0.6.0/',
-  rRepos: ['https://repo.r-wasm.org', 'https://bioc.r-universe.dev', 'https://cran.r-universe.dev'],
+  rRepos: ['https://repo.r-wasm.org', 'https://bioc-release.r-universe.dev', 'https://cran.r-universe.dev'],
+  /* R packages that the repositories above have no browser build of, built for this site and
+     looked in first: locfit, which DESeq2 and edgeR need (see the README.txt in that folder). */
+  rLocalRepo: 'assets/vendor/r-packages',
 
   /* The WebAssembly bioinformatics programs of the terminal and of Galaxy. */
   biowasmBase: 'assets/vendor/biowasm',

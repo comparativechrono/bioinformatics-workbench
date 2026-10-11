@@ -1,5 +1,5 @@
 /* Real, pinned programs compiled to WebAssembly (Biowasm builds; Bowtie 2, diff and cmp built for
- * this practical). One shared filesystem backs the terminal and the AI agent. Pipes use
+ * this practical; BWA, HISAT2 and FreeBayes from the genomics-wasm ports). One shared filesystem backs the terminal and the AI agent. Pipes use
  * byte-preserving temporary files (run one after another, not as concurrent processes).
  * Aioli's local execIO patch binds real file descriptors and reports each exit status.
  */
@@ -48,7 +48,7 @@
     ready:false, loading:null, cli:null, pipeN:0, mountN:0,
     synced:new Map(), placed:new Map(), managed:new Set(), dirs:new Set(), gone:[], denied:[], refused:[],
     gen:0, kept:new Map(), keepN:0,
-    versions:{fastp:'0.20.1',minimap2:'2.22',bowtie2:'2.4.2',samtools:'1.17',bcftools:'1.10',htslib:'1.17',seqtk:'1.4',bedtools:'2.31.0',jq:'1.7',gawk:'5.1.0',grep:'3.7',sed:'4.8',coreutils:'8.32',diffutils:'3.10',kalign:'3.3.1',muscle:'3.8.1551',fasttree:'2.1.11','seq-align':'2017.10.18',wgsim:'0.3.1-r13',gffread:'0.12.7',lastz:'1.04.52'},
+    versions:{fastp:'0.20.1',minimap2:'2.22',bowtie2:'2.4.2',bwa:'0.7.19',hisat2:'2.2.2',freebayes:'1.3.6',samtools:'1.17',bcftools:'1.10',htslib:'1.17',seqtk:'1.4',bedtools:'2.31.0',jq:'1.7',gawk:'5.1.0',grep:'3.7',sed:'4.8',coreutils:'8.32',diffutils:'3.10',kalign:'3.3.1',muscle:'3.8.1551',fasttree:'2.1.11','seq-align':'2017.10.18',wgsim:'0.3.1-r13',gffread:'0.12.7',lastz:'1.04.52'},
     apath(abs) { return ROOT+abs; },
     ensure(status) {
       if(this.ready)return Promise.resolve(this.cli);
@@ -58,7 +58,7 @@
         if(!window.Aioli)await loadScript(base+'/aioli.js');
         status?.('Starting the local WebAssembly filesystem…');
         // 'base' holds the shared file system and never runs a program: a tool that aborts is replaced without losing the files
-        const specs=[['base','1.0.0'],['samtools','1.17'],['bcftools','1.10'],['htslib','1.17','bgzip'],['htslib','1.17','tabix'],['minimap2','2.22'],['bowtie2','2.4.2','bowtie2-align-s'],['bowtie2','2.4.2','bowtie2-build-s'],['fastp','0.20.1'],['seqtk','1.4'],['bedtools','2.31.0'],['jq','1.7'],['gawk','5.1.0'],['grep','3.7'],['grep','3.11','grep-perl'],['sed','4.8'],['diffutils','3.10','diff'],['diffutils','3.10','cmp'],['kalign','3.3.1'],['muscle','3.8.1551'],['fasttree','2.1.11'],['seq-align','2017.10.18','needleman_wunsch'],['seq-align','2017.10.18','smith_waterman'],['seq-align','2017.10.18','lcs'],['wgsim','2011.10.17'],['gffread','0.12.7'],['lastz','1.04.52'],...CORE.map(p=>['coreutils','8.32',p])];
+        const specs=[['base','1.0.0'],['samtools','1.17'],['bcftools','1.10'],['htslib','1.17','bgzip'],['htslib','1.17','tabix'],['minimap2','2.22'],['bowtie2','2.4.2','bowtie2-align-s'],['bowtie2','2.4.2','bowtie2-build-s'],['bwa','0.7.19'],['hisat2','2.2.2'],['freebayes','1.3.6'],['fastp','0.20.1'],['seqtk','1.4'],['bedtools','2.31.0'],['jq','1.7'],['gawk','5.1.0'],['grep','3.7'],['grep','3.11','grep-perl'],['sed','4.8'],['diffutils','3.10','diff'],['diffutils','3.10','cmp'],['kalign','3.3.1'],['muscle','3.8.1551'],['fasttree','2.1.11'],['seq-align','2017.10.18','needleman_wunsch'],['seq-align','2017.10.18','smith_waterman'],['seq-align','2017.10.18','lcs'],['wgsim','2011.10.17'],['gffread','0.12.7'],['lastz','1.04.52'],...CORE.map(p=>['coreutils','8.32',p])];
         const tools=specs.map(([tool,version,program])=>({tool,version,program:program||tool,urlPrefix:`${base}/${tool}/${version}`,loading:'lazy',features:{}}));
         this.cli=await new window.Aioli(tools,{printInterleaved:false,urlCDN:base,debug:false});
         await mkdirp(this.cli,TMP); await mkdirp(this.cli,KEEP); this.ready=true; MG.bus.emit('wasm:ready',{}); return this.cli;
@@ -362,11 +362,11 @@
         inherit.size=((await stat(cli,stdin))||{}).size||0;
       }
       await this.cleanupPipes(fs,stdin);
-      // Paths in the student's home are given to the programs as typed: each program has a link
-      // /home/student -> the shared folder (see links below), and prints the names it was given.
-      // Other absolute paths (/tmp/…) are in the shared folder under ROOT.
-      const home=fs.home,inHome=p=>p===home||p.startsWith(home+'/');
-      const pathToken=p=>p.startsWith(ROOT)||p.startsWith('/dev/')||inHome(p)?p:(p.startsWith('/')?this.apath(MG.path.norm(p)):p);
+      // Paths in the student's home and in the example data are given to the programs as typed: each program has the
+      // links /home/student and /data -> the shared folder (see links below), and prints the names it was given (in the
+      // @PG lines of SAM files, the headers of VCF files). Other absolute paths (/tmp/…) are in the shared folder under ROOT.
+      const home=fs.home,inHome=p=>p===home||p.startsWith(home+'/'),inData=p=>p==='/data'||p.startsWith('/data/');
+      const pathToken=p=>p.startsWith(ROOT)||p.startsWith('/dev/')||inHome(p)||(inData(p)&&p===MG.path.norm(p))?p:(p.startsWith('/')?this.apath(MG.path.norm(p)):p);
       // What is no path goes to the program as it was typed: a pattern (grep /tmp, awk '/chr1/'), a set of characters
       // (tr / _), a delimiter (cut -d /). Of the rest, absolute paths and absolute output destinations are rewritten.
       const kinds=MG.shellLang&&MG.shellLang.argKinds?MG.shellLang.argKinds(ctx.name||program,args):args.map(()=>'path');
@@ -421,7 +421,7 @@
       let result;
       const killed=new Promise((_,reject)=>{this._killed=reject;});
       this.running=program;
-      try{result=await Promise.race([cli.execIO(program,a,{stdin,stdout:stdoutPath,stderr:ctx.mergeStderr?stdoutPath:stderrPath,merge:!!ctx.mergeStderr,links:[[this.apath(home),home]],lines,fifo,env:envOf(ctx,program,fs),...clock}),killed]);}
+      try{result=await Promise.race([cli.execIO(program,a,{stdin,stdout:stdoutPath,stderr:ctx.mergeStderr?stdoutPath:stderrPath,merge:!!ctx.mergeStderr,links:[[this.apath(home),home],[this.apath('/data'),'/data']],lines,fifo,env:envOf(ctx,program,fs),...clock}),killed]);}
       catch(e){
         // not a forced stop (then there is nothing left to look at): the page's file system must still learn what was written.
         // No program is running any more: a forced stop that came now would end the worker under this very call.
@@ -695,20 +695,30 @@
     return r.code;
   }
   MG.runReal=runReal;
-  /* A browser tab runs these programs on one thread. Asked for more, these builds stop (minimap2) or
-     abort (samtools, bcftools), so the option is left out – and the terminal says so. */
+  /* A browser tab runs these programs on one thread. Asked for more, these builds stop (minimap2, BWA, HISAT2) or
+     abort (samtools, bcftools), so the option is left out – and the terminal says so.
+     short/long: the options that ask for threads; one: the values that ask for no more than there is (the option then
+     stays as it was written); when: only for these subcommands (bwa index has no -t). */
+  const THREADS={
+    samtools:{short:'-@',long:'--threads',one:v=>v==='0'},
+    bcftools:{long:'--threads',one:v=>v==='0'},
+    minimap2:{short:'-t',one:v=>v==='1'},
+    bgzip:{short:'-@',long:'--threads',one:v=>v==='0'||v==='1'},
+    bwa:{short:'-t',one:v=>v==='1',when:a=>/^(mem|aln|bwasw)$/.test(a[0]||'')},
+    hisat2:{short:'-p',long:'--threads',one:v=>v==='1'},
+    'hisat2-build':{short:'-p',long:'--threads',one:v=>v==='1'}
+  };
   function oneThread(name,args,io){
-    const sam=name==='samtools',bcf=name==='bcftools',mm=name==='minimap2',bgz=name==='bgzip';
-    if(!sam&&!bcf&&!mm&&!bgz)return args;
+    const t=THREADS[name];
+    if(!t||(t.when&&!t.when(args)))return args;
+    const glued=a=>t.short&&a.length>t.short.length&&a.startsWith(t.short)&&/^\d+$/.test(a.slice(t.short.length))?a.slice(t.short.length):t.long&&a.startsWith(t.long+'=')&&/^\d+$/.test(a.slice(t.long.length+1))?a.slice(t.long.length+1):null;
     const out=[];let dropped='';
     for(let i=0;i<args.length;i++){
       const a=args[i];
-      // (asked for what there is – minimap2 -t 1, samtools -@ 0, bgzip -@ 1: the option stays as it was written)
-      const same=(v)=>mm?v==='1':bgz?v==='0'||v==='1':v==='0';
-      if((((sam||bgz)&&a==='-@')||((sam||bcf||bgz)&&a==='--threads')||(mm&&a==='-t'))&&same(args[i+1])){out.push(a,args[++i]);continue;}
-      if((((sam||bgz)&&/^-@\d+$/.test(a))&&same(a.slice(2)))||((sam||bcf||bgz)&&/^--threads=\d+$/.test(a)&&same(a.slice(10)))||(mm&&/^-t\d+$/.test(a)&&same(a.slice(2)))){out.push(a);continue;}
-      if(((sam||bgz)&&a==='-@')||((sam||bcf||bgz)&&a==='--threads')||(mm&&a==='-t')){dropped=a+' '+(args[i+1]||'');i++;continue;}
-      if(((sam||bgz)&&/^-@\d+$/.test(a))||((sam||bcf||bgz)&&/^--threads=\d+$/.test(a))||(mm&&/^-t\d+$/.test(a))){dropped=a;continue;}
+      if(a==='--'){out.push(...args.slice(i));break;}
+      const sep=a===t.short||a===t.long,g=sep?null:glued(a);
+      if(sep){if(t.one(args[i+1])){out.push(a,args[++i]);}else{dropped=a+' '+(args[i+1]||'');i++;}continue;}
+      if(g!=null){if(t.one(g))out.push(a);else dropped=a;continue;}
       out.push(a);
     }
     if(dropped&&io&&io.note)io.note(`${name}: ${dropped.trim()} left out – in the browser every program runs on one thread.`);
@@ -745,7 +755,12 @@
     lcs:['lcs','2017.10.18','Repeated substrings of a sequence, longest first (from seq-align)','lcs GATTACAGATTACA\n(each line: a substring that occurs twice, and the two positions where it starts, counted from 0)'],
     wgsim:['wgsim','0.3.1-r13','Simulates paired-end reads from a reference, with sequencing errors and mutations','wgsim -N 1000 -1 100 -2 100 -S 11 /data/examples/reads/reference.fa sim_R1.fastq sim_R2.fastq\n(-e error rate, -r mutation rate, -d/-s fragment length and its spread, -S seed: the same seed gives the same reads)'],
     gffread:['gffread','0.12.7','GFF/GTF files: check, convert, and write transcript, CDS or protein sequences','gffread /data/examples/annotation/cyp2c_slices.gff3 -T -o cyp2c.gtf          (GFF3 to GTF)\ngffread /data/examples/annotation/cyp2c_slices.gff3 -g /data/examples/reads/reference.fa -w transcripts.fa -y proteins.fa'],
-    lastz:['lastz','1.04.52','Pairwise alignment of long DNA sequences (regions, chromosomes, small genomes)',"lastz '/data/examples/reads/reference.fa[multiple]' query.fa --format=general > hits.tsv\nlastz target.fa query.fa --format=maf > aln.maf\n([multiple]: the target file holds more than one sequence)"]
+    lastz:['lastz','1.04.52','Pairwise alignment of long DNA sequences (regions, chromosomes, small genomes)',"lastz '/data/examples/reads/reference.fa[multiple]' query.fa --format=general > hits.tsv\nlastz target.fa query.fa --format=maf > aln.maf\n([multiple]: the target file holds more than one sequence)"],
+    bwa:['bwa','0.7.19','BWA: indexes a reference and maps short reads to it (bwa index, bwa mem)',"cp /data/examples/reads/reference.fa .        (bwa index writes five files next to the FASTA file)\nbwa index reference.fa\nbwa mem reference.fa /data/examples/reads/NA12878_R1.fastq /data/examples/reads/NA12878_R2.fastq > bwa.sam\nbwa mem -R '@RG\\tID:NA12878\\tSM:NA12878' reference.fa R1.fastq R2.fastq > bwa.sam    (with a read group)\n\nbwa mem reads .fastq.gz files too. bwa mem -t N: one thread in the browser."],
+    hisat2:['hisat2','2.2.2','HISAT2: maps RNA-seq reads, across splice junctions (needs an index from hisat2-build)',"hisat2-build /data/examples/rnaseq/yeast_chrI.fa yeast_chrI\nhisat2 -x yeast_chrI -1 /data/examples/rnaseq/SRR6357070_1.fastq -2 /data/examples/rnaseq/SRR6357070_2.fastq -S rnaseq.sam\nhisat2 -x yeast_chrI -U reads.fastq -S out.sam --no-unal                (single reads; leave out the reads that do not map)\nhisat2 ... --known-splicesite-infile /data/examples/rnaseq/yeast_chrI.splice_sites.tsv    (known junctions)\n\n.gz files are unpacked first, as hisat2's wrapper script does. hisat2 -p N: one thread in the browser."],
+    'hisat2-build':['hisat2','2.2.2','Builds a HISAT2 index from a FASTA file (eight .ht2 files)','hisat2-build /data/examples/rnaseq/yeast_chrI.fa yeast_chrI\n(writes yeast_chrI.1.ht2 … yeast_chrI.8.ht2; hisat2 -x yeast_chrI uses them)'],
+    'hisat2-inspect':['hisat2','2.2.2','Shows what is in a HISAT2 index','hisat2-inspect -s yeast_chrI       (a summary: the sequences and their lengths)\nhisat2-inspect -n yeast_chrI       (the names of the sequences)'],
+    freebayes:['freebayes','1.3.6','FreeBayes: haplotype-based variant caller – SNPs, indels and MNPs from aligned reads (BAM)','freebayes -f /data/examples/reads/reference.fa mapped.bam > freebayes.vcf\nfreebayes -f /data/examples/reads/reference.fa -r human_CYP2C19:11000-12500 mapped.bam    (one region: needs mapped.bam.bai – samtools index mapped.bam)\nfreebayes -f /data/examples/reads/reference.fa --min-alternate-count 3 --min-mapping-quality 20 mapped.bam > strict.vcf\n\nThe reads must be sorted by position (samtools sort); the reference needs its .fai index (samtools faidx).']
   };
   for(const [name,[program,version,summary,man]] of Object.entries(definitions))T[name]={version,summary,man:`${name} ${version} · compiled program, running in your browser\n\n${man}`,run:ctx=>{
     const here=(what,err)=>{if(MG.shellUtil.notHere)MG.shellUtil.notHere(what);return err;};
@@ -763,6 +778,8 @@
     }
     if(name==='bowtie2')return bowtie2Run(ctx,program);
     if(name==='bowtie2-build')return withArgs(ctx,['--wrapper','basic-0',...ctx.args],program);
+    if(name==='hisat2')return hisat2Run(ctx,here);
+    if(name==='hisat2-build'||name==='hisat2-inspect')return hisat2Tool(ctx,name,here);
     if(name==='samtools')seedNote(ctx);
     return withArgs(ctx,oneThread(name,ctx.args,ctx.io),program);
   }};
@@ -787,6 +804,81 @@
     const code=await withArgs(ctx,['--wrapper','basic-0',...a],program);
     if(code)ctx.err(`(ERR): bowtie2-align exited with value ${code}\n`);
     return code;
+  }
+  /* HISAT2. hisat2 is a wrapper script (perl) around the aligner, hisat2-build and hisat2-inspect are wrapper scripts
+     (python) around theirs. Here the three programs are one module: "hisat2 build|inspect ARGS", and the aligner when
+     the first argument is an option (see its NOTICE.txt). The terminal does what the wrappers do that a person meets:
+     - the programs are told --wrapper basic-0, as the wrappers tell them (their messages then name hisat2 and hisat2-build);
+     - hisat2 first looks for the read files ("(ERR): Read file 'X' doesn't exist"), then for the index (-x NAME: any
+       file NAME*.ht2): if it is not there it says so in its own words and ends with status 255;
+     - read files packed with gzip (.gz) are unpacked first: the aligner reads only plain FASTQ/FASTA files;
+     - when the aligner fails it adds "(ERR): hisat2-align exited with value N" and ends with N.
+     Done by the wrapper itself, and so not here: --un, --al, --un-conc, --al-conc (it reads the aligner's output). */
+  const hisat2Fail=(ctx,msg)=>{ctx.err(`(ERR): ${msg}\nExiting now ...\n`);return 255;};
+  async function hisat2Run(ctx,here){
+    const a=ctx.args,fs=ctx.fs,u=MG.shellUtil;
+    const w=a.find(x=>/^--(un|al|un-conc|al-conc|al-conc-disc)(-gz|-bz2|-lz4)?(=|$)/.test(x));
+    if(w)throw here('hisat2 '+w.split('=')[0],u.userErr(`hisat2: ${w.split('=')[0]} is not available here: it is done by hisat2's wrapper script (perl), and this terminal runs the aligner itself. To get the reads that did not align:  samtools fastq -f 4 mapped.bam > unaligned.fastq  (or leave them out of the SAM file with --no-unal)`));
+    if(a.includes('--large-index'))throw here('hisat2 --large-index',u.userErr('hisat2: --large-index is not available here: indexes are the small kind (.ht2), enough for anything that fits into a browser.'));
+    // the read files: -U, --unpaired, -1, -2 (also -1FILE), each a list separated by commas
+    const groups={U:[],1:[],2:[]},at={U:[],1:[],2:[]};
+    let inline=false;
+    for(let i=0;i<a.length;i++){
+      const x=a[i];
+      if(x==='--')break;
+      if(x==='-c')inline=true;
+      let k=null,v=null;
+      if(x==='-U'||x==='--unpaired'){k='U';v=a[i+1];}
+      else{const m=/^--?([12])(.*)$/.exec(x);if(m&&!/^--?12/.test(x)){k=m[1];if(m[2])v=m[2];else v=a[i+1];}}
+      if(k==null||v==null)continue;
+      const glued=!(x==='-U'||x==='--unpaired'||/^--?[12]$/.test(x));
+      at[k].push(glued?[i,x.slice(0,x.length-v.length)]:[i+1,'']);
+      groups[k].push(...v.split(',').filter(Boolean));
+      if(!glued)i++;
+    }
+    const files=[...groups.U,...groups[1],...groups[2]];
+    if(!inline)for(const f of files)if(f!=='-'&&!(fs.exists(f)&&!fs.isDir(f)))return hisat2Fail(ctx,`Read file '${f}' doesn't exist`);
+    const args=a.slice(),held=[];
+    try{
+      // packed read files: each group (-U, -1, -2) becomes one plain file, as the wrapper makes one pipe of each
+      if(!inline&&files.some(f=>/\.(gz|bz2)$/.test(f))){
+        const bz=files.find(f=>/\.bz2$/.test(f));
+        if(bz)throw here('hisat2 with .bz2 reads',u.userErr(`hisat2: ${bz}: bzip2 files cannot be unpacked in this terminal. Unpack it elsewhere, or pack it with gzip.`));
+        for(const k of ['U','1','2']){
+          if(!groups[k].length)continue;
+          const parts=[];
+          for(const f of groups[k]){
+            if(/\.gz$/.test(f)){
+              const r=await W.run({...ctx,stdin:null,inherit:null,redirectTarget:null,mergeStderr:false},'bgzip',['-dc',f],{binaryOut:true});
+              if(r.code){ctx.err(tidy(r.stderr,'hisat2'));return hisat2Fail(ctx,`Could not open gzipped read file: ${f} `);}
+              parts.push(await W.readBytes(r.stdoutPath));
+            }else parts.push(await fs.readBytes(f));
+          }
+          let n=0;for(const b of parts)n+=b.length;
+          const all=new Uint8Array(n);let o=0;for(const b of parts){all.set(b,o);o+=b.length;}
+          const ref=await W.tempBytes(all,false);W.hold(ref.apath);held.push(ref.apath);
+          // (the first place of the group gets the plain file; the others go)
+          at[k].forEach(([idx,prefix],j)=>{args[idx]=j?null:prefix+ref.apath;if(j&&!prefix)args[idx-1]=null;});
+        }
+      }
+      // the index: -x NAME
+      const xi=args.indexOf('-x');
+      if(xi>=0&&args[xi+1]!=null){
+        const base=args[xi+1],abs=fs.resolve(base),dir=/\/$/.test(base)?abs:MG.path.dirname(abs),stem=/\/$/.test(base)?'':abs.slice(dir.length).replace(/^\//,'');
+        if(!(fs.isDir(dir)&&fs.list(dir).some(c=>c.entry.kind!=='dir'&&c.name.startsWith(stem)&&/\.ht2l?$/.test(c.name.slice(stem.length)))))return hisat2Fail(ctx,`"${base}" does not exist`);
+      }
+      const code=await withArgs(ctx,['--wrapper','basic-0',...oneThread('hisat2',args.filter(x=>x!=null),ctx.io)],'hisat2');
+      if(code)ctx.err(`(ERR): hisat2-align exited with value ${code}\n`);
+      return code;
+    }finally{for(const p of held)W.release(p);}
+  }
+  /* hisat2-build and hisat2-inspect: their wrappers take away --verbose, --debug and --large-index (the last two
+     choose another program) and tell the program --wrapper basic-0. */
+  function hisat2Tool(ctx,name,here){
+    const a=ctx.args.filter(x=>x!=='--verbose'&&x!=='--debug');
+    if(a.includes('--large-index'))throw here(name+' --large-index',MG.shellUtil.userErr(`${name}: --large-index is not available here: indexes are the small kind (.ht2), enough for anything that fits into a browser.`));
+    const args=name==='hisat2-build'?oneThread('hisat2-build',a,ctx.io):a;
+    return withArgs(ctx,[name==='hisat2-build'?'build':'inspect','--wrapper','basic-0',...args],'hisat2');
   }
   /* samtools view -s SEED.FRACTION (and --subsample-seed): samtools turns the seed into a pseudo-random number with
      the C library's rand(), and the C library of these WebAssembly programs (musl) gives other numbers than the

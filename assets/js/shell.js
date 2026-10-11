@@ -154,9 +154,9 @@
      programs that people (and AI models) expect, but that are not here
      ------------------------------------------------------------------ */
   const ABSENT = [
-    [/^(bwa|bwa-mem2|bowtie|hisat2|STAR|bbmap|ngmlr|novoalign|subread-align)$/, 'is not installed in this terminal. For mapping reads there are minimap2 and bowtie2.'],
+    [/^(bwa-mem2|bowtie|STAR|bbmap|ngmlr|novoalign|subread-align)$/, 'is not installed in this terminal. For mapping reads there are bwa, bowtie2 and minimap2 – and hisat2 for RNA-seq reads.'],
     [/^(fastqc|multiqc|trimmomatic|cutadapt|trim_galore|bbduk\.sh|seqkit|NanoPlot|prinseq)$/, 'is not installed in this terminal. For quality control and trimming there is fastp (seqtk can do simple things too).'],
-    [/^(gatk|freebayes|picard|varscan|deepvariant|strelka|octopus|vardict|lofreq|snpEff|SnpSift|vep|annovar|vcftools|igv|qualimap|mosdepth|sambamba|bamtools)$/, 'is not installed in this terminal. For variants there is bcftools (mpileup, call, filter, view, query, stats, norm); for alignments samtools and bedtools.'],
+    [/^(gatk|picard|varscan|deepvariant|strelka|octopus|vardict|lofreq|snpEff|SnpSift|vep|annovar|vcftools|igv|qualimap|mosdepth|sambamba|bamtools)$/, 'is not installed in this terminal. For variants there are bcftools (mpileup, call, filter, view, query, stats, norm) and freebayes; for alignments samtools and bedtools.'],
     [/^(python|python3|python2|pip|pip3|R|Rscript|perl|ruby|java|julia|node|ipython|jupyter)$/, 'is not installed in this terminal. There is the shell with its text tools: awk, sed, grep, sort, cut, jq …'],
     [/^(conda|mamba|micromamba|apt|apt-get|yum|dnf|brew|docker|singularity|apptainer|snakemake|nextflow|git|make|module)$/, 'is not available: nothing can be installed in this terminal. Type  help  to see the programs that are here.'],
     [/^(wget|curl|ssh|scp|rsync|ping|ftp|sftp)$/, 'is not available: this terminal has no network access. The data is in ~/data.'],

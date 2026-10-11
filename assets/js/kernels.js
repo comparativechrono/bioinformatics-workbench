@@ -320,7 +320,7 @@ local({
       if (grepl("^[ACGTUacgtu]{2,}$", o)) return(sprintf("If %s is a sequence, put it in quotes: \"%s\"", o, o))
       return(sprintf("%s has not been made yet: run the cell that creates it first (after Restart, R forgets everything). If it is meant to be text, put it in quotes; if it is a column, use df$%s or a package such as dplyr.", o, o))
     }
-    if (grepl("there is no package called", msg)) return("That package could not be loaded: it is not in the webR repositories (repo.r-wasm.org for CRAN, bioc.r-universe.dev for Bioconductor), or it failed to download. Packages that need system libraries may not exist for the browser.")
+    if (grepl("there is no package called", msg)) return("That package could not be loaded: it is not in the webR repositories (repo.r-wasm.org for CRAN, bioc-release.r-universe.dev for Bioconductor), or it failed to download. Packages that need system libraries may not exist for the browser.")
     if (grepl("cannot open|No such file", msg)) return(sprintf("R is working in %s; relative paths start there. Your files are in /home/student (~), the examples in /data/examples.", getwd()))
     if (grepl("non-numeric argument to binary operator", msg)) return("One of the values is text, not a number. Convert it with as.numeric(), or look at the column types with str().")
     if (grepl("subscript out of bounds", msg)) return("R counts from 1 (not 0), and the position must exist: check with length(), nrow() or ncol().")
@@ -550,8 +550,10 @@ local({
         this._status('Setting up R…');
         this.shelter = await new webR.Shelter();
         const repos = (this.opts.repos || ['https://repo.r-wasm.org']).map((r) => r.replace(/\/$/, ''));
+        // (the site's own packages – locfit – are looked in first; CRAN stays the webR repository)
+        const local = this.opts.localRepo ? [abs(this.opts.localRepo).replace(/\/$/, '')] : [];
         await webR.evalRVoid(
-          `webr::shim_install()\noptions(webr_pkg_repos = ${rvec(repos)}, repos = c(CRAN = ${rstr(repos[0])}), warn = 1, width = 100, digits = 7, ` +
+          `webr::shim_install()\noptions(webr_pkg_repos = ${rvec([...local, ...repos])}, repos = c(CRAN = ${rstr(repos[0])}), warn = 1, width = 100, digits = 7, ` +
             `device = function(...) grDevices::pdf(file = "Rplots.pdf"), timeout = 300, help_type = "text", ` +
             // (help pages – ?mean – are shown as text under the cell: the browser has no pager program)
             `pager = function(files, header, title, delete.file) { for (f in files) cat(gsub("_\\b", "", readLines(f, warn = FALSE), useBytes = TRUE), sep = "\\n"); if (isTRUE(delete.file)) unlink(files); invisible(NULL) })\n` +
@@ -619,7 +621,7 @@ local({
         let src = code;
         if (/BiocManager::install\s*\(/.test(src)) {
           src = src.replace(/BiocManager::install\s*\(/g, 'install.packages(');
-          handlers.onOutput && handlers.onOutput({ type: 'stream', name: 'stderr', text: 'Note: BiocManager::install() is done by webR here (Bioconductor packages come from bioc.r-universe.dev).\n' });
+          handlers.onOutput && handlers.onOutput({ type: 'stream', name: 'stderr', text: 'Note: BiocManager::install() is done by webR here (Bioconductor packages – the current release – come from bioc-release.r-universe.dev).\n' });
         }
         src = src.replace(/^\s*if\s*\(\s*!\s*(require|requireNamespace)\s*\(\s*["']BiocManager["'][^)]*\)\s*\)\s*install\.packages\(\s*["']BiocManager["']\s*\)\s*$/gm, '# (BiocManager is not needed here)');
         let ok = false;
@@ -900,7 +902,7 @@ local({
             files: examples().map((f) => ({ path: f.path, url: f.url, mtime: f.mtime, readonly: true })),
             modules: [{ name: 'smk.py', url: abs('assets/py/smk.py') + '?v=' + (CFG.buildId || '1') }]
           });
-        else made[lang] = new RKernel({ baseUrl: CFG.webrBase || 'https://webr.r-wasm.org/v0.6.0/', repos: CFG.rRepos });
+        else made[lang] = new RKernel({ baseUrl: CFG.webrBase || 'https://webr.r-wasm.org/v0.6.0/', repos: CFG.rRepos, localRepo: CFG.rLocalRepo });
       }
       return made[lang];
     },

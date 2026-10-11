@@ -2,8 +2,9 @@
    A model of conda for the browser practical.
 
    The programs here are real (WebAssembly builds of minimap2, samtools,
-   bcftools, htslib, Graphviz, and Python 3.13 with pandas and matplotlib
-   from Pyodide), but only one version of each exists in the browser.
+   bcftools, htslib, BWA, HISAT2, FreeBayes, Graphviz, and Python 3.13 with
+   pandas and matplotlib from Pyodide), but only one version of each exists
+   in the browser.
    Environments decide which of them a command can use, exactly as on a
    real computer: a program outside the active environment is "not found".
    ===================================================================== */
@@ -25,6 +26,10 @@
     samtools: { v: '1.17', build: 'hd87286a_2', ch: 'bioconda', prog: ['samtools'], deps: ['htslib', 'libzlib', 'ncurses'], needs: { htslib: ['1.17', '1.25'], libzlib: ['1.2.13', '1.3'] } },
     bcftools: { v: '1.10', build: 'h5d15f04_0', ch: 'bioconda', prog: ['bcftools'], deps: ['htslib', 'libzlib'], needs: { htslib: ['1.10', '1.25'], libzlib: ['1.2.11', '1.3'] }, newest: { '1.10': '1.10.2' } },
     htslib: { v: '1.17', build: 'h81da01d_2', ch: 'bioconda', prog: ['bgzip', 'tabix'], deps: ['libzlib'], alt: { '1.10': 'h78d89cc_1' } },
+    // (bioconda's builds of the genomics-wasm versions; freebayes 1.3.6 was built against htslib 1.17)
+    bwa: { v: '0.7.19', build: 'h577a1d6_1', ch: 'bioconda', prog: ['bwa'], deps: ['libzlib'] },
+    hisat2: { v: '2.2.2', build: 'h503566f_0', ch: 'bioconda', prog: ['hisat2', 'hisat2-build', 'hisat2-inspect'], deps: ['python'] },
+    freebayes: { v: '1.3.6', build: 'hb0f3ef8_7', ch: 'bioconda', prog: ['freebayes'], deps: ['htslib', 'samtools'], needs: { htslib: ['1.17', '1.18'] } },
     tabix: { v: '1.17', build: 'h81da01d_2', ch: 'bioconda', prog: ['tabix', 'bgzip'], alias: 'htslib' },
     graphviz: { v: '16.1.0', build: 'wasm_viz3.31', ch: 'conda-forge', prog: ['dot'] },
     python: { v: '3.13.2', build: 'pyodide_0.29', ch: 'conda-forge', prog: ['python', 'python3'], py: true, deps: ['pip'], needs313: { libzlib: ['1.3.1', '2'] } },

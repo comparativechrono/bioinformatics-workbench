@@ -153,6 +153,46 @@
       command: (i, p) => `bowtie2-build ${i.reference} genome > /dev/null && bowtie2 -x genome ${i.fastq2 ? `-1 ${i.fastq1} -2 ${i.fastq2}` : `-U ${i.fastq1}`} ${p.preset} --rg-id ${rgSafe(p.rg_id)} --rg SM:${rgSafe(p.rg_sm)} 2> mapping_stats.txt | samtools sort -o output.bam -`,
       help: '<p>Builds a Bowtie 2 index of the reference, aligns the reads and sorts the alignments. The second output is Bowtie 2\'s summary: how many reads aligned once, more than once or not at all.</p>'
     },
+    {
+      id: 'bwa_mem', toolId: `${TS}/devteam/bwa/bwa_mem/0.7.19`, name: 'Map with BWA-MEM', desc: '- map medium and long reads (> 100 bp) against reference genome', version: '0.7.19', section: 'Mapping', needs: 'bwa',
+      requirements: [['bwa', '0.7.19'], ['samtools', '1.17']],
+      inputs: [
+        { name: 'reference', short: 'reference', label: 'Use the following dataset as the reference sequence (from the history; it is indexed first)', ext: ['fasta'], nice: 'reference.fa' },
+        { name: 'fastq1', short: 'reads 1', label: 'Select first set of reads (forward reads, or single-end reads)', ext: ['fastqsanger'], nice: 'input_f.fastq', pick: /_1\b|R1|forward/i },
+        { name: 'fastq2', short: 'reads 2', label: 'Select second set of reads (reverse reads; leave empty for single-end)', ext: ['fastqsanger'], nice: 'input_r.fastq', pick: /_2\b|R2|reverse/i, optional: true }
+      ],
+      params: [
+        { name: 'rg_id', short: 'read group ID', label: 'Read group identifier (ID)', type: 'text', default: 'sample1' },
+        { name: 'rg_sm', short: 'sample (SM)', label: 'Read group sample name (SM)', type: 'text', default: 'sample1' },
+        { name: 'min_seed', short: 'min seed', label: 'Minimum seed length (-k)', type: 'int', default: 19 },
+        { name: 'min_score', short: 'min score', label: 'Minimum score to output (-T)', type: 'int', default: 30 }
+      ],
+      outputs: [{ name: 'bam_output', short: 'BAM', ext: 'bam', file: 'output.bam', label: (ins) => L('Map with BWA-MEM', ins, 'mapped reads in BAM format') }],
+      command: (i, p) => `bwa index -p localref.fa ${i.reference} && bwa mem -t 1 -v 1 -k ${int(p.min_seed, 19)} -T ${int(p.min_score, 30)} -R '@RG\\tID:${rgSafe(p.rg_id)}\\tSM:${rgSafe(p.rg_sm)}' localref.fa ${i.fastq1}${i.fastq2 ? ' ' + i.fastq2 : ''} | samtools sort -o output.bam -`,
+      help: '<p>Indexes the reference (<b>bwa index</b>), aligns the reads with <b>bwa mem</b> and sorts the alignments by position (<b>samtools sort</b>). BWA-MEM suits Illumina reads of 70 bp and longer; give both files of paired-end reads, in step. Galaxy indexes BAM files by itself (the index is kept with the dataset).</p>'
+    },
+    {
+      id: 'hisat2', toolId: `${TS}/iuc/hisat2/hisat2/2.2.2+galaxy0`, name: 'HISAT2', desc: 'A fast and sensitive alignment program', version: '2.2.2+galaxy0', section: 'Mapping', needs: 'hisat2',
+      requirements: [['hisat2', '2.2.2'], ['samtools', '1.17']],
+      inputs: [
+        { name: 'reference', short: 'reference', label: 'Use a genome from history and build index (FASTA)', ext: ['fasta'], nice: 'genome.fa' },
+        { name: 'fastq1', short: 'reads 1', label: 'FASTQ file (forward reads, or single-end reads)', ext: ['fastqsanger'], nice: 'input_f.fastq', pick: /_1\b|R1|forward/i },
+        { name: 'fastq2', short: 'reads 2', label: 'FASTQ file (reverse reads; leave empty for single-end)', ext: ['fastqsanger'], nice: 'input_r.fastq', pick: /_2\b|R2|reverse/i, optional: true }
+      ],
+      params: [
+        { name: 'strandedness', short: 'strand', label: 'Specify strand information (--rna-strandness)', type: 'select', default: 'unstranded', options: [['unstranded', 'Unstranded'], ['FR', 'Forward (FR, or F for single-end reads)'], ['RF', 'Reverse (RF, or R for single-end reads)']], help: 'Which strand of the transcript the reads come from: the library protocol tells.' },
+        { name: 'no_spliced', short: 'no spliced', label: 'Disable spliced alignment (--no-spliced-alignment; for DNA reads)', type: 'bool', default: false }
+      ],
+      outputs: [
+        { name: 'output_alignments', short: 'BAM', ext: 'bam', file: 'output.bam', label: (ins) => L('HISAT2', ins, 'aligned reads (BAM)') },
+        { name: 'summary_file', short: 'summary', ext: 'txt', file: 'summary.txt', label: (ins) => L('HISAT2', ins, 'mapping summary') }
+      ],
+      command: (i, p) => {
+        const strand = p.strandedness === 'unstranded' ? '' : ` --rna-strandness ${i.fastq2 ? p.strandedness : p.strandedness[0]}`;
+        return `hisat2-build ${i.reference} genome > /dev/null && hisat2 -x genome ${i.fastq2 ? `-1 ${i.fastq1} -2 ${i.fastq2}` : `-U ${i.fastq1}`}${strand}${p.no_spliced ? ' --no-spliced-alignment' : ''} 2> summary.txt | samtools sort -o output.bam -`;
+      },
+      help: '<p>Builds a HISAT2 index of the reference, aligns RNA-seq reads – a read may span an intron, and is then split across the exons (an N in its CIGAR string) – and sorts the alignments by position. The second output is HISAT2\'s summary of how many reads aligned.</p>'
+    },
     /* ---------- SAM/BAM ---------- */
     {
       id: 'samtools_flagstat', toolId: `${TS}/devteam/samtools_flagstat/samtools_flagstat/2.0.5`, name: 'Samtools flagstat', desc: 'tabulate descriptive stats for BAM datset', version: '2.0.5', section: 'SAM/BAM', needs: 'samtools',
@@ -237,6 +277,27 @@
       outputs: [{ name: 'output_file', short: 'VCF', ext: (p) => (p.output_type === 'z' ? 'vcf_bgzip' : p.output_type === 'v' ? 'vcf' : 'bcf'), file: 'output', label: (ins) => L('bcftools call', ins) }],
       command: (i, p) => `bcftools call -${p.method}${p.variants_only ? 'v' : ''} -O${p.output_type} -o output ${i.input_file}`,
       help: '<p>Calls the variants: for each position it chooses the most likely genotype (0/0, 0/1 or 1/1) from the likelihoods made by mpileup. With <b>-v</b> only the variant sites are written.</p>'
+    },
+    {
+      id: 'freebayes', toolId: `${TS}/devteam/freebayes/freebayes/1.3.6+galaxy0`, name: 'FreeBayes', desc: 'bayesian genetic variant detector', version: '1.3.6+galaxy0', section: 'Variant calling', needs: 'freebayes',
+      requirements: [['freebayes', '1.3.6'], ['samtools', '1.17']],
+      inputs: [
+        { name: 'reference', short: 'reference', label: 'Choose the source for the reference genome: use a genome from the history', ext: ['fasta'], nice: 'ref.fa' },
+        { name: 'input_bam', short: 'BAM', label: 'BAM dataset (sorted by position)', ext: ['bam'], nice: 'input.bam' }
+      ],
+      params: [
+        { name: 'ploidy', short: 'ploidy', label: 'Ploidy of the sample (-p)', type: 'int', default: 2 },
+        { name: 'min_alt_count', short: 'min alt count', label: 'Require at least this many reads supporting an alternate allele (-C)', type: 'int', default: 2 },
+        { name: 'min_alt_fraction', short: 'min alt fraction', label: 'Require at least this fraction of the reads supporting an alternate allele (-F)', type: 'float', default: 0.05 },
+        { name: 'min_mapq', short: 'min MAPQ', label: 'Exclude alignments with a mapping quality less than (-m)', type: 'int', default: 1 },
+        { name: 'min_baseq', short: 'min base quality', label: 'Exclude alleles with a base quality less than (-q)', type: 'int', default: 0 }
+      ],
+      outputs: [{ name: 'output_vcf', short: 'VCF', ext: 'vcf', file: 'output.vcf', label: (ins) => L('FreeBayes', ins) }],
+      command: (i, p) => {
+        const f = Number.isFinite(+p.min_alt_fraction) && String(p.min_alt_fraction).trim() !== '' ? +p.min_alt_fraction : 0.05;
+        return `samtools faidx ${i.reference} && freebayes --bam ${i.input_bam} --fasta-reference ${i.reference} -p ${int(p.ploidy, 2)} -C ${int(p.min_alt_count, 2)} -F ${f} -m ${int(p.min_mapq, 1)} -q ${int(p.min_baseq, 0)} --vcf output.vcf`;
+      },
+      help: '<p>Calls SNPs, indels and multi-nucleotide variants from the reads, looking at the haplotypes in each read rather than at single positions. The output is a VCF file; its QUAL column is the evidence that a variant is there. An alternative to <b>bcftools mpileup</b> + <b>bcftools call</b>.</p>'
     },
     {
       id: 'bcftools_filter', toolId: `${TS}/iuc/bcftools_filter/bcftools_filter/1.10`, name: 'bcftools filter', desc: 'Apply fixed-threshold filters', version: '1.10', section: 'Variant calling', needs: 'bcftools',
