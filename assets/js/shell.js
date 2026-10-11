@@ -500,8 +500,9 @@
       this.fs = opts.fs && typeof opts.fs.forShell === 'function' ? opts.fs.forShell() : opts.fs;
       this.term = opts.term || null;
       // (TERM=dumb: this terminal shows text – no colours, no moving about the screen)
-      this.env = Object.assign({ HOME: this.fs.home, USER: 'student', LOGNAME: 'student', SHELL: '/bin/bash', PATH: '/usr/local/bin:/usr/bin:/bin', HOSTNAME: (MG.config && MG.config.hostname) || 'biolab', LANG: 'C.UTF-8', TERM: 'dumb' }, opts.env || {});
+      this.env = Object.assign({ HOME: this.fs.home, USER: MG.user.name(), LOGNAME: MG.user.name(), SHELL: '/bin/bash', PATH: '/usr/local/bin:/usr/bin:/bin', HOSTNAME: (MG.config && MG.config.hostname) || 'biolab', LANG: 'C.UTF-8', TERM: 'dumb' }, opts.env || {});
       this.env0 = Object.assign({}, this.env); // the environment of a new shell (see freshState)
+      this._user = this._person = MG.user.name(); // (the name $USER and $LOGNAME were given: see _userVars in shell-lang.js)
       this.history = [];
       this.lastCode = 0;
       this.running = false;
@@ -1262,9 +1263,10 @@
   B.whoami = (ctx) => {
     const a = ctx.args[0];
     if (a != null) throw /^-./.test(a) ? refuseOption('whoami', a) : userErr(`whoami: extra operand \u2018${a}\u2019\nTry 'whoami --help' for more information.`);
-    return ctx.out('student\n');
+    return ctx.out(MG.user.login() + '\n');
   };
-  /* id [-u|-g|-G] [-n] [-r] [USER]: who the student is here – one user, one group */
+  /* id [-u|-g|-G] [-n] [-r] [USER]: who the person is here – one user (user, or the name they gave the workbench),
+     one group of the same name */
   B.id = (ctx) => {
     const LONG = { '--user': 'u', '--group': 'g', '--groups': 'G', '--name': 'n', '--real': 'r', '--zero': 'z' };
     let flags = '';
@@ -1275,15 +1277,16 @@
         const bad = /[^ugGnrz]/.exec(a.slice(1));
         if (bad) throw refuseOption('id', '-' + bad[0]);
         flags += a.slice(1);
-      } else if (a !== 'student' && a !== '1000') throw userErr(`id: \u2018${a}\u2019: no such user`);
+      } else if (a !== MG.user.login() && a !== '1000') throw userErr(`id: \u2018${a}\u2019: no such user`);
     }
     const which = flags.replace(/[nrz]/g, '');
     if (which.length > 1 && new Set(which).size > 1) throw userErr('id: cannot print "only" of more than one choice');
     if (!which) {
       if (/[nrz]/.test(flags)) throw userErr(flags.includes('z') && !/[nr]/.test(flags) ? 'id: option --zero not permitted in default format' : 'id: cannot print only names or real IDs in default format');
-      return ctx.out('uid=1000(student) gid=1000(student) groups=1000(student)\n');
+      const u = MG.user.login();
+      return ctx.out(`uid=1000(${u}) gid=1000(${u}) groups=1000(${u})\n`);
     }
-    return ctx.out((flags.includes('n') ? 'student' : '1000') + (flags.includes('z') ? '\0' : '\n'));
+    return ctx.out((flags.includes('n') ? MG.user.login() : '1000') + (flags.includes('z') ? '\0' : '\n'));
   };
   /* hostname [-s|-f|-d|-i|-I]: the name in the prompt */
   B.hostname = (ctx) => {
@@ -1347,7 +1350,7 @@
   B[':'] = () => 0;
   B.false = () => 1;
   B.sudo = (ctx) => {
-    ctx.err('student is not in the sudoers file. (You do not need sudo here: everything in your home folder is yours.)\n');
+    ctx.err(`${MG.user.login()} is not in the sudoers file. (You do not need sudo here: everything in your home folder is yours.)\n`);
     return 1;
   };
   /* env [-i] [-u NAME] [NAME=VALUE …] [COMMAND [ARG …]]: without a command the environment is printed; with one, the
@@ -1771,10 +1774,11 @@ Try 'ls --help' for more information.`, 2);
       const frills = pre.map((p) => (o.i ? p[0] + ' ' : '') + (o.s ? p[1] + ' ' : ''));
       const names = items.map((it) => quoted(it.name) + mark(it.name, it.e));
       if (long) {
+        const me = MG.user.login();
         const rows = items.map((it) => {
           const e = it.e, root = !!e.protected;
           const perm = e.kind === 'dev' ? 'crw-rw-rw-' : e.kind === 'link' ? 'lrwxrwxrwx' : e.devdir ? 'drwxr-xr-x' : permText(e);
-          const owner = o.n ? (root ? '0' : '1000') : root ? 'root' : 'student';
+          const owner = o.n ? (root ? '0' : '1000') : root ? 'root' : me;
           const size = e.kind === 'dev' ? `${e.major}, ${e.minor}` : o.h ? humanCeil(sizeOf(e), o.si) : o.block ? Math.ceil(sizeOf(e) / o.block.size) + o.block.suffix : String(sizeOf(e));
           return [perm, String(nlink(it)), owner, owner, size, timeOf(e)];
         });
@@ -3012,7 +3016,7 @@ Try 'ls --help' for more information.`, 2);
       const bits = e.kind === 'dev' ? 0o666 : e.kind === 'link' ? 0o777 : e.devdir ? 0o755 : permBits(e), mode = (e.kind === 'dir' ? 0o40000 : e.kind === 'dev' ? 0o20000 : e.kind === 'link' ? 0o120000 : 0o100000) | bits;
       const perms = e.kind === 'dev' ? 'crw-rw-rw-' : e.kind === 'link' ? 'lrwxrwxrwx' : e.devdir ? 'drwxr-xr-x' : permText(e);
       const blocks = special || e.devdir ? 0 : e.kind === 'dir' ? 8 : Math.ceil(size / 4096) * 8;
-      const owner = e.protected ? 'root' : 'student', uid = e.protected ? 0 : 1000;
+      const owner = e.protected ? 'root' : MG.user.login(), uid = e.protected ? 0 : 1000;
       // (a folder has two links, and one more for each folder in it)
       const links = e.kind === 'dir' && !e.devdir ? 2 + ctx.fs.list(abs).filter((c) => c.entry.kind === 'dir').length : 1;
       const inode = special || e.devdir ? 1 + (inodeOf(abs) % 999) : inodeOf(abs);

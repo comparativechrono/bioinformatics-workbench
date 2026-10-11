@@ -63,6 +63,44 @@
 .ed-table th, .ed-table td { padding: 3px 10px; border-bottom: 1px solid var(--line); text-align: left; font-family: var(--mono); font-size: 12px; white-space: nowrap; }
 .ed-table th { position: sticky; top: 0; background: var(--panel-2); }
 .ed-note { margin: 10px 0 0; }
+/* PDF files (pdfview.js): the pages on a grey desk, a toolbar above them */
+.ed-view.pdf { padding: 0; overflow: hidden; display: flex; flex-direction: column; background: #e7ebf0; }
+.pdfv { flex: 1; min-height: 0; display: flex; flex-direction: column; }
+.pdfv-bar { flex: none; display: flex; align-items: center; flex-wrap: wrap; gap: 6px; padding: 5px 10px; background: var(--panel); border-bottom: 1px solid var(--line); font-size: 0.8rem; color: var(--ink-2); }
+.pdfv-pg { display: inline-flex; align-items: center; gap: 4px; white-space: nowrap; }
+.pdfv-num { width: 3.6em; padding: 2px 4px; border: 1px solid var(--line-2); border-radius: 5px; font: inherit; text-align: right; }
+.pdfv-sep { width: 1px; height: 18px; background: var(--line); margin: 0 4px; }
+.pdfv-zoom { min-width: 3.6em; text-align: center; font-variant-numeric: tabular-nums; }
+.pdfv-bar .tbtn.on { background: var(--accent-soft); color: var(--accent-2); border-color: var(--accent); }
+.pdfv-scroll { flex: 1; min-height: 0; overflow: auto; scrollbar-gutter: stable; position: relative; outline: none; }
+.pdfv-scroll:focus-visible { box-shadow: inset 0 0 0 2px var(--accent); }
+/* (a page wider than the pane – zoomed in, or turned sideways – starts at its left edge and the pane scrolls sideways;
+   narrower pages stay in the middle) */
+.pdfv-pages { padding: 12px 16px 28px; }
+.pdfv-page { position: relative; margin: 0 auto 12px; background: #fff; box-shadow: 0 0 0 1px rgba(16, 24, 40, 0.08), 0 2px 6px rgba(16, 24, 40, 0.14);
+  --user-unit: 1; --total-scale-factor: calc(var(--scale-factor) * var(--user-unit)); --scale-round-x: 1px; --scale-round-y: 1px; }
+.pdfv-page > canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+.pdfv-links { position: absolute; inset: 0; z-index: 2; pointer-events: none; }
+.pdfv-link { position: absolute; pointer-events: auto; border-radius: 2px; }
+.pdfv-link:hover, .pdfv-link:focus-visible { background: rgba(11, 107, 138, 0.12); box-shadow: 0 0 0 1px rgba(11, 107, 138, 0.55); outline: none; }
+.pdfv-msg { max-width: 34rem; margin: 40px auto; padding: 16px 18px; background: #fff; border: 1px solid var(--line); border-radius: 8px; color: var(--ink-2); font-size: 0.86rem; line-height: 1.5; }
+.pdfv-msg p { margin: 6px 0 0; }
+.pdfv-pass div { display: flex; gap: 6px; margin-top: 8px; }
+.pdfv-pass input { flex: 1; padding: 4px 8px; border: 1px solid var(--line-2); border-radius: 6px; font: inherit; }
+.pdfv-frame { width: 100%; height: 100%; min-height: 400px; border: 0; display: block; background: #fff; }
+/* the text of a page, laid over its picture so that it can be selected and found (after PDF.js's own text_layer.css) */
+.pdfv .textLayer { position: absolute; inset: 0; overflow: hidden; overflow: clip; text-align: initial; opacity: 1; line-height: 1; letter-spacing: normal; word-spacing: normal;
+  -webkit-text-size-adjust: none; text-size-adjust: none; forced-color-adjust: none; transform-origin: 0 0; caret-color: CanvasText; z-index: 0;
+  --min-font-size: 1; --text-scale-factor: calc(var(--total-scale-factor) * var(--min-font-size)); --min-font-size-inv: calc(1 / var(--min-font-size)); }
+.pdfv .textLayer span, .pdfv .textLayer br { color: transparent; position: absolute; white-space: pre; cursor: text; transform-origin: 0% 0%; -webkit-user-select: text; user-select: text; }
+.pdfv .textLayer > :not(.markedContent), .pdfv .textLayer .markedContent span:not(.markedContent) { z-index: 1; --font-height: 0; font-size: calc(var(--text-scale-factor) * var(--font-height));
+  --scale-x: 1; --rotate: 0deg; transform: rotate(var(--rotate)) scaleX(var(--scale-x)) scale(var(--min-font-size-inv)); }
+.pdfv .textLayer .markedContent { display: contents; }
+.pdfv .textLayer span[role="img"] { -webkit-user-select: none; user-select: none; cursor: default; }
+.pdfv .textLayer ::selection { background: rgba(11, 107, 138, 0.28); color: transparent; }
+.pdfv .textLayer br::selection { background: transparent; }
+.pdfv .textLayer .endOfContent { display: block; position: absolute; inset: 100% 0 0; z-index: 0; cursor: default; -webkit-user-select: none; user-select: none; }
+.pdfv .textLayer.selecting .endOfContent { top: 0; }
 .pill.small { font-size: 0.7rem; padding: 0 6px; }
 .pill.warn { background: var(--warn-soft); color: var(--warn); }
 

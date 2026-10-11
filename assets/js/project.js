@@ -48,13 +48,15 @@
     },
     all: () => idb.tx('readonly', (st) => st.getAll()),
     clear: () => idb.tx('readwrite', (st) => st.clear()),
-    /** put some records and delete some paths (and, for folders, everything below them), in one transaction */
-    write: (puts, dels) =>
+    /** put some records and delete some paths (and, for folders, everything below them), in one transaction.
+        drops: records to delete by themselves (not what is below them) */
+    write: (puts, dels, drops = []) =>
       idb.tx('readwrite', (st) => {
         for (const p of dels) {
           st.delete(p);
           st.delete(IDBKeyRange.bound(p + '/', p + '/￿'));
         }
+        for (const p of drops) st.delete(p);
         for (const r of puts) st.put(r);
       })
   };
@@ -64,6 +66,7 @@
     saved: new Map(), // path -> the entry object whose state is in IndexedDB
     dirty: new Set(),
     removed: new Set(),
+    drop: new Set(), // records kept under an old name, to be deleted one by one (see move)
     hold: new Set(), // paths whose records must not be deleted just now (a forced stop: they may come back)
     ok: true,
 
@@ -71,8 +74,10 @@
       return this.roots.some((r) => p === r || p.startsWith(r + '/'));
     },
 
-    /** put the kept files back into the file system (called once, before anything else uses it) */
-    async restore(fs, roots) {
+    /** put the kept files back into the file system (called once, before anything else uses it).
+        moved: [[old folder, new folder]] – files kept under a folder that has a new name now (the home folder was
+        /home/student until October 2026): they are put into the new folder, and kept there from now on */
+    async restore(fs, roots, moved = []) {
       this.roots = roots;
       let recs = [];
       try {
@@ -83,6 +88,9 @@
         toast('This browser does not let the workbench keep your files (private window, or storage turned off). Your work is lost when the page closes: download what you want to keep.', 'warn', 12000);
         return 0;
       }
+      const fresh = new Set();
+      if (moved.length) recs = await this.move(recs, moved, fresh);
+      recs = recs.filter((r) => r && r.path);
       recs.sort((a, b) => (a.path < b.path ? -1 : 1));
       let n = 0;
       for (const r of recs) {
@@ -108,12 +116,54 @@
             if (e.kind === 'text') e.dirty = true;
             n++;
           }
-          this.saved.set(r.path, e);
+          // (moved, but not yet kept under the new name in the browser's storage: the next flush does it – see move)
+          if (fresh.has(r.path)) this.dirty.add(r.path);
+          else this.saved.set(r.path, e);
         } catch (err) {
           /* a record that does not fit (a file where a folder is): left out */
         }
       }
       return n;
+    },
+
+    /** Files kept under a folder that has a new name now (moved: [[old, new]]) are kept under the new name: in the
+        browser's storage, fifty at a time (each in a transaction of its own: a large file is copied, and storage that
+        is nearly full must not stop everything). A file kept under both names: the newer one stays. Closing the page
+        half way loses nothing – the rest is moved the next time. What cannot be moved now is written under the new
+        name by the next flush (unsaved collects those paths), and its old record deleted then (drop).
+        → the records, with the new names */
+    async move(recs, moved, unsaved) {
+      const at = new Map(recs.filter((r) => r && r.path).map((r) => [r.path, r]));
+      const jobs = [];
+      for (const r of recs) {
+        const m = r && r.path && moved.find(([a]) => r.path === a || r.path.startsWith(a + '/'));
+        if (!m) continue;
+        const to = m[1] + r.path.slice(m[0].length), there = at.get(to);
+        jobs.push({ from: r.path, rec: !there || (r.mtime || 0) > (there.mtime || 0) ? Object.assign({}, r, { path: to }) : null });
+      }
+      if (!jobs.length) return recs;
+      for (let i = 0; i < jobs.length; i += 50) {
+        const part = jobs.slice(i, i + 50);
+        try {
+          await idb.tx('readwrite', (st) => {
+            for (const j of part) {
+              if (j.rec) st.put(j.rec);
+              st.delete(j.from);
+            }
+          });
+        } catch (e) {
+          for (const j of jobs.slice(i)) {
+            if (j.rec) unsaved.add(j.rec.path);
+            this.drop.add(j.from);
+          }
+          break;
+        }
+      }
+      for (const j of jobs) {
+        at.delete(j.from);
+        if (j.rec) at.set(j.rec.path, j.rec);
+      }
+      return Array.from(at.values());
     },
 
     /** keep every change: what changed is written to IndexedDB a moment later */
@@ -134,6 +184,8 @@
       });
       window.addEventListener('pagehide', () => this.flush());
       document.addEventListener('visibilitychange', () => document.visibilityState === 'hidden' && this.flush());
+      // (files that could not be moved to a new folder at once: written there now – see move)
+      if (this.dirty.size || this.removed.size || this.drop.size) this._soon();
     },
     _soon() {
       clearTimeout(this._t);
@@ -152,10 +204,11 @@
         return this._busy;
       }
       const fs = this.fs;
-      const dirty = Array.from(this.dirty), removed = Array.from(this.removed);
+      const dirty = Array.from(this.dirty), removed = Array.from(this.removed), drops = Array.from(this.drop);
       this.dirty.clear();
       this.removed.clear();
-      if (!dirty.length && !removed.length) return;
+      this.drop.clear();
+      if (!dirty.length && !removed.length && !drops.length) return;
       bus.emit('files:saving', {});
       this._busy = (async () => {
         const puts = [], dels = [];
@@ -206,7 +259,7 @@
           this.saved.set(p, e);
         }
         try {
-          if (puts.length || dels.length) await idb.write(puts, dels);
+          if (puts.length || dels.length || drops.length) await idb.write(puts, dels, drops);
           bus.emit('files:saved', { n: puts.length, removed: dels.length });
         } catch (err) {
           puts.forEach((r) => {
@@ -214,6 +267,7 @@
             this.dirty.add(r.path);
           });
           dels.forEach((p) => this.removed.add(p));
+          drops.forEach((p) => this.drop.add(p));
           bus.emit('files:notsaved', { error: String((err && err.message) || err) });
           if (!this._warned) {
             this._warned = true;
@@ -284,6 +338,7 @@
       this.saved.clear();
       this.dirty.clear();
       this.removed.clear();
+      this.drop.clear();
       if (fs) for (const r of this.roots) for (const [p] of Array.from(fs.entries)) if (p.startsWith(r + '/')) fs.entries.delete(p);
     },
 

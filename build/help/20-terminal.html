@@ -1,14 +1,15 @@
-<!-- id: h-terminal | title: The terminal | group: Terminal and programs | summary: bash, the programs, keys, saving a session | keys: terminal shell bash command line prompt help man history tab completion ctrl-c export-session save session script cd ls -->
+<!-- id: h-terminal | title: The terminal | group: Terminal and programs | summary: bash, the programs, keys, saving a session | keys: terminal shell bash command line prompt help man history tab completion ctrl-c export-session save session script cd ls user name username whoami your name -->
 <h1><!--ICON:terminal-->The terminal</h1>
 <p class="lede">A Linux shell (bash) with real bioinformatics programs – samtools, bcftools, minimap2, Bowtie 2, fastp, bedtools and more, compiled to WebAssembly so that they run in your browser.</p>
 <div class="tryrow"><button class="do" type="button" data-term-run="help">List the programs</button> <button class="do" type="button" data-term-run="ls -R /data/examples">Show the example data</button></div>
 
 <h2>Where you are</h2>
-<p>The prompt <code>student@workbench:~$</code> shows the folder you are in; <code>~</code> is your home folder, <code>/home/student</code>. Your files are there (the Files tab shows the same ones); the example data is in <code>/data/examples</code>, read-only – copy what you want to change.</p>
+<p>The prompt <code>user@workbench:~$</code> shows the folder you are in; <code>~</code> is your home folder, <code>/home/user</code>. Your files are there (the Files tab shows the same ones); the example data is in <code>/data/examples</code>, read-only – copy what you want to change.</p>
 <pre class="code" data-run="term"><code>pwd
 mkdir -p ~/practice && cd ~/practice
 cp /data/examples/sequences/myoglobins.fasta .
 ls -l</code></pre>
+<p><b>Your name in place of <code>user</code>:</b> <button class="do" type="button" data-username="">Put in your name</button> – or click <b>user</b> at the top of the page. The prompt, <code>whoami</code>, <code>$USER</code>, the owner of your files in <code>ls -l</code>, and Python and R then use it. It is kept in this browser only, and the home folder stays <code>/home/user</code>.</p>
 
 <h2>Getting help</h2>
 <ul>

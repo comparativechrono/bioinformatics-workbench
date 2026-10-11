@@ -128,6 +128,63 @@
     }
   };
 
+  /* ---------- the name of the person at the workbench ----------
+     The terminal's user is "user" (user@workbench:~$), unless the person has put in a name of their own – the button
+     with the name at the top of the page. That name is kept in this browser only. It is what the prompt, whoami, id,
+     ls -l, $USER and $LOGNAME, Python's and R's USER show. The home folder stays /home/user whatever the name.
+     The AI agent's commands run as "user": its commands' output goes to an AI service, the person's name does not. */
+  const USER0 = 'user';
+  const NAME_RE = /^[A-Za-z_][A-Za-z0-9_.-]{0,31}$/;
+  const user = {
+    DEFAULT: USER0,
+    /** a name that can be a user's name here: a letter or _ first, then letters, digits, . _ -, at most 32; not root */
+    valid: (n) => typeof n === 'string' && NAME_RE.test(n) && n !== 'root',
+    /** the name the person chose, or "user" */
+    name() {
+      const n = store.get('userName', '');
+      return user.valid(n) ? n : USER0;
+    },
+    /** the name that the commands see just now: "user" while the AI agent runs a command */
+    login() {
+      return MG.app && MG.app.term && MG.app.term.agentCmd ? USER0 : user.name();
+    },
+    /** what was typed, as a user name: "Ada Lovelace" → "Ada.Lovelace", "José" → "Jose"; '' if nothing usable is left */
+    suggest(text) {
+      let s = String(text == null ? '' : text).normalize('NFKD').replace(/[̀-ͯ]/g, '').trim();
+      s = s.replace(/\s+/g, '.').replace(/[^A-Za-z0-9_.-]/g, '').replace(/([._-])[._-]+/g, '$1').replace(/^[^A-Za-z_]+/, '').slice(0, 32).replace(/[.-]+$/, '');
+      return user.valid(s) ? s : '';
+    },
+    /** keep a new name (an empty one, or "user": back to "user") → false if it cannot be a user name */
+    set(n) {
+      const old = user.name();
+      n = n == null || n === '' ? USER0 : String(n);
+      if (!user.valid(n)) return false;
+      if (n === USER0) store.remove('userName');
+      else store.set('userName', n);
+      if (n !== old) bus.emit('user:name', { name: n, old });
+      return true;
+    },
+    /** what the commands printed, with "user" in place of the person's name where the name stands for the user: the
+        prompt (NAME@workbench), whoami, logname, $USER (a line of nothing else), id and stat (uid=1000(NAME)), the
+        owner and group of ls -l, find -ls and tar -tv, sudo's refusal. Elsewhere the text is left as it is: a name
+        that is also a word or a folder (data, home) must not change a path or a sentence. For what goes to an AI service. */
+    mask(text) {
+      const n = user.name();
+      if (n === USER0 || text == null) return text;
+      const N = n.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      const perms = '[-bcdlps][-rwxsStT]{9}[.+@]?';
+      return String(text)
+        .replace(new RegExp('(^|[^A-Za-z0-9_.-])' + N + '@', 'g'), '$1' + USER0 + '@')
+        .replace(new RegExp('(\\d\\(|\\d/\\s*)' + N + '\\)', 'g'), '$1' + USER0 + ')')
+        .replace(new RegExp('^((?:\\s*\\d+\\s+\\d+\\s+)?' + perms + '\\s+\\d+\\s+)' + N + '(?=\\s)', 'gm'), '$1' + USER0)
+        .replace(new RegExp('^((?:\\s*\\d+\\s+\\d+\\s+)?' + perms + '\\s+\\d+\\s+\\S+\\s+)' + N + '(?=\\s)', 'gm'), '$1' + USER0)
+        .replace(new RegExp('^(' + perms + '\\s+)' + N + '/' + N + '(?=\\s)', 'gm'), '$1' + USER0 + '/' + USER0)
+        .replace(new RegExp('^' + N + ' is not in the sudoers file', 'gm'), USER0 + ' is not in the sudoers file')
+        .replace(new RegExp('^' + N + ' : ' + N + '$', 'gm'), USER0 + ' : ' + USER0)
+        .replace(new RegExp('^' + N + '(\\s+' + N + ')*$', 'gm'), (m) => m.split(/(\s+)/).map((w) => (w === n ? USER0 : w)).join(''));
+    }
+  };
+
   /* ---------- fetch with timeout ---------- */
   async function fetchWithTimeout(url, opts = {}, ms) {
     const ctrl = typeof AbortController !== 'undefined' ? new AbortController() : null;
@@ -314,7 +371,7 @@
   };
 
   Object.assign(MG, {
-    esc, h, $, $$, bus, store, toast, debounce, clamp, fmt,
+    esc, h, $, $$, bus, store, toast, debounce, clamp, fmt, user,
     fetchWithTimeout, fetchJSON, fetchText, firstOk,
     downloadBlob, downloadText, copyText,
     AA3, AA3_NICE, AA1_NAME, niceRes

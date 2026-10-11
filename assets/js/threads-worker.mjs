@@ -4,7 +4,7 @@
    (see isolation.js). The single-threaded programs of the terminal run in the program runner of assets/vendor/biowasm.
 
    The page sends: the program's module (as genomics-wasm built it), its arguments, the folders and files it needs
-   (each file at the path it has in the terminal's program file system), the links /home/student and /data, the
+   (each file at the path it has in the terminal's program file system), the links of the home folder and /data, the
    working folder and the standard input. The answer: the exit status, the standard output and error (and the order
    in which the program wrote them), and every file the program made or changed – a file that was handed over keeps
    the time 0, so a file with another time, or another size, is one the program wrote.

@@ -46,6 +46,8 @@
       if (opts.welcome) this.note(opts.welcome);
       this._renderPrompt();
       this.renderFiles();
+      // the person gave the workbench a name (the button with the name at the top): the prompt shows it
+      bus.on('user:name', () => this._renderPrompt());
     }
 
     _build() {
@@ -95,9 +97,11 @@
       // "> " while a command is not complete yet (an open quote, a for … without its done)
       // (in front of the prompt: what the page puts there – the active conda environment)
       const pre = MG.shellHooks && MG.shellHooks.promptPrefix ? MG.shellHooks.promptPrefix() : '';
-      const p = this._more != null ? '<span class="pc">&gt;</span>&nbsp;' : `${pre}<span class="pu">student@${esc(this.hostname)}</span>:<span class="pp">${esc(this.cwdPretty)}</span>$&nbsp;`;
+      // (user@workbench – or the name the person gave the workbench in place of user)
+      const who = MG.user.name();
+      const p = this._more != null ? '<span class="pc">&gt;</span>&nbsp;' : `${pre}<span class="pu">${esc(who)}@${esc(this.hostname)}</span>:<span class="pp">${esc(this.cwdPretty)}</span>$&nbsp;`;
       this.promptEl.innerHTML = p;
-      this.titleEl.textContent = `student@${this.hostname}: ${this.cwdPretty}`;
+      this.titleEl.textContent = `${who}@${this.hostname}: ${this.cwdPretty}`;
     }
     focus() {
       this.input.focus({ preventScroll: true });
@@ -654,7 +658,7 @@
       const r = to.slice(from.length + 1);
       return /^[~-]/.test(r) ? './' + r : r;
     }
-    const home = '/home/student';
+    const home = (MG.app && MG.app.HOME) || '/home/user';
     if (to.startsWith(home + '/')) return '~/' + to.slice(home.length + 1);
     return to;
   }

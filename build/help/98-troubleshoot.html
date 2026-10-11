@@ -17,9 +17,11 @@
   <dt>My files are gone</dt>
   <dd>They are kept in one browser on one computer – is it the same browser, the same computer, the same web address, and not a private window? If the browser's data for the site was cleared, they cannot be recovered: download what you want to keep (<a href="#h-recipe-keep">Keep and share your work</a>).</dd>
   <dt>"No such file or directory"</dt>
-  <dd>The file is not where the code looked. A notebook works in its own folder (<code>~/notebooks</code>): use full paths such as <code>/data/examples/…</code> or <code>/home/student/…</code> (Python's <code>open()</code> does not understand <code>~</code>). <code>%pwd</code> or <code>getwd()</code> shows the folder; the Files tab shows the names.</dd>
+  <dd>The file is not where the code looked. A notebook works in its own folder (<code>~/notebooks</code>): use full paths such as <code>/data/examples/…</code> or <code>/home/user/…</code> (Python's <code>open()</code> does not understand <code>~</code>). <code>%pwd</code> or <code>getwd()</code> shows the folder; the Files tab shows the names.</dd>
   <dt>"Read-only file system" or "Permission denied"</dt>
   <dd><code>/data/examples</code> is read-only: its files cannot be changed, and nothing new can be written into it – not even what a program writes next to its input (<code>samtools faidx</code> writes its index next to the FASTA file). Copy what you need into your home folder and work there.</dd>
+  <dt>A PDF "cannot be read as a PDF"</dt>
+  <dd>The Files tab draws PDF files itself, so no PDF plug-in of the browser is needed. A file it cannot read is damaged, is not a PDF, or is not finished: a plot that R or Python is still drawing into is written only when it is closed – <code>dev.off()</code> after <code>pdf("plot.pdf")</code> in R, <code>plt.savefig("plot.pdf")</code> or the end of <code>with PdfPages(…)</code> in Python. Download the file to open it with another program.</dd>
   <dt>The space is running out</dt>
   <dd><b>My files</b> (top right) shows how much is used. Delete large intermediate files – SAM files, unsorted BAM files, trimmed reads – or download and delete them.</dd>
 </dl>

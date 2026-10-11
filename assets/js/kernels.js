@@ -20,7 +20,7 @@
   const { bus, esc, toast } = MG;
   const CFG = MG.config;
   const abs = (u) => new URL(u, location.href).href;
-  const HOME = () => (MG.app && MG.app.HOME) || '/home/student';
+  const HOME = () => (MG.app && MG.app.HOME) || '/home/user';
   const MAX_SYNC = 300 * 1024 * 1024; // larger files are not copied into Python or R
   const under = (p) => p === HOME() || p.startsWith(HOME() + '/');
 
@@ -169,7 +169,7 @@
         files: this.opts.files,
         modules: this.opts.modules || [],
         home: HOME(),
-        user: 'student'
+        user: MG.user.login()
       });
     }
     _status(text, bad) {
@@ -190,7 +190,7 @@
     async run(code, handlers, cwd) {
       await this.ensure();
       await MG.pysync.push();
-      return this._send({ type: 'run', code, cwd: cwd || HOME() }, handlers);
+      return this._send({ type: 'run', code, cwd: cwd || HOME(), user: MG.user.login() }, handlers);
     }
     async vars() {
       if (this.state !== 'ready') return [];
@@ -321,7 +321,7 @@ local({
       return(sprintf("%s has not been made yet: run the cell that creates it first (after Restart, R forgets everything). If it is meant to be text, put it in quotes; if it is a column, use df$%s or a package such as dplyr.", o, o))
     }
     if (grepl("there is no package called", msg)) return("That package could not be loaded: it is not in the webR repositories (repo.r-wasm.org for CRAN, bioc-release.r-universe.dev for Bioconductor), or it failed to download. Packages that need system libraries may not exist for the browser.")
-    if (grepl("cannot open|No such file", msg)) return(sprintf("R is working in %s; relative paths start there. Your files are in /home/student (~), the examples in /data/examples.", getwd()))
+    if (grepl("cannot open|No such file", msg)) return(sprintf("R is working in %s; relative paths start there. Your files are in %s (~), the examples in /data/examples.", getwd(), path.expand("~")))
     if (grepl("non-numeric argument to binary operator", msg)) return("One of the values is text, not a number. Convert it with as.numeric(), or look at the column types with str().")
     if (grepl("subscript out of bounds", msg)) return("R counts from 1 (not 0), and the position must exist: check with length(), nrow() or ncol().")
     if (grepl("missing value where TRUE/FALSE needed", msg)) return("An if() or while() got NA. Check for missing values with is.na().")
@@ -495,6 +495,14 @@ local({
     if (!m) return null;
     return { kind: m[1], fields: m[2].split('\x03').map((f) => f.replace(/\x02/g, '\n')) };
   }
+  /** a line of R's standard output → [what R printed, a mark of the workbench or null]. What was printed last without
+      a new line – cat("done") – has the mark that follows it on the same line. */
+  function splitRLine(line) {
+    const at = line.indexOf('\x01WB:');
+    if (at < 0) return [line, null];
+    const mk = parseRLine(line.slice(at));
+    return mk ? [line.slice(0, at), mk] : [line, null];
+  }
   const rstr = (s) => JSON.stringify(String(s)).replace(/\\u([0-9a-f]{4})/gi, (x, h4) => '\\u' + h4); // a JSON string is a valid R string
   const rvec = (a) => 'c(' + a.map(rstr).join(', ') + ')';
 
@@ -557,8 +565,11 @@ local({
             `device = function(...) grDevices::pdf(file = "Rplots.pdf"), timeout = 300, help_type = "text", ` +
             // (help pages – ?mean – are shown as text under the cell: the browser has no pager program)
             `pager = function(files, header, title, delete.file) { for (f in files) cat(gsub("_\\b", "", readLines(f, warn = FALSE), useBytes = TRUE), sep = "\\n"); if (isTRUE(delete.file)) unlink(files); invisible(NULL) })\n` +
-            `Sys.setenv(USER = "student", LOGNAME = "student", HOME = ${rstr(HOME())})\nsetwd(${rstr(HOME())})`
+            `Sys.setenv(USER = ${rstr(MG.user.login())}, LOGNAME = ${rstr(MG.user.login())}, HOME = ${rstr(HOME())})\nsetwd(${rstr(HOME())})\n` +
+            // (the home folder was /home/student before: a path written with that name still leads home)
+            `if (${rstr(HOME())} != "/home/student" && !file.exists("/home/student")) try(file.symlink(${rstr(HOME())}, "/home/student"), silent = TRUE)`
         );
+        this._user = MG.user.login();
         await webR.evalRVoid(R_SETUP);
         await webR.evalRVoid(R_NAMES);
         // the examples, read-only
@@ -605,6 +616,17 @@ local({
         }
       }
     }
+    /** USER and LOGNAME of R: the name of the person (or "user" for the AI agent's commands) – it may have changed */
+    async _userEnv() {
+      const u = MG.user.login();
+      if (this._user === u) return;
+      try {
+        await this.webR.evalRVoid(`Sys.setenv(USER = ${rstr(u)}, LOGNAME = ${rstr(u)})`);
+        this._user = u;
+      } catch (e) {
+        /* (R keeps the name it had) */
+      }
+    }
     /** one thing at a time: R runs one evaluation after another */
     _queued(fn) {
       const job = this.queue.then(fn);
@@ -616,6 +638,7 @@ local({
       await this.ensure();
       return this._queued(async () => {
         const t0 = performance.now();
+        await this._userEnv();
         await this.sync.push();
         // BiocManager cannot download from Bioconductor's own servers here: its install() is done by webR instead
         let src = code;
@@ -658,9 +681,9 @@ local({
       const emit = (o) => handlers.onOutput && handlers.onOutput(o);
       for (const o of res.output || []) {
         if (o.type !== 'stdout' && o.type !== 'stderr') continue;
-        const line = String(o.data);
-        const mk = o.type === 'stdout' ? parseRLine(line) : null;
+        const [line, mk] = o.type === 'stdout' ? splitRLine(String(o.data)) : [String(o.data), null];
         if (mk) {
+          if (line) emit({ type: 'stream', name: o.type, text: line });
           if (mk.kind === 'html') emit({ type: 'display', mime: 'text/html', data: mk.fields[0] });
           else if (mk.kind === 'error') {
             ok = false;
@@ -678,6 +701,7 @@ local({
     async script(opts, io) {
       await this.ensure();
       return this._queued(async () => {
+        await this._userEnv();
         await this.sync.push();
         this._lastStatus = 1;
         const call = `.wb_script(${opts.file ? 'file = ' + rstr(opts.file) : 'code = ' + rstr(opts.code)}, args = ${rvec(opts.args || [])}, cwd = ${rstr(opts.cwd || HOME())})`;
@@ -685,9 +709,10 @@ local({
           const res = await this.shelter.captureR(call, { withAutoprint: false, captureStreams: true, captureConditions: false, captureGraphics: false });
           for (const o of res.output || []) {
             if (o.type !== 'stdout' && o.type !== 'stderr') continue;
-            const line = String(o.data);
-            const mk = o.type === 'stdout' ? parseRLine(line) : null;
+            const [line, mk] = o.type === 'stdout' ? splitRLine(String(o.data)) : [String(o.data), null];
             if (mk) {
+              // (what the script printed last, without a new line: cat("done") – as Rscript prints it)
+              if (line) io.out(line);
               if (mk.kind === 'status') this._lastStatus = Number(mk.fields[0]);
               else if (mk.kind === 'html') io.out('[a table: shown as text in a notebook]\n');
               continue;

@@ -28,6 +28,7 @@
     </a>
     <div class="spacer"></div>
     <span class="store-status" id="storeStatus" title="Your files and notebooks are kept in this browser, on this computer"></span>
+    <button class="btn" id="userBtn" type="button" title="Your name in the workbench: the terminal shows it in place of user"><svg class="ic" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg><span class="user-name">user</span></button>
     <button class="btn" id="projectBtn" type="button" title="Download all your files, add files, or start afresh"><svg class="ic" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v1H7l-4 9z"/><path d="M3 19l3.5-8H22l-3.5 8z"/></svg><span>My files</span></button>
     <button class="btn" id="fullBtn" type="button" title="Full screen (F11 also works)"><svg class="ic" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"/></svg><span>Full screen</span></button>
   </header>
@@ -132,7 +133,7 @@ samtools faidx /data/examples/reads/reference.fa human_CYP2C19:11590-11640</code
 <p>Type <code>help</code> for the list of programs, and <code>man samtools</code> for examples of one of them.</p>
 
 <h2>3 · Your files</h2>
-<p>Your own files live in your home folder, <code>~</code> (<code>/home/student</code>). The notebooks, the terminal and the <b>Files</b> tab all see the same files: a file that a terminal command writes can be read by a notebook a moment later.</p>
+<p>Your own files live in your home folder, <code>~</code> (<code>/home/user</code>). The notebooks, the terminal and the <b>Files</b> tab all see the same files: a file that a terminal command writes can be read by a notebook a moment later.</p>
 <pre class="code" data-run="term"><code>mkdir -p ~/first && cd ~/first
 seqtk comp /data/examples/sequences/myoglobins.fasta | cut -f 1,2 > lengths.tsv
 cat lengths.tsv</code></pre>
@@ -229,7 +230,7 @@ cat lengths.tsv</code></pre>
 <p>More on each language: <a href="#h-python">Python</a> · <a href="#h-r">R</a>.</p>
 
 <h2 data-anchor="files">Files and folders</h2>
-<p>A notebook's code runs in the notebook's own folder – <code>~/notebooks</code> for most – so a file name without a folder means a file next to the notebook. Use full paths for files elsewhere: <code>/data/examples/tables/yeast_genes.csv</code>, or <code>/home/student/…</code> for your own (Python's <code>open()</code> does not understand <code>~</code>; pandas and R do).</p>
+<p>A notebook's code runs in the notebook's own folder – <code>~/notebooks</code> for most – so a file name without a folder means a file next to the notebook. Use full paths for files elsewhere: <code>/data/examples/tables/yeast_genes.csv</code>, or <code>/home/user/…</code> for your own (Python's <code>open()</code> does not understand <code>~</code>; pandas and R do).</p>
 <p>Files a cell writes appear in the Files tab and the terminal as soon as the cell has finished.</p>
 
 <h2>Terminal commands in a notebook</h2>
@@ -350,7 +351,7 @@ ggplot(genes, aes(protein_length, protein_abundance, colour = factor(essential))
 <p>A data frame on the last line of a cell is shown as a table. The plots of a cell appear after its printed output. <code>ggsave("plot.png", width = 6, height = 4)</code> or <code>png("plot.png")</code> … <code>dev.off()</code> also write the picture as a file.</p>
 
 <h2>Files</h2>
-<p>R reads and writes your files like Python does: the working folder is the notebook's folder (<code>getwd()</code>), <code>~</code> means <code>/home/student</code>, and <code>/data/examples</code> is read-only.</p>
+<p>R reads and writes your files like Python does: the working folder is the notebook's folder (<code>getwd()</code>), <code>~</code> means <code>/home/user</code>, and <code>/data/examples</code> is read-only.</p>
 
 <h2>Programs and the terminal</h2>
 <p><code>system()</code> cannot start programs in the browser: use a <code>%%bash</code> cell in the R notebook instead. In the terminal, <code>Rscript script.R</code> and <code>Rscript -e '…'</code> run R code with the same R; their plots go to <code>Rplots.pdf</code> unless the script opens a <code>png()</code> device.</p>
@@ -362,17 +363,18 @@ ggplot(genes, aes(protein_length, protein_abundance, colour = factor(essential))
   <li>Downloaded R notebooks (<code>.ipynb</code>) run in Jupyter with the R kernel (IRkernel), and in Google Colab with the R runtime.</li>
 </ul>
 </article>
-<article class="help-page" id="h-terminal" data-title="The terminal" data-group="Terminal and programs" data-group-page="h-terminal" data-keys="terminal shell bash command line prompt help man history tab completion ctrl-c export-session save session script cd ls" hidden>
+<article class="help-page" id="h-terminal" data-title="The terminal" data-group="Terminal and programs" data-group-page="h-terminal" data-keys="terminal shell bash command line prompt help man history tab completion ctrl-c export-session save session script cd ls user name username whoami your name" hidden>
 <h1><svg class="ic" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M4 17l6-5-6-5M12 19h8"/></svg>The terminal</h1>
 <p class="lede">A Linux shell (bash) with real bioinformatics programs – samtools, bcftools, minimap2, Bowtie 2, fastp, bedtools and more, compiled to WebAssembly so that they run in your browser.</p>
 <div class="tryrow"><button class="do" type="button" data-term-run="help">List the programs</button> <button class="do" type="button" data-term-run="ls -R /data/examples">Show the example data</button></div>
 
 <h2>Where you are</h2>
-<p>The prompt <code>student@workbench:~$</code> shows the folder you are in; <code>~</code> is your home folder, <code>/home/student</code>. Your files are there (the Files tab shows the same ones); the example data is in <code>/data/examples</code>, read-only – copy what you want to change.</p>
+<p>The prompt <code>user@workbench:~$</code> shows the folder you are in; <code>~</code> is your home folder, <code>/home/user</code>. Your files are there (the Files tab shows the same ones); the example data is in <code>/data/examples</code>, read-only – copy what you want to change.</p>
 <pre class="code" data-run="term"><code>pwd
 mkdir -p ~/practice && cd ~/practice
 cp /data/examples/sequences/myoglobins.fasta .
 ls -l</code></pre>
+<p><b>Your name in place of <code>user</code>:</b> <button class="do" type="button" data-username="">Put in your name</button> – or click <b>user</b> at the top of the page. The prompt, <code>whoami</code>, <code>$USER</code>, the owner of your files in <code>ls -l</code>, and Python and R then use it. It is kept in this browser only, and the home folder stays <code>/home/user</code>.</p>
 
 <h2>Getting help</h2>
 <ul>
@@ -864,7 +866,7 @@ open steps.svg</code></pre>
 </article>
 <article class="help-page" id="h-files" data-title="Your files" data-group="Files" data-group-page="h-files" data-keys="files folder home storage browser kept indexeddb upload download zip unzip rename delete edit save editor viewer quota storage space backup lost start afresh" hidden>
 <h1><svg class="ic" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v1H7l-4 9z"/><path d="M3 19l3.5-8H22l-3.5 8z"/></svg>Your files</h1>
-<p class="lede">Your files are in your home folder, <code>~</code> (<code>/home/student</code>). The notebooks, the terminal, Galaxy and the Files tab all use the same files.</p>
+<p class="lede">Your files are in your home folder, <code>~</code> (<code>/home/user</code>). The notebooks, the terminal, Galaxy and the Files tab all use the same files.</p>
 
 <h2 data-anchor="kept">Where your files are kept</h2>
 <p>There is no server: your files are kept <b>in this browser, on this computer</b> (in its storage for web sites, IndexedDB). They are there when you come back – in the same browser, on the same computer, at the same web address.</p>
@@ -880,7 +882,7 @@ open steps.svg</code></pre>
 <h2>The Files tab</h2>
 <ul>
   <li><b>Open a file</b> by clicking it. Text files open in an editor (with colours for Python, R, shell, YAML …): edit, then <b>Save</b> or <kbd>Ctrl</kbd>+<kbd>S</kbd>. Several files open as tabs.</li>
-  <li><b>Other files are shown</b> in a way that fits them: tables (CSV, TSV) as tables, FASTA files with their sequences, alignments in colour, trees (<code>.nwk</code>) drawn, pictures, PDF files, HTML reports (without their scripts). <b>Open as text</b> shows the text itself.</li>
+  <li><b>Other files are shown</b> in a way that fits them: tables (CSV, TSV) as tables, FASTA files with their sequences, alignments in colour, trees (<code>.nwk</code>) drawn, pictures, PDF files (with zoom and page numbers; their text can be selected and copied), HTML reports (without their scripts). <b>Open as text</b> shows the text itself.</li>
   <li><b>Notebooks</b> (<code>.ipynb</code>) open in the Notebook tab, <b>structures</b> (<code>.pdb</code>, <code>.cif</code>) in the 3D viewer.</li>
   <li>The <b>⋯ of a file or folder</b>: open in another tab (Notebook, 3D viewer, Genome browser, Galaxy), download, rename, duplicate, copy the path, open the folder in the terminal, unzip, delete.</li>
   <li>The buttons at the top: upload files from your computer, a new file, a new folder, show hidden files (names that start with a dot).</li>
@@ -2312,9 +2314,11 @@ conda activate workbench</code></pre>
   <dt>My files are gone</dt>
   <dd>They are kept in one browser on one computer – is it the same browser, the same computer, the same web address, and not a private window? If the browser's data for the site was cleared, they cannot be recovered: download what you want to keep (<a href="#h-recipe-keep">Keep and share your work</a>).</dd>
   <dt>"No such file or directory"</dt>
-  <dd>The file is not where the code looked. A notebook works in its own folder (<code>~/notebooks</code>): use full paths such as <code>/data/examples/…</code> or <code>/home/student/…</code> (Python's <code>open()</code> does not understand <code>~</code>). <code>%pwd</code> or <code>getwd()</code> shows the folder; the Files tab shows the names.</dd>
+  <dd>The file is not where the code looked. A notebook works in its own folder (<code>~/notebooks</code>): use full paths such as <code>/data/examples/…</code> or <code>/home/user/…</code> (Python's <code>open()</code> does not understand <code>~</code>). <code>%pwd</code> or <code>getwd()</code> shows the folder; the Files tab shows the names.</dd>
   <dt>"Read-only file system" or "Permission denied"</dt>
   <dd><code>/data/examples</code> is read-only: its files cannot be changed, and nothing new can be written into it – not even what a program writes next to its input (<code>samtools faidx</code> writes its index next to the FASTA file). Copy what you need into your home folder and work there.</dd>
+  <dt>A PDF "cannot be read as a PDF"</dt>
+  <dd>The Files tab draws PDF files itself, so no PDF plug-in of the browser is needed. A file it cannot read is damaged, is not a PDF, or is not finished: a plot that R or Python is still drawing into is written only when it is closed – <code>dev.off()</code> after <code>pdf("plot.pdf")</code> in R, <code>plt.savefig("plot.pdf")</code> or the end of <code>with PdfPages(…)</code> in Python. Download the file to open it with another program.</dd>
   <dt>The space is running out</dt>
   <dd><b>My files</b> (top right) shows how much is used. Delete large intermediate files – SAM files, unsorted BAM files, trimmed reads – or download and delete them.</dd>
 </dl>
@@ -2365,10 +2369,10 @@ conda activate workbench</code></pre>
 <h2>What is kept on your computer</h2>
 <ul>
   <li><b>Your files</b> – notebooks, results, uploads – and Galaxy's datasets: in this browser's storage for the site (IndexedDB).</li>
-  <li><b>In the browser's local storage</b>: your last 200 terminal commands; the list of Galaxy's history and its workflows; settings – the open tab and notebook, the help page, the genome, the choices of the AI assistant (not its key), and your e-mail address for BLAST if you ask to remember it.</li>
+  <li><b>In the browser's local storage</b>: your last 200 terminal commands; the list of Galaxy's history and its workflows; settings – the open tab and notebook, the help page, the genome, the choices of the AI assistant (not its key), your name in the workbench if you put one in, and your e-mail address for BLAST if you ask to remember it.</li>
   <li><b>The AI key</b>: only in the tab's memory, or, if you tick it, until the tab is closed (session storage). Never in a file or in long-term storage.</li>
 </ul>
-<p>On a shared computer, the next person who uses the same browser account can see what is stored: download your work, then <b>My files → Start afresh</b>. That deletes your files, Galaxy's history, the terminal's commands and the remembered e-mail address; the choices of the AI assistant and of the help pane stay, and the AI key is forgotten when you close the tab. The workbench itself sets no cookies and has no tracking or analytics.</p>
+<p>On a shared computer, the next person who uses the same browser account can see what is stored: download your work, then <b>My files → Start afresh</b>. That deletes your files, Galaxy's history, the terminal's commands and the remembered e-mail address; your name in the workbench and the choices of the AI assistant and of the help pane stay, and the AI key is forgotten when you close the tab. The workbench itself sets no cookies and has no tracking or analytics.</p>
 
 <h2>What is sent, and to whom</h2>
 <table>
@@ -2380,10 +2384,10 @@ conda activate workbench</code></pre>
 <tr><td>ask the AI assistant</td><td>your question and what you tick under the box: the open notebook's code, your file names, your last commands. From a notebook cell: its code, with its error (up to 2,500 characters) or the beginning of its output (up to 1,200 characters); from a failed terminal command: the command, its folder and the end of what it printed (up to 3,000 characters)</td><td>the AI service you connected, under its terms</td></tr>
 <tr><td>give the AI agent a task</td><td>the task, its commands and what they print (up to 3,000 characters a step) – including what it reads from your files</td><td>the AI service you connected</td></tr>
 </table>
-<p>Nothing else leaves your computer: your files are not uploaded anywhere unless you send them yourself.</p>
+<p>Nothing else leaves your computer: your files are not uploaded anywhere unless you send them yourself. The name you gave the workbench is not sent either: the agent's commands run as <code>user</code>, and in the terminal output that goes to the AI service your name is replaced by <code>user</code> where it names the user – the prompt, <code>whoami</code>, <code>id</code>, the owner in <code>ls -l</code>. (A name you write into a file or a question is sent like the rest of it.)</p>
 
 <div class="callout warn"><div class="co-t"><svg class="ic" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M12 3l10 18H2z"/><path d="M12 10v5M12 18h.01"/></svg>Personal and patient data</div>
-<p>The workbench is for learning, with public data. Never put personal or patient data into it – not into the Databases tab, not into an AI tool, not into your files here. Data you have been given for your studies stays within the rules you were given with it.</p></div>
+<p>The workbench is for learning, with public data. Never put personal or patient data into it – not into the Databases tab, not into an AI tool, not into your files here. Data you have been given for your studies or your work stays within the rules you were given with it.</p></div>
 </article>
 <article class="help-page" id="h-credits" data-title="Credits and licences" data-group="Reference" data-group-page="h-programs" data-keys="credits licences licenses copyright open source biowasm genomics-wasm featurecounts subread salmon kallisto stringtie mosdepth bwa-mem2 pyodide webr igv ngl codemirror marked dompurify jszip viz graphviz gpl mit data sources cite citation" hidden>
 <h1><svg class="ic" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M4 4h6a3 3 0 0 1 3 3v13a2 2 0 0 0-2-2H4zM20 4h-6a3 3 0 0 0-3 3v13a2 2 0 0 1 2-2h7z"/></svg>Credits and licences</h1>
@@ -2420,6 +2424,7 @@ conda activate workbench</code></pre>
 <tr><td>marked (Markdown)</td><td>MIT</td></tr>
 <tr><td>DOMPurify (safe display of AI answers)</td><td>Apache 2.0 or MPL 2.0</td></tr>
 <tr><td>JSZip (zip files)</td><td>MIT or GNU GPL 3</td></tr>
+<tr><td>PDF.js (PDF files in the Files tab)</td><td>Apache 2.0</td></tr>
 </table>
 <p>Galaxy, Snakemake and conda are re-implemented for the browser, after the real programs (<a href="https://galaxyproject.org" target="_blank" rel="noopener">Galaxy</a>, <a href="https://snakemake.github.io" target="_blank" rel="noopener">Snakemake</a>, <a href="https://docs.conda.io" target="_blank" rel="noopener">conda</a>); they contain no code of those projects.</p>
 
@@ -2492,6 +2497,7 @@ window.WB_STARTERS = [{"p":"notebooks/welcome-python.ipynb"},{"p":"notebooks/wel
 <script src="assets/js/kernels.js"></script>
 <script src="assets/js/notebook.js"></script>
 <script src="assets/js/pysync.js"></script>
+<script src="assets/js/pdfview.js"></script>
 <script src="assets/js/editor.js"></script>
 <script src="assets/js/galaxy.js"></script>
 <script src="assets/js/assistant.js"></script>

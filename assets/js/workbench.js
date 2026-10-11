@@ -2,7 +2,8 @@
    The workbench page: the tabs on the right (built the first time they
    are shown), the help on the left (topics, search, links between
    pages), hiding the help and full screen, the ▶ buttons of the help
-   pages, the "My files" menu and the storage indicator.
+   pages, the "My files" menu, the storage indicator, and the button with
+   the person's name (their name in place of "user" in the terminal).
 
    The tabs themselves are made by page-wb.js (MG.page.lazy).
    ===================================================================== */
@@ -644,7 +645,7 @@
         console.error(e);
       }
       await MG.project.reset(MG.app.fs);
-      const keep = new Set(['helpOff', 'helpWidth', 'helpPage', 'ai:settings', 'ai:context']);
+      const keep = new Set(['helpOff', 'helpWidth', 'helpPage', 'ai:settings', 'ai:context', 'userName']);
       try {
         const pfx = (MG.config.storePrefix || 'genomics') + ':' + document.body.dataset.page + ':';
         Object.keys(localStorage)
@@ -656,6 +657,80 @@
       location.reload();
     });
   }
+
+  /* ------------------------------------------------------------------
+     The button with the person's name, at the top: the terminal is user@workbench until they put in a name of their
+     own (MG.user in core.js). The name is kept in this browser only.
+     ------------------------------------------------------------------ */
+  function initUser() {
+    const btn = $('#userBtn');
+    if (!btn) return;
+    const label = btn.querySelector('.user-name');
+    const show = () => {
+      const n = MG.user.name(), plain = n === MG.user.DEFAULT;
+      if (label) label.textContent = n;
+      btn.title = plain ? 'Put your name into the workbench: the terminal shows it in place of user' : `Your name in the workbench: ${n} – click to change it`;
+      btn.setAttribute('aria-label', plain ? 'Your name in the workbench: user (click to put in yours)' : `Your name in the workbench: ${n}`);
+    };
+    show();
+    bus.on('user:name', show);
+    btn.addEventListener('click', nameDialog);
+  }
+  function nameDialog() {
+    const D = MG.user.DEFAULT, cur = MG.user.name();
+    const host = (MG.app.term && MG.app.term.hostname) || MG.config.hostname || 'workbench';
+    const m = MG.modal('Your name in the workbench', '');
+    const input = h('input.prompt-input#userNameIn', { type: 'text', value: cur === D ? '' : cur, placeholder: D, maxlength: '40', spellcheck: 'false', autocomplete: 'off', autocapitalize: 'off', 'aria-describedby': 'userNameNote' });
+    const preview = h('code.user-prompt');
+    const note = h('p.user-note#userNameNote', { 'aria-live': 'polite' });
+    const save = h('button.btn.primary', { type: 'submit' }, 'Save');
+    const reset = h('button.btn', { type: 'button' }, `Use “${D}”`);
+    const cancel = h('button.btn', { type: 'button' }, 'Cancel');
+    const form = h(
+      'form.user-form',
+      h('p', 'The terminal shows your name in its prompt, in place of ', h('code', D), '; ', h('code', 'whoami'), ', ', h('code', '$USER'), ', ', h('code', 'ls -l'), ', Python and R use it too. It is kept in this browser only. Your home folder stays ', h('code', MG.app.HOME || '/home/user'), '.'),
+      h('label.user-label', { for: 'userNameIn' }, 'Your name'),
+      input,
+      h('p.user-prev', h('span.muted', 'The prompt: '), preview),
+      note,
+      h('div.prompt-actions', reset, h('span.grow'), cancel, save)
+    );
+    m.box.querySelector('.modal-b').appendChild(form);
+    let chosen = cur;
+    const update = () => {
+      const v = input.value.trim();
+      const n = v === '' ? D : v === 'root' ? '' : MG.user.valid(v) ? v : MG.user.suggest(v);
+      note.classList.toggle('bad', !n);
+      if (v === 'root') note.textContent = 'root is the name of the administrator here: choose another name.';
+      else if (!n) note.textContent = 'A name here begins with a letter and has letters, digits, dots, hyphens or underscores – no spaces: ada, ada.lovelace or a_lovelace, for example.';
+      else if (v && n !== v) note.textContent = `A name here has no spaces or other signs: it will be ${n}.`;
+      else note.textContent = '';
+      chosen = n;
+      preview.textContent = `${n || '…'}@${host}:~$`;
+      save.disabled = !n;
+    };
+    input.addEventListener('input', update);
+    update();
+    form.addEventListener('submit', (e) => {
+      e.preventDefault();
+      if (!chosen || !MG.user.set(chosen)) return;
+      m.close();
+      toast(chosen === D ? `The terminal shows <b>${D}</b> again.` : `Saved: the terminal shows <b>${esc(chosen)}</b>@${esc(host)}.`, 'ok', 3500);
+    });
+    reset.addEventListener('click', () => {
+      input.value = '';
+      update();
+      input.focus();
+    });
+    cancel.addEventListener('click', () => m.close());
+    setTimeout(() => {
+      input.focus();
+      input.select();
+    }, 30);
+  }
+  MG.app.nameDialog = nameDialog;
+  // (a button of the help pages: data-username)
+  MG.actions.username = () => nameDialog();
 
   /* the indicator in the top bar: are the files kept? */
   function initStoreStatus() {
@@ -740,6 +815,7 @@
     initHelp();
     initActions();
     initFilesMenu();
+    initUser();
     try {
       if (MG.page.init) await MG.page.init();
     } catch (e) {

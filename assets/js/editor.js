@@ -411,6 +411,7 @@
       this.current = path;
       this.viewPath = null;
       this.view.hidden = true;
+      this._closeView();
       this.emptyEl.hidden = true;
       this.cmHost.hidden = false;
       this.cm.swapDoc(o.doc);
@@ -523,6 +524,7 @@
       this.viewPath = null;
       this.cmHost.hidden = true;
       this.view.hidden = true;
+      this._closeView();
       this.emptyEl.hidden = false;
       this.saveBtn.hidden = true;
       this.runBtn.hidden = true;
@@ -659,12 +661,27 @@
       if (this.view.hidden || this.viewPath !== path) return;
       await this._renderView(path);
     }
-    async _renderView(path, opts = {}) {
-      const V = this.view;
-      V.innerHTML = '';
-      const k = opts.tooBig ? 'binary' : kindOf(path);
+    /** what a viewer holds (a PDF document and its worker, a picture's URL): let go of it */
+    _closeView() {
+      this._viewToken = (this._viewToken || 0) + 1; // (a view still being made is not shown)
+      if (this._pdf) {
+        this._pdf.destroy();
+        this._pdf = null;
+      }
       if (this._url) URL.revokeObjectURL(this._url);
       this._url = null;
+      this.view.classList.remove('pdf');
+    }
+    async _renderView(path, opts = {}) {
+      const V = this.view;
+      // (a PDF shown again – it was written anew – opens at the same page and zoom)
+      const keep = this._pdf && this._pdfPath === path ? this._pdf.state() : null;
+      this._closeView();
+      V.innerHTML = '';
+      const k = opts.tooBig ? 'binary' : kindOf(path);
+      // (two views asked for one after the other: only the last one is shown)
+      const token = (this._viewToken = (this._viewToken || 0) + 1);
+      const stale = () => token !== this._viewToken;
       const textBtn = (label = 'Open as text') => {
         const b = h('button.btn.small', { type: 'button' }, label);
         b.addEventListener('click', () => this._openText(path));
@@ -673,19 +690,25 @@
       try {
         if (k === 'image') {
           const blob = await this.fs.toBlob(path);
+          if (stale()) return;
           this._url = URL.createObjectURL(blob);
           V.appendChild(h('div.ed-img', h('img', { src: this._url, alt: path.split('/').pop() })));
         } else if (k === 'svg') {
           const text = await this.fs.readText(path);
+          if (stale()) return;
           this._url = URL.createObjectURL(new Blob([text], { type: 'image/svg+xml' }));
           V.appendChild(h('div.ed-img.svg', h('img', { src: this._url, alt: path.split('/').pop() })));
           V.appendChild(h('p.ed-note', textBtn('Show the SVG text')));
         } else if (k === 'pdf') {
-          const blob = new Blob([await this.fs.readBytes(path)], { type: 'application/pdf' });
-          this._url = URL.createObjectURL(blob);
-          V.appendChild(h('iframe.ed-frame', { src: this._url, title: path.split('/').pop() }));
+          // drawn by the page itself (pdfview.js), not by the browser's PDF plug-in
+          const bytes = await this.fs.readBytes(path);
+          if (stale()) return;
+          V.classList.add('pdf');
+          this._pdf = MG.pdfView(V, bytes, { name: path.split('/').pop(), state: keep });
+          this._pdfPath = path;
         } else if (k === 'html') {
           const text = await this.fs.readText(path);
+          if (stale()) return;
           // (no scripts: an HTML file could come from anywhere – reports such as fastp's work without them)
           const fr = h('iframe.ed-frame', { sandbox: '', title: path.split('/').pop() });
           fr.srcdoc = text;
@@ -693,19 +716,23 @@
           V.appendChild(h('p.ed-note.muted', 'Shown without its scripts (for safety). To see it with everything, download it and open it in your browser.'));
         } else if (k === 'table') {
           const text = await this.fs.readText(path);
+          if (stale()) return;
           V.appendChild(tableView(text, /\.csv$/i.test(path) ? ',' : '\t'));
           V.appendChild(h('p.ed-note', textBtn()));
         } else if (k === 'fasta') {
           const text = await this.fs.readText(path);
+          if (stale()) return;
           V.appendChild(fastaView(text, path));
           V.appendChild(h('p.ed-note', textBtn()));
         } else if (k === 'alignment') {
           const text = await this.fs.readText(path);
+          if (stale()) return;
           const view = alignmentView(text);
           V.appendChild(view || h('p.muted', 'This file could not be read as an alignment (FASTA or Clustal).'));
           V.appendChild(h('p.ed-note', textBtn()));
         } else if (k === 'tree') {
           const text = await this.fs.readText(path);
+          if (stale()) return;
           V.appendChild(treeView(text));
           V.appendChild(h('p.ed-note', textBtn()));
         } else if (k === 'notebook' || k === 'structure') {
@@ -732,6 +759,7 @@
           V.appendChild(box);
         }
       } catch (err) {
+        if (stale()) return;
         V.appendChild(h('p.muted', 'Could not show this file: ' + err.message));
       }
     }

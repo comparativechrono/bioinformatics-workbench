@@ -1257,14 +1257,14 @@
   function reach(src, opts = {}) {
     const out = [];
     const hit = (w) => out.includes(w) || out.push(w);
-    const home = opts.home || '/home/student';
+    const home = opts.home || '/home/user';
     const allow = (opts.allow || []).map((p) => p.replace(/\/+$/, ''));
     const scripts = opts.scripts || new Set();
     const esc = (t) => t.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
     // $'…' and "…": without the quotes (and without the $ of $'…')
     const unq = (raw) => String(raw).replace(/\$(?=['"])/g, '').replace(/\\([\s\S])/g, '$1').replace(/['"]/g, '');
     const dots = (w) => /(^|\/)\.\.(\/|$)/.test(w);
-    // ~/x, $HOME/x, ${HOME}/x and /home/student/x are one place
+    // ~/x, $HOME/x, ${HOME}/x and /home/user/x are one place
     const homeRe = new RegExp('^' + esc(home) + '(?=/|$)');
     const canon = (w) => w.replace(/^(\$HOME\b|\$\{HOME\})/, '~').replace(homeRe, '~');
     const allowed = (w) => {
@@ -1535,7 +1535,7 @@
   /** A shell text in which a folder that is named in full is named by a variable instead. (For the script that is
       made from a run of the AI agent: the script runs in another folder than the agent did, so "the run's folder"
       must mean the folder the script is in.)
-        folder: { abs: '/home/student/runs/3-auto', home: '/home/student' } – the folder is then also recognised
+        folder: { abs: '/home/user/runs/3-auto', home: '/home/user' } – the folder is then also recognised
                 as ~/runs/3-auto, $HOME/runs/3-auto, ${HOME}/runs/3-auto and "$HOME"/runs/3-auto
         name:   the variable, RUN_FOLDER
       What the folder becomes depends on where it stands:
@@ -1544,8 +1544,8 @@
         inside '…' and $'…'                 the quote is closed and opened again around "$RUN_FOLDER"
         in a here-document that is taken as it is (<<'EOF')   the here-document becomes one that is expanded (<<EOF):
                                             $RUN_FOLDER for the folder, and \ before every $, ` and \ of its text
-      Only the folder itself and paths below it: /home/student/runs/3-auto_old is another one, and so is
-      /mnt/home/student/runs/3-auto. Inside '…' and such a here-document only the full path counts (~ and $HOME are
+      Only the folder itself and paths below it: /home/user/runs/3-auto_old is another one, and so is
+      /mnt/home/user/runs/3-auto. Inside '…' and such a here-document only the full path counts (~ and $HOME are
       plain text there).
       → { text, left }: left says that the folder is still named somewhere in the text (where ~ is not expanded,
       in a comment, after a variable …). It never throws. */
@@ -2297,7 +2297,7 @@
   };
   Shell.prototype.saveState = function () {
     const st = this._top();
-    return { vars: copyVars(st.vars), flags: Object.assign({}, st.flags), funcs: Object.assign({}, st.funcs), traps: Object.assign({}, st.traps), args: st.args.slice(), readonly: st.readonly ? new Set(st.readonly) : null, lastCode: this.lastCode, oldpwd: this.oldpwd, exported: new Set(st.exported || []), attrs: st.attrs ? new Map(st.attrs) : null, shopt: st.shopt ? Object.assign({}, st.shopt) : null, xfuncs: st.xfuncs ? new Set(st.xfuncs) : null, rand: st.rand ? Object.assign({}, st.rand) : null, noRandom: !!st.noRandom, sec0: st.sec0 != null ? st.sec0 : null, signals: st.signals ? Object.assign({}, st.signals) : null, umask: st.umask != null ? st.umask : null, saved: true };
+    return { user: this._user, vars: copyVars(st.vars), flags: Object.assign({}, st.flags), funcs: Object.assign({}, st.funcs), traps: Object.assign({}, st.traps), args: st.args.slice(), readonly: st.readonly ? new Set(st.readonly) : null, lastCode: this.lastCode, oldpwd: this.oldpwd, exported: new Set(st.exported || []), attrs: st.attrs ? new Map(st.attrs) : null, shopt: st.shopt ? Object.assign({}, st.shopt) : null, xfuncs: st.xfuncs ? new Set(st.xfuncs) : null, rand: st.rand ? Object.assign({}, st.rand) : null, noRandom: !!st.noRandom, sec0: st.sec0 != null ? st.sec0 : null, signals: st.signals ? Object.assign({}, st.signals) : null, umask: st.umask != null ? st.umask : null, saved: true };
   };
   Shell.prototype.restoreState = function (s) {
     const st = this._top();
@@ -2327,6 +2327,8 @@
     }
     st.sec0 = s.sec0 != null ? s.sec0 : null;
     st.signals = s.signals ? Object.assign({}, s.signals) : null;
+    // (the name $USER and $LOGNAME hold in this state – see _userVars)
+    this._user = s.saved ? (s.user != null ? s.user : this._user) : typeof st.vars.USER === 'string' ? st.vars.USER : this._user;
     st.umask = s.umask != null ? s.umask : null;
     st.inTrap = 0;
     st.inErr = false;
@@ -2346,6 +2348,19 @@
     st.stdin = null;
     this.lastCode = s.lastCode || 0;
     this.oldpwd = s.oldpwd; // where "cd -" goes
+  };
+  /** $USER and $LOGNAME follow the name that commands run under (MG.user.login in core.js): the person gave the
+      workbench another name, or the AI agent runs a command (as "user"). Only where they still hold the name before –
+      a value a script gave them stays. */
+  Shell.prototype._userVars = function (st) {
+    const now = MG.user.login(), was = this._user;
+    this._user = now;
+    if (was != null && was !== now) for (const k of ['USER', 'LOGNAME']) if (st.vars[k] === was) st.vars[k] = now;
+    // (the environment of a new shell – freshState, which the agent starts from – has the person's name, whoever runs
+    // the command just now: the agent's first command then gives it "user")
+    const person = MG.user.name(), had = this._person;
+    this._person = person;
+    if (this.env0 && had != null && had !== person) for (const k of ['USER', 'LOGNAME']) if (this.env0[k] === had) this.env0[k] = person;
   };
   Shell.prototype.freshState = function () {
     this.restoreState({ vars: this.env0, flags: {}, funcs: {}, traps: {}, args: [], readonly: null, lastCode: 0 });
@@ -2847,7 +2862,7 @@
         while (j < n && /[\w.+-]/.test(raw[j])) j++;
         if (j < n && raw[j] !== '/' && !(assignAt != null && raw[j] === ':')) return null;
         const who = raw.slice(k + 1, j);
-        const home = who === '' ? (typeof st.vars.HOME === 'string' ? st.vars.HOME : this.fs.home) : who === '+' ? this.fs.cwd : who === '-' ? this.oldpwd || null : who === (st.vars.USER || 'student') ? this.fs.home : who === 'root' ? '/root' : null;
+        const home = who === '' ? (typeof st.vars.HOME === 'string' ? st.vars.HOME : this.fs.home) : who === '+' ? this.fs.cwd : who === '-' ? this.oldpwd || null : who === MG.user.login() ? this.fs.home : who === 'root' ? '/root' : null;
         return home == null ? null : { text: home, next: j };
       };
       if (raw[0] === '~' && assignAt == null) {
@@ -3297,7 +3312,7 @@
       if (o === 'E') return each((s) => settleRaw(unescapeC(s)));
       if (o === 'P') {
         const host = String(st.vars.HOSTNAME || 'biolab'), pretty = (d) => this.fs.pretty(d);
-        return each((s) => s.replace(/\\(\[|\]|[uhHwW$nrtaes\\])/g, (x, c) => ({ u: String(st.vars.USER || 'student'), h: host.split('.')[0], H: host, w: pretty(this.fs.cwd), W: this.fs.cwd === this.fs.home ? '~' : this.fs.cwd.split('/').pop() || '/', $: '$', n: '\n', r: '\r', t: new Date().toTimeString().slice(0, 8), a: '\x07', e: '\x1b', s: 'bash', '\\': '\\', '[': '', ']': '' })[c]));
+        return each((s) => s.replace(/\\(\[|\]|[uhHwW$nrtaes\\])/g, (x, c) => ({ u: MG.user.login(), h: host.split('.')[0], H: host, w: pretty(this.fs.cwd), W: this.fs.cwd === this.fs.home ? '~' : this.fs.cwd.split('/').pop() || '/', $: '$', n: '\n', r: '\r', t: new Date().toTimeString().slice(0, 8), a: '\x07', e: '\x1b', s: 'bash', '\\': '\\', '[': '', ']': '' })[c]));
       }
       if (o === 'A') {
         if (m[2] !== undefined && (m[3] === '@' || m[3] === '*')) {
@@ -5421,6 +5436,7 @@
     // the arrow-up key must not hand the student a command of the agent's, to be run in another folder
     if (!(this.term && this.term.agentCmd)) text.split('\n').forEach((l) => l.trim() && this.history.push(l.trim()));
     const st = this._top();
+    this._userVars(st);
     let ast;
     this.endedBy = null;
     try {
@@ -5497,6 +5513,8 @@
       io.err(broken);
       return 2;
     }
+    // (a command of a notebook, of Snakemake or of Galaxy: $USER and $LOGNAME follow the name too – see _userVars)
+    if (!opts.st) this._userVars(this._top());
     const st = this._process(opts.st || this._top());
     if (opts.shopt) st.shopt = Object.assign({}, opts.shopt);
     if (opts.stdin != null) st.stdin = devStream(await this._stream(opts.stdin), opts); // (else: the input of the caller, shared)
@@ -5550,6 +5568,7 @@
     if (/\r\n/.test(text) && io.note) io.note(`${path} has the line ends of Windows: a carriage return (shown as ^M or \\r) at the end of each line. bash takes that character for a part of the last word of the line – messages such as  $'\\r': command not found  come from it. Take them away:  sed -i 's/\\r$//' ${path}`);
     // bash reads a script command by command: what comes before a syntax error still runs
     const parent = opts.st || this._top();
+    if (!opts.st) this._userVars(parent);
     const loose = parseLoose(text, `${path}: `, opts.sourced ? extOn(parent) : opts.shopt && opts.shopt.extglob);
     const ast = loose.ast;
     let broken = loose.broken;
@@ -6632,16 +6651,16 @@
   B.logname = (ctx) => {
     const a = ctx.args[0];
     if (a != null) throw /^-./.test(a) ? MG.shellUtil.refuseOption('logname', a) : userErr(`logname: extra operand \u2018${a}\u2019\nTry 'logname --help' for more information.`);
-    return ctx.out('student\n');
+    return ctx.out(MG.user.login() + '\n');
   };
   B.groups = (ctx) => {
     const names = ctx.args.filter((a) => !/^-./.test(a));
     const bad = ctx.args.find((a) => /^-./.test(a));
     if (bad) throw MG.shellUtil.refuseOption('groups', bad);
-    if (!names.length) return ctx.out('student\n');
+    if (!names.length) return ctx.out(MG.user.login() + '\n');
     let code = 0;
     for (const n of names) {
-      if (n === 'student' || n === 'root') ctx.out(`${n} : ${n}\n`);
+      if (n === MG.user.login() || n === 'root') ctx.out(`${n} : ${n}\n`);
       else {
         ctx.err(`groups: \u2018${n}\u2019: no such user\n`);
         code = 1;

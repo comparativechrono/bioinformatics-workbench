@@ -14,8 +14,25 @@
   MG.page = MG.page || {};
   MG.actions = MG.actions || {};
 
-  const HOME = '/home/student';
+  const HOME = '/home/user';
   MG.app.HOME = HOME;
+  /* The home folder was /home/student until October 2026. What the browser kept with that name moves to /home/user:
+     the files (project.restore), and the paths in what the page remembers – the files that were open, the folders
+     that were unfolded, the terminal's history, Galaxy's history, the conda environments. (A path written with the
+     old name still leads home: see vfs.js.) */
+  const OLD_HOME = '/home/student';
+  function moveOldHome() {
+    try {
+      const pfx = (CFG.storePrefix || 'genomics') + ':';
+      for (const k of Object.keys(localStorage)) {
+        if (!k.startsWith(pfx)) continue;
+        const v = localStorage.getItem(k);
+        if (v && v.includes(OLD_HOME)) localStorage.setItem(k, v.replace(/\/home\/student(?![A-Za-z0-9_.-])/g, HOME));
+      }
+    } catch (e) {
+      /* (the browser keeps nothing for the page) */
+    }
+  }
   MG.app.PROJECT = HOME; // (Galaxy and the assistant save things relative to this)
   const abs = (u) => new URL(u, location.href).href;
   const EX_TIME = Date.parse('2026-10-01T09:00:00Z');
@@ -34,7 +51,8 @@
       fs.put(f.path, { kind: 'url', url: f.url, size: f.size, protected: true, readonly: true, mtime: f.mtime });
     }
     for (const [p, e] of fs.entries) if (e.kind === 'dir' && (p === '/data' || p.startsWith('/data/'))) e.protected = true;
-    await MG.project.restore(fs, [HOME, '/galaxy']);
+    moveOldHome();
+    await MG.project.restore(fs, [HOME, '/galaxy'], [[OLD_HOME, HOME]]);
     fs.cwd = HOME;
     // the first visit: a folder of notebooks to start from (a file that is there already is left alone)
     if (!store.get('seeded', false)) {
@@ -63,7 +81,8 @@
       hostname: CFG.hostname || 'workbench',
       env: {},
       welcome:
-        'This is a Linux terminal (bash) with real bioinformatics programs, running in your browser. Your files: ~ (/home/student). Examples (read-only): /data/examples. Type  help  for the programs,  man NAME  for one of them.'
+        `This is a Linux terminal (bash) with real bioinformatics programs, running in your browser. Your files: ~ (${HOME}). Examples (read-only): /data/examples. Type  help  for the programs,  man NAME  for one of them.` +
+        (MG.user.name() === MG.user.DEFAULT ? ' To see your name in place of user, click “user” at the top of the page.' : '')
     });
     MG.app.nbApp = new MG.NotebookApp(document.getElementById('nbRoot'), { fs, dir: HOME + '/notebooks' });
     const last = store.get('nbOpen', null);

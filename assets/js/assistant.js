@@ -29,7 +29,7 @@
   const CFG = MG.config || {};
   const KEY_NAME = (CFG.storePrefix || 'biowb') + '-ai-key';
   const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
-  const HOME = () => (MG.app && MG.app.HOME) || '/home/student';
+  const HOME = () => (MG.app && MG.app.HOME) || '/home/user';
   const pretty = (p) => (MG.app && MG.app.fs ? MG.app.fs.pretty(p) : p);
   const TAB_NAMES = { notebook: 'Notebook', terminal: 'Terminal', editor: 'Files', galaxy: 'Galaxy', apis: 'Databases', viewer: '3D viewer', igv: 'Genome browser', assistant: 'AI assistant' };
   const stamp = () => {
@@ -227,7 +227,7 @@
     KeyError: 'That key is not in the dictionary – or that column is not in the table. Keys are case-sensitive: print the dictionary, or `df.columns`, to see what is there.',
     IndexError: 'An index is out of range: a list of 3 items has positions 0, 1 and 2.',
     TypeError: 'A value of the wrong type was used – for example a number added to a string (`"NA" + 1`), or something called that is not a function.',
-    FileNotFoundError: 'The file is not where Python looked. A notebook\'s code runs in the notebook\'s folder (`import os; os.getcwd()` shows it): give the path from there, or the full path (`/data/examples/tables/yeast_genes.csv`, `/home/student/…`).',
+    FileNotFoundError: 'The file is not where Python looked. A notebook\'s code runs in the notebook\'s folder (`import os; os.getcwd()` shows it): give the path from there, or the full path (`/data/examples/tables/yeast_genes.csv`, `/home/user/…`).',
     ModuleNotFoundError: 'That package is not installed yet. Install it with `%pip install NAME` in a cell – for Biopython `%pip install biopython`, then `import Bio`. Packages that need compiled code that was not built for the browser cannot be installed.',
     ImportError: 'The package is there, but that name is not in it (or not in this version): check the spelling and the package\'s documentation.',
     AttributeError: 'The object has no attribute or method of that name – often a typo, or a method of another kind of object (`type(x)` shows what it is).',
@@ -976,14 +976,14 @@
     /* ---------------- the chat ---------------- */
     systemPrompt() {
       return [
-        'You are the AI assistant of a bioinformatics workbench: a website where university students – most of them MSc students in bioinformatics or the biomedical sciences, many new to programming – analyse data after a series of practicals. Everything runs in their web browser; nothing is installed.',
+        'You are the AI assistant of a bioinformatics workbench: a website where people – researchers, staff and students in the life sciences, many of them new to programming – analyse biological data. Everything runs in their web browser; nothing is installed.',
         '',
         'The workbench:',
         ...envLines(),
         '- Its tabs: Notebook (Jupyter-style notebooks in Python or R, saved as .ipynb files; in a Python cell !command runs a terminal command, and a cell that begins with %%bash runs terminal commands – in R notebooks too), Terminal, Files (a file browser and editor), Galaxy (a small Galaxy with the same programs), Databases (search forms for UniProt, PDB, Ensembl, NCBI, EBI BLAST and others, each with code to repeat the search), 3D viewer (NGL, for PDB and AlphaFold structures), Genome browser (igv.js: BAM, VCF, BED and GFF files), and AI assistant (you).',
         '',
         'How to answer:',
-        '- Be brief, clear and friendly. Explain in plain words what code does and why – the users are learning.',
+        '- Be brief, clear and friendly. Explain in plain words what code does and why – many users are learning.',
         '- Put Python code in ```python blocks, R code in ```r blocks and terminal commands in ```bash blocks: each block gets a button that puts it into a notebook or runs it in the terminal. Give complete code that runs in this environment, with real paths (/data/examples/…, ~/…). To offer a file, put its path after the language: ```python scripts/count_genes.py',
         '- Never invent program options, functions, results or file contents. If you are not sure, say so, and say how to check (PROGRAM --help, help(name) in Python, ?name in R).',
         '- Do not claim to have run code or seen results that the user has not shown you.',
@@ -1024,7 +1024,8 @@
       } catch (e) {
         console.error(e);
       }
-      return parts.join('\n\n') + '\n\n';
+      // (the name the person gave the workbench stays in the browser: "user" where it names the user – ls -l, whoami …)
+      return MG.user.mask(parts.join('\n\n')) + '\n\n';
     }
     /** the user's files: names and sizes, two folders deep */
     fileList(max = 60) {
@@ -1180,7 +1181,9 @@
       const code = await T.exec(cmd, opts);
       const els = Array.from(T.outEl.children).slice(before + 1);
       const text = els.filter((x) => !x.classList.contains('ask')).map((x) => x.textContent + (x.classList.contains('note') ? '\n' : '')).join('');
-      return { code, text };
+      // (what goes to the AI service: the agent runs as "user" – and where the person's name still names the user in
+      // what it printed, a log of the person's with the output of whoami or ls -l in it, "user" takes its place)
+      return { code, text: opts && opts.agent ? MG.user.mask(text) : text };
     }
     /** While a step of the agent runs, a change to a file that its command did not reach – a notebook saved, a file
         edited in Files, a cell that wrote a file – is the user's: it is not undone after the step. (The terminal
@@ -1767,7 +1770,7 @@
       const q = question || this.input.value.trim() || '[write your question here]';
       const ctx = await this.contextFor(extra || {});
       return [
-        'I am a student using a bioinformatics workbench that runs in the web browser: Jupyter-style notebooks in Python (Pyodide) and R (webR), and a bash-like terminal with bioinformatics programs compiled to WebAssembly.',
+        'I am using a bioinformatics workbench that runs in the web browser: Jupyter-style notebooks in Python (Pyodide) and R (webR), and a bash-like terminal with bioinformatics programs compiled to WebAssembly.',
         ...envLines(),
         '',
         ctx.trim(),

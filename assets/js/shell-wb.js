@@ -325,7 +325,7 @@
         ctx.out(envTable());
         return 0;
       }
-      ctx.out(`\n     active environment : ${C().active}\n    active env location : ${C().prefix(C().active)}\n       user config file : /home/student/.condarc\n          conda version : ${C().VERSION}\n       python version : ${pyVersion()}\n       base environment : ${C().ROOT}  (writable)\n           channel URLs : https://conda.anaconda.org/conda-forge/linux-64\n                          https://conda.anaconda.org/bioconda/linux-64\n               platform : linux-64 (WebAssembly in your browser)\n\n`);
+      ctx.out(`\n     active environment : ${C().active}\n    active env location : ${C().prefix(C().active)}\n       user config file : ${HOME()}/.condarc\n          conda version : ${C().VERSION}\n       python version : ${pyVersion()}\n       base environment : ${C().ROOT}  (writable)\n           channel URLs : https://conda.anaconda.org/conda-forge/linux-64\n                          https://conda.anaconda.org/bioconda/linux-64\n               platform : linux-64 (WebAssembly in your browser)\n\n`);
       return 0;
     }
     if (sub === 'list') {
@@ -1103,6 +1103,9 @@
       const mtime = parseInt(str(off + 136, 12).trim() || '0', 8) * 1000;
       const mode = parseInt(str(off + 100, 8).trim() || '644', 8);
       const type = String.fromCharCode(buf[off + 156] || 48);
+      // (the owner and the group, by name – the ustar fields; an old archive without them: by number)
+      const owner = str(off + 265, 32) || String(parseInt(str(off + 108, 8).trim() || '0', 8) || 0);
+      const group = str(off + 297, 32) || String(parseInt(str(off + 116, 8).trim() || '0', 8) || 0);
       const prefix = str(off + 345, 155);
       if (prefix && dec.decode(buf.subarray(off + 257, off + 262)) === 'ustar') name = prefix + '/' + name;
       const data = buf.subarray(off + 512, off + 512 + size);
@@ -1120,7 +1123,7 @@
         name = longName;
         longName = null;
       }
-      out.push({ name, type: type === '5' ? 'dir' : type === '0' || type === '\0' || type === '7' ? 'file' : 'other', data, mtime, mode });
+      out.push({ name, type: type === '5' ? 'dir' : type === '0' || type === '\0' || type === '7' ? 'file' : 'other', data, mtime, mode, owner, group });
     }
     return out;
   }
@@ -1155,8 +1158,8 @@
       hdr[156] = (f.dir ? '5' : '0').charCodeAt(0);
       field(hdr, 257, 6, 'ustar ');
       field(hdr, 263, 2, ' \0');
-      field(hdr, 265, 32, 'student');
-      field(hdr, 297, 32, 'student');
+      field(hdr, 265, 32, MG.user.login());
+      field(hdr, 297, 32, MG.user.login());
       let sum = 0;
       for (let i = 0; i < 512; i++) sum += i >= 148 && i < 156 ? 32 : hdr[i];
       field(hdr, 148, 8, sum.toString(8).padStart(6, '0') + '\0 ');
@@ -1259,7 +1262,14 @@
     if (bytes[0] === 0x1f && bytes[1] === 0x8b) bytes = await gunzipBytes(bytes);
     const entries = tarEntries(bytes);
     if (mode === 't') {
-      ctx.out(entries.map((e) => (verbose ? `${e.type === 'dir' ? 'd' : '-'}rw-r--r-- ${String(e.data.length).padStart(10)} ${new Date(e.mtime).toISOString().slice(0, 16).replace('T', ' ')} ` : '') + e.name).join('\n') + (entries.length ? '\n' : ''));
+      // (as GNU tar: owner/group and the size take at least 18 characters together – and as many as the widest so far)
+      let ugsw = 18;
+      const ugs = (e) => {
+        const ug = `${e.owner}/${e.group}`, size = String(e.data.length), pad = ug.length + size.length;
+        if (pad > ugsw) ugsw = pad;
+        return ug + ' ' + size.padStart(ugsw - pad + size.length);
+      };
+      ctx.out(entries.map((e) => (verbose ? `${e.type === 'dir' ? 'd' : '-'}rw-r--r-- ${ugs(e)} ${new Date(e.mtime).toISOString().slice(0, 16).replace('T', ' ')} ` : '') + e.name).join('\n') + (entries.length ? '\n' : ''));
       return 0;
     }
     const base = ctx.fs.resolve(dir || '.');
@@ -1308,7 +1318,7 @@
   };
 
   /* ------------------------------------------------------------------ the session as a notebook or a script */
-  const HOME = () => (MG.app && MG.app.HOME) || '/home/student';
+  const HOME = () => (MG.app && MG.app.HOME) || '/home/user';
   const tilde = (p) => (p === HOME() ? '~' : p.startsWith(HOME() + '/') ? '~' + p.slice(HOME().length) : p);
   const qpath = (p) => (/^[\w~/.\-+]+$/.test(p) ? p : "'" + p.replace(/'/g, "'\\''") + "'");
   MG.termSession = {

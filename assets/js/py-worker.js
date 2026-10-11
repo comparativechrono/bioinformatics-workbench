@@ -25,7 +25,10 @@ let queue = Promise.resolve();
 const post = (m, transfer) => self.postMessage(m, transfer || []);
 const status = (text) => post({ type: 'status', text });
 
-let HOME = '/home/student';
+let HOME = '/home/user';
+// the name of the person at the workbench: USER and LOGNAME (see setUser)
+const NAME_OK = /^[A-Za-z_][A-Za-z0-9_.-]{0,31}$/;
+let USER = 'user';
 let ROOTS = [HOME];
 
 /* ------------------------------------------------------------------
@@ -562,7 +565,7 @@ def _hints(e, code):
             elif mod:
                 hints.append(f"Packages that are part of Pyodide load by themselves when imported. {mod} is not one of them: try  %pip install {mod}  (it works for pure-Python packages), then run this cell again.")
         elif name == 'FileNotFoundError':
-            hints.append(f"The notebook runs in {os.getcwd()}; relative paths start there. Your files are in /home/student (~), the examples in /data/examples. Check the name in the Files tab.")
+            hints.append(f"The notebook runs in {os.getcwd()}; relative paths start there. Your files are in {os.path.expanduser('~')} (~), the examples in /data/examples. Check the name in the Files tab.")
         elif name == 'UnboundLocalError':
             hints.append("Inside a function, this variable is both used and given a new value with =, so Python treats it as a new local variable. Give the new value another name.")
         elif name == 'RecursionError':
@@ -1088,12 +1091,21 @@ async function init(m) {
   }
   HOME = m.home || HOME;
   ROOTS = [HOME];
-  pyodide = await loadPyodide({ indexURL: m.indexURL, env: { HOME, USER: m.user || 'student', MPLBACKEND: 'Agg' } });
+  USER = NAME_OK.test(m.user || '') ? m.user : 'user';
+  pyodide = await loadPyodide({ indexURL: m.indexURL, env: { HOME, USER, LOGNAME: USER, MPLBACKEND: 'Agg' } });
   const pre = (m.preload || []).concat(['micropip']);
   status('Loading ' + pre.filter((x) => x !== 'micropip').join(', ') + '…');
   await pyodide.loadPackage(pre, { messageCallback: () => {}, errorCallback: () => {} });
   status('Setting up the files…');
   mkdirp(HOME);
+  // (the home folder was /home/student before: a path written with that name still leads home)
+  if (HOME !== '/home/student') {
+    try {
+      pyodide.FS.symlink(HOME, '/home/student');
+    } catch (e) {
+      /* there already */
+    }
+  }
   for (const f of m.files || []) {
     try {
       const r = await fetch(f.url);
@@ -1195,7 +1207,19 @@ function doneWithChanges(msg) {
   post(msg, transferOf(ch));
 }
 
+/** USER and LOGNAME of Python: the name of the person at the workbench (or "user" for the AI agent's commands) */
+function setUser(name) {
+  if (!name || name === USER || !NAME_OK.test(name) || !pyodide) return;
+  try {
+    pyodide.runPython(`import os\nos.environ['USER'] = os.environ['LOGNAME'] = ${JSON.stringify(name)}`);
+    USER = name;
+  } catch (e) {
+    /* (Python keeps the name it had) */
+  }
+}
+
 async function run(m) {
+  setUser(m.user);
   runId = m.id;
   resetOutput();
   const t0 = performance.now();
@@ -1221,6 +1245,7 @@ async function run(m) {
 }
 
 async function termRun(m) {
+  setUser(m.user);
   termId = m.id;
   tbuf = [];
   let code = 1;

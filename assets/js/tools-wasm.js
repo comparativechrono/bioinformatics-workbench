@@ -373,10 +373,11 @@
       }
       await this.cleanupPipes(fs,stdin);
       // Paths in the student's home and in the example data are given to the programs as typed: each program has the
-      // links /home/student and /data -> the shared folder (see links below), and prints the names it was given (in the
+      // links /home/user (the home folder) and /data -> the shared folder (see links below), and prints the names it was given (in the
       // @PG lines of SAM files, the headers of VCF files). Other absolute paths (/tmp/…) are in the shared folder under ROOT.
       const home=fs.home,inHome=p=>p===home||p.startsWith(home+'/'),inData=p=>p==='/data'||p.startsWith('/data/');
-      const pathToken=p=>p.startsWith(ROOT)||p.startsWith('/dev/')||inHome(p)||(inData(p)&&p===MG.path.norm(p))?p:(p.startsWith('/')?this.apath(MG.path.norm(p)):p);
+      // (a path below /home/student – the home folder until October 2026 – is one below the home folder: see vfs.js)
+      const pathToken=p=>(p=MG.VFS.unalias(fs,p),p.startsWith(ROOT)||p.startsWith('/dev/')||inHome(p)||(inData(p)&&p===MG.path.norm(p))?p:(p.startsWith('/')?this.apath(MG.path.norm(p)):p));
       // What is no path goes to the program as it was typed: a pattern (grep /tmp, awk '/chr1/'), a set of characters
       // (tr / _), a delimiter (cut -d /). Of the rest, absolute paths and absolute output destinations are rewritten.
       const kinds=MG.shellLang&&MG.shellLang.argKinds?MG.shellLang.argKinds(ctx.name||program,args):args.map(()=>'path');
@@ -508,7 +509,7 @@
     },
     /* featureCounts and Salmon (see THREADED): the command runs in a worker of its own (threads-worker.mjs). It gets
        the files that its arguments name – of a folder, everything in it; not what it is told to write (-o) – at the
-       paths they have in the programs' file system, the links /home/student and /data, every folder (it may write into
+       paths they have in the programs' file system, the links of the home folder and /data, every folder (it may write into
        any of them), its working folder and its input. What it wrote is put into the programs' file system, and the run
        goes on as for any other program: importChanges finds the new files. The answer has the form of execIO's. */
     threadedWorker:null,

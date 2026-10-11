@@ -38,10 +38,18 @@
     const n = normPath(p);
     return n.slice(n.lastIndexOf('/') + 1);
   }
+  /* The home folder was /home/student until October 2026. A path below that name – in a notebook or a script of that
+     time – still leads into the home folder. The name itself is not there (it is not listed in /home): as for a
+     link on Linux, rm -rf /home/student or mv /home/student … must not take the home folder with them. */
+  const OLD_HOME = '/home/student';
+  function unalias(fs, abs) {
+    if (typeof abs !== 'string' || !fs || fs.home === OLD_HOME || !abs.startsWith(OLD_HOME + '/')) return abs;
+    return fs.home + abs.slice(OLD_HOME.length);
+  }
 
   class VFS {
     constructor(home) {
-      this.home = home || '/home/student';
+      this.home = home || '/home/user';
       this.cwd = this.home;
       this.entries = new Map();
       this.listeners = [];
@@ -66,8 +74,8 @@
       p = String(p);
       if (p === '~') return this.home;
       if (p.startsWith('~/')) return normPath(this.home + '/' + p.slice(2));
-      if (p.startsWith('/')) return normPath(p);
-      return normPath((cwd || this.cwd) + '/' + p);
+      if (p.startsWith('/')) return unalias(this, normPath(p));
+      return unalias(this, normPath((cwd || this.cwd) + '/' + p));
     }
     /** The file system as the shell sees it: the same files, but a path is taken as it is written. On Linux "~" is
         the home folder only where the shell itself puts the folder in its place – at the start of a word that is not
@@ -87,7 +95,7 @@
         if (p == null || p === '') return normPath(cwd || fs.cwd);
         p = String(p);
         const base = cwd || fs.cwd;
-        if (!((p.length > 1 && p.endsWith('/')) || /(^|\/)\.\.?(\/|$)/.test(p))) return normPath(p.startsWith('/') ? p : base + '/' + p);
+        if (!((p.length > 1 && p.endsWith('/')) || /(^|\/)\.\.?(\/|$)/.test(p))) return unalias(fs, normPath(p.startsWith('/') ? p : base + '/' + p));
         let cur = p.startsWith('/') ? '/' : normPath(base), start = !p.startsWith('/');
         for (const seg of p.split('/')) {
           if (seg === '') continue;
@@ -98,7 +106,7 @@
             }
             if (seg === '..') cur = dirname(cur);
           } else {
-            cur = cur === '/' ? '/' + seg : cur + '/' + seg;
+            cur = unalias(fs, cur === '/' ? '/' + seg : cur + '/' + seg);
             start = false;
           }
         }
@@ -627,6 +635,7 @@
   }
 
   MG.VFS = VFS;
+  VFS.unalias = unalias;
   MG.path = { norm: normPath, dirname, basename };
   MG.humanSize = humanSize;
   MG.globRe = globRe;

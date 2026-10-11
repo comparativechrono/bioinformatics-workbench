@@ -2602,7 +2602,7 @@ def _banner(out, wf, argv, host):
         f"  Workflow ID: {uuid.uuid4()}",
         f"  Platform: {host.get('platform', sys.platform)}",
         f"  Host: {host.get('host', 'browser')}",
-        f"  User: {host.get('user', 'student')}",
+        f"  User: {host.get('user', 'user')}",
         f"  Snakemake version: {VERSION}" + (f" ({EDITION})" if host.get("edition", True) else ""),
         f"  Python version: {host.get('python', sys.version.splitlines()[0])}",
         f"  Command: {exe} {' '.join(argv)}".rstrip(),

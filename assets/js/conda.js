@@ -14,7 +14,7 @@
   const MG = window.MG;
   const { store } = MG;
 
-  const ROOT = '/home/student/miniforge3';
+  const ROOT = '/home/user/miniforge3';
   const CONDA_VERSION = '26.7.3';
 
   /* everything this browser can provide: name -> version, build, channel, programs */

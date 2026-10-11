@@ -24,6 +24,15 @@ body.dragging { user-select: none; cursor: col-resize; }
 .store-status[data-state='busy'] i { background: #e0b341; box-shadow: 0 0 0 3px rgba(224, 179, 65, 0.2); }
 .store-status[data-state='off'] i { background: #e5675e; box-shadow: 0 0 0 3px rgba(229, 103, 94, 0.2); }
 .store-status[data-state='off'] { color: #f3c2bd; }
+/* the person's name (workbench.js: initUser, nameDialog) */
+#userBtn .user-name { max-width: 16ch; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.user-form > p:first-child { margin-top: 0; color: var(--ink-2); line-height: 1.5; }
+.user-label { display: block; font-weight: 650; margin: 14px 0 5px; }
+.user-form .prompt-input { box-sizing: border-box; font-family: var(--mono); font-size: 0.95rem; }
+.user-prev { margin: 12px 0 0; }
+.user-prompt { font-family: var(--mono); font-size: 0.88rem; background: #10263a; color: #cfeee6; padding: 3px 9px; border-radius: 6px; white-space: pre; }
+.user-note { min-height: 1.4em; margin: 8px 0 0; font-size: 0.84rem; color: var(--muted); }
+.user-note.bad { color: var(--bad); }
 
 /* ---------------- the help pane ---------------- */
 .help-pane { display: flex; flex-direction: column; background: var(--help-bg); color: var(--help-ink); min-width: 280px; max-width: 60%; }
@@ -197,7 +206,7 @@ label.check { display: inline-flex; align-items: center; gap: 8px; cursor: point
   body[data-page='workbench'].help-open .help-scrim { opacity: 1; pointer-events: auto; }
   body[data-page='workbench'] .bench { width: 100%; }
   .brand-sub, .store-status span { display: none; }
-  #fullBtn span, #projectBtn span { display: none; }
+  #fullBtn span, #projectBtn span, #userBtn span { display: none; }
   .wb-tab { padding: 7px 10px 8px; font-size: 0.84rem; }
   .nb-name { width: 18ch; }
   .nb-bar2 .tbtn span { display: none; }

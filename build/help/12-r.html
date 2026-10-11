@@ -42,7 +42,7 @@ ggplot(genes, aes(protein_length, protein_abundance, colour = factor(essential))
 <p>A data frame on the last line of a cell is shown as a table. The plots of a cell appear after its printed output. <code>ggsave("plot.png", width = 6, height = 4)</code> or <code>png("plot.png")</code> … <code>dev.off()</code> also write the picture as a file.</p>
 
 <h2>Files</h2>
-<p>R reads and writes your files like Python does: the working folder is the notebook's folder (<code>getwd()</code>), <code>~</code> means <code>/home/student</code>, and <code>/data/examples</code> is read-only.</p>
+<p>R reads and writes your files like Python does: the working folder is the notebook's folder (<code>getwd()</code>), <code>~</code> means <code>/home/user</code>, and <code>/data/examples</code> is read-only.</p>
 
 <h2>Programs and the terminal</h2>
 <p><code>system()</code> cannot start programs in the browser: use a <code>%%bash</code> cell in the R notebook instead. In the terminal, <code>Rscript script.R</code> and <code>Rscript -e '…'</code> run R code with the same R; their plots go to <code>Rplots.pdf</code> unless the script opens a <code>png()</code> device.</p>

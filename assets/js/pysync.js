@@ -15,7 +15,7 @@
 (function () {
   'use strict';
   const MG = window.MG;
-  const HOME = () => (MG.app && MG.app.HOME) || '/home/student';
+  const HOME = () => (MG.app && MG.app.HOME) || '/home/user';
   const MAX_SYNC = 300 * 1024 * 1024; // larger files stay out of Python's copy
 
   const under = (p) => p === HOME() || p.startsWith(HOME() + '/');
@@ -114,7 +114,7 @@
         exe: (MG.conda && MG.conda.which('snakemake')) || '/usr/bin/snakemake',
         platform: 'Linux-WebAssembly (Pyodide in your web browser)',
         host: MG.config.hostname || 'workbench',
-        user: 'student',
+        user: MG.user.login(),
         python: (v.python || '3.13') + ' (Pyodide)',
         cpus: Math.max(1, Math.min(8, navigator.hardwareConcurrency || 2)),
         hints: MG.store.get('smkHints', true)
@@ -200,7 +200,7 @@
               K.worker.postMessage({ type: 'smk-shell-result', sid: m.sid, code, changes }, transfer);
             }
           });
-          K.worker.postMessage({ type, id, argv, cwd: ctx.fs.cwd, host: this.host() });
+          K.worker.postMessage({ type, id, argv, cwd: ctx.fs.cwd, host: this.host(), user: MG.user.login() });
         });
         const code = await work;
         MG.bus.emit(type === 'smk' ? 'smk:run' : 'py:script', { argv, code, ok: code === 0, secs: (performance.now() - t0) / 1000, cwd: ctx.fs.cwd });

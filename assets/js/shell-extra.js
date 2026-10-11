@@ -890,7 +890,7 @@
       return (t) => outFiles.get(file).push(t);
     };
     const lsLine = (it) => {
-      const size = sizeOf(it.e), who = it.e.protected ? 'root    ' : 'student ', t = it.e.mtime || Date.now();
+      const size = sizeOf(it.e), who = (it.e.protected ? 'root' : MG.user.login()).padEnd(8), t = it.e.mtime || Date.now();
       return `${'0'.padStart(9)} ${String(it.e.kind === 'dir' ? 4 : Math.ceil(size / 4096) * 4).padStart(6)} ${MG.permText(it.e)} ${String(linksOf(it)).padStart(3)} ${who} ${who} ${String(size).padStart(8)} ${MG.time.strftime(Math.abs(Date.now() - t) > 15778800000 ? '%b %e  %Y' : '%b %e %H:%M', t, zone)} ${it.shown}\n`;
     };
     /* -printf FORMAT. %p the path, %f the name, %h the folder, %H the starting point, %P the path below it, %s the
@@ -969,7 +969,7 @@
             case 'F': return 'ext4';
             case 'm': return modeOf(it.e).toString(8);
             case 'u':
-            case 'g': return it.e.protected ? 'root' : 'student';
+            case 'g': return it.e.protected ? 'root' : MG.user.login();
             case 'c':
             case 't': return day('m');
             default: return '';
@@ -1099,7 +1099,7 @@
         case '-user':
         case '-group': {
           const name = need();
-          if (!/^(student|root|1000|0)$/.test(name)) throw userErr(`find: ${q(name)} is not the name of a known ${a.slice(1)}`);
+          if (!(name === MG.user.login() || /^(root|1000|0)$/.test(name))) throw userErr(`find: ${q(name)} is not the name of a known ${a.slice(1)}`);
           const root = name === 'root' || name === '0';
           return async (it) => !!it.e.protected === root;
         }
@@ -2979,9 +2979,9 @@
   B.open = B['xdg-open'] = async (ctx) => {
     if (forPerson(ctx)) return 1;
     const unknown = ctx.args.find((a) => /^-./.test(a));
-    if (unknown) throw userErr(`${ctx.name}: unknown option ${unknown}\nusage: open FILE   (shows a file: pictures, SVG, text, tables)`);
+    if (unknown) throw userErr(`${ctx.name}: unknown option ${unknown}\nusage: open FILE   (shows a file: pictures, SVG, PDF, text, tables)`);
     const f = ctx.args.filter((a) => !a.startsWith('-'))[0];
-    if (!f) throw userErr('usage: open FILE   (shows a file: pictures, SVG, text, tables)');
+    if (!f) throw userErr('usage: open FILE   (shows a file: pictures, SVG, PDF, text, tables)');
     const e = ctx.fs.get(f);
     if (!e) throw userErr(`open: ${f}: No such file or directory`);
     if (MG.app && MG.app.openFile) await MG.app.openFile(ctx.fs.resolve(f));
@@ -3151,9 +3151,9 @@ The name of the terminal that the input comes from (/dev/pts/0), or "not a tty" 
 The language settings as the programs see them: LANG, LC_ALL and the LC_ variables.   -a  the settings that exist here (C, C.utf8, POSIX)
   charmap  the encoding: UTF-8, or plain ASCII when the setting is C or POSIX (export LC_ALL=C: sort, grep, sed, wc and awk then work on bytes)`,
     logname: `Usage: logname
-The name of the user: student.`,
+The name of the user: user, or the name given to the workbench (the button with the name at the top of the page).`,
     groups: `Usage: groups [USER]...
-The groups of the user: student.`,
+The groups of the user: one, of the same name as the user.`,
     sync: `Usage: sync
 Wait until everything that was written is stored. In this terminal there is nothing to wait for.`,
     timeout: `Usage: timeout [OPTION] DURATION COMMAND [ARGUMENT]...

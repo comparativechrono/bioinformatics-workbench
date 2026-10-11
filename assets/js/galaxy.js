@@ -18,7 +18,7 @@
   const { h, esc, bus, toast, store } = MG;
   const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
   const GX_ROOT = '/galaxy';
-  const HOME = () => (MG.app && MG.app.HOME) || '/home/student';
+  const HOME = () => (MG.app && MG.app.HOME) || '/home/user';
   /** a word for the shell, in single quotes */
   const shq = (s) => "'" + String(s).replace(/'/g, "'\\''") + "'";
   /** a read-group value: letters, digits and . _ - : only */
