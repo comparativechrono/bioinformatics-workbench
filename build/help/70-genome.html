@@ -10,6 +10,7 @@
   <li><b>Hosted by the IGV team</b> – whole genomes, with their genes: human hg38 and hg19, mouse, zebrafish, fly, worm, yeast. They need the internet.</li>
   <li><b>A FASTA file of yours</b> – any FASTA file in your home folder, once it has an index: <code>samtools faidx genome.fa</code>.</li>
 </ul>
+<p>Another genome replaces the one shown, and the tracks you added to it go – they belong to that genome. If the new genome cannot be loaded (no internet, a server that does not answer), the one you had comes back with its tracks, and a message says why.</p>
 <div class="callout warn"><div class="co-t"><!--ICON:warning-->The chromosome names must match</div><p>A track is drawn only on a genome whose chromosome (sequence) names are the ones in the file. Reads mapped to <code>reference.fa</code> are on <code>human_CYP2C19</code>, and show only on the example genome; a VCF file that says <code>chr10</code> needs hg19 or hg38 – the one it was made on.</p></div>
 
 <h2>Add your files</h2>
@@ -17,7 +18,7 @@
   <li><b>Add my files…</b> lists the files among yours that the browser can show: BAM (with its <code>.bai</code> index – <code>samtools index</code> makes it), VCF (<code>.vcf</code>, or <code>.vcf.gz</code> with its <code>.tbi</code>), BED, GFF and GTF, bedGraph, wig, bigWig and bigBed.</li>
   <li>In the terminal: <code>igv mapped.bam calls.vcf.gz</code>, and <code>igv --locus human_CYP2C19:11,566-11,666</code> to go somewhere.</li>
   <li>From the Files tab (⋯ → <i>Show in the Genome browser</i>; a FASTA file: <i>Use as the genome</i>), from a Galaxy dataset (<!--ICON:genome-->), and from the Ensembl and UCSC cards of the Databases tab.</li>
-  <li><b>From my computer…</b> shows files from your computer without copying them into your files – choose a BAM file together with its index.</li>
+  <li><b>From my computer…</b> shows files from your computer without copying them into your files – choose a BAM file together with its index, or a FASTA file with its <code>.fai</code> to use it as the genome.</li>
 </ul>
 <p>Map the example reads and look at them:</p>
 <pre class="code" data-run="term"><code>mkdir -p ~/igv &amp;&amp; cd ~/igv
