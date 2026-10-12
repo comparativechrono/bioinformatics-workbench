@@ -1,10 +1,12 @@
 /* Real, pinned programs compiled to WebAssembly (Biowasm builds; Bowtie 2, diff and cmp built for
- * this practical; BWA, BWA-MEM2, HISAT2, FreeBayes, StringTie, kallisto, mosdepth, featureCounts and Salmon from the
- * genomics-wasm ports). One shared filesystem backs the terminal and the AI agent. Pipes use
- * byte-preserving temporary files (run one after another, not as concurrent processes).
+ * this practical; BWA, BWA-MEM2, HISAT2, FreeBayes, StringTie, kallisto, mosdepth, featureCounts, Salmon, Cutadapt,
+ * LoFreq, SomaticSniper and Strelka2 from the genomics-wasm ports). One shared filesystem backs the terminal and the
+ * AI agent. Pipes use byte-preserving temporary files (run one after another, not as concurrent processes).
  * Aioli's local execIO patch binds real file descriptors and reports each exit status.
- * featureCounts and Salmon count on several threads: each command runs in a worker of its own (threads-worker.mjs),
- * with the files it needs, and what it writes comes back into the shared file system (see execThreaded).
+ * featureCounts, Salmon, Cutadapt, LoFreq, SomaticSniper and Strelka2's programs run as genomics-wasm built them: each
+ * command in a worker of its own (threads-worker.mjs; cutadapt-worker.mjs for Cutadapt, a Python program), with the
+ * files it needs, and what it writes comes back into the shared file system (see execWorker). lofreq somatic and
+ * Strelka's runWorkflow.py are workflows of several such commands (see somatic.js).
  */
 (function () {
   'use strict';
@@ -47,18 +49,29 @@
     if(!(st&&st.envEmptied))out.push('_='+(name.includes('/')?name:'/usr/bin/'+name));
     return out;
   }
-  /* Programs that count on several threads (Emscripten pthreads, SharedArrayBuffer): their modules as genomics-wasm
-     built them, in assets/vendor/genomics-wasm/. outputs: the options whose value the program writes (a file, or a
-     folder) – it is not handed over (salmon quant -o OUT: OUT may hold the results of an earlier run). */
-  const THREADED={
-    featurecounts:{name:'featureCounts',module:'featurecounts/2.1.1/featurecounts.mjs',outputs:()=>['-o','--tmpDir']},
-    salmon:{name:'salmon',module:'salmon/2.8.0/salmon.mjs',outputs:a=>a[0]==='index'?['-i','--index','-o','--output','--tmpdir']:['-o','--output','--auxDir','--tmpdir']}
+  /* Programs that run as genomics-wasm built them, each command in a worker of its own: their modules are in
+     assets/vendor/genomics-wasm/. threads: the program counts on several threads (Emscripten pthreads,
+     SharedArrayBuffer), which needs a cross-origin isolated page. worker: the worker that runs it (Cutadapt is a
+     Python program: its own worker starts the Python that comes with it). outputs: the options whose value the program
+     writes (a file, or a folder) – it is not handed over (salmon quant -o OUT: OUT may hold the results of an earlier
+     run). flow: a workflow of several commands, in place of one (lofreq somatic; Strelka's runWorkflow.py – somatic.js). */
+  const OWN_WORKER={
+    featurecounts:{name:'featureCounts',module:'featurecounts/2.1.1/featurecounts.mjs',threads:true,outputs:()=>['-o','--tmpDir']},
+    salmon:{name:'salmon',module:'salmon/2.8.0/salmon.mjs',threads:true,outputs:a=>a[0]==='index'?['-i','--index','-o','--output','--tmpdir']:['-o','--output','--auxDir','--tmpdir']},
+    cutadapt:{name:'cutadapt',module:'cutadapt/5.2/manifest.json',worker:'assets/js/cutadapt-worker.mjs',outputs:()=>['-o','--output','-p','--paired-output','--info-file','--rest-file','--wildcard-file','--too-short-output','--too-short-paired-output','--too-long-output','--too-long-paired-output','--untrimmed-output','--untrimmed-paired-output','--json']},
+    lofreq:{name:'lofreq',module:'lofreq/2.1.5/lofreq.mjs',outputs:()=>['-o','--out','--outprefix'],flow:a=>a[0]==='somatic'&&MG.somatic?MG.somatic.lofreq:null},
+    somaticsniper:{name:'bam-somaticsniper',module:'somaticsniper/1.0.5.0/somaticsniper.mjs',outputs:()=>[]},
+    // Strelka's workflow script: python2 RUNDIR/runWorkflow.py (made by configureStrelkaSomaticWorkflow.py)
+    strelka2:{name:'runWorkflow.py',module:'strelka2/2.9.10/strelka2.mjs',outputs:()=>[],flow:()=>MG.somatic&&MG.somatic.strelka}
   };
+  // the index files that a program finds next to a file it is given (NAME.bam: NAME.bam.bai or NAME.bai; a FASTA file:
+  // its .fai, and the .gzi of a compressed one; a compressed VCF or BED: its .tbi or .csi) – handed over with it
+  const INDEX_SUFFIXES=['.bai','.csi','.crai','.fai','.gzi','.tbi'];
   const W = {
     ready:false, loading:null, cli:null, pipeN:0, mountN:0,
     synced:new Map(), placed:new Map(), managed:new Set(), dirs:new Set(), gone:[], denied:[], refused:[],
     gen:0, kept:new Map(), keepN:0,
-    versions:{fastp:'0.20.1',minimap2:'2.22',bowtie2:'2.4.2',bwa:'0.7.19','bwa-mem2':'2.2.1',hisat2:'2.2.2',freebayes:'1.3.6',stringtie:'3.0.3',kallisto:'0.52.0',mosdepth:'0.3.14',featurecounts:'2.1.1',salmon:'2.8.0',samtools:'1.17',bcftools:'1.10',htslib:'1.17',seqtk:'1.4',bedtools:'2.31.0',jq:'1.7',gawk:'5.1.0',grep:'3.7',sed:'4.8',coreutils:'8.32',diffutils:'3.10',kalign:'3.3.1',muscle:'3.8.1551',fasttree:'2.1.11','seq-align':'2017.10.18',wgsim:'0.3.1-r13',gffread:'0.12.7',lastz:'1.04.52'},
+    versions:{fastp:'0.20.1',minimap2:'2.22',bowtie2:'2.4.2',bwa:'0.7.19','bwa-mem2':'2.2.1',hisat2:'2.2.2',freebayes:'1.3.6',stringtie:'3.0.3',kallisto:'0.52.0',mosdepth:'0.3.14',featurecounts:'2.1.1',salmon:'2.8.0',cutadapt:'5.2',lofreq:'2.1.5',somaticsniper:'1.0.5.0',strelka2:'2.9.10',samtools:'1.17',bcftools:'1.10',htslib:'1.17',seqtk:'1.4',bedtools:'2.31.0',jq:'1.7',gawk:'5.1.0',grep:'3.7',sed:'4.8',coreutils:'8.32',diffutils:'3.10',kalign:'3.3.1',muscle:'3.8.1551',fasttree:'2.1.11','seq-align':'2017.10.18',wgsim:'0.3.1-r13',gffread:'0.12.7',lastz:'1.04.52'},
     apath(abs) { return ROOT+abs; },
     ensure(status) {
       if(this.ready)return Promise.resolve(this.cli);
@@ -428,11 +441,12 @@
       const fifo=program==='wc'&&stdin!=null&&(ctx.stdin instanceof FileRef?(!ctx.stdin.fromFile||!!ctx.stdin.psub):ctx.stdin!=null?!(ctx.hereInput&&new Blob([ctx.stdin]).size>65536):!!(inherit&&inherit.pipe));
       const before=await this.snapshot();await cli.cd(this.apath(fs.isDir(fs.cwd)?fs.cwd:fs.home));
       status(`${program} is running locally…`);
-      const timer=setInterval(()=>status(`${program} · ${((performance.now()-start)/1000).toFixed(0)} s`),1000);
+      // (a workflow says which of its programs runs: lofreq somatic – lofreq call · 12 s)
+      const timer=setInterval(()=>status(`${this.running||program}${this.stage?' – '+this.stage:''} · ${((performance.now()-start)/1000).toFixed(0)} s`),1000);
       let result;
       const killed=new Promise((_,reject)=>{this._killed=reject;});
-      this.running=THREADED[program]?THREADED[program].name:program;
-      const job=THREADED[program]?this.execThreaded(program,a,{stdin,stdout:stdoutPath,stderr:stderrPath,merge:!!ctx.mergeStderr,fs,before})
+      this.running=OWN_WORKER[program]?(ctx.name||OWN_WORKER[program].name):program;
+      const job=OWN_WORKER[program]?this.execWorker(program,a,{stdin,stdout:stdoutPath,stderr:stderrPath,merge:!!ctx.mergeStderr,fs,before,name:ctx.name,io:ctx.io,flowOpts:opts.flow})
         :cli.execIO(program,a,{stdin,stdout:stdoutPath,stderr:ctx.mergeStderr?stdoutPath:stderrPath,merge:!!ctx.mergeStderr,links:[[this.apath(home),home],[this.apath('/data'),'/data']],lines,fifo,env:envOf(ctx,program,fs),...clock});
       try{result=await Promise.race([job,killed]);}
       catch(e){
@@ -507,19 +521,23 @@
       const stdinUsed=stdin&&!inherit?(devUsed.has(stdin)?Infinity:Math.max(result.stdinMax||0,result.stdinPos||0)):null;
       return {stdout,stderr:stderr+tail,parts,tail,stdoutPath,stdoutSize:outStat?.size||0,created,secs:(performance.now()-start)/1000,code:code||(undone?1:0),statusKnown:result.code!=null,stdinUsed};
     },
-    /* featureCounts and Salmon (see THREADED): the command runs in a worker of its own (threads-worker.mjs). It gets
-       the files that its arguments name – of a folder, everything in it; not what it is told to write (-o) – at the
-       paths they have in the programs' file system, the links of the home folder and /data, every folder (it may write into
-       any of them), its working folder and its input. What it wrote is put into the programs' file system, and the run
-       goes on as for any other program: importChanges finds the new files. The answer has the form of execIO's. */
+    /* A program of OWN_WORKER: the command runs in a worker of its own (threads-worker.mjs, or the program's own). It
+       gets the files that its arguments name – of a folder, everything in it; not what it is told to write (-o) – with
+       their index files (INDEX_SUFFIXES), at the paths they have in the programs' file system, the links of the home
+       folder and /data, every folder (it may write into any of them), its working folder and its input. What it wrote
+       is put into the programs' file system, and the run goes on as for any other program: importChanges finds the new
+       files. A workflow (T.flow) runs its commands that way one after another, and hands back what they made. The
+       answer has the form of execIO's. */
     threadedWorker:null,
-    async execThreaded(program,args,{stdin,stdout,stderr,merge,fs,before}){
-      const T=THREADED[program],cli=this.cli,home=fs.home,cwd=this.apath(fs.isDir(fs.cwd)?fs.cwd:fs.home);
-      const outs=T.outputs(args);
+    /** the files of the programs' file system that the arguments name (with their index files), read for a worker:
+        [{path, data, readonly}]. cwd: the folder relative names are in (a path of the programs' file system). */
+    async inputsOf(args,outs,{fs,before,cwd}){
+      const cli=this.cli;
       const toProg=v=>{
         if(!v||v==='-')return null;
         if(v===ROOT||v.startsWith(ROOT+'/'))return MG.path.norm(v);
-        if(v.startsWith('/'))return v===home||v.startsWith(home+'/')||v==='/data'||v.startsWith('/data/')?ROOT+MG.path.norm(v):null;
+        // (an absolute path that is not one of the programs' file system – /dev/stdin – names no file there)
+        if(v.startsWith('/'))return ROOT+MG.path.norm(v);
         return MG.path.norm(cwd+'/'+v);
       };
       const want=new Set();
@@ -528,34 +546,80 @@
         if(i&&outs.includes(args[i-1]))continue;
         const m=/^(--?[^=]+)=(.*)$/.exec(v);
         if(m&&outs.includes(m[1]))continue;
-        const p=toProg(m?m[2]:v);
-        // (the files of pipes – /dev/stdin, <(COMMAND) – are not in the list of the programs' files: asked for one by one)
-        const st=!p?null:p.startsWith(TMP+'/')?await stat(cli,p):before.get(p);
-        if(!st)continue;
-        if(!st.isDir){want.add(p);continue;}
-        for(const [q,t] of before)if(!t.isDir&&q.startsWith(p+'/'))want.add(q);
+        // (a list of files after an option: lofreq call -S a.vcf.gz,b.vcf.gz; Cutadapt's adapters from a file: -a file:adapters.fa)
+        for(const w of (m?m[2]:v).split(',')){
+          const p=toProg(w.replace(/^\^?file\$?:/,''));
+          // (the files of pipes – /dev/stdin, <(COMMAND) – are not in the list of the programs' files: asked for one by one)
+          const st=!p?null:p.startsWith(TMP+'/')?await stat(cli,p):before.get(p);
+          if(!st)continue;
+          if(!st.isDir){
+            want.add(p);
+            for(const x of [...INDEX_SUFFIXES.map(s=>p+s),...(/\.(bam|cram)$/.test(p)?[p.replace(/\.(bam|cram)$/,'.bai'),p.replace(/\.(bam|cram)$/,'.crai')]:[])]){const t=before.get(x);if(t&&!t.isDir)want.add(x);}
+            continue;
+          }
+          for(const [q,t] of before)if(!t.isDir&&q.startsWith(p+'/'))want.add(q);
+        }
       }
       const files=[];
       for(const p of want){
         const e=fs.entries.get(p.slice(ROOT.length));
         files.push({path:p,data:await cli.fs.readFile(p),readonly:!!(e&&(e.readonly||e.protected))});
       }
-      const dirs=[ROOT,TMP,...Array.from(before).filter(([p,t])=>t.isDir&&!p.startsWith(TMP)).map(([p])=>p),cwd];
-      const input=stdin?await cli.fs.readFile(stdin):null;
+      return files;
+    },
+    /** one command in a worker of its own → {exitCode, error, stdout, stderr, order, dirs, files, removed, stdinPos}
+        T: the program (OWN_WORKER, or {name, module, worker}); the rest as threads-worker.mjs takes it */
+    async spawn(T,{args,thisProgram,cwd,dirs,files,links,stdin,roots}){
+      // (stopped between two commands of a workflow: the next one does not start)
+      if(this.ownRun&&this.ownRun.stopped)throw Object.assign(new Error('Killed'),{userMessage:`${this.running||'program'}: Killed`,code:137});
       const base=new URL(String(MG.config.threadsBase||'assets/vendor/genomics-wasm').replace(/\/?$/,'/'),location.href);
-      const worker=new Worker(new URL('assets/js/threads-worker.mjs',location.href),{type:'module',name:T.name});
+      const worker=new Worker(new URL(T.worker||'assets/js/threads-worker.mjs',location.href),{type:'module',name:thisProgram||T.name});
       this.threadedWorker=worker;
-      let r;
       try{
-        r=await new Promise((resolve,reject)=>{
+        return await new Promise((resolve,reject)=>{
           this._threadedStop=reject;
           worker.onmessage=e=>{const m=e.data||{};if(m.type==='result')resolve(m.result);else reject(new Error((m.error&&m.error.message)||'the program gave no answer'));};
           worker.onerror=e=>{if(e.preventDefault)e.preventDefault();reject(new Error(e.message||'the program could not be started'));};
-          const buffers=new Set(files.map(f=>f.data.buffer));if(input)buffers.add(input.buffer);
-          worker.postMessage({moduleUrl:new URL(T.module,base).href,args,thisProgram:T.name,cwd,dirs,files,links:[[ROOT+home,home],[ROOT+'/data','/data']],stdin:input,roots:[ROOT]},[...buffers]);
+          // (the files are copied, not moved: a workflow hands the same bytes to its next command)
+          worker.postMessage({moduleUrl:new URL(T.module,base).href,args,thisProgram:thisProgram||T.name,cwd,dirs,files,links,stdin,roots});
         });
       }finally{this._threadedStop=null;if(this.threadedWorker===worker)this.threadedWorker=null;try{worker.terminate();}catch(e){}}
-      for(const d of r.dirs)if(!before.has(d))await mkdirp(cli,d);
+    },
+    async execWorker(program,args,{stdin,stdout,stderr,merge,fs,before,name,io,flowOpts}){
+      const T=OWN_WORKER[program],cli=this.cli,home=fs.home,cwd=this.apath(fs.isDir(fs.cwd)?fs.cwd:fs.home);
+      const links=[[ROOT+home,home],[ROOT+'/data','/data']];
+      const dirs=[ROOT,TMP,...Array.from(before).filter(([p,t])=>t.isDir&&!p.startsWith(TMP)).map(([p])=>p),cwd];
+      const input=stdin?await cli.fs.readFile(stdin):null;
+      const flow=T.flow&&T.flow(args);
+      let r;
+      const run=this.ownRun={stopped:false};
+      try{
+      if(flow){
+        // A workflow: its commands one after another, each in a worker of its own (see somatic.js). Its files have the
+        // paths of the terminal (/home/user/…, /data/…, /tmp/…) – also in the workers, where they are folders of their
+        // own: a program that writes a path into its output (Strelka's VCF header names the reference file) writes the
+        // path the person knows. What the workflow made is put below ROOT here.
+        const term=p=>p===ROOT?'/':p.startsWith(ROOT+'/')?p.slice(ROOT.length):p,tcwd=term(cwd);
+        // (the arguments as they were typed: ROOT is in none of them – see pathToken in _run)
+        const typed=args.map(v=>v.split(ROOT+'/').join('/'));
+        const h={cwd:tcwd,io,opts:flowOpts||{},name:name||T.name,
+          abs:p=>MG.path.norm(p.startsWith('/')?p:tcwd+'/'+p),
+          isDir:p=>{const t=before.get(p==='/'?ROOT:ROOT+p);return !!(t&&t.isDir);},
+          isFile:p=>{const t=before.get(ROOT+p);return !!(t&&!t.isDir);},
+          readText:async p=>new TextDecoder('utf-8').decode(await cli.fs.readFile(ROOT+p)),
+          pretty:p=>(fs.pretty?fs.pretty(p):p),
+          stage:t=>{this.stage=t;},
+          inputsOf:async(a,outs,at)=>(await this.inputsOf(a,outs||[],{fs,before,cwd:at?ROOT+at:cwd})).map(f=>({path:term(f.path),data:f.data,readonly:f.readonly})),
+          spawn:(t,o)=>this.spawn(t,Object.assign({cwd:tcwd,dirs:[tcwd],links:[],stdin:null},o))};
+        r=await flow(typed,h);
+        r.files=(r.files||[]).map(f=>({path:ROOT+f.path,data:f.data}));
+      }else{
+        const files=await this.inputsOf(args,T.outputs(args),{fs,before,cwd});
+        r=await this.spawn(T,{args,thisProgram:name||T.name,cwd,dirs,files,links,stdin:input,roots:[ROOT]});
+      }
+      }finally{if(this.ownRun===run)this.ownRun=null;this.stage=null;}
+      if(run.stopped)throw Object.assign(new Error('Killed'),{userMessage:`${this.running||name||T.name}: Killed`,code:137});
+      for(const d of r.dirs||[])if(!before.has(d))await mkdirp(cli,d);
       // (-o /dev/stdout: the program wrote into the file that stands for its output – it joins what it printed)
       const join=(a,b)=>{const all=new Uint8Array(a.length+b.length);all.set(a);all.set(b,a.length);return all;};
       for(const f of r.files){
@@ -569,18 +633,21 @@
         for(let k=0;k<r.order.length;k+=2){const n=r.order[k+1];if(r.order[k]===1){all.set(r.stdout.subarray(i1,i1+n),o);i1+=n;}else{all.set(r.stderr.subarray(i2,i2+n),o);i2+=n;}o+=n;}
         await cli.fs.writeFile(stdout,all);
       }else{await cli.fs.writeFile(stdout,r.stdout);await cli.fs.writeFile(stderr,r.stderr);}
-      return {code:r.exitCode,error:r.error?`${T.name}: stopped – ${r.error}`:null,order:merge?[]:r.order,stdinPos:r.stdinPos||0,stdinMax:r.stdinPos||0};
+      return {code:r.exitCode,error:r.error?`${name||T.name}: stopped – ${r.error}`:null,order:merge?[]:r.order||[],stdinPos:r.stdinPos||0,stdinMax:r.stdinPos||0};
     },
     /* A program that does not end blocks every later command. kill() stops the worker that runs the
        programs; the next command starts a new one. What programs had written lived in that worker's
        memory and is lost (returned as a list); the course data and text files are not.
-       featureCounts and Salmon run in a worker of their own: stopping one loses nothing else (lastKill 'threads'). */
+       The programs of OWN_WORKER run in a worker of their own: stopping one loses nothing else (lastKill 'threads') – nor
+       does stopping a workflow of them (lofreq somatic, runWorkflow.py) between two of its commands. */
     lastKill:'',
+    ownRun:null,
     kill(fs){
       fs=real(fs);
-      if(this.threadedWorker){
+      if(this.threadedWorker||this.ownRun){
         const program=this.running,err=Object.assign(new Error('Killed'),{userMessage:`${program||'program'}: Killed`,code:137});
-        try{this.threadedWorker.terminate();}catch(e){}
+        if(this.ownRun)this.ownRun.stopped=true;
+        try{if(this.threadedWorker)this.threadedWorker.terminate();}catch(e){}
         this.threadedWorker=null;this.lastKill='threads';
         if(this._threadedStop)this._threadedStop(err);
         if(this._killed)this._killed(err);
@@ -726,6 +793,14 @@
   function binaryOutput(program,a){
     if(program==='samtools')return ['sort','merge','markdup','fixmate','collate'].includes(a[0])&&!a.some(x=>x==='SAM'||x==='sam'||/^(-O|--output-fmt=)sam(,|$)/i.test(x))||a[0]==='view'&&a.some(x=>/^-[A-Za-z]*[bu]/.test(x))&&!a.some(x=>x==='-c'||x==='--count');
     if(program==='bcftools')return a.some((x,i)=>/^-[A-Za-z]*O[buz]/.test(x)||x==='-O'&&/^[buz]/.test(a[i+1]||'')||/^--output-type=[buz]/.test(x));
+    // lofreq indelqual and viterbi write BAM to the standard output unless -o names a file; alnqual with -b or -u
+    if(program==='lofreq'){
+      if(a[0]==='alnqual')return a.slice(1).some(x=>/^-[A-Za-z]*[bu]/.test(x));
+      if(a[0]!=='indelqual'&&a[0]!=='viterbi')return false;
+      let o=null;
+      for(let i=1;i<a.length;i++){if(a[i]==='-o'||a[i]==='--out')o=a[++i];else if(/^--out=/.test(a[i]))o=a[i].slice(6);else if(/^-o./.test(a[i]))o=a[i].slice(2);}
+      return o==null||o==='-';
+    }
     return program==='bgzip'&&!a.some(x=>/^-\w*d/.test(x)||x==='--decompress');
   }
   /* Messages of the programs: paths as the student sees them, and the program's name where the
@@ -810,7 +885,9 @@
     // (mosdepth's -t: threads that unpack the BAM file besides the main one – 0, its default, is the only value here)
     mosdepth:{short:'-t',long:'--threads',one:v=>v==='0'},
     featureCounts:{short:'-T',one:v=>/^[1-4]$/.test(v),cap:'4',why:'in the browser featureCounts counts on four threads at most'},
-    salmon:{short:'-p',long:'--threads',one:v=>v==='1',when:a=>/^(index|quant)$/.test(a[0]||''),why:'in the browser Salmon runs one worker thread'}
+    salmon:{short:'-p',long:'--threads',one:v=>v==='1',when:a=>/^(index|quant)$/.test(a[0]||''),why:'in the browser Salmon runs one worker thread'},
+    cutadapt:{short:'-j',long:'--cores',one:v=>v==='1',why:'in the browser Cutadapt runs on one core'},
+    lofreq:{long:'--threads',one:v=>v==='1',when:a=>a[0]==='somatic',why:'in the browser lofreq somatic runs its steps one after another'}
   };
   function oneThread(name,args,io){
     const t=THREADS[name];
@@ -870,6 +947,10 @@
     mosdepth:['mosdepth','0.3.14','mosdepth: read depth (coverage) of a BAM file – per base, in windows or in regions, with a summary',"samtools index rnaseq.bam                    (mosdepth needs the index of the BAM file, .bai)\nmosdepth yeast rnaseq.bam                    (yeast.mosdepth.summary.txt, yeast.mosdepth.global.dist.txt, yeast.per-base.bed.gz)\ncat yeast.mosdepth.summary.txt               (the length, the bases and the mean depth of each sequence)\nmosdepth -n --by 1000 windows rnaseq.bam     (the mean depth in windows of 1000 bp; -n: no per-base file)\nmosdepth --by /data/examples/annotation/cyp2c_exons.bed --thresholds 1,10,20 exons mapped.bam   (the regions of a BED file)\nzcat yeast.per-base.bed.gz | head\n\nmosdepth keeps an array as long as the longest sequence of the BAM file: fine for yeast chromosomes and the example\nslices, too big for a whole human chromosome in a browser. mosdepth -t N: not in the browser."],
     featureCounts:['featurecounts','2.1.1','featureCounts (Subread): counts the reads in each gene of an annotation – the count table for DESeq2 or edgeR',"featureCounts -p --countReadPairs -a /data/examples/rnaseq/yeast_chrI.gtf -o counts.txt rnaseq.bam   (paired reads: a count per fragment)\ntail -n +3 counts.txt | sort -k7,7nr | head        (the genes with the most reads)\ncat counts.txt.summary      (why reads were not counted: Unassigned_NoFeatures, _Ambiguity, _MultiMapping …)\nfeatureCounts -a genes.gtf -o counts.txt single.bam                       (single reads)\nfeatureCounts -s 2 -p --countReadPairs -a genes.gtf -o counts.txt s1.bam s2.bam s3.bam   (a reverse-stranded library; a column per file)\n\nPaired reads need -p: without it featureCounts 2.1 stops (\"Paired-end reads were detected in single-end read library\").\nfeatureCounts counts on several threads (-T 1 to 4; one unless asked for more). That needs a page that is\ncross-origin isolated, which the workbench makes its page as it starts – see Limits in the help."],
     salmon:['salmon','2.8.0','Salmon: transcript abundances from RNA-seq reads, by selective alignment to the transcript sequences',"gffread -w transcripts.fa -g /data/examples/rnaseq/yeast_chrI.fa /data/examples/rnaseq/yeast_chrI.gtf   (the transcript sequences)\nsalmon index -t transcripts.fa -i salmon_index\nsalmon quant -i salmon_index -l A -1 /data/examples/rnaseq/SRR6357070_1.fastq -2 /data/examples/rnaseq/SRR6357070_2.fastq -o salmon_out\nhead salmon_out/quant.sf        (NumReads and TPM of every transcript)\nsalmon quant -i salmon_index -l U -r reads.fastq --fldMean 200 --fldSD 20 -o single    (single reads)\n\n-l A: Salmon works out the library type (salmon_out/lib_format_counts.json says which).\nAn index made by Salmon on a 64-bit computer cannot be read here, nor one made here there: make it where you use it.\nsalmon -p N: one worker thread in the browser. Like featureCounts, Salmon needs a cross-origin isolated page."],
+    cutadapt:['cutadapt','5.2','Cutadapt: removes adapters, primers and poly-A tails from reads, trims low-quality ends and filters reads by length',"cutadapt -a AGATCGGAAGAGCACACGTCTGAACTCCAGTCA -A AGATCGGAAGAGCGTCGTGTAGGGAAAGAGTGT -o trimmed_1.fastq -p trimmed_2.fastq /data/examples/trimming/SRR6357070_adapters_1.fastq /data/examples/trimming/SRR6357070_adapters_2.fastq\ncutadapt -q 20 -m 50 -a AGATCGGAAGAGC -o trimmed.fastq reads.fastq      (also trim 3' ends below quality 20; keep reads of 50 bases or more)\ncutadapt -g ^ACGTACGT -o out.fastq.gz reads.fastq.gz                    (a 5' adapter anchored at the start; .gz in and out)\ncutadapt --discard-untrimmed -a ADAPTER -o with_adapter.fastq reads.fastq   (keep only the reads that had the adapter)\ncutadapt ... --json report.json                                         (the report as JSON too, for MultiQC)\n\n-a/-A: the 3' adapter of read 1/read 2 (-g/-G: 5'); -e: error rate (0.1); -O: shortest overlap that counts (3).\nThe report (on the screen, or > report.txt) says how many reads had the adapter and how many bases were removed.\nCutadapt runs on one core here (-j N is left out, with a note). It is a Python program: each command starts the Python\nthat comes with it, which takes a few seconds."],
+    lofreq:['lofreq','2.1.5','LoFreq: calls variants, also those at low frequencies (lofreq call), and somatic variants from a tumour and its normal (lofreq somatic)',"lofreq call -f /data/examples/somatic/reference.fa -o tumor_calls.vcf /data/examples/somatic/tumor.bam     (SNVs, at any allele frequency)\n\nSomatic variants – first give the reads indel qualities (needed for --call-indels), then index:\nlofreq indelqual --dindel -f /data/examples/somatic/reference.fa -o tumor.iq.bam /data/examples/somatic/tumor.bam\nlofreq indelqual --dindel -f /data/examples/somatic/reference.fa -o normal.iq.bam /data/examples/somatic/normal.bam\nsamtools index tumor.iq.bam && samtools index normal.iq.bam\nlofreq somatic -n normal.iq.bam -t tumor.iq.bam -f /data/examples/somatic/reference.fa --call-indels -o lofreq_\nzcat lofreq_somatic_final.snvs.vcf.gz | grep -v '^##'       (the somatic SNVs; lofreq_somatic_final.indels.vcf.gz: the indels)\n\nlofreq somatic runs lofreq call, filter, vcfset and uniq one after another, as upstream's script does; its options\nare upstream's (lofreq somatic -h), with --threads 1. LoFreq's authors call this workflow experimental.\nNot here: lofreq call-parallel and lofreq vcfplot (Python scripts that start other programs)."],
+    'bam-somaticsniper':['somaticsniper','1.0.5.0','SomaticSniper: somatic SNVs from a tumour BAM and its matched normal BAM',"bam-somaticsniper -F vcf -f /data/examples/somatic/reference.fa /data/examples/somatic/tumor.bam /data/examples/somatic/normal.bam somaticsniper.vcf\ngrep -v '^##' somaticsniper.vcf | head      (the columns NORMAL and TUMOR; SS=2 in FORMAT: somatic)\nbam-somaticsniper -F vcf -Q 40 -L -G -f ref.fa tumor.bam normal.bam strict.vcf    (somatic score 40 or more; no LOH, no gain of reference)\n\nThe tumour BAM comes first, then the normal BAM, then the output file. Both BAM files must be sorted by position and\nmust name the same chromosomes, in the same order; the reference needs its .fai index (samtools faidx).\n-F vcf|classic|bed: output format (classic by default); -q: minimum mapping quality; -Q: minimum somatic score (15);\n-n/-t: the sample names in the VCF. -t is the name of the tumour sample, not a number of threads."],
+    somaticsniper:['somaticsniper','1.0.5.0','SomaticSniper (the program behind bam-somaticsniper)',"somaticsniper -F vcf -f ref.fa tumor.bam normal.bam calls.vcf     (the same as bam-somaticsniper)"],
     freebayes:['freebayes','1.3.6','FreeBayes: haplotype-based variant caller – SNPs, indels and MNPs from aligned reads (BAM)','freebayes -f /data/examples/reads/reference.fa mapped.bam > freebayes.vcf\nfreebayes -f /data/examples/reads/reference.fa -r human_CYP2C19:11000-12500 mapped.bam    (one region: needs mapped.bam.bai – samtools index mapped.bam)\nfreebayes -f /data/examples/reads/reference.fa --min-alternate-count 3 --min-mapping-quality 20 mapped.bam > strict.vcf\n\nThe reads must be sorted by position (samtools sort); the reference needs its .fai index (samtools faidx).']
   };
   for(const [name,[program,version,summary,man]] of Object.entries(definitions))T[name]={version,summary,man:`${name} ${version} · compiled program, running in your browser\n\n${man}`,run:ctx=>{
@@ -891,7 +972,13 @@
     if(name==='hisat2')return hisat2Run(ctx,here);
     if(name==='hisat2-build'||name==='hisat2-inspect')return hisat2Tool(ctx,name,here);
     if(name==='samtools')seedNote(ctx);
-    if(THREADED[program]&&!window.crossOriginIsolated)return notIsolated(ctx,name);
+    // lofreq call-parallel and vcfplot are Python scripts that start other programs – which a web page cannot do
+    if(name==='lofreq'&&(ctx.args[0]==='call-parallel'||ctx.args[0]==='vcfplot')){
+      here('lofreq '+ctx.args[0]);
+      ctx.err(ctx.args[0]==='call-parallel'?'lofreq call-parallel: not available here – it is a Python script that runs several lofreq call processes at once, and a browser page cannot start processes. Use lofreq call: one process, the same calls (but for rare differences where call-parallel splits the genome).\n':'lofreq vcfplot: not available here – it is a Python script that plots with matplotlib. For the numbers use bcftools stats; to plot, read the VCF into a notebook.\n');
+      return 2;
+    }
+    if(OWN_WORKER[program]&&OWN_WORKER[program].threads&&!window.crossOriginIsolated)return notIsolated(ctx,name);
     return withArgs(ctx,oneThread(name,ctx.args,ctx.io),program);
   }};
   /* featureCounts and Salmon outside a cross-origin isolated page: why they cannot run here, and what to do */

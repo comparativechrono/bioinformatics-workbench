@@ -1,0 +1,30 @@
+{
+  "packages": [
+    {
+      "filename": "wheels/xopen-2.1.0-py3-none-any.whl",
+      "name": "xopen",
+      "sha256": "f8075bf19781854fcaac467ac08f78beebc533df563419d78168959a26b9af6d",
+      "version": "2.1.0"
+    },
+    {
+      "filename": "wheels/dnaio-1.2.4-cp314-cp314-pyemscripten_2026_0_wasm32.whl",
+      "name": "dnaio",
+      "sha256": "ff1134674a68793b1189f431553276a066ece3b64f76936d0044f7337ec5c23a",
+      "version": "1.2.4"
+    },
+    {
+      "filename": "wheels/cutadapt-5.2-cp314-cp314-pyemscripten_2026_0_wasm32.whl",
+      "name": "cutadapt",
+      "sha256": "b7471b8002dd0f2c6a84544f55f74ef4eed8699a5af6d3c66cc75e2deb875072",
+      "version": "5.2"
+    }
+  ],
+  "pyodide": {
+    "path": "pyodide/",
+    "python": "3.14.2",
+    "version": "314.0.7"
+  },
+  "schema": 1,
+  "tool": "cutadapt",
+  "version": "5.2"
+}

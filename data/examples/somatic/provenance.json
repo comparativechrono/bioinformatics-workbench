@@ -1,0 +1,65 @@
+{
+ "schemaVersion": 1,
+ "about": "Real reads of a tumour cell line and its matched normal cell line, for somatic variant calling (SomaticSniper, LoFreq somatic, Strelka2). Taken unchanged from the test data of the genomics-wasm project (github.com/comparativechrono/genomics-wasm, commit bfacba302b32f9fe12da4cc694c9a0b65b492986: datasets/strelka2/hcc1395, whose manifest.json and README.md record every source, byte range, step and check).",
+ "samples": {
+  "tumor.bam": "HCC1395, a breast-cancer cell line (ATCC CRL-2324): SEQC2 run WGS_NS_T_1",
+  "normal.bam": "HCC1395BL, a B-lymphocyte cell line of the same donor (ATCC CRL-2325): SEQC2 run WGS_NS_N_1"
+ },
+ "source": "NCBI, SEQC2 study SRP162370: WGS_NS_T_1.bwa.dedup.bam and WGS_NS_N_1.bwa.dedup.bam (whole-genome sequencing, BWA-MEM alignments to GRCh38, duplicates marked), https://ftp-trace.ncbi.nlm.nih.gov/ReferenceSamples/seqc/Somatic_Mutation_WG/data/WGS/ – only bounded byte ranges of the two regions were fetched",
+ "regions": {
+  "chr21_10572001_10582000": "GRCh38 chr21:10,572,001-10,582,000 (add 10,572,000 to a position)",
+  "chr21_21404501_21423500": "GRCh38 chr21:21,404,501-21,423,500 (add 21,404,500 to a position)"
+ },
+ "selection": "Complete primary mapped read pairs whose two alignments lie wholly inside one window and whose mate fields agree; both reads moved by the same offset onto the window. Sequences, qualities, flags, CIGARs, mapping qualities, template lengths and all tags are unchanged (SA and XA tags keep their original coordinates). The BAM header names the two windows only. No depth subsampling; nothing simulated or added.",
+ "reads": {
+  "tumor.bam": "13,130 records, 6,565 pairs",
+  "normal.bam": "16,822 records, 8,411 pairs"
+ },
+ "reference": "the two windows of UCSC hg38 chr21 (https://hgdownload.soe.ucsc.edu/goldenPath/hg38/chromosomes/chr21.fa.gz), unchanged",
+ "truth": "truth.vcf: the SEQC2 merged high-confidence somatic SNV/indel truth set v1.2.1 (official mirror of Google DeepSomatic), the four records in the windows, positions moved as the reads; regions.bed: the windows less 2 kb at each end; regions.bed.gz and .tbi: the same, compressed with bgzip and indexed with tabix",
+ "observed": "Reads with the alternate allele (base and mapping quality 20 or more) – tumour / normal: chr21_10572001_10582000:4679 A>G 17/66, 0/68; :4939 CA>C 14/57, 0/72; chr21_21404501_21423500:5025 GA>G 14/38, 0/50; :14045 C>T 0/51, 0/45 (a low-frequency truth variant that no read of this replicate shows)",
+ "citation": "Fang LT et al. (2021) Establishing community reference samples, data and call sets for benchmarking cancer mutation detection using whole-genome sequencing. Nature Biotechnology 39, 1151-1160. doi:10.1038/s41587-021-00993-6",
+ "files": {
+  "normal.bam": {
+   "bytes": 827440,
+   "sha256": "7a65e42bc63992c8b546a9e5ec50c45e153f82c002b4a88d362903b5a50da71a"
+  },
+  "normal.bam.bai": {
+   "bytes": 208,
+   "sha256": "18e927bfbb57ea074fa2267e49bef6f7d8de1ff4f78919b8fe10f85f39f8ac98"
+  },
+  "reference.fa": {
+   "bytes": 29534,
+   "sha256": "50aff973f9aae16a477245dac3a6f524f96f1106ab13b0b6ba933100353a6325"
+  },
+  "reference.fa.fai": {
+   "bytes": 81,
+   "sha256": "76e4501f4fcf97c5fb03faf07c0c3dda7ce6238dbd8ea8dacd402863591026a7"
+  },
+  "regions.bed": {
+   "bytes": 69,
+   "sha256": "4963073890341c3bb57a6d165e8e3dad8cec2fddec1aa3644c7bc3b66c3f96a6"
+  },
+  "regions.bed.gz": {
+   "bytes": 101,
+   "sha256": "b397ba8c20ab9a7274fb87a0756a456291da3c1f9cb231becb063e22fc437180"
+  },
+  "regions.bed.gz.tbi": {
+   "bytes": 154,
+   "sha256": "688dabdaed59c4130052781fb07536f9b031ce0c1085e09ff36c9737b767fe94"
+  },
+  "truth.vcf": {
+   "bytes": 14510,
+   "sha256": "2fba5998446b581836bc3bab0f2920dd91d1a65719a2808dc046ab2bc1fa6fe8"
+  },
+  "tumor.bam": {
+   "bytes": 650995,
+   "sha256": "fb327c9b6ccb4929a2771f71097c748aa05e4eaad2038715d74c48bbecb45286"
+  },
+  "tumor.bam.bai": {
+   "bytes": 224,
+   "sha256": "77293ea58333f7321b2005694d6f6187583d31725391a5faa5002f30b30064bb"
+  }
+ },
+ "note": "Two windows chosen around known variants: useful to see how the callers work and agree, not a benchmark of their accuracy."
+}

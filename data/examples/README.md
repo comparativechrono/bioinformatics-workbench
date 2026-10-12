@@ -21,17 +21,27 @@ Read-only copies that come with the workbench. To change one, copy it into your 
 | | `SRR6357070_1.fastq`, `SRR6357070_2.fastq` | 256 pairs of 101-base RNA-seq reads of wild-type yeast (SRA run SRR6357070, GEO GSE110004), all from chromosome I; 128 of the pairs were chosen because they span an annotated intron. The library is reverse-stranded (Salmon finds `ISR`: `featureCounts -s 2`). With `gffread -w` the GTF file gives the 124 transcript sequences for kallisto and Salmon |
 | | `airway_counts.tsv`, `airway_samples.tsv` | the gene counts of a published RNA-seq experiment – 63,677 genes (Ensembl 75, GRCh37) × 8 samples: airway smooth muscle cells of four cell lines, untreated and treated with dexamethasone (Himes et al. 2014, GEO GSE52778) – and the table of the samples, for DESeq2 and edgeR |
 | | `provenance.json`, `NOTICE.txt` | where these files came from, and their licences |
+| `trimming/` | `SRR6357070_adapters_1.fastq`, `SRR6357070_adapters_2.fastq` | 384 pairs of 101-base reads of the same yeast RNA-seq run (SRR6357070), chosen because many of them run into the adapter – for cutadapt and fastp. Read 1's adapter: `AGATCGGAAGAGCACACGTCTGAACTCCAGTCA`, read 2's: `AGATCGGAAGAGCGTCGTGTAGGGAAAGAGTGT` |
+| | `provenance.json`, `NOTICE.txt` | where they came from, how they were chosen, and their licence |
+| `somatic/` | `tumor.bam`, `normal.bam` (+ `.bai`) | real Illumina reads of the breast-cancer cell line HCC1395 (tumour; 6,565 pairs) and of HCC1395BL, a cell line from the blood of the same donor (normal; 8,411 pairs), sequenced by the SEQC2 consortium – the reads of two windows of chromosome 21 (GRCh38) |
+| | `reference.fa`, `reference.fa.fai` | those two windows, the reference of the BAM files: `chr21_10572001_10582000` (10 kb) and `chr21_21404501_21423500` (19 kb) |
+| | `regions.bed`, `regions.bed.gz` (+ `.tbi`) | the windows less 2 kb at each end, where the variants are evaluated (the `.gz` for Strelka's `--callRegions`) |
+| | `truth.vcf` | the four SEQC2 high-confidence somatic variants in these windows: two SNVs and two one-base deletions |
+| | `provenance.json`, `NOTICE.txt` | where these files came from, and how they were made |
 
 Positions on the slices: add 96,530,000 (human_CYP2C19) or 96,699,000 (human_CYP2C9) to get the GRCh37
-chromosome 10 position. The variant *CYP2C19\*2* (rs4244285, hg19 chr10:96,541,616) is at position 11,616 of
+chromosome 10 position. In `somatic/`, add 10,572,000 (`chr21_10572001_10582000`) or 21,404,500
+(`chr21_21404501_21423500`) to get the GRCh38 chromosome 21 position. The variant *CYP2C19\*2* (rs4244285, hg19 chr10:96,541,616) is at position 11,616 of
 `human_CYP2C19`. The GFF3 file keeps the GRCh37 positions of each feature as `hg19_start`/`hg19_end`;
 features that reach beyond a slice are cut at its ends and marked `partial=true`.
 
-All of it is public data: NA12878 is the widely used public reference sample (Coriell cell line GM12878); no
+All of it is public data: NA12878 is the widely used public reference sample (Coriell cell line GM12878);
+HCC1395 and HCC1395BL are public research cell lines (ATCC), whose sequences SEQC2 released for benchmarking. No
 patient data is included. Sources: 1000 Genomes Project; UCSC (genome sequence); Ensembl GRCh37
 (annotation, from grch37.rest.ensembl.org); NCBI GenBank; UniProt (CC BY 4.0); SGD (CC BY 4.0) and the other databases named above; RCSB PDB (CC0);
-for `rnaseq/`, nf-core/test-datasets (MIT licence) and the Bioconductor package airway 1.26.0 (LGPL), both as prepared by the
-genomics-wasm project – see `rnaseq/NOTICE.txt`.
+for `rnaseq/` and `trimming/`, nf-core/test-datasets (MIT licence) and the Bioconductor package airway 1.26.0 (LGPL), as prepared by the
+genomics-wasm project – see `rnaseq/NOTICE.txt` and `trimming/NOTICE.txt`; for `somatic/`, the SEQC2 consortium (NCBI) and
+UCSC – see `somatic/NOTICE.txt`.
 
 ## The columns of `tables/yeast_genes.csv`
 

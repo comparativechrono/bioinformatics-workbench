@@ -1,0 +1,28 @@
+{
+ "schemaVersion": 1,
+ "about": "Real yeast RNA-seq read pairs, chosen for adapters, for adapter and quality trimming (cutadapt, fastp). Taken unchanged from the test data of the genomics-wasm project (github.com/comparativechrono/genomics-wasm, commit bfacba302b32f9fe12da4cc694c9a0b65b492986: datasets/cutadapt/yeast, whose manifest.json records every source and step, and README.md the selection).",
+ "organism": "Saccharomyces cerevisiae",
+ "run": "SRR6357070 (wild-type total RNA-seq, biological replicate 1; GEO GSE110004; Illumina HiSeq 2500; 101-base paired reads)",
+ "publication": "Wu et al. (2018) Molecular Cell, doi:10.1016/j.molcel.2018.10.018",
+ "source": "nf-core/test-datasets, commit cad884e7fbe5617dcd55bdd07d9ddf65b54febe4: testdata/GSE110004/SRR6357070_1.fastq.gz and _2.fastq.gz (50,000 pairs that nf-core selected for chromosome I)",
+ "selection": "The first 96 pairs, in source order, of each of four groups, taken in this order: (1) both reads contain their whole 33-base adapter; (2) either read contains AGATCGGAAGAGC; (3) either read has a base quality below 20 in its last 10 bases; (4) all other pairs. The FASTQ records are copied unchanged, in their original order. The selection makes adapters far more common than in the run itself.",
+ "adapters": {
+  "read1": "AGATCGGAAGAGCACACGTCTGAACTCCAGTCA",
+  "read2": "AGATCGGAAGAGCGTCGTGTAGGGAAAGAGTGT",
+  "note": "sequences that occur in these reads; no particular kit is implied"
+ },
+ "nativeCutadapt52": "cutadapt -a <read1 adapter> -A <read2 adapter>: 205 first and 209 second reads with the adapter; 12,061 bases removed",
+ "files": {
+  "SRR6357070_adapters_1.fastq": {
+   "from": "datasets/cutadapt/yeast/reads_1.fastq",
+   "bytes": 98106,
+   "sha256": "1a586cc2fd113f48c72ac11154f2aab4b47dfa475f9d6c5b343fdcfa93d88f5f"
+  },
+  "SRR6357070_adapters_2.fastq": {
+   "from": "datasets/cutadapt/yeast/reads_2.fastq",
+   "bytes": 98106,
+   "sha256": "8eb2cd6f30c53d74075da14d30ed7102bb68dc0755467e5b44cf6c33a176dd8f"
+  }
+ },
+ "licence": "MIT (nf-core/test-datasets); the reads are public INSDC data"
+}

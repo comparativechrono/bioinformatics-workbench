@@ -151,5 +151,32 @@
   "bytes": 26095717,
   "upstream": "https://subread.sourceforge.net/ (https://downloads.sourceforge.net/project/subread/subread-2.1.1/subread-2.1.1-source.tar.gz)",
   "origin": "official release archive, as pinned by genomics-wasm tools/featurecounts/sources.lock.json (SHA-256 checked), retrieved 2026-10-11; featureCounts is compiled from it"
+ },
+ {
+  "package": "strelka-2.9.10",
+  "licence": "GPL-3.0-or-later",
+  "file": "sources/strelka-2.9.10.release_src.tar.bz2",
+  "sha256": "45e78efec6e5272697f1d0a95851c7ae0d623dc8f93846e11fe37f15da9f1e30",
+  "bytes": 35416322,
+  "upstream": "https://github.com/Illumina/strelka/releases/tag/v2.9.10",
+  "origin": "the release archive, https://github.com/Illumina/strelka/releases/download/v2.9.10/strelka-2.9.10.release_src.tar.bz2 (commit 1c8f1be330dc6f58568c82468a9da1c5f32fb54a; its redist/ folder holds Boost 1.58 (subset), HTSlib 1.7-6-g6d2bfb7, samtools 1.6, CodeMin 1.0.5, RapidJSON 1.1.0, bgzf_extras 0.1 and pyflow 1.1.20), as pinned in genomics-wasm's tools/strelka2/sources.lock.json, 2026-10-11"
+ },
+ {
+  "package": "pyodide-314.0.7",
+  "licence": "MPL-2.0",
+  "file": "sources/pyodide-314.0.7.tar.gz",
+  "sha256": "0731cd39bd1897c8cf0cac4da5cf9752594e5427cf4bad584200f8c9b617b9ef",
+  "bytes": 1464973,
+  "upstream": "https://github.com/pyodide/pyodide/tree/314.0.7",
+  "origin": "git archive --format=tar --prefix=pyodide-314.0.7/ 314.0.7 | gzip -n, from https://github.com/pyodide/pyodide.git – byte for byte GitHub's archive of the tag (https://github.com/pyodide/pyodide/archive/refs/tags/314.0.7.tar.gz), as pinned in genomics-wasm's tools/cutadapt/sources.lock.json, 2026-10-11"
+ },
+ {
+  "package": "hiwire-6a1e67280a15d929ebeceee54a6358c9c8d5f697",
+  "licence": "MPL-2.0",
+  "file": "sources/hiwire-6a1e67280a15d929ebeceee54a6358c9c8d5f697.tar.gz",
+  "sha256": "0d64144f149c0de3bd157551421833c6c16fdc0492c312a6325ffc25d185c93c",
+  "bytes": 27264,
+  "upstream": "https://github.com/pyodide/hiwire/tree/6a1e67280a15d929ebeceee54a6358c9c8d5f697",
+  "origin": "git archive --format=tar --prefix=hiwire-6a1e67280a15d929ebeceee54a6358c9c8d5f697/ 6a1e6728 | gzip -n, from https://github.com/pyodide/hiwire.git – byte for byte GitHub's archive of the commit, as pinned in genomics-wasm's tools/cutadapt/sources.lock.json, 2026-10-11"
  }
 ]
