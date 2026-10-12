@@ -1,0 +1,31 @@
+Strelka2 2.9.10: strelka2, GetChromDepth, MergeRunStats, and HTSlib's bgzip, tabix and htsfile, bgzf_cat – the
+programs of Strelka's somatic workflow
+Licence: GNU GPL version 3 or later (LICENSE.txt, COPYRIGHT.txt in this folder). It contains a subset of Boost 1.58
+(LICENSE.boost), HTSlib 1.7-6-g6d2bfb7 (LICENSE.htslib), CodeMin 1.0.5 (LICENSE.codemin), RapidJSON 1.1.0
+(LICENSE.rapidjson) and bgzf_extras 0.1 (LICENSE.bgzf-extras), and is built with zlib 1.3.1 (LICENSE.zlib); the loader
+is Emscripten's runtime (MIT and NCSA: LICENSE.emscripten). samtools 1.6 (LICENSE.samtools) and pyflow 1.1.20
+(COPYRIGHT.pyflow) are part of the upstream release, used by its own workflow scripts. THIRD_PARTY_LICENSES.txt
+lists them. config/ holds Strelka's empirical variant scoring models, as released.
+Upstream source: https://github.com/Illumina/strelka (release 2.9.10, commit 1c8f1be330dc6f58568c82468a9da1c5f32fb54a):
+strelka-2.9.10.release_src.tar.bz2 – in ../../../licenses/sources/.
+
+Compiled to WebAssembly by the genomics-wasm project (https://github.com/comparativechrono/genomics-wasm,
+commit bfacba3): Emscripten 3.1.64, one thread. The modules are used here as that project built them: the page runs
+each command in a worker of its own (assets/js/threads-worker.mjs). Everything needed to build them again is described
+in ../../../licenses/genomics-wasm-build/.
+
+Changes to the source (tools/strelka2/browser.patch, htslib.patch and rapidjson.patch there): an assignment operator
+of RapidJSON that cannot be used is deleted; Strelka's run-statistics counters are 64-bit numbers on 32-bit
+WebAssembly too; bgzip stops (status 2) when asked for more than one thread. Calling, scoring and the models are
+unchanged.
+Strelka's workflow is a set of Python 2 scripts (pyflow). strelka2-somatic.mjs, from genomics-wasm's runtime/
+(GNU GPL 3 or later, unchanged), is their translation for the somatic workflow: it runs the programs above one after
+another, with upstream's commands, segments and file handling; index.mjs is the workbench's small part of it (the
+paths of the terminal). In the workbench's terminal configureStrelkaSomaticWorkflow.py checks the input with the
+messages of upstream's configure script and writes RUNDIR/runWorkflow.py, which runs the workflow (assets/js/somatic.js).
+Only the somatic workflow is here; -m local only, and the tasks run one after another.
+
+Checked against Strelka2 2.9.10 built natively from the same release, run by its own Python 2 workflow
+(genomics-wasm's comparison: 13 of 13 cases with the HCC1395 tumour/normal reads – exome mode, call regions, callable
+regions, EVS features, configuration files, single regions; and in the workbench with the example data): the same
+VCF records and index queries, and the same run statistics (but for the times).

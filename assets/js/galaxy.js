@@ -107,6 +107,36 @@
       help: '<p>Removes adapters and low-quality bases, and reports the quality of the reads before and after (the HTML report). For paired-end reads give both files: the two outputs stay in step, read for read.</p>'
     },
     {
+      id: 'cutadapt', toolId: `${TS}/lparsons/cutadapt/cutadapt/5.2+galaxy2`, name: 'Cutadapt', desc: 'Remove adapter sequences from FASTQ/FASTA', version: '5.2+galaxy2', section: 'Quality control', needs: 'cutadapt',
+      requirements: [['cutadapt', '5.2']],
+      inputs: [
+        { name: 'input_1', short: 'reads 1', label: 'FASTQ/A file #1 (or the single-end reads)', ext: ['fastqsanger'], nice: 'input_1.fastq', pick: /_1\b|R1|forward/i },
+        { name: 'input_2', short: 'reads 2', label: 'FASTQ/A file #2 (for paired-end reads; leave empty for single-end)', ext: ['fastqsanger'], nice: 'input_2.fastq', pick: /_2\b|R2|reverse/i, optional: true }
+      ],
+      params: [
+        { name: 'adapter', short: '-a', label: "Read 1: 3' (end) adapter sequence (-a)", type: 'text', default: 'AGATCGGAAGAGC', help: "The start of the Illumina TruSeq adapters (AGATCGGAAGAGC) finds most of them. Leave empty for no 3' adapter." },
+        { name: 'adapter2', short: '-A', label: "Read 2: 3' (end) adapter sequence (-A; paired-end reads)", type: 'text', default: 'AGATCGGAAGAGC' },
+        { name: 'error_rate', short: 'error rate', label: 'Maximum error rate (--error-rate)', type: 'float', default: 0.1, help: 'Errors allowed in the match, as a fraction of its length.' },
+        { name: 'overlap', short: 'overlap', label: 'Minimum overlap length (--overlap)', type: 'int', default: 3, help: 'A match with the adapter shorter than this does not count – it may be chance.' },
+        { name: 'quality_cutoff', short: 'quality', label: "Quality cutoff (--quality-cutoff): trim 3' ends below this Phred quality", type: 'int', default: 0 },
+        { name: 'minimum_length', short: 'min length', label: 'Minimum length (--minimum-length): discard reads shorter than this after trimming', type: 'int', default: 1 },
+        { name: 'discard_untrimmed', short: 'discard untrimmed', label: 'Discard Untrimmed Reads (--discard-untrimmed)', type: 'bool', default: false },
+        { name: 'poly_a', short: 'poly-A', label: 'Trim poly-A tails (--poly-a)', type: 'bool', default: false }
+      ],
+      outputs: [
+        { name: 'out1', short: 'reads 1', ext: 'fastqsanger', file: 'out1.fastq', label: (ins) => L('Cutadapt', ins, 'Read 1 Output') },
+        { name: 'out2', short: 'reads 2', ext: 'fastqsanger', file: 'out2.fastq', when: (i) => !!i.input_2, label: (ins) => L('Cutadapt', ins, 'Read 2 Output') },
+        { name: 'report', short: 'report', ext: 'txt', file: 'report.txt', label: (ins) => L('Cutadapt', ins, 'Report') }
+      ],
+      command: (i, p) => {
+        const seq = (v) => String(v || '').trim().toUpperCase().replace(/[^ACGTURYSWKMBDHVN]/g, '');
+        const num = (v, d) => (Number.isFinite(+v) && String(v).trim() !== '' && +v >= 0 ? +v : d);
+        const a = seq(p.adapter), a2 = seq(p.adapter2);
+        return `cutadapt -j 1${a ? ' -a ' + a : ''}${i.input_2 && a2 ? ' -A ' + a2 : ''} --error-rate=${num(p.error_rate, 0.1)} --overlap=${int(p.overlap, 3)} --quality-cutoff=${int(p.quality_cutoff, 0)} --minimum-length=${int(p.minimum_length, 1)}${p.discard_untrimmed ? ' --discard-untrimmed' : ''}${p.poly_a ? ' --poly-a' : ''} -o out1.fastq${i.input_2 ? ' -p out2.fastq' : ''} ${i.input_1}${i.input_2 ? ' ' + i.input_2 : ''} > report.txt`;
+      },
+      help: '<p>Finds the adapter sequence in each read and removes it, with everything after it (a 3′ adapter), and can trim low-quality ends and drop reads that end up too short. The <b>Report</b> says how many reads had the adapter and how many bases were removed. For paired-end reads give both files: the pairs stay in step. Cutadapt runs on one core here.</p>'
+    },
+    {
       id: 'seqtk_comp', toolId: `${TS}/iuc/seqtk/seqtk_comp/1.4+galaxy0`, name: 'seqtk_comp', desc: 'get the nucleotide composition of FASTA/Q', version: '1.4+galaxy0', section: 'Quality control', needs: 'seqtk',
       requirements: [['seqtk', '1.4']],
       inputs: [{ name: 'input', short: 'sequences', label: 'Input FASTA/Q file', ext: ['fastqsanger', 'fasta'], nice: (d) => 'input.' + DOWNLOAD_EXT[d.ext] }],
@@ -444,6 +474,74 @@
         return `samtools faidx ${i.reference} && freebayes --bam ${i.input_bam} --fasta-reference ${i.reference} -p ${int(p.ploidy, 2)} -C ${int(p.min_alt_count, 2)} -F ${f} -m ${int(p.min_mapq, 1)} -q ${int(p.min_baseq, 0)} --vcf output.vcf`;
       },
       help: '<p>Calls SNPs, indels and multi-nucleotide variants from the reads, looking at the haplotypes in each read rather than at single positions. The output is a VCF file; its QUAL column is the evidence that a variant is there. An alternative to <b>bcftools mpileup</b> + <b>bcftools call</b>.</p>'
+    },
+    {
+      id: 'lofreq_indelqual', toolId: `${TS}/iuc/lofreq_indelqual/lofreq_indelqual/2.1.5+galaxy1`, name: 'Insert indel qualities', desc: 'into a BAM file', version: '2.1.5+galaxy1', section: 'Variant calling', needs: 'lofreq',
+      requirements: [['lofreq', '2.1.5'], ['samtools', '1.17']],
+      inputs: [
+        { name: 'reads', short: 'BAM', label: 'Reads (BAM)', ext: ['bam'], nice: 'reads.bam' },
+        { name: 'ref', short: 'reference', label: 'Reference (for Dindel): use a genome from the history', ext: ['fasta'], nice: 'ref.fa', optional: true }
+      ],
+      params: [
+        { name: 'selector', short: 'approach', label: 'Indel calculation approach', type: 'select', default: 'dindel', options: [['dindel', 'Dindel (needs the reference)'], ['uniform', 'Uniform']], help: 'Dindel computes indel qualities from the reads and the reference (Illumina reads); Uniform gives every base the same quality.' },
+        { name: 'insertions', short: 'quality', label: 'Uniform: indel quality to add', type: 'int', default: 30 }
+      ],
+      outputs: [{ name: 'output', short: 'BAM', ext: 'bam', file: 'output.bam', label: (ins) => L('Insert indel qualities', ins) }],
+      command: (i, p) => p.selector === 'uniform'
+        ? `lofreq indelqual --uniform ${int(p.insertions, 30)} -o output.bam ${i.reads}`
+        : `samtools faidx ${i.ref || 'NO_REFERENCE_GIVEN.fa'} && lofreq indelqual --dindel --ref ${i.ref || 'NO_REFERENCE_GIVEN.fa'} -o output.bam ${i.reads}`,
+      help: '<p>Adds indel qualities to every read: LoFreq needs them to call indels (Call variants with LoFreq, “SNVs and indels”). Do not realign the reads afterwards.</p>'
+    },
+    {
+      id: 'lofreq_call', toolId: `${TS}/iuc/lofreq_call/lofreq_call/2.1.5+galaxy3`, name: 'Call variants', desc: 'with LoFreq', version: '2.1.5+galaxy3', section: 'Variant calling', needs: 'lofreq',
+      requirements: [['lofreq', '2.1.5'], ['samtools', '1.17']],
+      inputs: [
+        { name: 'reads', short: 'BAM', label: 'Input reads in BAM format', ext: ['bam'], nice: 'reads.bam' },
+        { name: 'ref', short: 'reference', label: 'Choose the source for the reference genome: use a genome from the history', ext: ['fasta'], nice: 'ref.fa' },
+        { name: 'bed', short: 'regions', label: 'Call variants across: regions specified in BED (optional; empty: the whole reference)', ext: ['bed'], nice: 'regions.bed', optional: true }
+      ],
+      params: [
+        { name: 'variant_types', short: 'types', label: 'Types of variants to call', type: 'select', default: '', options: [['', 'Only SNVs'], ['--call-indels', 'SNVs and indels'], ['--call-indels --only-indels', 'Only indels']], help: 'Indels need indel qualities in the reads: run Insert indel qualities first.' },
+        { name: 'filter_type', short: 'filter', label: 'Variant filter parameters', type: 'select', default: 'set_lofreq_standard', options: [['set_lofreq_standard', 'Preset filtering on QUAL score + coverage + strand bias (lofreq call default)'], ['set_no_default', 'Preset QUAL score-based filtering'], ['set_all_off', 'Strictly no filtering']] },
+        { name: 'min_cov', short: 'min coverage', label: 'Minimum coverage at a position (--min-cov)', type: 'int', default: 1 }
+      ],
+      outputs: [{ name: 'variants', short: 'VCF', ext: 'vcf', file: 'variants.vcf', label: (ins) => L('Call variants', ins) }],
+      command: (i, p) => {
+        const types = ['', '--call-indels', '--call-indels --only-indels'].includes(p.variant_types) ? p.variant_types : '';
+        const filter = p.filter_type === 'set_all_off' ? ' --sig 1 --bonf 1 --no-default-filter' : p.filter_type === 'set_no_default' ? ' --sig 0.01 --bonf dynamic --no-default-filter' : ' --sig 0.01 --bonf dynamic';
+        return `samtools faidx ${i.ref} && lofreq call --ref ${i.ref} --out variants.vcf${types ? ' ' + types : ''}${i.bed ? ' --bed ' + i.bed : ''} --min-cov ${Math.max(1, int(p.min_cov, 1))}${filter} ${i.reads}`;
+      },
+      help: '<p>Calls single-nucleotide variants (and indels, with indel qualities) at any frequency the data supports – also variants carried by only a few percent of the reads, as in viral populations or tumours. Each call has a quality (QUAL) and the allele frequency (AF). (Galaxy\'s tool runs lofreq call-parallel on several cores; here lofreq call runs on one. The calls are the same, but for rare differences where call-parallel splits the genome.)</p>'
+    },
+    {
+      id: 'strelka_somatic', toolId: `${TS}/iuc/strelka_somatic/strelka_somatic/2.9.10+galaxy0`, name: 'Strelka Somatic', desc: 'small variant caller for somatic variation in tumor/normal sample pairs', version: '2.9.10+galaxy0', section: 'Variant calling', needs: 'configureStrelkaSomaticWorkflow.py',
+      requirements: [['strelka', '2.9.10'], ['samtools', '1.17'], ['htslib', '1.17']],
+      inputs: [
+        { name: 'normalBam', short: 'normal', label: 'Select normal sample file (BAM)', ext: ['bam'], nice: 'input_normal.bam', pick: /normal/i },
+        { name: 'tumorBam', short: 'tumor', label: 'Select tumor sample file (BAM)', ext: ['bam'], nice: 'input_tumor.bam', pick: /tumou?r/i },
+        { name: 'ref', short: 'reference', label: 'Choose the source for the reference genome: use a genome from the history', ext: ['fasta'], nice: 'input_ref.fa' }
+      ],
+      params: [
+        { name: 'optimization', short: 'data', label: 'Optimize variant calling for', type: 'select', default: '', options: [['', 'Whole-genome sequencing (WGS) data (default mode)'], ['--exome', 'Whole-exome sequencing (WES) data (--exome)']], help: '--exome turns off the filter of positions with a much higher depth than the chromosome\'s mean.' },
+        { name: 'minTier1Mapq', short: 'min MAPQ', label: 'Set minTier1Mapq: minimum MAPQ score for reads at tier1', type: 'int', default: 20 },
+        { name: 'ssnvQuality_LowerBound', short: 'SNV QSS', label: 'Set ssnvQuality_LowerBound: somatic quality score below which SNVs are marked as filtered', type: 'int', default: 15 },
+        { name: 'sindelQuality_LowerBound', short: 'indel QSI', label: 'Set sindelQuality_LowerBound: somatic quality score below which indels are marked as filtered', type: 'int', default: 40 },
+        { name: 'outputCallableRegions', short: 'callable', label: 'Generate bed file describing somatic callable regions of the genome', type: 'bool', default: false }
+      ],
+      outputs: [
+        { name: 'out_indels', short: 'indels', ext: 'vcf', file: 'indels.vcf', label: (ins) => L('Strelka Somatic', ins, 'Indels, vcf') },
+        { name: 'out_snvs', short: 'SNVs', ext: 'vcf', file: 'snvs.vcf', label: (ins) => L('Strelka Somatic', ins, 'SNVs, vcf') },
+        { name: 'out_callable', short: 'callable', ext: 'bed', file: 'callable.bed', when: (i, p) => !!p.outputCallableRegions, label: (ins) => L('Strelka Somatic', ins, 'Callable regions, bed') }
+      ],
+      command: (i, p) => {
+        const conf = `[StrelkaSomatic]\\nminTier1Mapq = ${int(p.minTier1Mapq, 20)}\\nssnvQuality_LowerBound = ${int(p.ssnvQuality_LowerBound, 15)}\\nsindelQuality_LowerBound = ${int(p.sindelQuality_LowerBound, 40)}\\n`;
+        // (the BAM datasets come with their index, as in Galaxy: .bai next to them in the job's folder)
+        return `samtools faidx ${i.ref} && printf '${conf}' > config.txt && `
+          + `configureStrelkaSomaticWorkflow.py --normalBam ${i.normalBam} --tumorBam ${i.tumorBam}${p.outputCallableRegions ? ' --outputCallableRegions' : ''} --config=config.txt${p.optimization === '--exome' ? ' --exome' : ''} --referenceFasta ${i.ref} --runDir results > /dev/null && `
+          + `results/runWorkflow.py -m local -j 1 --quiet && bgzip -d results/results/variants/somatic.indels.vcf.gz && bgzip -d results/results/variants/somatic.snvs.vcf.gz && mv results/results/variants/somatic.indels.vcf indels.vcf && mv results/results/variants/somatic.snvs.vcf snvs.vcf`
+          + (p.outputCallableRegions ? ' && bgzip -d results/results/regions/somatic.callable.regions.bed.gz && mv results/results/regions/somatic.callable.regions.bed callable.bed' : '');
+      },
+      help: '<p>Calls somatic SNVs and small indels: variants in the tumour that its matched normal sample does not have. Strelka runs its own workflow – depth of each chromosome, calling in segments, empirical variant scoring – and marks each call PASS or with the filters it failed (in FILTER). Both BAM files must be aligned to the reference given here, with the same chromosomes.</p>'
     },
     {
       id: 'bcftools_filter', toolId: `${TS}/iuc/bcftools_filter/bcftools_filter/1.10`, name: 'bcftools filter', desc: 'Apply fixed-threshold filters', version: '1.10', section: 'Variant calling', needs: 'bcftools',

@@ -30,7 +30,8 @@ window.MG_CONFIG = {
 
   /* The WebAssembly bioinformatics programs of the terminal and of Galaxy. */
   biowasmBase: 'assets/vendor/biowasm',
-  // featureCounts and Salmon: the modules of the programs that count on several threads (see tools-wasm.js: THREADED)
+  // the programs of the genomics-wasm project that run in a worker of their own: featureCounts and Salmon (on several
+  // threads), Cutadapt, LoFreq, SomaticSniper and Strelka2 (see tools-wasm.js: OWN_WORKER, and somatic.js)
   threadsBase: 'assets/vendor/genomics-wasm/',
 
   /* AI assistant. Each user enters their own API key in the assistant's settings; it is kept

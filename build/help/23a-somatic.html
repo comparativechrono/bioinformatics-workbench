@@ -1,0 +1,59 @@
+<!-- id: h-somatic | title: Somatic variants: tumour and normal | group: Terminal and programs | summary: SomaticSniper, LoFreq somatic, Strelka2 on a tumour and its matched normal | keys: somatic variant tumour tumor normal matched pair cancer snv indel somaticsniper bam-somaticsniper lofreq somatic indelqual strelka strelka2 configureStrelkaSomaticWorkflow runWorkflow hcc1395 seqc2 loh truth -->
+<h1><!--ICON:tag-->Somatic variants: tumour and normal</h1>
+<p class="lede">A somatic variant is one that the tumour has and the rest of the body does not. The callers here compare the reads of a tumour with the reads of a <i>matched normal</i> sample of the same person: <b>SomaticSniper</b>, <b>LoFreq</b> (<code>lofreq somatic</code>) and <b>Strelka2</b>.</p>
+<p>The examples work in a folder of your own: <button class="do" type="button" data-term-run="mkdir -p ~/somatic && cd ~/somatic">mkdir -p ~/somatic &amp;&amp; cd ~/somatic</button></p>
+
+<h2>The example data</h2>
+<p><code>/data/examples/somatic/</code> holds real reads of the breast-cancer cell line <b>HCC1395</b> (<code>tumor.bam</code>) and of <b>HCC1395BL</b>, a cell line made from the blood of the same donor (<code>normal.bam</code>). They come from the SEQC2 consortium, which sequenced the two cell lines many times over and published the somatic variants it is confident of. To keep them small, the reads are those of two windows of chromosome 21 (GRCh38), and the windows are the reference: <code>chr21_10572001_10582000</code> (10 kb) and <code>chr21_21404501_21423500</code> (19 kb). A position plus 10,572,000 – or plus 21,404,500 – is the position on chromosome 21.</p>
+<pre class="code" data-run="term"><code>ls /data/examples/somatic/
+samtools view -H /data/examples/somatic/tumor.bam | grep -E "^@(SQ|RG)"
+grep -v "^##" /data/examples/somatic/truth.vcf | cut -f 1-7</code></pre>
+<p><code>truth.vcf</code> has the four SEQC2 variants in these windows: two SNVs and two deletions of one base. The SNV at <code>chr21_21404501_21423500:14045</code> is a rare one (about 7 % of the tumour cells): in this particular set of reads no read shows it, and no caller can find it. The BAM files are sorted and indexed, and both name the two windows – the callers check that tumour, normal and reference agree.</p>
+<p>Look at the first SNV yourself, tumour and normal together:</p>
+<pre class="code" data-run="term"><code>igv --genome /data/examples/somatic/reference.fa /data/examples/somatic/tumor.bam /data/examples/somatic/normal.bam --locus chr21_10572001_10582000:4,659-4,699</code></pre>
+<p>About a quarter of the tumour's reads have a G at position 4,679; none of the normal's do. That is what a somatic SNV looks like. (A germline variant would be in both, at about half or all of the reads.)</p>
+
+<h2>SomaticSniper</h2>
+<pre class="code" data-run="term"><code>bam-somaticsniper -F vcf -f /data/examples/somatic/reference.fa \
+    /data/examples/somatic/tumor.bam /data/examples/somatic/normal.bam somaticsniper.vcf
+grep -v "^##" somaticsniper.vcf | cut -f 1,2,4,5,9-11</code></pre>
+<p>The tumour BAM comes first, then the normal, then the output file. Each line has the two samples, NORMAL then TUMOR, in the fields that FORMAT names. Two of them matter most: <b>SS</b>, the somatic status (0 wild type, 1 germline, 2 somatic, 3 loss of heterozygosity – LOH, 5 unknown), and <b>SSC</b>, the somatic score (higher is surer). Only the first call, the true SNV, has a high SSC; the others are LOH calls and weak candidates. To keep the somatic calls with a score of 40 or more:</p>
+<pre class="code" data-run="term"><code>bam-somaticsniper -F vcf -Q 40 -L -G -f /data/examples/somatic/reference.fa \
+    /data/examples/somatic/tumor.bam /data/examples/somatic/normal.bam somaticsniper.strict.vcf
+grep -v "^#" somaticsniper.strict.vcf | cut -f 1,2,4,5</code></pre>
+<p><code>-Q</code> is the lowest somatic score reported, <code>-L</code> leaves out LOH calls, <code>-G</code> gains of reference. SomaticSniper calls SNVs only. <code>-n</code> and <code>-t</code> name the normal and tumour samples in the VCF – <code>-t</code> is not a number of threads.</p>
+
+<h2>LoFreq: lofreq somatic</h2>
+<p>LoFreq calls variants at any frequency the reads support. <code>lofreq somatic</code> calls the normal and the tumour, and keeps the tumour's calls that the normal does not have. For indels LoFreq needs indel qualities in the reads (<code>lofreq indelqual</code>); then the BAM files must be indexed again:</p>
+<pre class="code" data-run="term"><code>lofreq indelqual --dindel -f /data/examples/somatic/reference.fa -o tumor.iq.bam /data/examples/somatic/tumor.bam
+lofreq indelqual --dindel -f /data/examples/somatic/reference.fa -o normal.iq.bam /data/examples/somatic/normal.bam
+samtools index tumor.iq.bam &amp;&amp; samtools index normal.iq.bam
+lofreq somatic -n normal.iq.bam -t tumor.iq.bam -f /data/examples/somatic/reference.fa --call-indels -o lofreq_
+ls lofreq_*
+zcat lofreq_somatic_final.snvs.vcf.gz | grep -v "^##"
+zcat lofreq_somatic_final.indels.vcf.gz | grep -v "^##"</code></pre>
+<p>Everything starts with the prefix given with <code>-o</code>. <code>lofreq_somatic_final.snvs.vcf.gz</code> and <code>…indels.vcf.gz</code> are the results; the other files are the steps on the way (relaxed and stringent calls of each sample, and the raw somatic calls). INFO has the allele frequency in the tumour (<code>AF</code>), the depth (<code>DP</code>) and a strand-bias score (<code>SB</code>). On the example LoFreq finds the SNV and both deletions. It warns that no dbSNP file was given: with human data, <code>-d dbsnp.vcf.gz</code> removes known germline variants. LoFreq's authors call this workflow experimental. <code>lofreq call -f REF.fa -o calls.vcf sample.bam</code> calls the variants of one sample, at low frequencies too.</p>
+
+<h2>Strelka2</h2>
+<p>Strelka2 is used in two steps, as on any computer. The first configures a run in a folder of its own and checks the input; the second runs it:</p>
+<pre class="code" data-run="term"><code>configureStrelkaSomaticWorkflow.py --normalBam /data/examples/somatic/normal.bam --tumorBam /data/examples/somatic/tumor.bam \
+    --referenceFasta /data/examples/somatic/reference.fa --runDir strelka_run
+strelka_run/runWorkflow.py -m local -j 1
+ls strelka_run/results/variants/
+bcftools view -H strelka_run/results/variants/somatic.snvs.vcf.gz | cut -f 1-7
+bcftools view -H -f PASS strelka_run/results/variants/somatic.indels.vcf.gz | cut -f 1-7</code></pre>
+<p>Strelka writes every candidate it scored, and marks in FILTER whether it passed: <code>PASS</code>, or the filters it failed (<code>LowEVS</code>, a low empirical variant score; <code>LowDepth</code>). <code>bcftools view -f PASS</code> keeps the passing calls: here the SNV and both deletions. The normal and tumour columns hold the counts of each base (<code>AU</code>, <code>CU</code>, <code>GU</code>, <code>TU</code>) and, for indels, of reads with and without the indel (<code>TAR</code>, <code>TIR</code>); <code>QSS</code> and <code>QSI</code> are the somatic qualities. <code>strelka_run/results/stats/runStats.tsv</code> summarises the run.</p>
+<p>Options of the first step: <code>--exome</code> (exome or panel data: no filter for unusually high depth), <code>--callRegions regions.bed.gz</code> (call only in these regions – compressed with bgzip and indexed with <code>tabix -p bed</code>; <code>/data/examples/somatic/regions.bed.gz</code> is one), <code>--region chr:start-end</code>, <code>--outputCallableRegions</code>; <code>--allHelp</code> lists them all. Each run needs a new folder. Strelka's workflow scripts are Python 2, which is not here: the terminal runs them itself, with Strelka's own programs. <code>-j</code> does not matter (the tasks run one after another), and there is no <code>sge</code> mode.</p>
+
+<h2>Compare the callers with the truth</h2>
+<pre class="code" data-run="term"><code>grep -v "^#" /data/examples/somatic/truth.vcf | cut -f 1,2,4,5 > truth.tsv
+grep -v "^#" somaticsniper.strict.vcf | cut -f 1,2,4,5 > sniper.tsv
+zcat lofreq_somatic_final.snvs.vcf.gz lofreq_somatic_final.indels.vcf.gz | grep -v "^#" | cut -f 1,2,4,5 > lofreq.tsv
+bcftools view -H -f PASS strelka_run/results/variants/somatic.snvs.vcf.gz | cut -f 1,2,4,5 > strelka.tsv
+bcftools view -H -f PASS strelka_run/results/variants/somatic.indels.vcf.gz | cut -f 1,2,4,5 >> strelka.tsv
+for f in sniper lofreq strelka; do echo "$f: $(grep -c -F -x -f truth.tsv $f.tsv) of $(wc -l &lt; truth.tsv) true variants, $(wc -l &lt; $f.tsv) calls"; done</code></pre>
+<p>Two windows chosen around known variants are no benchmark – they show how the callers report, not how good they are. Real data needs more: a panel of normals, known germline variants, a look at each candidate in the genome browser.</p>
+
+<h2>In Galaxy</h2>
+<p>Galaxy (the Galaxy tab) has <b>Strelka Somatic</b>, <b>Insert indel qualities</b> and <b>Call variants with LoFreq</b>, which run the same programs. Upload the two BAM files and the reference to a history first.</p>
+<p>LoFreq, SomaticSniper and Strelka2 are compiled to WebAssembly from their released sources by the genomics-wasm project, and give the same calls as the same programs built for Linux (see <a href="#h-programs">Programs and versions</a>).</p>

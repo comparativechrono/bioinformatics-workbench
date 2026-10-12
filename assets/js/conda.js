@@ -3,9 +3,9 @@
 
    The programs here are real (WebAssembly builds of minimap2, samtools,
    bcftools, htslib, BWA, BWA-MEM2, HISAT2, FreeBayes, StringTie, kallisto,
-   mosdepth, featureCounts (Subread), Salmon, Graphviz, and Python 3.13 with
-   pandas and matplotlib from Pyodide), but only one version of each exists
-   in the browser.
+   mosdepth, featureCounts (Subread), Salmon, Cutadapt, LoFreq, SomaticSniper,
+   Strelka2, Graphviz, and Python 3.13 with pandas and matplotlib from Pyodide),
+   but only one version of each exists in the browser.
    Environments decide which of them a command can use, exactly as on a
    real computer: a program outside the active environment is "not found".
    ===================================================================== */
@@ -39,6 +39,15 @@
     mosdepth: { v: '0.3.14', build: 'h87be163_2', ch: 'bioconda', prog: ['mosdepth'], deps: ['libzlib'] },
     subread: { v: '2.1.1', build: 'h577a1d6_0', ch: 'bioconda', prog: ['featureCounts'], deps: ['libzlib'] },
     salmon: { v: '2.8.0', build: 'hfa8f182_0', ch: 'bioconda', prog: ['salmon'] },
+    // (bioconda's newest builds. What LoFreq needs besides – HTSlib 1.24, samtools 1.24 or newer, bcftools 1.22 or newer, GSL – is not
+    // modelled: in the browser LoFreq has its own HTSlib, built in. Strelka 2.9.10's workflow scripts are Python 2.7 –
+    // bioconda's strelka asks for python 2.7.*: here the terminal runs the scripts itself, and needs no Python for them)
+    cutadapt: { v: '5.2', build: 'py313hd978853_2', ch: 'bioconda', prog: ['cutadapt'], deps: ['python', 'dnaio', 'xopen'] },
+    dnaio: { v: '1.2.4', build: 'py313hd978853_0', ch: 'bioconda', dep: true, deps: ['xopen'] },
+    xopen: { v: '2.1.0', build: 'pyh707e725_0', ch: 'conda-forge', dep: true },
+    lofreq: { v: '2.1.5', build: 'py313ha7493ab_16', ch: 'bioconda', prog: ['lofreq'], deps: ['python', 'libzlib'] },
+    'somatic-sniper': { v: '1.0.5.0', build: '0', ch: 'bioconda', prog: ['bam-somaticsniper'], deps: ['libzlib'] },
+    strelka: { v: '2.9.10', build: 'hdfd78af_2', ch: 'bioconda', prog: ['configureStrelkaSomaticWorkflow.py'] },
     tabix: { v: '1.17', build: 'h81da01d_2', ch: 'bioconda', prog: ['tabix', 'bgzip'], alias: 'htslib' },
     graphviz: { v: '16.1.0', build: 'wasm_viz3.31', ch: 'conda-forge', prog: ['dot'] },
     python: { v: '3.13.2', build: 'pyodide_0.29', ch: 'conda-forge', prog: ['python', 'python3'], py: true, deps: ['pip'], needs313: { libzlib: ['1.3.1', '2'] } },
@@ -56,7 +65,12 @@
     ncurses: { v: '6.5', build: 'h2d0b736_3', ch: 'conda-forge', dep: true }
   };
   /* names of programs that are not the names of their packages */
-  const INSTEAD = { featurecounts: 'featureCounts is in the package subread: conda install subread' };
+  const INSTEAD = {
+    featurecounts: 'featureCounts is in the package subread: conda install subread',
+    somaticsniper: 'SomaticSniper is in the package somatic-sniper: conda install somatic-sniper',
+    'bam-somaticsniper': 'bam-somaticsniper is in the package somatic-sniper: conda install somatic-sniper',
+    strelka2: 'Strelka2 is in the package strelka: conda install strelka'
+  };
   /* programs whose availability depends on the environment */
   const MANAGED = new Set(); // the workbench: every program is always available (environments only record what a pipeline needs)
 

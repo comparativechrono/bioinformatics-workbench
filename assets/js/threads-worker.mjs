@@ -1,7 +1,9 @@
-/* One command of a program that counts or quantifies on several threads (featureCounts, Salmon), in a worker of its
-   own. These programs run their main function on a thread of their own (Emscripten's PROXY_TO_PTHREAD) and start
-   more threads, which share the program's memory: that takes SharedArrayBuffer, and so a cross-origin isolated page
-   (see isolation.js). The single-threaded programs of the terminal run in the program runner of assets/vendor/biowasm.
+/* One command of a program of the genomics-wasm project, in a worker of its own. featureCounts and Salmon count or
+   quantify on several threads: they run their main function on a thread of their own (Emscripten's PROXY_TO_PTHREAD)
+   and start more threads, which share the program's memory – that takes SharedArrayBuffer, and so a cross-origin
+   isolated page (see isolation.js). LoFreq, SomaticSniper and Strelka2's programs run on one thread, in any page; a
+   workflow (lofreq somatic, Strelka's runWorkflow.py) runs each of its commands in a worker like this one (see
+   somatic.js). The other programs of the terminal run in the program runner of assets/vendor/biowasm.
 
    The page sends: the program's module (as genomics-wasm built it), its arguments, the folders and files it needs
    (each file at the path it has in the terminal's program file system), the links of the home folder and /data, the

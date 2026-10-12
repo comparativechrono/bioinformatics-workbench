@@ -1,6 +1,6 @@
-<!-- id: h-reads | title: Reads: quality, trimming, simulation | group: Terminal and programs | summary: fastp, seqtk, wgsim | keys: fastq reads quality control qc trimming adapters fastp seqtk wgsim subsample sample simulate phred -->
+<!-- id: h-reads | title: Reads: quality, trimming, simulation | group: Terminal and programs | summary: fastp, cutadapt, seqtk, wgsim | keys: fastq reads quality control qc trimming adapters adapter primer poly-a fastp cutadapt seqtk wgsim subsample sample simulate phred -->
 <h1><!--ICON:dna-->Reads: quality, trimming, simulation</h1>
-<p class="lede">FASTQ files hold reads with a quality for every base. <b>fastp</b> checks and trims them, <b>seqtk</b> does many small jobs, <b>wgsim</b> makes simulated reads from a reference.</p>
+<p class="lede">FASTQ files hold reads with a quality for every base. <b>fastp</b> checks and trims them, <b>cutadapt</b> finds and removes adapters and primers, <b>seqtk</b> does many small jobs, <b>wgsim</b> makes simulated reads from a reference.</p>
 <p>The examples work in a folder of your own: <button class="do" type="button" data-term-run="mkdir -p ~/reads && cd ~/reads">mkdir -p ~/reads &amp;&amp; cd ~/reads</button></p>
 
 <h2>A look at the reads</h2>
@@ -23,6 +23,26 @@ open fastp.html</code></pre>
 <tr><td><code>--cut_tail</code></td><td>trim low-quality bases from the 3′ end in a sliding window</td></tr>
 <tr><td><code>--detect_adapter_for_pe</code></td><td>find the adapters of paired-end reads from the reads themselves</td></tr>
 </table>
+
+<h2>cutadapt: adapters, primers and quality</h2>
+<p>When a DNA fragment is shorter than the read, the sequencer reads on into the adapter at the end of the fragment. <code>/data/examples/trimming/</code> has 384 read pairs of a yeast RNA-seq run that were chosen because many of them do: Cutadapt looks for the adapter you give it in every read and cuts it off, with everything after it.</p>
+<pre class="code" data-run="term"><code>cutadapt -a AGATCGGAAGAGCACACGTCTGAACTCCAGTCA -A AGATCGGAAGAGCGTCGTGTAGGGAAAGAGTGT \
+         -o trimmed_1.fastq -p trimmed_2.fastq \
+         /data/examples/trimming/SRR6357070_adapters_1.fastq /data/examples/trimming/SRR6357070_adapters_2.fastq > cutadapt_report.txt
+head -20 cutadapt_report.txt</code></pre>
+<p>The report says that 205 of the 384 first reads, and 209 of the second, had the adapter, and how many bases went. Further down, the table <i>Overview of removed sequences</i> counts the matches by length and compares them with the number expected by chance (<code>expect</code>): many matches of 3 or 4 bases are chance – <code>-O</code> raises the shortest overlap that counts.</p>
+<table>
+<tr><th>Option</th><th>Means</th></tr>
+<tr><td><code>-a SEQ</code> / <code>-A SEQ</code></td><td>a 3′ adapter of read 1 / read 2: the adapter and what follows it are removed</td></tr>
+<tr><td><code>-g SEQ</code> / <code>-g ^SEQ</code></td><td>a 5′ adapter or primer (with <code>^</code>: only at the very start of the read)</td></tr>
+<tr><td><code>-q 20</code></td><td>trim bases below quality 20 from the 3′ end (before the adapter is searched)</td></tr>
+<tr><td><code>-m 30</code></td><td>discard reads (pairs) shorter than 30 bases after trimming</td></tr>
+<tr><td><code>-e 0.1</code>, <code>-O 3</code></td><td>errors allowed in a match (a fraction of its length); the shortest match that counts</td></tr>
+<tr><td><code>--poly-a</code>, <code>--trim-n</code></td><td>trim poly-A tails; trim N bases from the ends</td></tr>
+<tr><td><code>--discard-untrimmed</code></td><td>keep only the reads in which the adapter was found (amplicons, primers)</td></tr>
+<tr><td><code>--json report.json</code></td><td>the report as JSON too (for MultiQC, or <code>jq</code>)</td></tr>
+</table>
+<p>The adapter sequence comes from the library kit; <code>AGATCGGAAGAGC</code>, the start of Illumina's TruSeq adapters, finds most of them. Cutadapt reads and writes <code>.gz</code> files, and prints the reads to the standard output when there is no <code>-o</code> (<code>cutadapt -a … reads.fastq | head</code>). Here it runs on one core (<code>-j</code> is left out) and, being a Python program, takes a few seconds to start. Galaxy has it as <b>Cutadapt</b>.</p>
 
 <h2>seqtk: small jobs</h2>
 <pre class="code" data-run="term"><code># FASTQ to FASTA

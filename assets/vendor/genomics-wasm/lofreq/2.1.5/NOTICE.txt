@@ -1,0 +1,29 @@
+LoFreq 2.1.5 (LoFreq_Star): lofreq
+Licence: MIT (LICENSE in this folder). Built with HTSlib 1.24 (LICENSE.htslib; with htscodecs, LICENSE.htscodecs),
+zlib 1.3.1 (LICENSE.zlib) and two long-double functions of OpenLibm 0.8.8 (LICENSE.openlibm); LoFreq contains uthash
+(LICENSE.uthash) and DCDFLIB (NOTICE.cdflib). The loader is Emscripten's runtime (MIT and NCSA: LICENSE.emscripten).
+THIRD_PARTY_LICENSES.txt lists them.
+Upstream source: https://github.com/CSB5/lofreq (tag v2.1.5, commit 8fe42b04dcd9775fb618d8004649421c0632b35c)
+
+Compiled to WebAssembly by the genomics-wasm project (https://github.com/comparativechrono/genomics-wasm,
+commit bfacba3): Emscripten 3.1.64, one thread. The module (lofreq.mjs, lofreq.wasm) is used here as that project
+built it: the page runs each command in a worker of its own (assets/js/threads-worker.mjs). Everything needed to
+build it again is described in ../../../licenses/genomics-wasm-build/.
+
+Changes to the source (tools/lofreq/browser.patch there): lofreq call runs LoFreq's filter as a function, where
+upstream starts "lofreq filter" through a shell (the same thresholds and options); the C library's floating-point
+exception flags, which WebAssembly does not have, are recorded explicitly where LoFreq checks them; the test counts
+of filter and uniq are 64-bit numbers. WebAssembly's long double expl and log10l would lose very small
+probabilities, so OpenLibm's functions are linked in their place. Calling and filtering are unchanged.
+"lofreq somatic", "call-parallel" and "vcfplot" are Python scripts upstream. lofreq-somatic.mjs (MIT, from
+genomics-wasm's runtime/, unchanged) is the translation of lofreq2_somatic.py that runs the somatic workflow's
+commands – call, filter, vcfset, uniq – one after another; index.mjs is the workbench's small part of it (the paths
+of the terminal: see the comment in it). call-parallel and vcfplot are not available.
+
+In the workbench's terminal, lofreq somatic --threads N is run with one thread, with a note, and the messages of its
+steps stay out of sight unless it fails (as upstream, whose log files keep them).
+
+Checked against LoFreq 2.1.5 built natively from the same sources (genomics-wasm's comparison: 20 of 20 cases with
+the HCC1395 tumour/normal reads, among them complete somatic workflows run by upstream's own Python script; and in the
+workbench with the example data): lofreq call gives the same VCF records, lofreq indelqual the same BAM file byte for
+byte, and lofreq somatic the same files with the same records.

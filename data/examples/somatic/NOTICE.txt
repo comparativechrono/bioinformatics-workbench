@@ -1,0 +1,19 @@
+Notices for the files in this folder
+====================================
+
+tumor.bam, normal.bam (and their .bai indexes) hold reads of the cell lines HCC1395 (a breast cancer) and HCC1395BL
+(B lymphocytes of the same donor), sequenced by the SEQC2 consortium (Sequencing Quality Control Phase 2, led by the
+US FDA) and released by NCBI for benchmarking: study SRP162370,
+https://ftp-trace.ncbi.nlm.nih.gov/ReferenceSamples/seqc/Somatic_Mutation_WG/data/WGS/ .
+reference.fa is two windows of chromosome 21 of the human reference GRCh38, from UCSC (hg38). truth.vcf holds records
+of the SEQC2 high-confidence somatic SNV and indel truth set v1.2.1.
+
+These are publicly distributed research data. Please cite:
+
+  Fang LT, Zhu B, Zhao Y, et al. Establishing community reference samples, data and call sets for benchmarking
+  cancer mutation detection using whole-genome sequencing. Nature Biotechnology 2021; 39: 1151-1160.
+  doi:10.1038/s41587-021-00993-6
+
+The files were prepared – the reads of two windows, moved onto the windows, nothing else changed – by the genomics-wasm
+project (https://github.com/comparativechrono/genomics-wasm, commit bfacba3: datasets/strelka2/hcc1395), whose
+manifest records every source, byte range and step. Where every file came from, and its SHA-256: provenance.json.

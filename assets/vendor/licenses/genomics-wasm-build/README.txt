@@ -1,5 +1,5 @@
-BWA, BWA-MEM2, HISAT2, FreeBayes, featureCounts, StringTie, kallisto, Salmon, mosdepth and the R package
-locfit – from the genomics-wasm project
+BWA, BWA-MEM2, HISAT2, FreeBayes, featureCounts, StringTie, kallisto, Salmon, mosdepth, Cutadapt, LoFreq,
+SomaticSniper, Strelka2 and the R package locfit – from the genomics-wasm project
 ===========================================================================================================
 The WebAssembly builds of BWA 0.7.19, HISAT2 2.2.2 and FreeBayes 1.3.6 in ../../biowasm/, and of the
 R package locfit 1.5-9.12 in ../../r-packages/, come from the genomics-wasm project:
@@ -123,3 +123,58 @@ BWA-MEM2, StringTie, kallisto, mosdepth, featureCounts and Salmon (added on 11 O
   mosdepth -t, which must be 0); featureCounts counts on up to four threads (-T 5 and more become -T 4). Emscripten's
   note about a system call that it does not have (featureCounts: "warning: unsupported syscall: __syscall_prlimit64")
   is left out, and Salmon's system error numbers are given as Linux numbers them.
+
+Cutadapt, LoFreq, SomaticSniper and Strelka2 (added on 11 October 2026)
+  Cutadapt 5.2 (with dnaio 1.2.4 and xopen 2.1.0, in Pyodide 314.0.7 – CPython 3.14.2), LoFreq 2.1.5, SomaticSniper
+  1.0.5.0 and Strelka2 2.9.10 in ../../genomics-wasm/ come from the same project at commit
+  bfacba302b32f9fe12da4cc694c9a0b65b492986 (11 October 2026). Their parts of the repository, in its layout:
+  scripts/           build-cutadapt.py, build-lofreq.sh, build-somaticsniper.sh, build-strelka2.sh,
+                     setup-strelka2-python.py (Python 2.7.18, only for the comparison with Strelka's native workflow)
+  tools/cutadapt/    README.md, browser.patch, sources.lock.json (every source archive, compiler download and Python
+                     build dependency, with its SHA-256), build-requirements.lock, runtime-sources.json, native-entry.py,
+                     the licences, cython-notices/ and runtime-notices/
+  tools/lofreq/      README.md, browser.patch, portable_math.c/.h, counts.h, numerics.c, build.py, sources.lock.json,
+                     the licences
+  tools/somaticsniper/ README.md, browser.patch, samtools.patch, build.py, sources.lock.json, the licences
+  tools/strelka2/    README.md, browser.patch, htslib.patch, rapidjson.patch, CMakeLists.txt (the cross-build layer),
+                     build.py, sources.lock.json, the licences
+  tools/strelka2-python/ the recipe's record of Python 2.7.18
+  runtime/           lofreq.mjs, lofreq-somatic.mjs, strelka2.mjs, strelka2-somatic.mjs, cutadapt.mjs,
+                     cutadapt-worker.mjs, cutadapt-execute.mjs, and LOFREQ.md, STRELKA2.md, CUTADAPT.md (how they work).
+                     lofreq-somatic.mjs (MIT) and strelka2-somatic.mjs (GNU GPL 3 or later) are used unchanged, next
+                     to the programs; assets/js/cutadapt-worker.mjs here was adapted from cutadapt-execute.mjs.
+  Source code included here (in ../sources/): Strelka2 2.9.10 as released (GNU GPL 3 or later; the archive holds
+  Boost, HTSlib, samtools, CodeMin, RapidJSON, bgzf_extras and pyflow as Strelka bundles them), and Pyodide 314.0.7
+  and hiwire (Mozilla Public License 2.0), the Python runtime of Cutadapt. The other parts are under permissive
+  licences (MIT, BSD, PSF, zlib) and their sources are where the lock files point.
+  What was done for this site:
+    workbench/build-somatic-and-cutadapt-for-workbench.sh  the builds, step by step (the repository's scripts, with
+                                            the build machine's folders mapped out of the programs' strings)
+    workbench/recreate-github-archive.sh    makes again the archives that GitHub makes of a tag or a commit (git
+                                            archive, gzip -n), and checks their SHA-256 against the lock files
+    workbench/build-cutadapt-offline-bzip2.py  runs build-cutadapt.py unchanged, accepting the one archive that could
+                                            not be made again byte for byte (see the script)
+  None of the four is linked again: each runs as built, each command in a worker of its own (threads-worker.mjs;
+  cutadapt-worker.mjs for Cutadapt), with no need for a cross-origin isolated page.
+
+  How they were made and checked (11 October 2026)
+  1. Native programs from the unchanged sources, native programs with the port's changes, and the WebAssembly programs,
+     with each tool's script ("all"); Emscripten 3.1.64 (LoFreq, SomaticSniper, Strelka2) and 5.0.3 with pyodide-build
+     (Cutadapt's and dnaio's Cython extensions, for CPython 3.14.2 built from python.org's source).
+  2. The project's comparisons in Node.js 22 passed: validate-cutadapt.mjs (34 of 34 cases: human and yeast reads –
+     the same reads, qualities and statistics as native Cutadapt), validate-somatic.mjs --tool somaticsniper (11 of
+     11) and --tool lofreq (20 of 20, with complete somatic workflows run by upstream's own lofreq2_somatic.py),
+     validate-strelka2.mjs (13 of 13, against Strelka's unchanged native workflow run by Python 2.7.18 and pyflow):
+     real HCC1395 tumour and HCC1395BL normal reads (SEQC2).
+  3. In the workbench's terminal and in its Galaxy, with the example data, the results were compared with the native
+     programs once more: Cutadapt's trimmed FASTQ files (byte for byte) and report; lofreq call's VCF records, lofreq
+     indelqual's BAM file (byte for byte), lofreq somatic's files and records; bam-somaticsniper's VCF records;
+     Strelka2's somatic SNV and indel records, index files and run statistics, from configureStrelkaSomaticWorkflow.py
+     and runWorkflow.py – all the same, apart from dates, times and command lines in headers.
+
+  In the terminal of the workbench
+  cutadapt, lofreq, bam-somaticsniper (also somaticsniper), configureStrelkaSomaticWorkflow.py and the runWorkflow.py
+  it writes run these programs. cutadapt -j N and lofreq somatic --threads N run with one, with a note. lofreq
+  call-parallel and vcfplot (Python scripts upstream) are not available. runWorkflow.py runs with -m local; -j does not
+  matter. Strelka's germline workflow is not here. There is no Python 2: python2 runs Strelka's run scripts only.
+
