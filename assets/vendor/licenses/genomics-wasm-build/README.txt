@@ -1,5 +1,5 @@
 BWA, BWA-MEM2, HISAT2, FreeBayes, featureCounts, StringTie, kallisto, Salmon, mosdepth, Cutadapt, LoFreq,
-SomaticSniper, Strelka2 and the R package locfit – from the genomics-wasm project
+SomaticSniper, Strelka2, Kraken2, Bracken and the R package locfit – from the genomics-wasm project
 ===========================================================================================================
 The WebAssembly builds of BWA 0.7.19, HISAT2 2.2.2 and FreeBayes 1.3.6 in ../../biowasm/, and of the
 R package locfit 1.5-9.12 in ../../r-packages/, come from the genomics-wasm project:
@@ -142,7 +142,8 @@ Cutadapt, LoFreq, SomaticSniper and Strelka2 (added on 11 October 2026)
   runtime/           lofreq.mjs, lofreq-somatic.mjs, strelka2.mjs, strelka2-somatic.mjs, cutadapt.mjs,
                      cutadapt-worker.mjs, cutadapt-execute.mjs, and LOFREQ.md, STRELKA2.md, CUTADAPT.md (how they work).
                      lofreq-somatic.mjs (MIT) and strelka2-somatic.mjs (GNU GPL 3 or later) are used unchanged, next
-                     to the programs; assets/js/cutadapt-worker.mjs here was adapted from cutadapt-execute.mjs.
+                     to the programs; assets/js/python-worker.mjs here was adapted from cutadapt-execute.mjs (it was
+                     called cutadapt-worker.mjs until Bracken came – see below).
   Source code included here (in ../sources/): Strelka2 2.9.10 as released (GNU GPL 3 or later; the archive holds
   Boost, HTSlib, samtools, CodeMin, RapidJSON, bgzf_extras and pyflow as Strelka bundles them), and Pyodide 314.0.7
   and hiwire (Mozilla Public License 2.0), the Python runtime of Cutadapt. The other parts are under permissive
@@ -155,7 +156,7 @@ Cutadapt, LoFreq, SomaticSniper and Strelka2 (added on 11 October 2026)
     workbench/build-cutadapt-offline-bzip2.py  runs build-cutadapt.py unchanged, accepting the one archive that could
                                             not be made again byte for byte (see the script)
   None of the four is linked again: each runs as built, each command in a worker of its own (threads-worker.mjs;
-  cutadapt-worker.mjs for Cutadapt), with no need for a cross-origin isolated page.
+  python-worker.mjs for Cutadapt), with no need for a cross-origin isolated page.
 
   How they were made and checked (11 October 2026)
   1. Native programs from the unchanged sources, native programs with the port's changes, and the WebAssembly programs,
@@ -178,3 +179,54 @@ Cutadapt, LoFreq, SomaticSniper and Strelka2 (added on 11 October 2026)
   call-parallel and vcfplot (Python scripts upstream) are not available. runWorkflow.py runs with -m local; -j does not
   matter. Strelka's germline workflow is not here. There is no Python 2: python2 runs Strelka's run scripts only.
 
+Kraken2 and Bracken (added on 12 October 2026)
+  Kraken2 2.17.2 and Bracken 3.1 in ../../genomics-wasm/, and the example data in data/examples/metagenomics/, come
+  from the same project at commit ebe345482f587ca151ffd54fc65c36f520a8a1ae (12 October 2026). Their parts of the
+  repository, in its layout:
+  scripts/           build-kraken2.sh, build-bracken.sh, fetch-metagenomics-test-data.py (how the example data was
+                     made from its sources, and checked)
+  tools/kraken2/     README.md, browser.patch, abi-check.cc (the checks of the 64-bit database layout), build.py,
+                     sources.lock.json, the licences
+  tools/bracken/     README.md, browser.patch, build.py, sources.lock.json, runtime-sources.json, the licences and
+                     runtime-notices/ (those of the Python it runs in)
+  runtime/           kraken2.mjs, bracken.mjs, bracken-execute.mjs, bracken-worker.mjs, and KRAKEN2.md, BRACKEN.md (how
+                     they work). kraken2.mjs (MIT) is used unchanged, next to the programs; assets/js/python-worker.mjs
+                     here runs Bracken's Python programs as bracken-execute.mjs does.
+  datasets/metagenomics/ README.md (what the example data is), manifest.json (its files, with their SHA-256),
+                     provenance/sources.lock.json (the sources: ENA's reads, NCBI's sequences and taxonomy)
+  Source code included here (in ../sources/): Bracken 3.1 (GNU GPL 3 or later). Kraken2 is under the MIT licence;
+  its source is where tools/kraken2/sources.lock.json points. Bracken's Python programs run in the Pyodide that
+  Cutadapt uses – one copy, ../../genomics-wasm/pyodide/314.0.7/ (its source, and hiwire's: ../sources/, as above).
+  What was done for this site:
+    workbench/build-kraken2-and-bracken-for-workbench.sh  the builds, step by step (as for Cutadapt and the somatic
+                                            callers: the build machine's folders mapped out of the programs' strings,
+                                            and GitHub's archives made again with recreate-github-archive.sh)
+    workbench/build-bracken-offline-bzip2.py  runs tools/bracken/build.py unchanged, accepting the one archive that
+                                            could not be made again byte for byte (see the script)
+  Neither is linked again: each program runs as built, each command in a worker of its own (threads-worker.mjs;
+  python-worker.mjs for Bracken's Python programs), with no need for a cross-origin isolated page. Kraken2's and
+  Bracken's own scripts – kraken2, kraken2-build and kraken2-inspect (Perl and shell), bracken and bracken-build
+  (shell) – are not run: assets/js/metagenomics.js does what they do, with their options, checks and messages.
+
+  How they were made and checked (12 October 2026)
+  1. Native programs from the unchanged sources, native programs with the port's changes, and the WebAssembly programs,
+     with each tool's script ("all"); Emscripten 3.1.64; CPython 3.14.2 for Bracken's Python programs natively.
+  2. The project's comparison in Node.js 22 passed: validate-metagenomics.mjs --tool all (Kraken2 13 of 13 cases,
+     Bracken 14 of 14): real reads of a mock community (ERR2984773), with databases built natively and in WebAssembly
+     and read by the other; the same classifications, reports, database files and distributions.
+  3. In the workbench's terminal and in its Galaxy, with the example data, the results were compared with the native
+     programs, run by Kraken2's and Bracken's own scripts: kraken2's reports (also with --use-mpa-style,
+     --report-zero-counts, --report-minimizer-data, --confidence and --minimum-hit-groups), classifications, and
+     classified and unclassified reads; kraken2-inspect's table; kraken2-build's hash.k2d and taxo.k2d; bracken's
+     abundance tables and reports; bracken-build's database.kraken and distributions (151- and 100-base reads) – all
+     the same, byte for byte. (kraken2-build's opts.k2d differs from a native build's in unused padding bytes only,
+     which the port writes as zeros – tools/kraken2/README.md.)
+
+  In the terminal of the workbench
+  kraken2, kraken2-inspect, kraken2-build, bracken and bracken-build run these programs (and est_abundance.py,
+  generate_kmer_distribution.py and kmer2read_distr, which Bracken's scripts run). Thread options are left out with a
+  note: everything runs on one thread. kraken2-build cannot download (--download-taxonomy, --download-library,
+  --standard, --special) and has no --add-to-library; databases are built from a library/, seqid2taxid.map and
+  taxonomy/ that are there, without masking (--no-masking). A file of reads that is not there is an error here
+  (upstream's kraken2 counts it as no reads); - is such a file name, as upstream – the standard input is /dev/stdin.
+  Where Bracken's shell script reports an error but ends with status 0, bracken here ends with status 2.

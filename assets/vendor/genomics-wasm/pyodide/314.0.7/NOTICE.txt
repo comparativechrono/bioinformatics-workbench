@@ -1,0 +1,14 @@
+Pyodide 314.0.7 – CPython 3.14.2 compiled to WebAssembly with Emscripten 5.0.3 – unchanged: the Python of Cutadapt
+(../../cutadapt/5.2/) and of Bracken's Python programs (../../bracken/3.1/)
+The files of the release pyodide-core-314.0.7 (https://github.com/pyodide/pyodide/releases/tag/314.0.7) that the two
+need: pyodide.mjs, pyodide.asm.mjs, pyodide.asm.wasm, python_stdlib.zip and pyodide-lock.json. No other package of
+Pyodide's is loaded. One copy serves both: assets/js/python-worker.mjs is given this folder, and checks that the
+versions of Pyodide and Python are those that the tool's manifest names.
+
+Licences: Pyodide and hiwire are under the Mozilla Public License 2.0; CPython under the PSF licence; Emscripten's
+runtime under MIT and NCSA; the libraries in it – libffi, xz, zstd, SQLite, bzip2 and zlib – under their own
+(permissive) licences. runtime-notices/ holds their notices, unchanged, as genomics-wasm ships them with Bracken
+(runtime-notices/README.md says what each is; runtime-notices/manifest.json gives their SHA-256); Cutadapt comes with
+the same notices (../../cutadapt/5.2/runtime-notices/). The source code of Pyodide and hiwire is in
+../../../licenses/sources/ (pyodide-314.0.7.tar.gz, hiwire-6a1e67280a15d929ebeceee54a6358c9c8d5f697.tar.gz).
+Upstream source: https://github.com/pyodide/pyodide (tag 314.0.7).

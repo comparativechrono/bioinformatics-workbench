@@ -1,0 +1,23 @@
+Notices for the files in this folder
+====================================
+
+reads_1.fastq.gz and reads_2.fastq.gz hold the first 4,096 read pairs of the Illumina MiSeq run ERR2984773 (ENA/SRA,
+INSDC): a mock microbial community – the ZymoBIOMICS Microbial Community DNA Standard (D6305), even composition: DNA of
+eight bacteria, 12 % each, and two yeasts, 2 % each – sequenced at the University of Birmingham, study PRJEB29504,
+sample SAMEA5157164. Please cite:
+
+  Nicholls SM, Quick JC, Tang S, Loman NJ. Ultra-deep, long-read nanopore sequencing of mock microbial community
+  standards. GigaScience 2019; 8(5): giz043. doi:10.1093/gigascience/giz043
+
+db/ is a small Kraken2 database: db/library/reference.fna holds the first 1,000,000 bases of three bacterial
+chromosomes from NCBI RefSeq – Escherichia coli K-12 MG1655 (NC_000913.3), Salmonella enterica Typhimurium LT2
+(NC_003197.2) and Shigella flexneri 2a 301 (NC_004337.2); db/taxonomy/ holds their lineages from NCBI Taxonomy;
+db/seqid2taxid.map gives each sequence its species. hash.k2d, opts.k2d and taxo.k2d were built from them with Kraken2
+2.17.2, and database151mers.kmer_distrib with Bracken 3.1 (reads of 151 bases). Shigella flexneri is in the database
+as a close relative of E. coli; it is not in the community, and most of the community's organisms are not in the
+database.
+
+The files were prepared by the genomics-wasm project (https://github.com/comparativechrono/genomics-wasm, commit
+ebe3454: datasets/metagenomics/zymo), with unchanged upstream programs; its manifest records every source, byte range
+and step. Where every file came from, and its SHA-256: provenance.json. The reads are public INSDC data; NCBI's
+sequences and taxonomy are public.

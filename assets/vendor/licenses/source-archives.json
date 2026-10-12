@@ -162,6 +162,15 @@
   "origin": "the release archive, https://github.com/Illumina/strelka/releases/download/v2.9.10/strelka-2.9.10.release_src.tar.bz2 (commit 1c8f1be330dc6f58568c82468a9da1c5f32fb54a; its redist/ folder holds Boost 1.58 (subset), HTSlib 1.7-6-g6d2bfb7, samtools 1.6, CodeMin 1.0.5, RapidJSON 1.1.0, bgzf_extras 0.1 and pyflow 1.1.20), as pinned in genomics-wasm's tools/strelka2/sources.lock.json, 2026-10-11"
  },
  {
+  "package": "bracken-3.1",
+  "licence": "GPL-3.0-or-later",
+  "file": "sources/bracken-3.1.tar.gz",
+  "sha256": "c0a35331a8aac1e0dbb14c2a92c4de6f89f0aac540101c05c2eec54032107560",
+  "bytes": 141466,
+  "upstream": "https://github.com/jenniferlu717/Bracken/tree/v3.1",
+  "origin": "git archive --format=tar --prefix=Bracken-3.1/ v3.1 | gzip -n, from https://github.com/jenniferlu717/Bracken.git – byte for byte GitHub's archive of the tag (https://codeload.github.com/jenniferlu717/Bracken/tar.gz/refs/tags/v3.1), as pinned in genomics-wasm's tools/bracken/sources.lock.json, 2026-10-12"
+ },
+ {
   "package": "pyodide-314.0.7",
   "licence": "MPL-2.0",
   "file": "sources/pyodide-314.0.7.tar.gz",

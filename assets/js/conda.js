@@ -4,7 +4,8 @@
    The programs here are real (WebAssembly builds of minimap2, samtools,
    bcftools, htslib, BWA, BWA-MEM2, HISAT2, FreeBayes, StringTie, kallisto,
    mosdepth, featureCounts (Subread), Salmon, Cutadapt, LoFreq, SomaticSniper,
-   Strelka2, Graphviz, and Python 3.13 with pandas and matplotlib from Pyodide),
+   Strelka2, Kraken2, Bracken, Graphviz, and Python 3.13 with pandas and
+   matplotlib from Pyodide),
    but only one version of each exists in the browser.
    Environments decide which of them a command can use, exactly as on a
    real computer: a program outside the active environment is "not found".
@@ -48,6 +49,9 @@
     lofreq: { v: '2.1.5', build: 'py313ha7493ab_16', ch: 'bioconda', prog: ['lofreq'], deps: ['python', 'libzlib'] },
     'somatic-sniper': { v: '1.0.5.0', build: '0', ch: 'bioconda', prog: ['bam-somaticsniper'], deps: ['libzlib'] },
     strelka: { v: '2.9.10', build: 'hdfd78af_2', ch: 'bioconda', prog: ['configureStrelkaSomaticWorkflow.py'] },
+    // (bioconda's kraken2 also asks for perl, blast, rsync and wget – for its download scripts, which are not here)
+    kraken2: { v: '2.17.2', build: 'pl5321h3be2455_0', ch: 'bioconda', prog: ['kraken2', 'kraken2-build', 'kraken2-inspect'], deps: ['python', 'libzlib'] },
+    bracken: { v: '3.1', build: 'h9948957_0', ch: 'bioconda', prog: ['bracken', 'bracken-build', 'est_abundance.py', 'generate_kmer_distribution.py', 'kmer2read_distr'], deps: ['kraken2', 'python'] },
     tabix: { v: '1.17', build: 'h81da01d_2', ch: 'bioconda', prog: ['tabix', 'bgzip'], alias: 'htslib' },
     graphviz: { v: '16.1.0', build: 'wasm_viz3.31', ch: 'conda-forge', prog: ['dot'] },
     python: { v: '3.13.2', build: 'pyodide_0.29', ch: 'conda-forge', prog: ['python', 'python3'], py: true, deps: ['pip'], needs313: { libzlib: ['1.3.1', '2'] } },

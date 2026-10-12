@@ -1,0 +1,21 @@
+{
+  "schema": 1,
+  "tool": "bracken",
+  "version": "3.1",
+  "upstreamVersionText": "3.0.1",
+  "pyodide": {
+    "version": "314.0.7",
+    "python": "3.14.2",
+    "path": "pyodide/"
+  },
+  "scripts": {
+    "est_abundance.py": {
+      "path": "python/est_abundance.py",
+      "sha256": "c311cb56921b92c807ea28710c98349c725f27b7cee2b20e2e343c50e2981cca"
+    },
+    "generate_kmer_distribution.py": {
+      "path": "python/generate_kmer_distribution.py",
+      "sha256": "fa74ac171c04f8855b18b892ecde376561eaea01266499fcfb8e1890a0734c87"
+    }
+  }
+}
