@@ -1,0 +1,33 @@
+Bracken 3.1: est_abundance.py and generate_kmer_distribution.py (Python, unchanged) and kmer2read_distr (compiled) –
+the programs that bracken and bracken-build run
+Licence: GNU General Public License 3 or later (LICENSE in this folder); copyright Jennifer Lu. The loader of
+kmer2read_distr is Emscripten's runtime (MIT and NCSA: LICENSE.emscripten). THIRD_PARTY_LICENSES.txt lists them.
+Source code: ../../../licenses/sources/bracken-3.1.tar.gz, with the changes below (tools/bracken/browser.patch in
+../../../licenses/genomics-wasm-build/).
+Upstream source: https://github.com/jenniferlu717/Bracken (tag v3.1). Its scripts print the version 3.0.1, here as
+upstream.
+
+The Python programs run unchanged in Pyodide 314.0.7 – CPython 3.14.2 compiled to WebAssembly – which they share
+with Cutadapt: ../../pyodide/314.0.7/ (its notices are there). They need only Python's standard library. manifest.json
+names them (python/) with their SHA-256, and the page checks them before it runs them. runtime-sources.json records
+the sources of that Python and of its libraries.
+
+Built by the genomics-wasm project (https://github.com/comparativechrono/genomics-wasm, commit ebe3454):
+kmer2read_distr compiled with Emscripten 3.1.64, one thread. The page runs each command in a worker of its own:
+assets/js/threads-worker.mjs for kmer2read_distr, assets/js/python-worker.mjs for the Python programs (adapted from
+genomics-wasm's runtime/bracken-execute.mjs and cutadapt-execute.mjs). assets/js/metagenomics.js does what Bracken's
+shell scripts bracken and bracken-build do – their options, checks and messages; bracken-build runs Kraken2 from
+../../kraken2/2.17.2/. Everything needed to build them again is described in ../../../licenses/genomics-wasm-build/.
+
+Changes to kmer2read_distr (tools/bracken/browser.patch): it runs on one thread (without OpenMP); two diagnostic
+printf arguments have the right types; an empty file is read as no records; it no longer reads a record that is not
+there after the last newline (natively that adds a line with an empty sequence ID to DB/databaseREADLENmers.kraken –
+a line with no part in the distribution); and a malformed record or an unknown sequence ID stops it with a message.
+The distribution is computed as upstream.
+Where Bracken's shell script reports an error but ends with status 0 (no database, no report), the workbench's
+bracken ends with status 2.
+
+Checked against Bracken 3.1 built natively (genomics-wasm's comparison: 14 of 14 cases; and in the workbench with the
+example data, against the native programs run by Bracken's own scripts): the same abundance tables and reports from
+bracken, and the same distribution files (DB/database151mers.kmer_distrib, database100mers.kmer_distrib) from
+bracken-build, byte for byte.

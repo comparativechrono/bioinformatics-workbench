@@ -1,0 +1,62 @@
+<!-- id: h-metagenomics | title: Metagenomics: who is in the sample | group: Terminal and programs | summary: Kraken2 and Bracken: a taxon for every read, and how much of each species | keys: metagenomics metagenome microbiome microbial community taxonomy taxonomic classification profiling abundance species genus family kraken kraken2 kraken2-build kraken2-inspect bracken bracken-build est_abundance k-mer minimizer database library seqid2taxid nodes.dmp names.dmp taxid mock community zymo shotgun report -->
+<h1><!--ICON:chart-->Metagenomics: who is in the sample</h1>
+<p class="lede">The DNA of a sample of soil, gut or water comes from many organisms at once. <b>Kraken2</b> gives each read the taxon – species, genus, family … – whose DNA it matches in a database of known genomes. <b>Bracken</b> then estimates how many reads each species has, including the reads that Kraken2 could place only on a genus or a family.</p>
+<p>The examples work in a folder of your own: <button class="do" type="button" data-term-run="mkdir -p ~/meta && cd ~/meta">mkdir -p ~/meta &amp;&amp; cd ~/meta</button></p>
+
+<h2>The example data</h2>
+<p><code>/data/examples/metagenomics/</code> holds 4,096 pairs of real Illumina reads of a <i>mock community</i>: a mixture made to a known recipe, the ZymoBIOMICS Microbial Community DNA Standard – the DNA of eight bacteria, 12 % each, and of two yeasts, 2 % each. Because the answer is known, a mock community shows what a method gets right and what it gets wrong. <code>db/</code> is a small Kraken2 database: the first million bases of three bacterial chromosomes – <i>Escherichia coli</i>, <i>Salmonella enterica</i> and <i>Shigella flexneri</i> – with their taxonomy.</p>
+<pre class="code" data-run="term"><code>ls /data/examples/metagenomics/ /data/examples/metagenomics/db/
+zcat /data/examples/metagenomics/reads_1.fastq.gz | head -4
+cat /data/examples/metagenomics/db/seqid2taxid.map</code></pre>
+<p>E. coli and Salmonella are in the community; Shigella is not – it is there as a close relative of E. coli. The other six bacteria and the yeasts are not in the database at all. <code>seqid2taxid.map</code> gives each sequence of the database its NCBI taxonomy ID: 562 is <i>E. coli</i>, 28901 <i>S. enterica</i>, 623 <i>S. flexneri</i>.</p>
+
+<h2>Kraken2: a taxon for every read</h2>
+<pre class="code" data-run="term"><code>kraken2 --db /data/examples/metagenomics/db --paired --report sample.report --output sample.kraken \
+    /data/examples/metagenomics/reads_1.fastq.gz /data/examples/metagenomics/reads_2.fastq.gz
+head -5 sample.kraken</code></pre>
+<p>Kraken2 cuts each read into k-mers (31-base minimizers of 35-base windows, here) and looks them up in the database, which knows for each one the taxon it belongs to – the species, or, for a k-mer that several species share, their common ancestor. It puts the read on the taxon whose path from the root collects most of its k-mers. With <code>--paired</code> the two reads of a pair are classified together, so the 4,096 "sequences" are read pairs: 231 are classified, 3,865 are not.</p>
+<p>A line of <code>sample.kraken</code>: <code>C</code> or <code>U</code> (classified or not), the name of the read, the taxonomy ID it was given (0: none), the lengths of the two reads, and its k-mers – <code>562:113</code> are 113 k-mers of taxon 562, <code>0:4</code> four k-mers that are not in the database, and <code>|:|</code> separates the first read from the second. A read of 151 bases has 117 k-mers of 35.</p>
+
+<h2>The report</h2>
+<pre class="code" data-run="term"><code>cat sample.report</code></pre>
+<p>One line per taxon: the percentage of all reads in its clade (the taxon and everything below it), the reads in the clade, the reads given to this taxon itself, its rank (<b>U</b> unclassified, <b>R</b> root, <b>D</b> domain, <b>K</b> kingdom, <b>P</b> phylum, <b>C</b> class, <b>O</b> order, <b>F</b> family, <b>G</b> genus, <b>S</b> species; <b>R1</b>, <b>S1</b> … are ranks in between), its taxonomy ID and its name, indented by depth. This report is what Bracken reads.</p>
+<ul>
+  <li><b>Most reads are unclassified.</b> Only E. coli and Salmonella of the community are in the database, and only a fifth of their genomes (one megabase each). They are 24 % of the DNA, so about 5 % of the reads can be classified – and Kraken2 classifies 5.6 %. Kraken2 can find only what its database holds: a read of an organism that is not there stays unclassified, or goes to the nearest relative that is.</li>
+  <li><b>31 reads stop at the family</b>, Enterobacteriaceae: their k-mers are shared by species of different genera, and Kraken2 does not guess between them.</li>
+  <li><b>9 reads go to <i>Shigella flexneri</i></b>, which is not in the community. Shigella is E. coli in all but name – the Shigella species are lineages within E. coli – and these are E. coli reads with k-mers that, of these three genomes, only Shigella's has. A database with hundreds of E. coli genomes would put most of them on E. coli. A name in a Kraken2 report is a hypothesis, not proof.</li>
+</ul>
+<p>What the database knows decides all of this. <code>kraken2-inspect</code> shows how its minimizers are shared out:</p>
+<pre class="code" data-run="term"><code>kraken2-inspect --db /data/examples/metagenomics/db</code></pre>
+<p>A quarter of them belong to the family only – mostly what E. coli and Shigella have in common. Salmonella has 42 % to itself, E. coli and Shigella 18 % and 16 %: a read from the part of E. coli that Shigella shares can say no more than "Enterobacteriaceae".</p>
+
+<h2>Bracken: how much of each species</h2>
+<p>Bracken takes the reads that Kraken2 left on a genus or a family and shares them out among the species below, in proportion to how often each species gives reads that end there. It knows that from the database: <code>database151mers.kmer_distrib</code>, made by <code>bracken-build</code> for reads of 151 bases – the reads' length, which you give with <code>-r</code>.</p>
+<pre class="code" data-run="term"><code>bracken -d /data/examples/metagenomics/db -i sample.report -o sample.bracken -r 151 -l S -t 10
+cat sample.bracken</code></pre>
+<p><code>-l S</code> asks for species (<code>G</code> for genera, <code>F</code> for families …), and <code>-t 10</code> leaves out species with fewer than 10 reads of their own. The table has, per species, Kraken2's reads, the reads added, the new estimate and its share of all the estimates. E. coli gets 30 of the 31 family reads – Salmonella's reads seldom end at the family, E. coli's often do, because of Shigella. Shigella, with 9 reads, is below the threshold and is left out. The two species of the community that the database holds come out at 45 % and 55 %; in the standard they are equal. With <code>-t 1</code> every species counts:</p>
+<pre class="code" data-run="term"><code>bracken -d /data/examples/metagenomics/db -i sample.report -o sample_t1.bracken -r 151 -l S -t 1
+cat sample_t1.bracken
+cat sample_bracken_species.report</code></pre>
+<p>Now Shigella has 11 reads – a species that is not in the sample. The threshold is a guard against such names; it cannot tell a true rare species from a false one. Bracken also writes a report in Kraken2's format with the new counts (<code>-w</code> names it; by default it is the report's name with <code>_bracken_species</code>), which shows only the classified reads: the percentages there are of those, not of all reads.</p>
+
+<h2>Your own database</h2>
+<p>A Kraken2 database is built from three things: the sequences, in <code>library/</code> (FASTA files ending in <code>.fna</code>); <code>seqid2taxid.map</code>, the taxonomy ID of each sequence; and <code>taxonomy/</code> with NCBI's <code>nodes.dmp</code> (each taxon's parent and rank) and <code>names.dmp</code> (the names). The example has all three. Copy it, remove what was built from it, and build it again:</p>
+<pre class="code" data-run="term"><code>cp -r /data/examples/metagenomics/db ~/mydb
+rm ~/mydb/*.k2d ~/mydb/*.kmer_distrib
+ls -R ~/mydb
+kraken2-build --build --db ~/mydb
+kraken2-inspect --db ~/mydb --skip-counts
+cmp ~/mydb/hash.k2d /data/examples/metagenomics/db/hash.k2d &amp;&amp; echo "the same hash table"</code></pre>
+<p><code>kraken2-build --build</code> estimates the size of the hash table, then fills it: <code>hash.k2d</code> (the minimizers and their taxa), <code>taxo.k2d</code> (the taxonomy) and <code>opts.k2d</code> (the settings: <code>--kmer-len</code>, <code>--minimizer-len</code> …). Then Bracken's distribution for reads of 151 bases:</p>
+<pre class="code" data-run="term"><code>bracken-build -d ~/mydb -t 1 -k 35 -l 151
+cmp ~/mydb/database151mers.kmer_distrib /data/examples/metagenomics/db/database151mers.kmer_distrib &amp;&amp; echo "the same distribution"</code></pre>
+<p><code>bracken-build</code> classifies the database's own sequences with Kraken2 (<code>database.kraken</code>, kept for the next read length), cuts them into every possible read of the length given with <code>-l</code>, and counts where the reads of each genome end. <code>-k</code> is the database's k-mer length (35, Kraken2's default). Make one distribution for each read length you have.</p>
+<p>On a computer, databases for real samples are made with <code>kraken2-build --standard</code> or <code>--download-library</code>, which download genomes and NCBI's taxonomy – tens of gigabytes for the standard database – or downloaded ready-made; Galaxy servers have them installed. Neither is possible in the browser, which holds a few hundred megabytes at most. Here you can build small databases of your own sequences: put them in <code>library/</code>, write <code>seqid2taxid.map</code>, and take the lineages from NCBI's taxonomy into <code>nodes.dmp</code> and <code>names.dmp</code>.</p>
+
+<h2>Options worth knowing</h2>
+<p><code>--confidence 0.1</code>: a read is placed only where at least that share of its k-mers agrees – it moves up the tree, or stays unclassified (default 0). <code>--minimum-hit-groups 3</code> asks for more evidence before a call (default 2). <code>--use-names</code> writes names in <code>--output</code> instead of numbers. <code>--classified-out 'cl#.fq' --unclassified-out 'un#.fq'</code> writes the reads themselves (the <code>#</code> becomes <code>_1</code> and <code>_2</code> for pairs) – the unclassified ones are what to look at next. <code>--report-zero-counts</code> lists every taxon of the database, <code>--use-mpa-style</code> writes the report in MetaPhlAn's format (<code>d__Bacteria|k__Pseudomonadati|…</code>). <code>--output -</code> writes no classifications. <code>man kraken2</code>, <code>man bracken</code>, <code>kraken2-build --help</code> and <code>bracken -h</code> have the rest.</p>
+<p>In the browser Kraken2 and Bracken run on one thread (<code>--threads</code> and <code>-t</code> of bracken-build are left out, with a note), reads compressed with bzip2 cannot be read (gzip can), and nothing is downloaded. Bracken's two Python programs start a Python of their own for each command, which takes a few seconds.</p>
+
+<h2>In Galaxy</h2>
+<p>Galaxy (the Galaxy tab) has <b>Kraken2</b> and <b>Bracken</b> in its <i>Metagenomics</i> section, with the example database. Upload the two read files, run Kraken2 with <i>Print a report</i> set to <i>Yes</i>, and give the report to Bracken.</p>
+<p>Kraken2 and Bracken are compiled to WebAssembly from their released sources by the genomics-wasm project, and give the same classifications, reports and estimates as the same programs built for Linux (see <a href="#h-programs">Programs and versions</a>).</p>

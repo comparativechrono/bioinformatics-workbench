@@ -28,6 +28,9 @@ Read-only copies that come with the workbench. To change one, copy it into your 
 | | `regions.bed`, `regions.bed.gz` (+ `.tbi`) | the windows less 2 kb at each end, where the variants are evaluated (the `.gz` for Strelka's `--callRegions`) |
 | | `truth.vcf` | the four SEQC2 high-confidence somatic variants in these windows: two SNVs and two one-base deletions |
 | | `provenance.json`, `NOTICE.txt` | where these files came from, and how they were made |
+| `metagenomics/` | `reads_1.fastq.gz`, `reads_2.fastq.gz` | 4,096 pairs of real 151-base Illumina reads of a mock microbial community – the ZymoBIOMICS Microbial Community DNA Standard (D6305): DNA of eight bacteria (12 % each) and two yeasts (2 % each) (ENA run ERR2984773) – for Kraken2 |
+| | `db/` | a small Kraken2 database: `hash.k2d`, `opts.k2d`, `taxo.k2d`, built from the first 1,000,000 bases of three chromosomes – *Escherichia coli*, *Salmonella enterica*, *Shigella flexneri* – in `library/reference.fna`, with `seqid2taxid.map` and `taxonomy/`; and `database151mers.kmer_distrib`, Bracken's distribution for 151-base reads |
+| | `provenance.json`, `NOTICE.txt` | where these files came from, and how they were made |
 
 Positions on the slices: add 96,530,000 (human_CYP2C19) or 96,699,000 (human_CYP2C9) to get the GRCh37
 chromosome 10 position. In `somatic/`, add 10,572,000 (`chr21_10572001_10582000`) or 21,404,500
@@ -36,12 +39,13 @@ chromosome 10 position. In `somatic/`, add 10,572,000 (`chr21_10572001_10582000`
 features that reach beyond a slice are cut at its ends and marked `partial=true`.
 
 All of it is public data: NA12878 is the widely used public reference sample (Coriell cell line GM12878);
-HCC1395 and HCC1395BL are public research cell lines (ATCC), whose sequences SEQC2 released for benchmarking. No
-patient data is included. Sources: 1000 Genomes Project; UCSC (genome sequence); Ensembl GRCh37
+HCC1395 and HCC1395BL are public research cell lines (ATCC), whose sequences SEQC2 released for benchmarking; the
+metagenomic reads are of a commercial mock community. No patient data is included. Sources: 1000 Genomes Project; UCSC (genome sequence); Ensembl GRCh37
 (annotation, from grch37.rest.ensembl.org); NCBI GenBank; UniProt (CC BY 4.0); SGD (CC BY 4.0) and the other databases named above; RCSB PDB (CC0);
 for `rnaseq/` and `trimming/`, nf-core/test-datasets (MIT licence) and the Bioconductor package airway 1.26.0 (LGPL), as prepared by the
 genomics-wasm project – see `rnaseq/NOTICE.txt` and `trimming/NOTICE.txt`; for `somatic/`, the SEQC2 consortium (NCBI) and
-UCSC – see `somatic/NOTICE.txt`.
+UCSC – see `somatic/NOTICE.txt`; for `metagenomics/`, ENA (study PRJEB29504; Nicholls et al. 2019) and NCBI RefSeq and
+Taxonomy, as prepared by the genomics-wasm project – see `metagenomics/NOTICE.txt`.
 
 ## The columns of `tables/yeast_genes.csv`
 

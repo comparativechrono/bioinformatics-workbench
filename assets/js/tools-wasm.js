@@ -1,12 +1,13 @@
 /* Real, pinned programs compiled to WebAssembly (Biowasm builds; Bowtie 2, diff and cmp built for
  * this practical; BWA, BWA-MEM2, HISAT2, FreeBayes, StringTie, kallisto, mosdepth, featureCounts, Salmon, Cutadapt,
- * LoFreq, SomaticSniper and Strelka2 from the genomics-wasm ports). One shared filesystem backs the terminal and the
- * AI agent. Pipes use byte-preserving temporary files (run one after another, not as concurrent processes).
- * Aioli's local execIO patch binds real file descriptors and reports each exit status.
- * featureCounts, Salmon, Cutadapt, LoFreq, SomaticSniper and Strelka2's programs run as genomics-wasm built them: each
- * command in a worker of its own (threads-worker.mjs; cutadapt-worker.mjs for Cutadapt, a Python program), with the
- * files it needs, and what it writes comes back into the shared file system (see execWorker). lofreq somatic and
- * Strelka's runWorkflow.py are workflows of several such commands (see somatic.js).
+ * LoFreq, SomaticSniper, Strelka2, Kraken2 and Bracken from the genomics-wasm ports). One shared filesystem backs the
+ * terminal and the AI agent. Pipes use byte-preserving temporary files (run one after another, not as concurrent
+ * processes). Aioli's local execIO patch binds real file descriptors and reports each exit status.
+ * featureCounts, Salmon, Cutadapt, LoFreq, SomaticSniper, Strelka2's, Kraken2's and Bracken's programs run as
+ * genomics-wasm built them: each command in a worker of its own (threads-worker.mjs; python-worker.mjs for the Python
+ * programs – Cutadapt, Bracken's), with the files it needs, and what it writes comes back into the shared file system
+ * (see execWorker). lofreq somatic and Strelka's runWorkflow.py are workflows of several such commands (somatic.js), and
+ * so are Kraken2's and Bracken's commands, wrapper scripts upstream (metagenomics.js).
  */
 (function () {
   'use strict';
@@ -58,11 +59,16 @@
   const OWN_WORKER={
     featurecounts:{name:'featureCounts',module:'featurecounts/2.1.1/featurecounts.mjs',threads:true,outputs:()=>['-o','--tmpDir']},
     salmon:{name:'salmon',module:'salmon/2.8.0/salmon.mjs',threads:true,outputs:a=>a[0]==='index'?['-i','--index','-o','--output','--tmpdir']:['-o','--output','--auxDir','--tmpdir']},
-    cutadapt:{name:'cutadapt',module:'cutadapt/5.2/manifest.json',worker:'assets/js/cutadapt-worker.mjs',outputs:()=>['-o','--output','-p','--paired-output','--info-file','--rest-file','--wildcard-file','--too-short-output','--too-short-paired-output','--too-long-output','--too-long-paired-output','--untrimmed-output','--untrimmed-paired-output','--json']},
+    cutadapt:{name:'cutadapt',module:'cutadapt/5.2/manifest.json',worker:'assets/js/python-worker.mjs',pyodide:'pyodide/314.0.7/',outputs:()=>['-o','--output','-p','--paired-output','--info-file','--rest-file','--wildcard-file','--too-short-output','--too-short-paired-output','--too-long-output','--too-long-paired-output','--untrimmed-output','--untrimmed-paired-output','--json']},
     lofreq:{name:'lofreq',module:'lofreq/2.1.5/lofreq.mjs',outputs:()=>['-o','--out','--outprefix'],flow:a=>a[0]==='somatic'&&MG.somatic?MG.somatic.lofreq:null},
     somaticsniper:{name:'bam-somaticsniper',module:'somaticsniper/1.0.5.0/somaticsniper.mjs',outputs:()=>[]},
     // Strelka's workflow script: python2 RUNDIR/runWorkflow.py (made by configureStrelkaSomaticWorkflow.py)
-    strelka2:{name:'runWorkflow.py',module:'strelka2/2.9.10/strelka2.mjs',outputs:()=>[],flow:()=>MG.somatic&&MG.somatic.strelka}
+    strelka2:{name:'runWorkflow.py',module:'strelka2/2.9.10/strelka2.mjs',outputs:()=>[],flow:()=>MG.somatic&&MG.somatic.strelka},
+    // Kraken2's commands (kraken2, kraken2-inspect, kraken2-build) and Bracken's (bracken, bracken-build and its three
+    // programs): wrapper scripts upstream, run by the terminal – each program of theirs in a worker of its own
+    // (metagenomics.js); Bracken's Python programs in the Python that comes with them, as Cutadapt's
+    kraken2:{name:'kraken2',module:'kraken2/2.17.2/classify.mjs',outputs:()=>[],flow:()=>MG.metagenomics&&MG.metagenomics.kraken2},
+    bracken:{name:'bracken',module:'bracken/3.1/manifest.json',worker:'assets/js/python-worker.mjs',pyodide:'pyodide/314.0.7/',outputs:()=>[],flow:()=>MG.metagenomics&&MG.metagenomics.bracken}
   };
   // the index files that a program finds next to a file it is given (NAME.bam: NAME.bam.bai or NAME.bai; a FASTA file:
   // its .fai, and the .gzi of a compressed one; a compressed VCF or BED: its .tbi or .csi) – handed over with it
@@ -71,7 +77,7 @@
     ready:false, loading:null, cli:null, pipeN:0, mountN:0,
     synced:new Map(), placed:new Map(), managed:new Set(), dirs:new Set(), gone:[], denied:[], refused:[],
     gen:0, kept:new Map(), keepN:0,
-    versions:{fastp:'0.20.1',minimap2:'2.22',bowtie2:'2.4.2',bwa:'0.7.19','bwa-mem2':'2.2.1',hisat2:'2.2.2',freebayes:'1.3.6',stringtie:'3.0.3',kallisto:'0.52.0',mosdepth:'0.3.14',featurecounts:'2.1.1',salmon:'2.8.0',cutadapt:'5.2',lofreq:'2.1.5',somaticsniper:'1.0.5.0',strelka2:'2.9.10',samtools:'1.17',bcftools:'1.10',htslib:'1.17',seqtk:'1.4',bedtools:'2.31.0',jq:'1.7',gawk:'5.1.0',grep:'3.7',sed:'4.8',coreutils:'8.32',diffutils:'3.10',kalign:'3.3.1',muscle:'3.8.1551',fasttree:'2.1.11','seq-align':'2017.10.18',wgsim:'0.3.1-r13',gffread:'0.12.7',lastz:'1.04.52'},
+    versions:{fastp:'0.20.1',minimap2:'2.22',bowtie2:'2.4.2',bwa:'0.7.19','bwa-mem2':'2.2.1',hisat2:'2.2.2',freebayes:'1.3.6',stringtie:'3.0.3',kallisto:'0.52.0',mosdepth:'0.3.14',featurecounts:'2.1.1',salmon:'2.8.0',cutadapt:'5.2',lofreq:'2.1.5',somaticsniper:'1.0.5.0',strelka2:'2.9.10',kraken2:'2.17.2',bracken:'3.1',samtools:'1.17',bcftools:'1.10',htslib:'1.17',seqtk:'1.4',bedtools:'2.31.0',jq:'1.7',gawk:'5.1.0',grep:'3.7',sed:'4.8',coreutils:'8.32',diffutils:'3.10',kalign:'3.3.1',muscle:'3.8.1551',fasttree:'2.1.11','seq-align':'2017.10.18',wgsim:'0.3.1-r13',gffread:'0.12.7',lastz:'1.04.52'},
     apath(abs) { return ROOT+abs; },
     ensure(status) {
       if(this.ready)return Promise.resolve(this.cli);
@@ -446,7 +452,7 @@
       let result;
       const killed=new Promise((_,reject)=>{this._killed=reject;});
       this.running=OWN_WORKER[program]?(ctx.name||OWN_WORKER[program].name):program;
-      const job=OWN_WORKER[program]?this.execWorker(program,a,{stdin,stdout:stdoutPath,stderr:stderrPath,merge:!!ctx.mergeStderr,fs,before,name:ctx.name,io:ctx.io,flowOpts:opts.flow})
+      const job=OWN_WORKER[program]?this.execWorker(program,a,{stdin,stdout:stdoutPath,stderr:stderrPath,merge:!!ctx.mergeStderr,fs,before,name:ctx.name,io:ctx.io,flowOpts:opts.flow,devUsed})
         :cli.execIO(program,a,{stdin,stdout:stdoutPath,stderr:ctx.mergeStderr?stdoutPath:stderrPath,merge:!!ctx.mergeStderr,links:[[this.apath(home),home],[this.apath('/data'),'/data']],lines,fifo,env:envOf(ctx,program,fs),...clock});
       try{result=await Promise.race([job,killed]);}
       catch(e){
@@ -477,10 +483,11 @@
           if(t2!==t)await cli.fs.writeFile(stdoutPath,t2);
         }catch(e){}
       }
-      // (a file that stood for /dev/stdin … is called that again in what the program printed)
+      // (a file that stood for /dev/stdin … is called that again in what the program printed – also as a workflow
+      // names it, with the terminal's path: bracken -o /dev/stdout)
       // (… and of a name that asks for a folder where a file is – "a.txt/", "a.txt/../x" – the program is told, in
       // Linux's words, why it was not found)
-      const named=t=>{for(const [real,name] of devUsed)t=t.split(real).join(name);if(notDir.length)t=t.split('\n').map(l=>notDir.some(v=>l.includes(v))?l.replace('No such file or directory','Not a directory'):l).join('\n');return t;};
+      const named=t=>{for(const [real,name] of devUsed){t=t.split(real).join(name);if(real.startsWith(TMP+'/'))t=t.split(real.slice(ROOT.length)).join(name);}if(notDir.length)t=t.split('\n').map(l=>notDir.some(v=>l.includes(v))?l.replace('No such file or directory','Not a directory'):l).join('\n');return t;};
       if(devUsed.size){
         const st=await stat(cli,stdoutPath);
         if(st&&st.size&&st.size<=1048576)try{
@@ -581,11 +588,11 @@
           worker.onmessage=e=>{const m=e.data||{};if(m.type==='result')resolve(m.result);else reject(new Error((m.error&&m.error.message)||'the program gave no answer'));};
           worker.onerror=e=>{if(e.preventDefault)e.preventDefault();reject(new Error(e.message||'the program could not be started'));};
           // (the files are copied, not moved: a workflow hands the same bytes to its next command)
-          worker.postMessage({moduleUrl:new URL(T.module,base).href,args,thisProgram:thisProgram||T.name,cwd,dirs,files,links,stdin,roots});
+          worker.postMessage({moduleUrl:new URL(T.module,base).href,pyodideUrl:T.pyodide?new URL(T.pyodide,base).href:undefined,args,thisProgram:thisProgram||T.name,cwd,dirs,files,links,stdin,roots});
         });
       }finally{this._threadedStop=null;if(this.threadedWorker===worker)this.threadedWorker=null;try{worker.terminate();}catch(e){}}
     },
-    async execWorker(program,args,{stdin,stdout,stderr,merge,fs,before,name,io,flowOpts}){
+    async execWorker(program,args,{stdin,stdout,stderr,merge,fs,before,name,io,flowOpts,devUsed}){
       const T=OWN_WORKER[program],cli=this.cli,home=fs.home,cwd=this.apath(fs.isDir(fs.cwd)?fs.cwd:fs.home);
       const links=[[ROOT+home,home],[ROOT+'/data','/data']];
       const dirs=[ROOT,TMP,...Array.from(before).filter(([p,t])=>t.isDir&&!p.startsWith(TMP)).map(([p])=>p),cwd];
@@ -600,11 +607,14 @@
         // own: a program that writes a path into its output (Strelka's VCF header names the reference file) writes the
         // path the person knows. What the workflow made is put below ROOT here.
         const term=p=>p===ROOT?'/':p.startsWith(ROOT+'/')?p.slice(ROOT.length):p,tcwd=term(cwd);
-        // (the arguments as they were typed: ROOT is in none of them – see pathToken in _run)
-        const typed=args.map(v=>v.split(ROOT+'/').join('/'));
-        const h={cwd:tcwd,io,opts:flowOpts||{},name:name||T.name,
+        // (the arguments as they were typed: ROOT is in none of them – see pathToken in _run. /dev/stdin is given back its
+        // name: the workflow has what came in as h.stdin – kraken2 … /dev/stdin)
+        const ins=[...(devUsed||new Map())].filter(([,n])=>n==='/dev/stdin').map(([real])=>real);
+        const typed=args.map(v=>{for(const real of ins)v=v.split(real).join('/dev/stdin');return v.split(ROOT+'/').join('/');});
+        const h={cwd:tcwd,io,opts:flowOpts||{},name:name||T.name,stdin:input,
           abs:p=>MG.path.norm(p.startsWith('/')?p:tcwd+'/'+p),
-          isDir:p=>{const t=before.get(p==='/'?ROOT:ROOT+p);return !!(t&&t.isDir);},
+          // (the folder of the files that stand for /dev/stdout and /dev/stderr is not in the snapshot – it is there)
+          isDir:p=>{if(p===term(TMP))return true;const t=before.get(p==='/'?ROOT:ROOT+p);return !!(t&&t.isDir);},
           isFile:p=>{const t=before.get(ROOT+p);return !!(t&&!t.isDir);},
           readText:async p=>new TextDecoder('utf-8').decode(await cli.fs.readFile(ROOT+p)),
           pretty:p=>(fs.pretty?fs.pretty(p):p),
@@ -613,6 +623,9 @@
           spawn:(t,o)=>this.spawn(t,Object.assign({cwd:tcwd,dirs:[tcwd],links:[],stdin:null},o))};
         r=await flow(typed,h);
         r.files=(r.files||[]).map(f=>({path:ROOT+f.path,data:f.data}));
+        // (what the workflow removes – kraken2-build --clean: in the programs' file system, and in the terminal's)
+        r.removeTerm=r.remove||[];
+        r.remove=r.removeTerm.map(p=>ROOT+p);
       }else{
         const files=await this.inputsOf(args,T.outputs(args),{fs,before,cwd});
         r=await this.spawn(T,{args,thisProgram:name||T.name,cwd,dirs,files,links,stdin:input,roots:[ROOT]});
@@ -620,6 +633,8 @@
       }finally{if(this.ownRun===run)this.ownRun=null;this.stage=null;}
       if(run.stopped)throw Object.assign(new Error('Killed'),{userMessage:`${this.running||name||T.name}: Killed`,code:137});
       for(const d of r.dirs||[])if(!before.has(d))await mkdirp(cli,d);
+      for(const p of r.remove||[]){const st=await stat(cli,p);if(st&&st.isDir)await rmtree(cli,p);else if(st)await cli.fs.unlink(p);}
+      for(const p of r.removeTerm||[])fs.remove(p);
       // (-o /dev/stdout: the program wrote into the file that stands for its output – it joins what it printed)
       const join=(a,b)=>{const all=new Uint8Array(a.length+b.length);all.set(a);all.set(b,a.length);return all;};
       for(const f of r.files){
@@ -630,7 +645,9 @@
       if(merge){
         // 2>&1: the two outputs in one file, in the order in which they were written
         const all=new Uint8Array(r.stdout.length+r.stderr.length);let o=0,i1=0,i2=0;
-        for(let k=0;k<r.order.length;k+=2){const n=r.order[k+1];if(r.order[k]===1){all.set(r.stdout.subarray(i1,i1+n),o);i1+=n;}else{all.set(r.stderr.subarray(i2,i2+n),o);i2+=n;}o+=n;}
+        // (a workflow that kept no order: what it printed, then its messages)
+        const ord=r.order&&r.order.length?r.order:[1,r.stdout.length,2,r.stderr.length];
+        for(let k=0;k<ord.length;k+=2){const n=ord[k+1];if(ord[k]===1){all.set(r.stdout.subarray(i1,i1+n),o);i1+=n;}else{all.set(r.stderr.subarray(i2,i2+n),o);i2+=n;}o+=n;}
         await cli.fs.writeFile(stdout,all);
       }else{await cli.fs.writeFile(stdout,r.stdout);await cli.fs.writeFile(stderr,r.stderr);}
       return {code:r.exitCode,error:r.error?`${name||T.name}: stopped – ${r.error}`:null,order:merge?[]:r.order||[],stdinPos:r.stdinPos||0,stdinMax:r.stdinPos||0};

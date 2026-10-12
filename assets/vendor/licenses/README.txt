@@ -15,8 +15,9 @@ sources/                       the source code of the GPL and MPL programs, as r
                                  all its submodules) and featureCounts (Subread 2.1.1), with zlib
                                  1.3.1 and SIMDe 0.8.2, which are part of them; Strelka2 2.9.10
                                  (with what it bundles); the R package locfit 1.5-9.12
-                                 (../../r-packages/); and, under the Mozilla Public License 2.0,
-                                 Pyodide 314.0.7 and hiwire – the Python that Cutadapt runs in
+                                 (../../r-packages/); Bracken 3.1; and, under the Mozilla Public
+                                 License 2.0, Pyodide 314.0.7 and hiwire – the Python that Cutadapt
+                                 and Bracken run in
 source-archives.json           where each archive came from, its size and SHA-256
 biowasm-build/                 the Biowasm recipes (scripts and patches) with which the programs
                                  other than Bowtie 2, diff, cmp and the grep for "grep -P" were
@@ -30,8 +31,8 @@ diffutils-build/               how diff and cmp (GNU diffutils) were compiled fo
 grep-perl-build/               how GNU grep 3.11 with PCRE2 10.42 ("grep -P") was compiled for the
                                  course: build script, one added function, instructions
 genomics-wasm-build/           how BWA, BWA-MEM2, HISAT2, FreeBayes, featureCounts, StringTie,
-                                 kallisto, Salmon, mosdepth, Cutadapt, LoFreq, SomaticSniper and
-                                 Strelka2 were compiled (the recipes of the
+                                 kallisto, Salmon, mosdepth, Cutadapt, LoFreq, SomaticSniper,
+                                 Strelka2, Kraken2 and Bracken were compiled (the recipes of the
                                  genomics-wasm project: scripts, patches, the files that replace
                                  upstream ones, lock files with the SHA-256 of every source archive),
                                  how they were linked for this site's runner (workbench/relink-*.sh),

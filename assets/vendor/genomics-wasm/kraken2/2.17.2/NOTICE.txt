@@ -1,0 +1,31 @@
+Kraken2 2.17.2: classify, build_db, estimate_capacity and dump_table – the programs that kraken2, kraken2-build and
+kraken2-inspect run
+Licence: MIT (LICENSE in this folder). Kraken2 contains kseq (MIT: LICENSE.kseq) and code from KrakenUniq (its
+copyright notice: COPYRIGHT.krakenuniq). The loaders are Emscripten's runtime (MIT and NCSA: LICENSE.emscripten).
+THIRD_PARTY_LICENSES.txt lists them.
+Upstream source: https://github.com/DerrickWood/kraken2 (tag 2.17.2, commit 8c190b1b668825935dbf6dee5f969227dc8269bb).
+The release's VERSION file says 2.17.1, and kraken2 --version prints that, as upstream does.
+
+Compiled to WebAssembly by the genomics-wasm project (https://github.com/comparativechrono/genomics-wasm, commit
+ebe3454): Emscripten 3.1.64, one thread. The programs are built with MEMORY64=2, so they keep Kraken2's 64-bit layout
+of the database files: a database built by Kraken2 on a computer can be read here, and the other way round. The
+modules are used here as that project built them. kraken2.mjs (MIT, from genomics-wasm's runtime/, unchanged) turns
+the options of Kraken2's scripts into calls of the programs; index.mjs is the workbench's small part of it (the paths
+of the terminal: see the comment in it). The page runs each program in a worker of its own
+(assets/js/threads-worker.mjs), and assets/js/metagenomics.js does what Kraken2's Perl and shell scripts do – their
+options, checks and messages. genomics-wasm also builds lookup_accession_numbers, which only the databases that
+kraken2-build downloads need; it is left out. Everything needed to build them again is described in
+../../../licenses/genomics-wasm-build/.
+
+Changes to the source (tools/kraken2/browser.patch there): a thread count other than one is refused (the programs run
+Kraken2's own one-thread code), the database is read by one reader, daemon mode is refused, and the unused padding
+bytes of the database options record (opts.k2d) are written as zeros – upstream leaves them unset, so they differ
+from one build to the next; they are not settings. Classification and database building are unchanged.
+
+Checked against Kraken2 2.17.2 built natively from the same sources (genomics-wasm's comparison: 13 of 13 cases with
+real reads of a mock community, among them databases built natively and read here, and the other way round; and in
+the workbench with the example data, against the native programs run by Kraken2's own scripts): the same reports,
+classifications and classified and unclassified reads, byte for byte, and from kraken2-build the same hash.k2d and
+taxo.k2d. kraken2-inspect prints the same lines. (Natively, kraken2-inspect > FILE loses its summary lines – the ones
+that start with # – because dump_table opens /dev/fd/1 again for the table, which empties the file; here the file
+keeps them, as a pipe does natively.)

@@ -1,0 +1,172 @@
+{
+ "description": "Real Illumina MiSeq reads of a mock microbial community (ZymoBIOMICS Microbial Community DNA Standard D6305, even composition: ENA's sample record calls it \"CS/Even DNA standard\") and a small Kraken2 database of three reference windows, with its Bracken read distribution \u2013 from the test data of the genomics-wasm project.",
+ "genomicsWasm": {
+  "repository": "https://github.com/comparativechrono/genomics-wasm",
+  "commit": "ebe345482f587ca151ffd54fc65c36f520a8a1ae",
+  "dataset": "datasets/metagenomics (manifest.json, provenance/)"
+ },
+ "reads": {
+  "run": "ERR2984773",
+  "study": "PRJEB29504",
+  "sample": "SAMEA5157164",
+  "instrument": "Illumina MiSeq",
+  "library": "paired, WGS",
+  "selection": "the first 4,096 read pairs of ERR2984773_1.fastq.gz and ERR2984773_2.fastq.gz (ENA), byte for byte; each read 151 bases; recompressed with gzip, without file name or time",
+  "firstReadId": "ERR2984773.1",
+  "lastReadId": "ERR2984773.4096"
+ },
+ "database": {
+  "references": [
+   {
+    "accession": "NC_000913.3",
+    "chromosomeBases": 4641652,
+    "coordinateSystem": "1-based inclusive",
+    "end": 1000000,
+    "name": "Escherichia coli",
+    "sequenceId": "NC_000913.3_1_1000000",
+    "source": "GCF_000005845.2_ASM584v2_genomic.fna.gz",
+    "start": 1,
+    "taxid": 562,
+    "windowSequenceSha256": "d51bbf6b29a23f043b0d7d7e7d7a816d8971a63d351f70e4e091aecacd32cfb8"
+   },
+   {
+    "accession": "NC_003197.2",
+    "chromosomeBases": 4857450,
+    "coordinateSystem": "1-based inclusive",
+    "end": 1000000,
+    "name": "Salmonella enterica",
+    "sequenceId": "NC_003197.2_1_1000000",
+    "source": "GCF_000006945.2_ASM694v2_genomic.fna.gz",
+    "start": 1,
+    "taxid": 28901,
+    "windowSequenceSha256": "d0b7ac4e21cff8ff4a69fb04f339a3fcc72e45fb7b1d8ac9041f5859cfbe92c6"
+   },
+   {
+    "accession": "NC_004337.2",
+    "chromosomeBases": 4607202,
+    "coordinateSystem": "1-based inclusive",
+    "end": 1000000,
+    "name": "Shigella flexneri",
+    "sequenceId": "NC_004337.2_1_1000000",
+    "source": "GCF_000006925.2_ASM692v2_genomic.fna.gz",
+    "start": 1,
+    "taxid": 623,
+    "windowSequenceSha256": "c0b6014b61cfacb8f32d3add8013cad94e7445b71c7e0a7041cec9223b2ec249"
+   }
+  ],
+  "selection": "the first 1,000,000 bases (positions 1-1,000,000) of each of the three chromosomes, sequence letters unchanged, 80 bases per line; the three species and their ancestors from NCBI Taxonomy, in taxonomy/nodes.dmp and names.dmp",
+  "built": "kraken2-build --build --no-masking --threads 1 (Kraken2 2.17.2, k = 35, minimizer length 31), unchanged upstream programs; the unused padding bytes of opts.k2d are zero; bracken-build -k 35 -l 151 (Bracken 3.1) \u2192 database151mers.kmer_distrib"
+ },
+ "expected": {
+  "kraken2 --paired": {
+   "classifiedPairs": 231,
+   "unclassifiedPairs": 3865,
+   "assignedByTaxid": {
+    "0": 3865,
+    "28901": 100,
+    "543": 31,
+    "562": 91,
+    "623": 9
+   }
+  }
+ },
+ "sources": {
+  "ERR2984773_1.prefix-0-2097151.fastq.gz": {
+   "url": "https://ftp.sra.ebi.ac.uk/vol1/fastq/ERR298/003/ERR2984773/ERR2984773_1.fastq.gz",
+   "bytes": 2097152,
+   "sha256": "d9fa8ffc30b3302961170879e1e271392d25e52ddd5182f8ad15a1ecde3b662d",
+   "range": [
+    0,
+    2097151
+   ],
+   "contentRange": "bytes 0-2097151/927693096"
+  },
+  "ERR2984773_2.prefix-0-2097151.fastq.gz": {
+   "url": "https://ftp.sra.ebi.ac.uk/vol1/fastq/ERR298/003/ERR2984773/ERR2984773_2.fastq.gz",
+   "bytes": 2097152,
+   "sha256": "ab3853b0c8d3581365051a87f44b54b7166a939aa7457ce5287548d4f5388673",
+   "range": [
+    0,
+    2097151
+   ],
+   "contentRange": "bytes 0-2097151/1028981403"
+  },
+  "GCF_000005845.2_ASM584v2_genomic.fna.gz": {
+   "url": "https://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/000/005/845/GCF_000005845.2_ASM584v2/GCF_000005845.2_ASM584v2_genomic.fna.gz",
+   "bytes": 1379902,
+   "sha256": "a96d3cfa58c88d477013c768f90a11d2386d42a70d566abfb6d9013dcbd24255"
+  },
+  "GCF_000006945.2_ASM694v2_genomic.fna.gz": {
+   "url": "https://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/000/006/945/GCF_000006945.2_ASM694v2/GCF_000006945.2_ASM694v2_genomic.fna.gz",
+   "bytes": 1471540,
+   "sha256": "2996f647c223d4c5b3e0f1a0940025614b39cad5c0c1a00b73f264e3b718d59a"
+  },
+  "GCF_000006925.2_ASM692v2_genomic.fna.gz": {
+   "url": "https://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/000/006/925/GCF_000006925.2_ASM692v2/GCF_000006925.2_ASM692v2_genomic.fna.gz",
+   "bytes": 1423732,
+   "sha256": "51f45ad24a8109705410a4795a751a81b11604a96b8d69014f5125e687d0f12f"
+  },
+  "taxonomy-562-28901-623.xml": {
+   "url": "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=taxonomy&id=562,28901,623&retmode=xml",
+   "bytes": 32908,
+   "sha256": "0719fd6c605e9e2a821e7817b24c0a640398c6abcfa9cd980c964f87a6a99b5a"
+  },
+  "taxonomy-root-1.xml": {
+   "url": "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=taxonomy&id=1&retmode=xml",
+   "bytes": 769,
+   "sha256": "cb8f93b3bd810681b5201ed4b2ecfedd6ec2d0e8acc1794139caecbb0f0392eb"
+  }
+ },
+ "files": {
+  "reads_1.fastq.gz": {
+   "bytes": 483472,
+   "sha256": "06cb5e33dcfe3aec1b29900060ec50e9f0e221ead94e4bafefae050872f72df1",
+   "genomicsWasmFixture": "datasets/metagenomics/zymo/reads_1.fastq.gz"
+  },
+  "reads_2.fastq.gz": {
+   "bytes": 536175,
+   "sha256": "dc46d4e2c428cab9d8065d03603603a14a2c1ecd4aa8849899ddc836b508f898",
+   "genomicsWasmFixture": "datasets/metagenomics/zymo/reads_2.fastq.gz"
+  },
+  "db/database151mers.kmer_distrib": {
+   "bytes": 191,
+   "sha256": "0ce16c9375122c8af988f47f6ab533069c245873de86b1265a972ca07aa84844",
+   "genomicsWasmFixture": "datasets/metagenomics/zymo/db/database151mers.kmer_distrib"
+  },
+  "db/hash.k2d": {
+   "bytes": 4404692,
+   "sha256": "b94cf7073346fee9519ca027f24a22a2837c2c54b7aefa335363071fab3f5fe6",
+   "genomicsWasmFixture": "datasets/metagenomics/zymo/db/hash.k2d"
+  },
+  "db/opts.k2d": {
+   "bytes": 64,
+   "sha256": "d51697baeed11477f0886c0609465805a57531bc2f774fdaf51fd68be057c267",
+   "genomicsWasmFixture": "datasets/metagenomics/zymo/db/opts.k2d"
+  },
+  "db/seqid2taxid.map": {
+   "bytes": 80,
+   "sha256": "06790b61d8c0806a66d6a63b5d562423238448b0c2cef0f712833ef9c4d3b431",
+   "genomicsWasmFixture": "datasets/metagenomics/zymo/db/seqid2taxid.map"
+  },
+  "db/taxo.k2d": {
+   "bytes": 1155,
+   "sha256": "9f1d30d2cc8a68bf20ddb681dd63ca07e4ca0aa5eecf6273e4ed598c83358e83",
+   "genomicsWasmFixture": "datasets/metagenomics/zymo/db/taxo.k2d"
+  },
+  "db/library/reference.fna": {
+   "bytes": 3037738,
+   "sha256": "5323c2a271995f7ca8ca9cbb05bae85e8788a9e2f82aa4dfae2a5436c63d8d72",
+   "genomicsWasmFixture": "datasets/metagenomics/zymo/db/library/reference.fna"
+  },
+  "db/taxonomy/names.dmp": {
+   "bytes": 621,
+   "sha256": "2fd52975d4df54d66eef08995be66621e1872ed632a2cf3c12cf566bf33e1ab1",
+   "genomicsWasmFixture": "datasets/metagenomics/zymo/db/taxonomy/names.dmp"
+  },
+  "db/taxonomy/nodes.dmp": {
+   "bytes": 847,
+   "sha256": "6ed2c0a3aca73bacd03fb4d5ada7fd4b1bb3f0dce11839e09228ba3c43327423",
+   "genomicsWasmFixture": "datasets/metagenomics/zymo/db/taxonomy/nodes.dmp"
+  }
+ }
+}

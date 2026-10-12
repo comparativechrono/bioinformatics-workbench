@@ -2,7 +2,7 @@
 """Write the checksum lists (SHA256SUMS) of site/assets/vendor/ again – after any change to the files there.
 
 - each program folder, assets/vendor/biowasm/NAME/VERSION/ and assets/vendor/genomics-wasm/NAME/VERSION/ (the
-  programs of the genomics-wasm project): every file in it;
+  programs of the genomics-wasm project, and pyodide/314.0.7/, the Python of Cutadapt and Bracken): every file in it;
 - assets/vendor/biowasm/: the four files at its top (the runner, its licence, the two descriptions of the
   local changes);
 - assets/vendor/licenses/: every file below it, the source archives in sources/ too (which may be handed

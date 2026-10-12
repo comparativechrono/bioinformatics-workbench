@@ -21,6 +21,8 @@
 <ul>
   <li><b>Cutadapt</b> is a Python program: each command starts a Python of its own (Pyodide 314.0.7, CPython 3.14.2), which takes a few seconds, and the first one loads about 13 MB. It trims on one core.</li>
   <li><b>LoFreq</b>: <code>lofreq call-parallel</code> and <code>lofreq vcfplot</code> are not here – use <code>lofreq call</code>. <code>lofreq somatic</code> runs its steps one after another.</li>
+  <li><b>Kraken2</b> works with small databases: the database must fit in the browser's memory – a few hundred megabytes at most. The databases used for real samples (Kraken2's standard database is tens of gigabytes) do not; <code>kraken2-build</code> cannot download (<code>--download-taxonomy</code>, <code>--download-library</code>, <code>--standard</code>, <code>--special</code>) and has no <code>--add-to-library</code> – a database is built from sequences, a map and a taxonomy that you put in its folder (see <a href="#h-metagenomics">Metagenomics</a>). Reads compressed with bzip2 cannot be read. Kraken2 and Bracken run on one thread.</li>
+  <li><b>Bracken</b>: its two Python programs start a Python of their own for each command, as Cutadapt does (a few seconds). Where Bracken's script reports an error but ends with status 0 – a database or a report that is not there – it ends with status 2 here.</li>
   <li><b>Strelka2</b>: the somatic workflow, not the germline one. Strelka's workflow scripts are Python 2, which is not here: the terminal runs <code>runWorkflow.py</code> itself, with Strelka's own programs – <code>-m local</code> only, the tasks one after another. <code>python2</code> runs these scripts and nothing else.</li>
 </ul>
 

@@ -544,6 +544,71 @@
       help: '<p>Calls somatic SNVs and small indels: variants in the tumour that its matched normal sample does not have. Strelka runs its own workflow – depth of each chromosome, calling in segments, empirical variant scoring – and marks each call PASS or with the filters it failed (in FILTER). Both BAM files must be aligned to the reference given here, with the same chromosomes.</p>'
     },
     {
+      id: 'kraken2', toolId: `${TS}/iuc/kraken2/kraken2/2.17.1+galaxy0`, name: 'Kraken2', desc: 'assign taxonomic labels to sequencing reads', version: '2.17.1+galaxy0', section: 'Metagenomics', needs: 'kraken2',
+      requirements: [['kraken2', '2.17.2']],
+      inputs: [
+        { name: 'input_sequences', short: 'reads', label: 'Input sequences (single-end reads – or, for paired reads, the forward reads)', ext: ['fastqsanger', 'fasta'], nice: (d) => 'input_1.' + DOWNLOAD_EXT[d.ext], pick: /_1\b|R1|forward/i },
+        { name: 'input_reverse', short: 'reverse reads', label: 'Reverse reads, for paired reads (leave empty for single-end reads)', ext: ['fastqsanger', 'fasta'], nice: (d) => 'input_2.' + DOWNLOAD_EXT[d.ext], pick: /_2\b|R2|reverse/i, optional: true }
+      ],
+      params: [
+        { name: 'kraken2_database', short: 'database', label: 'Select a Kraken2 database', type: 'select', default: 'mock3', options: [['mock3', 'Mock community example: Escherichia coli, Salmonella enterica, Shigella flexneri (1 Mb of each)']], help: 'On a Galaxy server the administrators install the databases (Standard, PlusPF, viral …). Here there is the example database, /data/examples/metagenomics/db.' },
+        { name: 'use_names', short: 'names', label: 'Print scientific names instead of just taxids (--use-names)', type: 'bool', default: false },
+        { name: 'confidence', short: 'confidence', label: 'Confidence (--confidence)', type: 'float', default: 0, help: 'Confidence score threshold. Must be in [0, 1]' },
+        { name: 'min_base_quality', short: 'min base quality', label: 'Minimum Base Quality (--minimum-base-quality)', type: 'int', default: 0, help: 'Minimum base quality used in classification (only effective with FASTQ input)' },
+        { name: 'minimum_hit_groups', short: 'hit groups', label: 'Minimum hit groups (--minimum-hit-groups)', type: 'int', default: 2, help: 'Number of overlapping k-mers sharing the same minimizer needed to make a call' },
+        { name: 'quick', short: 'quick', label: 'Enable quick operation (--quick)', type: 'bool', default: false, help: 'Quick operation (use first hit)' },
+        { name: 'split_reads', short: 'split', label: 'Split classified and unclassified outputs?', type: 'bool', default: false, help: 'Sets --unclassified-out and --classified-out' },
+        { name: 'create_report', short: 'report', label: 'Print a report with aggregrate counts/clade to file (--report)', type: 'select', default: 'false', options: [['true', 'Yes'], ['false', 'No']], help: 'Can be used as input for Bracken' },
+        { name: 'use_mpa_style', short: 'mpa style', label: "Report: format report output like Kraken 1's kraken-mpa-report (--use-mpa-style)", type: 'bool', default: false },
+        { name: 'report_zero_counts', short: 'zero counts', label: 'Report: report counts for ALL taxa, even if counts are zero (--report-zero-counts)', type: 'bool', default: false },
+        { name: 'report_minimizer_data', short: 'minimizer data', label: 'Report: report minimizer data (--report-minimizer-data)', type: 'bool', default: false }
+      ],
+      outputs: [
+        { name: 'classified_out_s', short: 'classified', ext: { from: 'input_sequences' }, file: 'cl_out', when: (i, p) => !!p.split_reads && !i.input_reverse, label: (ins) => L('Kraken2', ins, 'Classified reads') },
+        { name: 'unclassified_out_s', short: 'unclassified', ext: { from: 'input_sequences' }, file: 'un_out', when: (i, p) => !!p.split_reads && !i.input_reverse, label: (ins) => L('Kraken2', ins, 'Unclassified reads') },
+        { name: 'classified_forward', short: 'classified forward', ext: { from: 'input_sequences' }, file: 'cl_out_1', when: (i, p) => !!p.split_reads && !!i.input_reverse, label: (ins) => L('Kraken2', ins, 'Classified read pairs: forward') },
+        { name: 'classified_reverse', short: 'classified reverse', ext: { from: 'input_sequences' }, file: 'cl_out_2', when: (i, p) => !!p.split_reads && !!i.input_reverse, label: (ins) => L('Kraken2', ins, 'Classified read pairs: reverse') },
+        { name: 'unclassified_forward', short: 'unclassified forward', ext: { from: 'input_sequences' }, file: 'un_out_1', when: (i, p) => !!p.split_reads && !!i.input_reverse, label: (ins) => L('Kraken2', ins, 'Unclassified read pairs: forward') },
+        { name: 'unclassified_reverse', short: 'unclassified reverse', ext: { from: 'input_sequences' }, file: 'un_out_2', when: (i, p) => !!p.split_reads && !!i.input_reverse, label: (ins) => L('Kraken2', ins, 'Unclassified read pairs: reverse') },
+        { name: 'report_output', short: 'report', ext: 'tabular', file: 'report.tsv', when: (i, p) => p.create_report === 'true', label: (ins) => L('Kraken2', ins, 'Report') },
+        { name: 'output', short: 'classification', ext: 'tabular', file: 'output.tsv', label: (ins) => L('Kraken2', ins, 'Classification') }
+      ],
+      command: (i, p) => {
+        const num = (v, d) => (Number.isFinite(+v) && String(v).trim() !== '' ? Math.min(1, Math.max(0, +v)) : d);
+        const pe = !!i.input_reverse, report = p.create_report === 'true';
+        return `kraken2 --threads 1 --db /data/examples/metagenomics/db${p.quick ? ' --quick' : ''}${pe ? ` --paired ${i.input_sequences} ${i.input_reverse}` : ` ${i.input_sequences}`}`
+          + (p.split_reads ? (pe ? " --unclassified-out 'un_out#' --classified-out 'cl_out#'" : ' --unclassified-out un_out --classified-out cl_out') : '')
+          + ` --confidence ${num(p.confidence, 0)} --minimum-base-quality ${int(p.min_base_quality, 0)} --minimum-hit-groups ${int(p.minimum_hit_groups, 2)}${p.use_names ? ' --use-names' : ''}`
+          + (report ? ` --report report.tsv${p.use_mpa_style ? ' --use-mpa-style' : ''}${p.report_zero_counts ? ' --report-zero-counts' : ''}${p.report_minimizer_data ? ' --report-minimizer-data' : ''}` : '')
+          + ' > output.tsv';
+      },
+      help: '<p>Gives each read the taxon – species, genus, family … – whose DNA its k-mers match in the database, or none (unclassified). The <b>Classification</b> has a line per read: C or U, its name, the taxonomy ID, its length and the taxa of its k-mers; the <b>Report</b> counts the reads per taxon and is what Bracken reads. Only what is in the database can be found: a read of a species that is not there stays unclassified, or goes to a relative. Kraken2 runs on one thread here.</p>'
+    },
+    {
+      id: 'est_abundance', toolId: `${TS}/iuc/bracken/est_abundance/3.1+galaxy0`, name: 'Bracken', desc: 'to re-estimate abundance at a taxonomic level from kraken output', version: '3.1+galaxy0', section: 'Metagenomics', needs: 'est_abundance.py',
+      requirements: [['bracken', '3.1']],
+      inputs: [
+        { name: 'input', short: 'report', label: 'Kraken report file', ext: ['tabular'], nice: 'kraken_report.tsv' }
+      ],
+      params: [
+        { name: 'kmer_distr', short: 'distribution', label: 'Select a Kmer distribution', type: 'select', default: 'mock3_151', options: [['mock3_151', 'Mock community example database, reads of 151 bases']], help: 'The distribution of the Kraken2 database the reads were classified with, for the length of the reads. On a Galaxy server the administrators install them with the databases.' },
+        { name: 'level', short: 'level', label: 'Level', type: 'select', default: 'S', options: [['S2', 'Subspecies 2'], ['S1', 'Subspecies 1'], ['S', 'Species'], ['G', 'Genus'], ['F', 'Family'], ['O', 'Order'], ['C', 'Class'], ['P', 'Phylum'], ['D', 'Domain']], help: 'Level to push all reads to' },
+        { name: 'threshold', short: 'threshold', label: 'Threshold: the reads a taxon needs before re-estimation (-t)', type: 'int', default: 10, help: 'Threshold for the minimum number of reads kraken must assign to a classification for that classification to be considered in the final abundance estimation. (On usegalaxy.org this field is labelled "Number of mismatches allowed when matching tag".)' },
+        { name: 'out_report', short: 'Kraken-style report', label: 'Produce Kraken-Style Bracken report (--out-report)', type: 'bool', default: false },
+        { name: 'logfile_output', short: 'log', label: 'Add log file output', type: 'bool', default: false }
+      ],
+      outputs: [
+        { name: 'report', short: 'report', ext: 'tabular', file: 'report.tsv', label: (ins) => L('Bracken', ins, 'Report') },
+        { name: 'kraken_report', short: 'Kraken-style report', ext: 'tabular', file: 'bracken.report', when: (i, p) => !!p.out_report, label: (ins) => L('Bracken', ins, 'Kraken style report') },
+        { name: 'logfile', short: 'log', ext: 'txt', file: 'log.txt', when: (i, p) => !!p.logfile_output, label: (ins) => L('Bracken', ins, 'log file') }
+      ],
+      command: (i, p) => {
+        const level = ['S2', 'S1', 'S', 'G', 'F', 'O', 'C', 'P', 'D'].includes(p.level) ? p.level : 'S';
+        return `est_abundance.py -i ${i.input} -k /data/examples/metagenomics/db/database151mers.kmer_distrib -l ${level} -t ${int(p.threshold, 10)} -o report.tsv --out-report bracken.report${p.logfile_output ? ' | tee log.txt' : ''}`;
+      },
+      help: '<p>Kraken2 assigns many reads only to a genus or a family, where species share their DNA. Bracken moves those reads down to the level chosen – species, by default – in proportion to how likely each species is to give reads that end there (the k-mer distribution of the database), and estimates how many reads each species has. The <b>Report</b> has a line per taxon: Kraken2\'s reads, the reads added, the new estimate and its share of all the reads estimated at that level.</p>'
+    },
+    {
       id: 'bcftools_filter', toolId: `${TS}/iuc/bcftools_filter/bcftools_filter/1.10`, name: 'bcftools filter', desc: 'Apply fixed-threshold filters', version: '1.10', section: 'Variant calling', needs: 'bcftools',
       requirements: [['bcftools', '1.10']],
       inputs: [{ name: 'input_file', short: 'VCF', label: 'VCF/BCF Data', ext: ['vcf_bgzip', 'vcf', 'bcf'], nice: (d) => 'input.' + DOWNLOAD_EXT[d.ext] }],
