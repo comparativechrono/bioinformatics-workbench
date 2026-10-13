@@ -1,16 +1,6 @@
-<!-- id: h-db-function | title: Interactions, pathways and GO | group: Databases | summary: STRING networks, Reactome pathways, Gene Ontology terms | keys: string interaction network protein-protein confidence score neighbours reactome pathway diagram gene ontology go term molecular function biological process cellular component evidence code quickgo ols ontology hpo mondo sequence ontology -->
-<h1><!--ICON:link-->Interactions, pathways and GO</h1>
-<p class="lede">What does a protein do, and with whom? <b>STRING</b> draws the network of its interactions, <b>Reactome</b> names the pathways it takes part in, and the <b>Gene Ontology</b> card lists the standard terms for its function, the processes it is part of, and where it is in the cell.</p>
-
-<h2>STRING</h2>
-<p>STRING collects known and predicted protein–protein associations: from experiments, curated databases, genes that are switched on together (co-expression), genes that sit together in genomes, and papers that mention proteins together (text mining). Type gene or protein names, one per line, choose the species, and <b>Search</b>.</p>
-<ul>
-  <li><b>Minimum confidence</b>: STRING's combined score, from 0 to 1. <i>high (0.7)</i> keeps the associations it is most sure of.</li>
-  <li><b>Add neighbours</b>: adds the proteins most strongly connected to yours, to show the neighbourhood.</li>
-  <li>The picture is STRING's own drawing of the network; the table has one row for each pair, with the combined score and its parts (experiments, databases, text mining).</li>
-</ul>
-<p>An association is not always a physical contact: two enzymes of one pathway are associated without ever touching. Look at where a score comes from before you call it an interaction.</p>
-<div class="tryrow"><button class="do" type="button" data-api="string:network:TP53, MDM2, CDKN1A">Network of TP53, MDM2, CDKN1A</button></div>
+<!-- id: h-db-function | title: Pathways, GO and enrichment | group: Databases | summary: Reactome pathways, Gene Ontology terms, and g:Profiler enrichment of gene lists | keys: reactome pathway diagram gene ontology go term molecular function biological process cellular component evidence code quickgo ols ontology hpo mondo sequence ontology enrichment over-representation g:profiler gprofiler g:gost gost g:scs kegg wikipathways gene list -->
+<h1><!--ICON:workflow-->Pathways, GO and enrichment</h1>
+<p class="lede">What does a protein do? <b>Reactome</b> names the pathways it takes part in, the <b>Gene Ontology</b> card lists the standard terms for its function, the processes it is part of and where it is in the cell, and <b>g:Profiler</b> finds what a whole list of genes has in common. Which proteins it works with – STRING, IntAct and NDEx – is on the page <a href="#h-db-networks">Interactions and networks</a>.</p>
 
 <h2>Reactome</h2>
 <p>Reactome is a curated database of human biological pathways – reactions, the molecules in them, and how they connect – with predictions for other species. Type a <b>UniProt accession</b>: the answer lists the pathways the protein is in, with <b>Diagram</b> for those that have one; <i>Disease</i> marks pathways of a disease.</p>
@@ -27,4 +17,15 @@
 <p><b>GO terms of a protein</b> (from QuickGO): type a UniProt accession, and choose an aspect or all three. Each term has an <b>evidence</b> code that says how it was assigned: <code>EXP</code>, <code>IDA</code>, <code>IMP</code>, <code>IPI</code> … from experiments; <code>IBA</code>, <code>ISS</code> from related genes; <code>IEA</code> automatically, without a curator; <code>TAS</code>, <code>NAS</code> from statements in papers. The qualifier says how the protein relates to the term (<i>enables</i>, <i>involved in</i>, <i>located in</i>, <i>part of</i>, or <i>NOT</i>).</p>
 <p><b>Look up a term</b> (from the Ontology Lookup Service) searches the terms of GO and other ontologies: the Human Phenotype Ontology (symptoms and signs), Mondo (diseases), Uberon (anatomy), the Cell Ontology, ChEBI (chemicals), the Sequence Ontology (the names of variant consequences used by VEP).</p>
 <div class="tryrow"><button class="do" type="button" data-api="go:annot:P04637">GO terms of p53</button> <button class="do" type="button" data-api="go:terms:apoptosis">Look up "apoptosis"</button></div>
-<p>Lists of genes – the genes changed in an experiment – are compared against GO with an <i>enrichment</i> analysis, which asks which terms occur more often in the list than by chance. In a notebook, the recipe <a href="#h-recipe-api">Databases from code</a> asks UniProt about many proteins at once and reads the answer as a table: add <code>go_p</code>, <code>go_f</code> or <code>go_c</code> (biological process, molecular function, cellular component) to the <code>fields</code> of its query, and the table has their GO terms.</p>
+<h2>g:Profiler</h2>
+<p>Lists of genes – the genes changed in an experiment – are compared against GO and the pathway databases with an <b>enrichment</b> (over-representation) analysis: which terms occur more often in the list than among all the genes of the species? g:Profiler's <b>g:GOSt</b> answers for GO, KEGG, Reactome and WikiPathways at once. Type the genes (names or Ensembl IDs), choose the organism and the sources, and <b>Search</b>.</p>
+<ul>
+  <li>The p-values are adjusted for testing thousands of terms with g:Profiler's own method, <b>g:SCS</b>, made for the way GO terms overlap; terms below 0.05 are listed.</li>
+  <li><i>Genes</i> is the number of your genes with the term, over the number of genes in the genome with it: a term with 3 of your genes out of 20 in the genome says more than 3 out of 2,000.</li>
+  <li>g:Profiler says which of your names it did not know – check their spelling, or use Ensembl IDs.</li>
+</ul>
+<p>The test compares your list with the whole genome. If your genes could only come from a smaller set – the genes detected in your experiment – the whole genome makes many terms look enriched; on g:Profiler's own site you can give that set as the background. STRING's enrichment (on <a href="#h-db-networks">Interactions and networks</a>) and the Networks tab's <i>Analyse → Functional enrichment</i> do the same test, and can use the nodes of a network as the background.</p>
+<div class="tryrow"><button class="do" type="button" data-api="gprofiler:gost:FKBP5 TSC22D3 PER1 KLF15 ZBTB16 DUSP1 CRISPLD2 PDK4 KLF9 ERRFI1">Genes dexamethasone switches on</button></div>
+<p>In a notebook, the recipe <a href="#h-recipe-api">Databases from code</a> asks UniProt about many proteins at once and reads the answer as a table: add <code>go_p</code>, <code>go_f</code> or <code>go_c</code> (biological process, molecular function, cellular component) to the <code>fields</code> of its query, and the table has their GO terms.</p>
+
+<!--CITE: gprofiler-->

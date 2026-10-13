@@ -1,0 +1,40 @@
+Notices for the files in this folder
+====================================
+
+Networks for the Networks tab: genes that dexamethasone changes in airway cells on their STRING network, and Zachary's
+karate club.
+
+  airway_deseq2.csv           DESeq2's results for the airway experiment (dexamethasone-treated against untreated
+                              airway smooth muscle cells, four cell lines; design ~ cell + dex): one row for each of the
+                              22,369 genes with at least 10 reads, ordered by adjusted p-value – the table the RNA-seq
+                              recipe of the help writes (deseq2_dex_vs_untreated.csv), made in the workbench from
+                              ../rnaseq/airway_counts.tsv and ../rnaseq/airway_samples.tsv with DESeq2 1.52.0 in webR.
+  airway_string_nodes.tsv     STRING's identifiers for the 409 genes of that table with padj < 0.01 and
+                              |log2FoldChange| >= 1.5 (human, one protein for each gene): 357 were found
+  airway_string_network.tsv   STRING's associations among those 357 proteins with a combined score of at least 0.4
+                              (the full, "functional" network): 512, with the scores of their evidence channels
+  karate_club.graphml         Zachary's karate club: the 34 members of a university karate club and the 78 pairs of
+                              them who met outside the club; the attribute club says which side each member joined
+                              when the club split (Mr. Hi, the instructor, member 1; Officer, the administrator, 34)
+
+How they were made, with the SHA-256 of each file: provenance.json.
+
+STRING: the two .tsv files are the answers of STRING's API (version 12.5, https://string-db.org, 13 October 2026), with
+STRING's own columns. STRING's data are available under the Creative Commons Attribution 4.0 licence (CC BY 4.0,
+https://creativecommons.org/licenses/by/4.0/); the files here are unchanged answers, written as tab-separated tables.
+Please cite: Szklarczyk D et al. (2025) The STRING database in 2025: protein networks with directionality of regulation.
+Nucleic Acids Research 53(D1): D730–D737. https://doi.org/10.1093/nar/gkae1113
+
+The airway experiment: Himes BE et al. (2014) RNA-Seq transcriptome profiling identifies CRISPLD2 as a glucocorticoid
+responsive gene that modulates cytokine function in airway smooth muscle cells. PLoS ONE 9(6): e99625.
+https://doi.org/10.1371/journal.pone.0099625 – by way of the Bioconductor package airway (LGPL); see
+../rnaseq/NOTICE.txt. DESeq2: Love MI, Huber W, Anders S (2014) Genome Biology 15: 550.
+https://doi.org/10.1186/s13059-014-0550-8
+
+The karate club: Zachary WW (1977) An information flow model for conflict and fission in small groups. Journal of
+Anthropological Research 33(4): 452–473. https://doi.org/10.1086/jar.33.4.3629752 – the network as NetworkX 3.4.2 has it
+(networkx.karate_club_graph(), BSD licence), without its edge weights, with the members numbered 1 to 34 as in
+Zachary's paper.
+
+They are for learning. A network made from a database at one date is a snapshot: STRING changes from version to
+version, and the associations of well-studied genes are better known than those of others.

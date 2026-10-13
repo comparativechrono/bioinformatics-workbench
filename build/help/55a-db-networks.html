@@ -1,0 +1,51 @@
+<!-- id: h-db-networks | title: Interactions and networks | group: Databases | summary: STRING, IntAct and NDEx: protein interactions, enrichment and published networks – and how to open them in the Networks tab | keys: string intact ndex interaction interactions network networks protein-protein ppi interactome association confidence score combined score channels experiments databases text mining co-expression neighbours mi score miscore evidence detection method psi-mi pubmed cx2 pathway nci-pid signor wikipathways enrichment functional enrichment go kegg reactome fdr | icon: network -->
+<h1><!--ICON:network-->Interactions and networks</h1>
+<p class="lede">Which proteins work together? <b>STRING</b> collects known and predicted associations between proteins and tests lists of genes for shared functions; <b>IntAct</b> holds the interactions that experiments have shown, curated from papers; <b>NDEx</b> shares whole networks – pathways, interactomes, the networks of published papers. Each answer can be opened in the <a href="#h-networks">Networks tab</a>, to style with your own data and analyse.</p>
+
+<h2>STRING</h2>
+<p>STRING scores how likely two proteins are to work together, from seven kinds of evidence (<i>channels</i>): experiments, curated databases, genes switched on together (co-expression), genes that sit together in genomes, are fused, or are found in the same species, and papers that mention them together (text mining). The <b>combined score</b>, from 0 to 1, puts them together.</p>
+<p><b>Interaction network</b>: type gene or protein names (or UniProt or Ensembl IDs), one per line, choose the species, and <b>Search</b>.</p>
+<ul>
+  <li><b>Minimum confidence</b>: <i>high (0.7)</i> keeps the associations STRING is most sure of; <i>medium (0.4)</i> is STRING's default.</li>
+  <li><b>Add neighbours</b>: adds the proteins most strongly connected to yours, to show the neighbourhood.</li>
+  <li>The picture is STRING's own drawing; the table has a row for each pair, with the combined score and the scores of its main channels. <b>Open in Networks</b> makes the same network in the Networks tab, with the edges as wide as their scores.</li>
+</ul>
+<p>An association is not always a physical contact: two enzymes of one pathway are associated without ever touching. Look at where a score comes from before you call it an interaction – or, in the Networks tab's <i>From STRING…</i>, ask for <i>physical interactions only</i>.</p>
+<div class="tryrow"><button class="do" type="button" data-api="string:network:TP53, MDM2, CDKN1A">Network of TP53, MDM2, CDKN1A</button> <button class="do" type="button" data-net="string:TP53,MDM2,CDKN1A,ATM,CHEK2">The same in the Networks tab</button></div>
+<p><b>Functional enrichment</b>: type a list of genes – those an experiment changed, say. STRING says which GO terms, pathways (KEGG, Reactome, WikiPathways) and other annotations are more common among them than among all the genes of the species, with false discovery rates (FDR). <i>Show</i> keeps one category. <b>Their network in Networks</b> opens the network of the list.</p>
+<div class="tryrow"><button class="do" type="button" data-api="string:enrichment:FKBP5, TSC22D3, PER1, KLF15, ZBTB16, DUSP1, CRISPLD2, PDK4">Enrichment of genes a steroid switches on</button></div>
+
+<h2>IntAct</h2>
+<p>IntAct is a database of molecular interactions, curated by hand from published experiments: which molecules bind, how that was shown (yeast two-hybrid, co-immunoprecipitation, a crystal structure …), and in which paper. Type a <b>UniProt accession</b> (P04637) or a protein name; several, separated by spaces, find the interactions of each.</p>
+<ul>
+  <li>IntAct stores each experiment as a separate piece of <i>evidence</i>; the table joins them, one row for each pair of molecules, with the number of pieces of evidence, the methods and the PubMed IDs of the papers.</li>
+  <li>The <b>MI score</b> (0 to 1) is IntAct's confidence in an interaction: higher when more experiments, of more kinds and from more papers, show it. Above 0.6 is usually called high confidence, above 0.45 medium.</li>
+  <li><b>Open in Networks</b>: the network of the molecules you asked for and their partners, with an edge for each pair, as wide as its MI score. Isoforms of a protein (P04637-2) are counted as the protein itself.</li>
+</ul>
+<div class="tryrow"><button class="do" type="button" data-api="intact:interactions:P04637">Interactions of p53</button> <button class="do" type="button" data-api="intact:interactions:P0DTC2">Spike protein of SARS-CoV-2</button></div>
+
+<h2>NDEx</h2>
+<p>The Network Data Exchange is a public library of networks: curated pathways (NCI-PID, SIGNOR, WikiPathways), interactomes, and networks that authors share with their papers. Search it by words – a pathway, a gene, a disease, an author. The table lists each network's size and its <b>Rights</b>: each network has its own licence, so read it before you reuse one. <b>Open in Networks</b> opens a network (of up to 50,000 edges) with its layout, and all the columns of its nodes and edges.</p>
+<div class="tryrow"><button class="do" type="button" data-api="ndex:search:p53 signaling">Search for p53 signalling</button> <button class="do" type="button" data-api="ndex:search:NCI-PID">NCI-PID pathways</button></div>
+
+<h2>Which one?</h2>
+<table>
+<tr><th></th><th>STRING</th><th>IntAct</th><th>NDEx</th></tr>
+<tr><td>What it holds</td><td>Associations, physical or functional, scored from many kinds of evidence – including predictions and text mining</td><td>Physical interactions shown by experiments, each with its paper</td><td>Whole networks, made by others</td></tr>
+<tr><td>Coverage</td><td>Almost every protein of thousands of species</td><td>Fewer proteins, studied ones first</td><td>Whatever has been shared</td></tr>
+<tr><td>Use it for</td><td>A first look at a list of genes; their shared functions</td><td>Evidence you can cite for a single interaction</td><td>A published pathway or network to compare with</td></tr>
+</table>
+<p>Well-studied proteins have more known partners because they have been studied more: a hub in a network made from these databases can be a popular protein rather than a central one.</p>
+
+<h2>From code</h2>
+<p><b>Send to notebook</b> gives the code of each query. In Python, a STRING network becomes a networkx graph:</p>
+<pre class="code" data-run="py"><code>import requests, pandas as pd, networkx as nx
+
+params = {"identifiers": "\r".join(["TP53", "MDM2", "CDKN1A", "ATM", "CHEK2"]), "species": 9606,
+          "required_score": 400, "caller_identity": "bioinformatics_workbench"}
+edges = pd.DataFrame(requests.post("https://string-db.org/api/json/network", data=params).json())
+G = nx.from_pandas_edgelist(edges, "preferredName_A", "preferredName_B", edge_attr="score")
+sorted(G.degree, key=lambda x: -x[1])</code></pre>
+<div class="callout warn"><div class="co-t"><!--ICON:warning-->Public services</div><p>Only what you type is sent – gene names, accessions, search words. Never type or paste personal or patient data. STRING's and IntAct's data are free to reuse under CC BY 4.0: cite them (below) when you publish a network or a figure made from them.</p></div>
+
+<!--CITE: string intact ndex-->

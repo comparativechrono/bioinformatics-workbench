@@ -24,7 +24,7 @@
 <ol>
   <li>Click a tool. Its form lists its inputs – choose datasets from your history – and its settings, with Galaxy's own help under the form and, at its end, the papers to cite when you use the tool (<i>References</i>), as on a Galaxy server.</li>
   <li><b>Run tool</b>. The new datasets appear at the top of the history; wait for them to turn green.</li>
-  <li>Open a dataset: <!--ICON:eye--> shows it (tables as tables, HTML reports, trees drawn), <!--ICON:download--> downloads it, <i>copy to my files</i> puts it in <code>~/galaxy</code> for the terminal and notebooks. BAM, VCF and BED datasets have <!--ICON:genome--> to show them in the Genome browser.</li>
+  <li>Open a dataset: <!--ICON:eye--> shows it (tables as tables, HTML reports, trees drawn), <!--ICON:download--> downloads it, <i>copy to my files</i> puts it in <code>~/galaxy</code> for the terminal and notebooks. BAM, VCF and BED datasets have <!--ICON:genome--> to show them in the Genome browser; networks (the datatypes <code>sif</code> and <code>xgmml</code>) have <!--ICON:network--> to open them in the Networks tab.</li>
 </ol>
 <p>A first analysis with the example reads: upload <code>NA12878_R1.fastq</code>, <code>NA12878_R2.fastq</code> and <code>reference.fa</code>; run <b>fastp</b> on the two read files; <b>Map with minimap2</b> with the reference and the two trimmed outputs; <b>bcftools mpileup</b> on the BAM, then <b>bcftools call</b>, then <b>bcftools filter</b>. Each step takes seconds.</p>
 

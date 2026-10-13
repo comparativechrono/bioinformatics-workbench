@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Bioinformatics workbench</title>
-<meta name="description" content="A bioinformatics workbench in the browser: a Python and R notebook, a Linux terminal with real bioinformatics programs, Galaxy, database APIs, a 3D protein viewer, a genome browser and an AI assistant. Nothing to install.">
+<meta name="description" content="A bioinformatics workbench in the browser: a Python and R notebook, a Linux terminal with real bioinformatics programs, Galaxy, database APIs, a 3D protein viewer, a genome browser, a network viewer and an AI assistant. Nothing to install.">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%2310263a'/%3E%3Cpath d='M10 7c0 6 12 6 12 12s-12 6-12 6M22 7c0 6-12 6-12 12' fill='none' stroke='%237fd6c2' stroke-width='2.4' stroke-linecap='round'/%3E%3C/svg%3E">
 <script src="assets/js/isolation.js"></script>
 <link rel="stylesheet" href="assets/vendor/codemirror/codemirror.css">
@@ -13,6 +13,7 @@
 <link rel="stylesheet" href="assets/css/nb-ai.css">
 <link rel="stylesheet" href="assets/css/pipe.css">
 <link rel="stylesheet" href="assets/css/wb.css">
+<link rel="stylesheet" href="assets/css/net.css">
 </head>
 <body data-page="workbench" data-title="Bioinformatics workbench">
 <div class="app">
@@ -23,7 +24,7 @@
       <svg class="brand-mark" viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="7" fill="#1d4660"/><path d="M10 7c0 6 12 6 12 12s-12 6-12 6M22 7c0 6-12 6-12 12" fill="none" stroke="#7fd6c2" stroke-width="2.4" stroke-linecap="round"/><path d="M12 11h8M12 21h8" stroke="#cfeee6" stroke-width="1.6" stroke-linecap="round"/></svg>
       <div>
         <div class="brand-title">Bioinformatics workbench</div>
-        <div class="brand-sub">Notebook · terminal · Galaxy · databases · 3D · genomes · AI – in your browser</div>
+        <div class="brand-sub">Notebook · terminal · Galaxy · databases · 3D · genomes · networks · AI – in your browser</div>
       </div>
     </a>
     <div class="spacer"></div>
@@ -58,6 +59,7 @@
         <button class="wb-tab" type="button" role="tab" data-wb="apis" title="Databases"><!--ICON:database--><span class="lbl">Databases</span><span class="dot"></span></button>
         <button class="wb-tab" type="button" role="tab" data-wb="viewer" title="3D viewer"><!--ICON:cube--><span class="lbl">3D viewer</span><span class="dot"></span></button>
         <button class="wb-tab" type="button" role="tab" data-wb="igv" title="Genome browser"><!--ICON:genome--><span class="lbl">Genome browser</span><span class="dot"></span></button>
+        <button class="wb-tab" type="button" role="tab" data-wb="networks" title="Networks"><!--ICON:network--><span class="lbl">Networks</span><span class="dot"></span></button>
         <button class="wb-tab" type="button" role="tab" data-wb="assistant" title="AI"><!--ICON:sparkle--><span class="lbl">AI</span><span class="dot"></span></button>
       </div>
       <div class="wb-body">
@@ -68,6 +70,7 @@
         <div class="wb-pane" data-wb="apis" hidden><div id="apiRoot"></div></div>
         <div class="wb-pane" data-wb="viewer" hidden><div id="viewerRoot"></div></div>
         <div class="wb-pane" data-wb="igv" hidden><div id="igvRoot"></div></div>
+        <div class="wb-pane" data-wb="networks" hidden><div id="netRoot"></div></div>
         <div class="wb-pane" data-wb="assistant" hidden><div id="aiRoot"></div></div>
       </div>
     </section>

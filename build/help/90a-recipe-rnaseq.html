@@ -1,4 +1,4 @@
-<!-- id: h-recipe-rnaseq | title: RNA-seq: reads to differential expression | group: Recipes | summary: HISAT2, spliced reads in the genome browser, featureCounts, DESeq2 and edgeR | keys: recipe rna-seq rnaseq featurecounts count strand stranded transcriptome expression differential deseq2 edger limma locfit hisat2 splice spliced intron cigar counts airway dexamethasone volcano ma pca vst normalisation normalization fold change padj fdr yeast -->
+<!-- id: h-recipe-rnaseq | title: RNA-seq: reads to differential expression | group: Recipes | summary: HISAT2, spliced reads in the genome browser, featureCounts, DESeq2 and edgeR | keys: recipe rna-seq rnaseq network string featurecounts count strand stranded transcriptome expression differential deseq2 edger limma locfit hisat2 splice spliced intron cigar counts airway dexamethasone volcano ma pca vst normalisation normalization fold change padj fdr yeast -->
 <h1><!--ICON:flask-->RNA-seq: reads to differential expression</h1>
 <p class="lede">Two halves of an RNA-seq analysis. First, map real RNA-seq reads with HISAT2, see reads split across an intron, and count the reads of each gene with featureCounts. Then, from the gene counts of a published experiment, find the genes that a drug switches on or off – with DESeq2, and with edgeR for comparison.</p>
 <div class="tryrow"><button class="do" type="button" data-recipe="r">Open this recipe as an R notebook</button> <button class="do" type="button" data-open="/data/examples/rnaseq/airway_samples.tsv">Show the samples</button></div>
@@ -81,6 +81,9 @@ summary(decideTests(qlf))
 edger_genes <- rownames(topTags(qlf, n = Inf, p.value = 0.05))
 deseq2_genes <- rownames(top)[which(top$padj < 0.05)]
 c(DESeq2 = length(deseq2_genes), edgeR = length(edger_genes), both = length(intersect(deseq2_genes, edger_genes)))</code></pre>
+
+<h2>10. On an interaction network</h2>
+<p>Which of these genes work together? The recipe <a href="#h-recipe-network">Expression data on an interaction network</a> puts the table that step 7 wrote onto the STRING network of the genes, coloured by their fold changes, and looks for its hubs and clusters. <button class="do" type="button" data-net="genetable:~/recipe-rnaseq/deseq2_dex_vs_untreated.csv">Your table in the Networks tab</button></p>
 
 <div class="callout info"><div class="co-t"><!--ICON:info-->Good to know</div><p>DESeq2 and edgeR need raw counts – whole numbers, not normalised values – and biological replicates. In the browser they run as on a computer: locfit, a package they need, was built for the workbench, and a check against R on Linux gave the same results. Download the notebook to run it in RStudio or Jupyter: <code>BiocManager::install(c("DESeq2", "edgeR"))</code> there.</p></div>
 

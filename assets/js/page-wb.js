@@ -137,6 +137,20 @@
       root.innerHTML = '';
       MG.app.igv = new MG.IGVPanel(root, {});
     },
+    networks: async (pane) => {
+      const root = pane.querySelector('#netRoot');
+      root.innerHTML = '<div class="wb-loading"><span class="spinner"></span> Loading the network viewer…</div>';
+      // Cytoscape.js and its layouts (fCoSE needs layout-base and cose-base before it), then the tab's own scripts
+      for (const src of ['assets/vendor/cytoscape/cytoscape.min.js', 'assets/vendor/cytoscape/layout-base.js', 'assets/vendor/cytoscape/cose-base.js', 'assets/vendor/cytoscape/cytoscape-fcose.js', 'assets/vendor/cytoscape/cytoscape-dagre.min.js', 'assets/js/net-io.js', 'assets/js/net-algo.js', 'assets/js/networks.js']) await loadOnce(src);
+      if (!MG.netLayoutsRegistered) {
+        window.cytoscape.use(window.cytoscapeFcose);
+        window.cytoscape.use(window.cytoscapeDagre);
+        MG.netLayoutsRegistered = true;
+      }
+      root.innerHTML = '';
+      MG.app.networks = new MG.NetworksPanel(root);
+      await MG.app.networks.ready;
+    },
     assistant: (pane) => {
       MG.app.ai = new MG.Assistant(pane.querySelector('#aiRoot'), { notebook: MG.app.nbApp });
     }
@@ -150,13 +164,16 @@
     editor: () => MG.app.editor && MG.app.editor.shown && MG.app.editor.shown(),
     galaxy: () => MG.app.galaxy && MG.app.galaxy.shown && MG.app.galaxy.shown(),
     viewer: () => MG.app.viewer && MG.app.viewer.stage && MG.app.viewer.stage.handleResize(),
-    igv: () => MG.app.igv && MG.app.igv.shown && MG.app.igv.shown()
+    igv: () => MG.app.igv && MG.app.igv.shown && MG.app.igv.shown(),
+    networks: () => MG.app.networks && MG.app.networks.shown && MG.app.networks.shown()
   };
 
   /* ------------------------------------------------------------------
      opening files: the right tab for each kind
      ------------------------------------------------------------------ */
   const STRUCTURE = /\.(pdb|ent|cif|mmcif|bcif|mol2|sdf|pqr|gro|mmtf)(\.gz)?$/i;
+  const NETWORK = /\.(sif|graphml|xgmml|gml|cyjs|cx2)$/i;
+  MG.app.isNetwork = (p) => NETWORK.test(p);
   const GENOMIC = /\.(bam|cram|vcf|vcf\.gz|bcf|bed|bed\.gz|gff3?|gtf|bedgraph|bw|bigwig|wig|seg)$/i;
   MG.app.isStructure = (p) => STRUCTURE.test(p);
   MG.app.isGenomic = (p) => GENOMIC.test(p);
@@ -180,6 +197,7 @@
       return MG.app.nbApp.open(p);
     }
     if (!opts.edit && STRUCTURE.test(p)) return MG.app.viewStructure(p);
+    if (!opts.edit && NETWORK.test(p)) return MG.app.netOpen([p]);
     return MG.app.editFile(p, opts);
   };
   /** show a folder or file in the Files tab */
@@ -227,6 +245,25 @@
     const I = await waitFor(() => MG.app.igv, 15000);
     if (I) await I.loadPaths(MG.app.fs, [].concat(paths));
   };
+  /** the Networks tab, built and ready → its NetworksPanel */
+  MG.app.networksReady = async () => {
+    await MG.app.showWorkbench('networks');
+    const N = await waitFor(() => MG.app.networks, 30000);
+    if (!N) throw new Error('The Networks tab could not start.');
+    await N.ready;
+    return N;
+  };
+  /** network files (SIF, GraphML, XGMML, GML, Cytoscape JSON, CX2 – or tables of edges) → the Networks tab */
+  MG.app.netOpen = async (paths, opts) => (await MG.app.networksReady()).openPaths([].concat(paths), opts || {});
+  /** a table of values (DESeq2 results …) → the nodes of the network that is open */
+  MG.app.netTable = async (path) => (await MG.app.networksReady()).importTableDialog({ path: MG.app.fs.resolve(path) });
+  /** a network of net-io.js's form (nodes, edges) → a new network */
+  MG.app.netFrom = async (obj, opts) => (await MG.app.networksReady()).addNetwork(obj, opts || {});
+  /** STRING: {ids, species, score, type, add} → a network */
+  MG.app.netString = async (opts) => (await MG.app.networksReady()).stringNetwork(opts);
+  /* ▶ buttons of the help: data-net="example:airway", "analyse:mcode" … (see NetworksPanel.action) */
+  MG.actions.net = async (spec) => (await MG.app.networksReady()).action(spec);
+
   /** a file → Galaxy's history */
   MG.app.toGalaxy = async (paths) => {
     await MG.app.showWorkbench('galaxy');

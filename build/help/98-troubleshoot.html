@@ -1,4 +1,4 @@
-<!-- id: h-troubleshoot | title: When something goes wrong | group: Reference | summary: Common problems and what to do | keys: troubleshoot kraken2 bracken kmer_distrib unclassified prodigal hmmer hmmscan hmmpress auxfiles pressed format problem 20000 characters problem error help isolated isolation cross-origin featurecounts salmon threads not working slow stuck crash files gone lost storage full quota not found no such file network failed to fetch cors 429 genome browser empty galaxy red ai key locked terminal out of memory reload index bai fai chromosome names variant caller strelka lofreq plink plink2 pca lapack memory glm covariates allow-no-covars -->
+<!-- id: h-troubleshoot | title: When something goes wrong | group: Reference | summary: Common problems and what to do | keys: troubleshoot networks string hairball kraken2 bracken kmer_distrib unclassified prodigal hmmer hmmscan hmmpress auxfiles pressed format problem 20000 characters problem error help isolated isolation cross-origin featurecounts salmon threads not working slow stuck crash files gone lost storage full quota not found no such file network failed to fetch cors 429 genome browser empty galaxy red ai key locked terminal out of memory reload index bai fai chromosome names variant caller strelka lofreq plink plink2 pca lapack memory glm covariates allow-no-covars -->
 <h1><!--ICON:help-->When something goes wrong</h1>
 <p class="lede">The usual problems, and what to do about them. Error messages in the notebook and the terminal often carry a hint of their own – and <b>Ask the AI assistant about this error</b> explains them (<a href="#h-ai">AI assistant</a>).</p>
 
@@ -76,6 +76,12 @@
   <dd>Is the right genome chosen? The chromosome names of the file must be those of the genome (<code>human_CYP2C19</code> for the example genome, <code>chr10</code> for hg19/hg38). A BAM file needs its <code>.bai</code> (<code>samtools index</code>), a FASTA genome its <code>.fai</code> (<code>samtools faidx</code>). Reads appear only when you zoom in.</dd>
   <dt>A Galaxy dataset is red</dt>
   <dd>Open its details (<!--ICON:info-->): the program's messages say what went wrong. Often an input of the wrong kind, or a setting; <!--ICON:rerun--> runs the tool again with the same settings, to change one.</dd>
+  <dt>Networks: STRING does not know some of my genes</dt>
+  <dd>STRING knows proteins: long non-coding RNAs and pseudogenes have none, and Ensembl IDs that Ensembl has retired are not found. Check the species. Versions at the end of Ensembl IDs (<code>ENSG00000120129.5</code>) are taken off before the IDs are sent.</dd>
+  <dt>Networks: few nodes found a row of my table</dt>
+  <dd>The two columns must hold the same kind of names – gene names with gene names, Ensembl IDs with Ensembl IDs. A network from STRING keeps the names you sent in its column <code>query</code>, and STRING's own names in <code>name</code>: choose the one that matches your table.</dd>
+  <dt>Networks: the network is a hairball</dt>
+  <dd>Raise STRING's confidence (0.7), keep fewer genes (a smaller p-value), hide the nodes without edges (<i>Select → Nodes without edges</i>), or look at the clusters one at a time (<i>Analyse → Clusters</i>, then <i>new network</i> on a cluster).</dd>
   <dt>The AI assistant says "Not connected", the key is not accepted, or it is busy</dt>
   <dd>Check the service and key in <!--ICON:gear--> AI settings and press <b>Test</b>. Free keys allow only a few requests per minute: wait a minute.</dd>
 </dl>

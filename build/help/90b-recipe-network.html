@@ -1,0 +1,87 @@
+<!-- id: h-recipe-network | title: Expression data on an interaction network | group: Recipes | summary: DESeq2's results on a STRING network: colour the genes by fold change, find the hubs and clusters, and ask what the clusters do | keys: recipe network networks string protein-protein interaction ppi deseq2 rna-seq expression differential fold change log2foldchange padj airway dexamethasone glucocorticoid steroid hub hubs cytohubba mcc mcode cluster clusters enrichment go kegg networkx louvain | icon: network -->
+<h1><!--ICON:flask-->Expression data on an interaction network</h1>
+<p class="lede">The genes that a drug switches on or off make a list; the proteins they code for work together in a network. This recipe takes the result of the <a href="#h-recipe-rnaseq">RNA-seq recipe</a> – the genes that the steroid dexamethasone changes in airway smooth muscle cells – onto their STRING network, colours them by how much they changed, and looks for the hubs and clusters of the network and for what the clusters do. Most of it happens in the Networks tab, with the buttons below; the last steps do the same in Python.</p>
+<div class="tryrow"><button class="do" type="button" data-net="example:airway">The finished network</button> <button class="do" type="button" data-recipe="python">Open the code as a Python notebook</button></div>
+
+<h2>1. The results of DESeq2</h2>
+<p>A row for each gene of the experiment: its Ensembl ID, its mean count (<code>baseMean</code>), how much it changed in treated cells (<code>log2FoldChange</code>: 1 is twice as much RNA, −1 half) and the adjusted p-value (<code>padj</code>). It is the file <code>deseq2_dex_vs_untreated.csv</code> that the RNA-seq recipe writes; a copy is in <code>/data/examples/networks/airway_deseq2.csv</code>. <button class="do" type="button" data-open="/data/examples/networks/airway_deseq2.csv">Look at the table</button></p>
+
+<h2>2. From the table to a network</h2>
+<p><button class="do" type="button" data-net="genetable:/data/examples/networks/airway_deseq2.csv">Open → From a table of genes…</button> (if you made your own table in the RNA-seq recipe, choose it there instead). The tab finds the column of IDs and DESeq2's columns <code>padj</code> and <code>log2FoldChange</code> by their names. Keep the genes with <code>padj</code> &lt; 0.01 and |<code>log2FoldChange</code>| ≥ 1.5 – 409 genes –, leave human, medium confidence (0.4) and all associations, and <b>Make the network</b>.</p>
+<ul>
+  <li>The IDs go to STRING, which finds the proteins – 357 of the 409 genes. Most of the others make no protein (long non-coding RNAs, pseudogenes), or have IDs that Ensembl has since retired: the airway data use an older annotation.</li>
+  <li>STRING returns the associations among the 357 proteins with a score of at least 0.4: 512 of them.</li>
+  <li>Every column of the table is added to the nodes – the rows are matched on the IDs that were sent, which the nodes keep in the column <code>query</code>.</li>
+  <li>The nodes are coloured by <code>log2FoldChange</code> – red up, blue down, grey unchanged – and sized by <code>padj</code>, the smallest p-values largest. The ends of the colour scale hold 95% of the genes, so that a few extreme ones do not wash out the rest (≤ and ≥ in the legend).</li>
+</ul>
+<p>The finished network (the button at the top) was made in the same way on 13 October 2026, from STRING 12.5, and opens without the internet. STRING changes from version to version: made today, the network can differ a little.</p>
+
+<h2>3. Read the network</h2>
+<p>About a hundred proteins have no association with the others at this confidence. <button class="do" type="button" data-net="select:isolated">Select → Nodes without edges</button>, <button class="do" type="button" data-net="hide">hide them</button>, and <button class="do" type="button" data-net="layout:fcose">lay the network out again</button>: the rest is one large component of 237 proteins and some small ones.</p>
+<p>Where are the genes that every steroid experiment finds – the classic targets of the glucocorticoid receptor? <button class="do" type="button" data-net="select:FKBP5,TSC22D3,PER1,KLF15,ZBTB16,DUSP1,CRISPLD2,PDK4">Select FKBP5, TSC22D3, PER1, KLF15, ZBTB16, DUSP1, CRISPLD2 and PDK4</button> (or type their names into <b>Find nodes</b>). All eight are red: switched on. ZBTB16 changed most – a log2 fold change of 7.35, over 150 times as much RNA. Click one for its details, and its row in the node table; right-click it for its UniProt entry or its AlphaFold structure.</p>
+
+<h2>4. Hubs</h2>
+<p><button class="do" type="button" data-net="analyse:hubs">Analyse → Hubs</button> with MCC, Degree, Betweenness and Closeness ranks the proteins. The most connected are leptin (LEP, 26 partners), thrombospondin 1 (THBS1, 21), the chemokine CXCL12 (19) and FOXO1 (16); MCC puts CXCL12, THBS1, LEP, VCAM1 and TGFB2 first; betweenness LEP, THBS1, FOXO1, CAMK2A and GPX3 – the proteins that link the parts of the network. The hubs are a mix of genes switched on (LEP, THBS1, FOXO1) and off (CXCL12, VCAM1, TGFB2).</p>
+<p>A hub of a network made from databases is partly a well-studied gene: leptin and the chemokines are the subject of thousands of papers, and STRING's evidence – experiments, curated databases, text mining – grows with them. A hub is a reason to look closer, not a finding on its own. (What each ranking measures: <a href="#h-network-analysis">Network analysis</a>.)</p>
+
+<h2>5. Clusters</h2>
+<p><button class="do" type="button" data-net="analyse:mcode">Analyse → Clusters: MCODE</button> finds the densely connected regions: fourteen with the usual settings, each in a colour of its own. <button class="do" type="button" data-net="layout:groups">Lay them out by cluster</button> to see them apart. The eight with the highest scores (↑ switched on, ↓ off):</p>
+<table>
+<tr><th>Cluster</th><th>Proteins</th><th>What they are</th></tr>
+<tr><td>1</td><td>COL4A3↑ COL4A4↑ COL11A1↑ ITGA10↑ ITGA11↓</td><td>Collagens and the integrins that bind them</td></tr>
+<tr><td>2</td><td>ATF3↑ DUSP1↑ NR4A3↑ EGR2↓ EGR3↓</td><td>Immediate-early genes: switched on within minutes of a signal</td></tr>
+<tr><td>3</td><td>15 proteins, all but two ↓: BDKRB1, BDKRB2, ADRA2A, CCKAR, MCHR1, ADCY1, ADCY4, ADCY8, CAMK2A …</td><td>Receptors that act through G proteins, the adenylyl cyclases that make cAMP, and what follows</td></tr>
+<tr><td>4</td><td>PDK4↑ FABP4↑ FOXO1↑ SCD↓</td><td>The use of fats and sugars</td></tr>
+<tr><td>5</td><td>NEXN↑ MYOZ2↑ PKP2↑ PRKAG2↑</td><td>Muscle and cell-junction proteins</td></tr>
+<tr><td>6</td><td>MT1E↑ MT1M↑ MT1X↑ MT2A↑</td><td>Metallothioneins – among the first genes found to be switched on by glucocorticoids</td></tr>
+<tr><td>7</td><td>HSPA2↑ DNAJB4↑ HSPA6↓ HSPA12B↓</td><td>Heat-shock proteins, which help other proteins fold</td></tr>
+<tr><td>8</td><td>FZD5↑ FZD8↑ FRZB↑ WNT2↓</td><td>Wnt signalling</td></tr>
+</table>
+<p>The other six are smaller or looser – among them the chemokines CCL8 and CXCL12 with the adhesion molecule VCAM1, all switched off (cluster 9), and the clock genes PER1, PER3 and DBP (cluster 14). Several clusters lean one way – the metallothioneins all up, the receptors of cluster 3 nearly all down: the steroid switches groups of proteins that work together on or off. Try <i>Clusters: MCL</i> or <i>Communities: Louvain</i> too: they put every protein in a group, so their groups are larger and looser.</p>
+
+<h2>6. What the clusters do</h2>
+<p>Each cluster in the <i>Results</i> panel has a link <i>enrichment</i>: its genes go to STRING, which lists the GO terms and pathways they share more than chance would. <button class="do" type="button" data-net="enrich:cluster1">The enrichment of cluster 1</button>: ECM–receptor interaction and focal adhesion (KEGG), integrin cell surface interactions (Reactome), collagen trimers (GO). Click a term to select its genes on the network. Cluster 3 gives signalling by G-protein-coupled receptors, cAMP and calcium – and, among the WikiPathways, <i>Albuterol and budesonide therapy for asthma</i>: a bronchodilator and a steroid, for the disease these airway cells are studied for. Cluster 4 gives the PPAR pathway and the response to fatty acids; <i>Analyse → Functional enrichment</i> of the whole network, among others, the regulation of lipolysis, the extracellular matrix, signalling by G-protein-coupled receptors, and cytokine–cytokine receptor interaction.</p>
+<p>Five genes are a small sample: an enriched term among them is a hint. And the test compares the genes with the whole genome, although only genes switched on in these cells could have been found; with the box <i>Background</i>, STRING compares them with the network instead.</p>
+
+<h2>7. Keep it</h2>
+<p><button class="do" type="button" data-net="picture:png">Save → Picture (PNG)</button> draws the network with its legend, at up to four times the size of the screen; <i>Picture (SVG)</i> for a poster or a paper. <i>Save → Network: Cytoscape JSON</i> keeps the network with its layout, its colours and every column, to open here again or in Cytoscape. The networks that are open are also kept in this browser for your next visit.</p>
+
+<h2>8. The same in Python</h2>
+<p>The network can be made and analysed in a notebook too, with STRING's API and networkx – useful to repeat it on other experiments, or to keep the analysis with the code of the rest of the project. The table, filtered as in step 2:</p>
+<pre class="code" data-run="py"><code>import pandas as pd, requests, time
+import networkx as nx
+
+de = pd.read_csv("/data/examples/networks/airway_deseq2.csv", index_col=0)
+sig = de[(de.padj &lt; 0.01) &amp; (de.log2FoldChange.abs() &gt;= 1.5)].sort_values("padj")
+len(sig)</code></pre>
+<p>STRING's identifiers for the genes, then the network among them. STRING asks for a second's pause between requests, and for a name for the program that asks (<code>caller_identity</code>):</p>
+<pre class="code" data-run="py"><code>STRING = "https://string-db.org/api/json/"
+me = "bioinformatics_workbench"
+found = pd.DataFrame(requests.post(STRING + "get_string_ids", data={
+    "identifiers": "\r".join(sig.index), "species": 9606, "limit": 1, "echo_query": 1, "caller_identity": me}).json())
+time.sleep(1)
+edges = pd.DataFrame(requests.post(STRING + "network", data={
+    "identifiers": "\r".join(found.stringId), "species": 9606, "required_score": 400, "caller_identity": me}).json())
+len(found), len(edges)</code></pre>
+<p>A networkx graph, with DESeq2's values on its nodes; its most connected and most central proteins:</p>
+<pre class="code" data-run="py"><code>G = nx.Graph()
+for _, g in found.iterrows():
+    G.add_node(g.preferredName, ensembl=g.queryItem,
+               log2FoldChange=float(de.log2FoldChange[g.queryItem]), padj=float(de.padj[g.queryItem]))
+G.add_weighted_edges_from(zip(edges.preferredName_A, edges.preferredName_B, edges.score), weight="score")
+print(G.number_of_nodes(), "proteins,", G.number_of_edges(), "interactions,", nx.number_connected_components(G), "components")
+
+degree = pd.Series(dict(G.degree())).sort_values(ascending=False)
+betweenness = pd.Series(nx.betweenness_centrality(G, normalized=False)).sort_values(ascending=False)
+pd.DataFrame({"degree": degree.head(8), "log2FoldChange": [G.nodes[n]["log2FoldChange"] for n in degree.head(8).index]})</code></pre>
+<p>The same numbers as the tab's – and betweenness puts LEP, THBS1 and FOXO1 first again (<code>betweenness.head()</code>). Louvain communities, and the network in the Networks tab:</p>
+<pre class="code" data-run="py"><code>communities = nx.community.louvain_communities(G, seed=1)
+big = sorted((c for c in communities if len(c) &gt; 1), key=len, reverse=True)
+print(len(big), "communities, modularity", round(nx.community.modularity(G, communities), 3))
+nx.write_graphml(G, "airway_string.graphml")</code></pre>
+<pre class="code" data-run="py"><code>!network airway_string.graphml</code></pre>
+<p>networkx takes the nodes in a random order (fixed here with <code>seed=1</code>), the Networks tab in the order of its table: their communities are alike, but not the same. In the tab, colour the nodes again by <code>log2FoldChange</code>: the Style panel, <i>Fill colour</i>, <i>continuous</i>.</p>
+
+<div class="callout info"><div class="co-t"><!--ICON:info-->Good to know</div><p>STRING's associations are not all physical: two proteins of the same pathway are associated without touching. For a network of physical contacts only, choose <i>physical interactions only</i> in step 2, or IntAct (<a href="#h-db-networks">Interactions and networks</a>). The gene names go to STRING; the table stays in the browser – never send personal or patient data to these services.</p></div>
+
+<!--CITE: deseq2 airway string cytohubba mcode networkx-->

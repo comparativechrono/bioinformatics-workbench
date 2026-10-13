@@ -48,7 +48,7 @@
   <li>Python is downloaded when a Python notebook is open, R when an R notebook is open – and the page opens the last notebook you had open when it starts (a Python one on the first visit) –, packages when they are imported or installed: tens of megabytes, of which the browser keeps a copy for later visits.</li>
   <li>A web page can only ask web services that allow requests from web pages (<b>CORS</b>). The big bioinformatics services do – Ensembl, UniProt, NCBI, EBI, the PDB, AlphaFold DB and the others of the Databases tab; KEGG and most web pages do not. This holds for notebooks, <code>curl</code> and <code>wget</code> alike.</li>
   <li>R in the browser can only make GET requests; use Python for POST requests.</li>
-  <li>The Databases tab, the AI assistant, the hosted genomes of the genome browser and downloads from the PDB need the internet all the time.</li>
+  <li>The Databases tab, the AI assistant, the hosted genomes of the genome browser, downloads from the PDB, and the Networks tab's STRING, IntAct, NDEx and enrichment need the internet all the time.</li>
 </ul>
 
 <h2>The tabs</h2>
@@ -56,6 +56,7 @@
   <li><b>Galaxy</b> offers a selection of tools, runs one job at a time, and has no user accounts or shared histories.</li>
   <li><b>Snakemake</b> is a browser edition of its commonly used core: rules, wildcards, <code>expand</code>, <code>-n</code>, <code>--dag</code>, <code>--summary</code>; no cluster execution.</li>
   <li><b>The 3D viewer</b> needs WebGL (3D graphics in the browser): if it does not start, turn on hardware acceleration in the browser's settings.</li>
+  <li><b>The Networks tab</b> draws networks of a few thousand nodes smoothly; larger ones (up to 60,000 nodes and 300,000 edges) open, but are slow to draw and to lay out. Statistics and hub rankings follow every shortest path: seconds for a few thousand nodes, about half a minute for 10,000. Cytoscape's apps (plugins) are not here; the most used of them – NetworkAnalyzer, cytoHubba, MCODE, MCL, enrichment – have their equivalents in the tab (<a href="#h-network-analysis">Network analysis</a>).</li>
   <li>The workbench is made for a laptop or desktop screen; on a phone or tablet it works, cramped.</li>
 </ul>
 <p>Use a current Chrome, Edge, Firefox or Safari.</p>

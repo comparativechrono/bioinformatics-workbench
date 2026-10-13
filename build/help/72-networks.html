@@ -1,0 +1,100 @@
+<!-- id: h-networks | title: The Networks tab | group: Networks | summary: Draw, style and analyse networks of genes and proteins (Cytoscape.js) | keys: network networks graph interaction protein-protein ppi interactome cytoscape cytoscape.js sif graphml xgmml gml cyjs cx2 ndex string intact node edge layout fcose force-directed style mapping legend node table edge table import table join deseq2 fold change subnetwork merge undo export png svg networkx igraph | icon: network -->
+<h1><!--ICON:network-->The Networks tab</h1>
+<p class="lede">Networks of interacting genes and proteins – or of anything else with links between things: open them, colour and size them with your own data, look for their hubs and clusters, and save pictures and files of them. The tab works like the desktop program Cytoscape, and reads and writes its files; it is built on Cytoscape.js.</p>
+<div class="tryrow"><button class="do" type="button" data-bench="networks">Open the Networks tab</button> <button class="do" type="button" data-net="example:airway">Example: genes changed by a drug, on STRING</button> <button class="do" type="button" data-net="example:karate">Example: a karate club</button></div>
+
+<h2>The parts of the tab</h2>
+<ul>
+  <li><b>The toolbar</b>: the network you are looking at (click it to switch to another, rename, duplicate or close it), then <b>Open</b>, <b>Data</b>, <b>Layout</b>, <b>Select</b>, <b>Analyse</b> and <b>Save</b>, a box to find nodes, undo and redo.</li>
+  <li><b>The network</b>, with the number of nodes and edges at the top left, the legend at the bottom left (<b>−</b> folds it away) and, at the bottom right, zoom, fit and a button that hides the panels to give the network the whole tab.</li>
+  <li><b>The side panel</b>: <i>Style</i> (colours, sizes, shapes, labels), <i>Select</i> (filters), <i>Results</i> (of the analyses) and <i>Details</i> (of what is selected).</li>
+  <li><b>The tables</b> underneath: one row for each node, or each edge, with all their columns. Drag the bar above them to make them taller.</li>
+</ul>
+
+<h2>Open a network</h2>
+<table>
+<tr><th>From</th><th>How</th></tr>
+<tr><td>A file</td><td><b>Open → From my files…</b> or <b>From my computer…</b>. The tab reads SIF (<code>.sif</code>), GraphML (<code>.graphml</code> – networkx, igraph, Gephi, yEd), XGMML (<code>.xgmml</code>, Cytoscape's XML), GML (<code>.gml</code>), Cytoscape JSON (<code>.cyjs</code>, also Cytoscape.js's own JSON), CX2 (<code>.cx2</code>, NDEx) – and tables of edges (<code>.csv</code>, <code>.tsv</code>): it shows the first rows and asks which columns hold the two ends of each edge.</td></tr>
+<tr><td>STRING</td><td><b>Open → From STRING…</b>: type genes or proteins; STRING finds them and returns their network – known and predicted associations, with a confidence score (0–1) and the evidence behind it. The edge width shows the score.</td></tr>
+<tr><td>A table of genes</td><td><b>Open → From a table of genes…</b>: the results of DESeq2, edgeR or limma. Choose the column of gene names or IDs and the filters (adjusted p-value, fold change): the genes that pass go to STRING, and every column of the table becomes a column of the nodes. See the recipe <a href="#h-recipe-network">Expression data on an interaction network</a>.</td></tr>
+<tr><td>IntAct</td><td><b>Open → From IntAct…</b>: the experimentally shown interactions of proteins (UniProt accessions or names), one edge for each pair, with IntAct's MI score and the number of experiments.</td></tr>
+<tr><td>NDEx</td><td><b>Open → From NDEx…</b>: search the public networks of NDEx – pathways (NCI-PID, WikiPathways, SIGNOR), interactomes, the networks of papers – and open one, with its own layout. Each network has its own licence, shown in the list.</td></tr>
+<tr><td>The other tabs</td><td>Files (⋯ → <i>Open in Networks</i>), the terminal (<code>network FILE</code>), a Galaxy dataset of the formats <code>sif</code> or <code>xgmml</code>, and the STRING, IntAct and NDEx cards of the Databases tab (<i>Open in Networks</i>). From a Python notebook: <code>!network graph.graphml</code>.</td></tr>
+</table>
+<pre class="code" data-run="term"><code>network --example karate
+network --string TP53 MDM2 CDKN1A ATM CHEK2
+network /data/examples/networks/karate_club.graphml</code></pre>
+<div class="callout warn"><div class="co-t"><!--ICON:warning-->What goes to the services</div><p>STRING, IntAct, NDEx and g:Profiler get the names you send them – gene names, accessions, search words – and nothing else: your tables stay in the browser. Never send personal or patient data. STRING's and IntAct's data are CC BY 4.0: cite them (below) when you publish a network made from them.</p></div>
+
+<h2>Find your way</h2>
+<ul>
+  <li>Drag the background to move; the mouse wheel (or a pinch) zooms; <kbd>F</kbd> or the fit button shows the whole network.</li>
+  <li>Click a node or an edge to select it; <kbd>Shift</kbd>+click adds to the selection; <kbd>Shift</kbd>+drag draws a box around several. Drag a node to move it. A double-click zooms in on a node and its neighbours.</li>
+  <li><b>Right-click</b> a node: its neighbours, its interactors from STRING, its UniProt entry, its AlphaFold structure in the 3D viewer, its gene in the Genome browser (human, hg38); right-click the background to add a node there.</li>
+  <li><b>Find nodes</b> (the box in the toolbar) marks the nodes whose names contain what you type – several names, separated by spaces, at once; <kbd>Enter</kbd> selects them and zooms to them.</li>
+  <li><kbd>Delete</kbd> deletes what is selected; <kbd>Ctrl</kbd>+<kbd>Z</kbd> undoes (deletions, layouts, imports, analyses), <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>Z</kbd> redoes; <kbd>Esc</kbd> selects nothing. (The keys work once you have clicked the network.)</li>
+</ul>
+
+<h2>The tables</h2>
+<p>The <b>node table</b> has a row for each node and a column for each attribute: its name, the columns of the file it came from, those of tables you imported, and those the analyses add. The <b>edge table</b> does the same for edges, and <b>Network</b> describes the network as a whole.</p>
+<ul>
+  <li>Click a column's name to sort by it; click a row to select its node (or edge) and go to it. <i>only selected</i> shows the rows of what is selected; the box filters the rows by any text.</li>
+  <li>Double-click a cell to change it. The <b>⋯</b> of a column: colour or size the nodes by it, a histogram, select by its values, rename it, delete it.</li>
+  <li><b>Save</b> writes the table as a CSV file into your files.</li>
+</ul>
+
+<h2>Your data on the network</h2>
+<p><b>Data → Import a table of values onto the nodes…</b> joins a table to the nodes: each row whose name (or ID) matches a node adds its columns to that node. The tab finds the pair of columns that match best – gene names with gene names, Ensembl IDs with Ensembl IDs – and says how many nodes found a row. Networks from STRING keep what you typed in the column <code>query</code>, so Ensembl IDs from DESeq2 match there.</p>
+<h3>Style</h3>
+<p>Every look of a node or an edge – fill colour, size, shape, label, border, opacity; edge colour, width, line, arrow – is the same for all, or <b>mapped</b> from a column, in the <i>Style</i> panel:</p>
+<ul>
+  <li><b>Continuous</b> (a column of numbers): a range of colours or sizes. For fold changes, the blue – grey – red colours (blue down, grey unchanged, red up) with 0 in the middle; for p-values, <i>−log₁₀</i> so that the smallest p-values give the largest nodes. <i>95% of them</i> sets the ends of the scale so that a few extreme values do not wash the others out (those get the colour of the end, ≥ in the legend).</li>
+  <li><b>Discrete</b> (any column): a colour, shape or size for each value – clusters, kinds of molecule, the two clubs of the karate club. The first eight values get eight colours chosen to be told apart by colour-blind readers too; more values are grey unless you choose a colour for them.</li>
+  <li><b>Label</b>: any column, or none.</li>
+  <li><b>Chart</b>: a ring of slices on each node, one for each column ticked, coloured by its value – the fold changes of several experiments on one network.</li>
+</ul>
+<p>The <b>ready-made</b> styles set several at once: <i>Plain</i>, <i>Confidence</i> (edges wider for higher STRING or IntAct scores), <i>Expression</i> (fill by the fold change, size by the adjusted p-value), <i>Clusters</i> (a colour for each cluster) and <i>Degree</i> (size and colour by the number of edges). The legend follows the mappings; it is drawn in saved pictures too.</p>
+
+<h2>Layouts</h2>
+<table>
+<tr><th>Layout</th><th>For</th></tr>
+<tr><td>Force-directed (fCoSE)</td><td>The usual first choice: nodes repel each other, edges pull them together, so connected groups come together. Separate pieces are packed side by side.</td></tr>
+<tr><td>… strong edges shorter</td><td>The same, with edges of high score (STRING, IntAct) shorter.</td></tr>
+<tr><td>Circle, Grid</td><td>Every node visible and in order – small networks, or to start editing.</td></tr>
+<tr><td>Concentric</td><td>The most connected nodes in the middle.</td></tr>
+<tr><td>Hierarchical (dagre)</td><td>Directed networks – signalling, regulation, pathways – in layers from top to bottom.</td></tr>
+<tr><td>Tree</td><td>A breadth-first tree from the selected node (or the most connected one).</td></tr>
+<tr><td>Groups</td><td>A circle for each value of a column: one per cluster after Analyse → Clusters.</td></tr>
+<tr><td>Spring-embedded (CoSE)</td><td>Cytoscape.js's older force-directed layout.</td></tr>
+</table>
+<p>A layout of the <b>selected nodes only</b> rearranges a part and leaves the rest. Layouts can be undone.</p>
+
+<h2>Select, edit, combine</h2>
+<ul>
+  <li><b>Select</b>: all, none, the inverse, the neighbours of what is selected, the edges between the selected nodes, nodes without edges, the shortest path between two selected nodes – and, in the <i>Select</i> panel, by the values of columns (<code>padj &lt; 0.01</code>, <code>|log2FoldChange| ≥ 2</code>, a name that contains a word …), with several conditions.</li>
+  <li>What is selected becomes a <b>new network</b> (with the edges between its nodes), can be hidden, or deleted.</li>
+  <li><b>Data</b>: add a node, an edge between two selected nodes, the interactors of the selected nodes from STRING, STRING's interactions between the nodes of a network that has none; <b>merge</b> two networks (union, intersection, difference – nodes matched by name or another column); treat the edges as directed (arrows).</li>
+</ul>
+
+<h2>Analyse</h2>
+<p><b>Analyse</b> computes the statistics of the network (degree, betweenness, closeness, clustering coefficient …), ranks its hubs, finds clusters (MCODE, MCL, Louvain), connected components and k-cores, the shortest path between two nodes, and the functions and pathways its genes share. Each result appears in the <i>Results</i> panel and adds columns to the node table. What each one means, and how it was checked: <a href="#h-network-analysis">Network analysis</a>.</p>
+
+<h2>Save and share</h2>
+<table>
+<tr><th>Save →</th><th>What you get</th></tr>
+<tr><td>Picture (PNG)</td><td>The whole network as drawn, at 1×, 2× or 4×, with the legend at the right – to download or to keep among your files.</td></tr>
+<tr><td>Picture (SVG)</td><td>The same as a vector picture, for papers and posters (Inkscape, Illustrator, PowerPoint open it).</td></tr>
+<tr><td>Cytoscape JSON (<code>.cyjs</code>)</td><td>The network with its positions and every column; it opens again here (with its style) and in Cytoscape (File → Import → Network from File).</td></tr>
+<tr><td>GraphML, SIF</td><td>For networkx, igraph, Gephi, yEd and Cytoscape; SIF keeps only the nodes, edges and kinds of interaction.</td></tr>
+<tr><td>Node table, edge table</td><td>CSV files of the tables.</td></tr>
+<tr><td>To a notebook</td><td>Adds code to the open notebook that reads the network: for Python, the network is saved as GraphML in <code>~/networks</code> and read with networkx; for R, its node and edge tables are saved as CSV files there and made into a network with igraph.</td></tr>
+</table>
+<p>The networks that are open are kept in this browser, in <code>~/.networks/session.json</code>: they are there again when you come back. To keep a network for good, or take it elsewhere, save it as a file.</p>
+<pre class="code" data-run="py"><code>import networkx as nx
+
+# a network made in Python, opened in the Networks tab
+G = nx.les_miserables_graph()
+nx.write_graphml(G, "lesmis.graphml")
+!network lesmis.graphml</code></pre>
+
+<!--CITE: cytoscapejs fcose cytoscape string intact ndex-->

@@ -958,6 +958,424 @@
    "issue": "",
    "pages": "122",
    "doi": "10.1186/s13059-016-0974-4"
+  },
+  "cytoscapejs2023": {
+   "authors": [
+    "Franz M",
+    "Lopes CT",
+    "Fong D",
+    "Kucera M",
+    "Cheung M",
+    "Siper MC",
+    "Huck G",
+    "Dong Y",
+    "Sumer O",
+    "Bader GD"
+   ],
+   "year": 2023,
+   "title": "Cytoscape.js 2023 update: a graph theory library for visualization and analysis",
+   "container": "Bioinformatics",
+   "volume": "39",
+   "issue": "1",
+   "pages": "btad031",
+   "doi": "10.1093/bioinformatics/btad031"
+  },
+  "cytoscapejs2016": {
+   "authors": [
+    "Franz M",
+    "Lopes CT",
+    "Huck G",
+    "Dong Y",
+    "Sumer O",
+    "Bader GD"
+   ],
+   "year": 2016,
+   "title": "Cytoscape.js: a graph theory library for visualisation and analysis",
+   "container": "Bioinformatics",
+   "volume": "32",
+   "issue": "2",
+   "pages": "309-311",
+   "doi": "10.1093/bioinformatics/btv557"
+  },
+  "fcose2022": {
+   "authors": [
+    "Balci H",
+    "Dogrusoz U"
+   ],
+   "year": 2022,
+   "title": "fCoSE: A Fast Compound Graph Layout Algorithm with Constraint Support",
+   "container": "IEEE Transactions on Visualization and Computer Graphics",
+   "volume": "28",
+   "issue": "12",
+   "pages": "4582-4593",
+   "doi": "10.1109/TVCG.2021.3095303"
+  },
+  "cytoscape2003": {
+   "authors": [
+    "Shannon P",
+    "Markiel A",
+    "Ozier O",
+    "Baliga NS",
+    "Wang JT",
+    "Ramage D",
+    "Amin N",
+    "Schwikowski B",
+    "Ideker T"
+   ],
+   "year": 2003,
+   "title": "Cytoscape: A Software Environment for Integrated Models of Biomolecular Interaction Networks",
+   "container": "Genome Research",
+   "volume": "13",
+   "issue": "11",
+   "pages": "2498-2504",
+   "doi": "10.1101/gr.1239303"
+  },
+  "networkanalyzer2008": {
+   "authors": [
+    "Assenov Y",
+    "Ramírez F",
+    "Schelhorn SE",
+    "Lengauer T",
+    "Albrecht M"
+   ],
+   "year": 2008,
+   "title": "Computing topological parameters of biological networks",
+   "container": "Bioinformatics",
+   "volume": "24",
+   "issue": "2",
+   "pages": "282-284",
+   "doi": "10.1093/bioinformatics/btm554"
+  },
+  "networkanalyzer2012": {
+   "authors": [
+    "Doncheva NT",
+    "Assenov Y",
+    "Domingues FS",
+    "Albrecht M"
+   ],
+   "year": 2012,
+   "title": "Topological analysis and interactive visualization of biological networks and protein structures",
+   "container": "Nature Protocols",
+   "volume": "7",
+   "issue": "4",
+   "pages": "670-685",
+   "doi": "10.1038/nprot.2012.004"
+  },
+  "cytohubba2014": {
+   "authors": [
+    "Chin CH",
+    "Chen SH",
+    "Wu HH",
+    "Ho CW",
+    "Ko MT",
+    "Lin CY"
+   ],
+   "year": 2014,
+   "title": "cytoHubba: identifying hub objects and sub-networks from complex interactome",
+   "container": "BMC Systems Biology",
+   "volume": "8",
+   "issue": "S4",
+   "pages": "S11",
+   "doi": "10.1186/1752-0509-8-S4-S11"
+  },
+  "mcode2003": {
+   "authors": [
+    "Bader GD",
+    "Hogue CWV"
+   ],
+   "year": 2003,
+   "title": "An automated method for finding molecular complexes in large protein interaction networks",
+   "container": "BMC Bioinformatics",
+   "volume": "4",
+   "issue": "1",
+   "pages": "2",
+   "doi": "10.1186/1471-2105-4-2"
+  },
+  "clustermaker2_2023": {
+   "authors": [
+    "Utriainen M",
+    "Morris JH"
+   ],
+   "year": 2023,
+   "title": "clusterMaker2: a major update to clusterMaker, a multi-algorithm clustering app for Cytoscape",
+   "container": "BMC Bioinformatics",
+   "volume": "24",
+   "issue": "1",
+   "pages": "134",
+   "doi": "10.1186/s12859-023-05225-z"
+  },
+  "mcl2002": {
+   "authors": [
+    "Enright AJ",
+    "Van Dongen S",
+    "Ouzounis CA"
+   ],
+   "year": 2002,
+   "title": "An efficient algorithm for large-scale detection of protein families",
+   "container": "Nucleic Acids Research",
+   "volume": "30",
+   "issue": "7",
+   "pages": "1575-1584",
+   "doi": "10.1093/nar/30.7.1575"
+  },
+  "mcl2008": {
+   "authors": [
+    "van Dongen S"
+   ],
+   "year": 2008,
+   "title": "Graph Clustering Via a Discrete Uncoupling Process",
+   "container": "SIAM Journal on Matrix Analysis and Applications",
+   "volume": "30",
+   "issue": "1",
+   "pages": "121-141",
+   "doi": "10.1137/040608635"
+  },
+  "louvain2008": {
+   "authors": [
+    "Blondel VD",
+    "Guillaume JL",
+    "Lambiotte R",
+    "Lefebvre E"
+   ],
+   "year": 2008,
+   "title": "Fast unfolding of communities in large networks",
+   "container": "Journal of Statistical Mechanics: Theory and Experiment",
+   "volume": "2008",
+   "issue": "10",
+   "pages": "P10008",
+   "doi": "10.1088/1742-5468/2008/10/P10008"
+  },
+  "brandes2001": {
+   "authors": [
+    "Brandes U"
+   ],
+   "year": 2001,
+   "title": "A faster algorithm for betweenness centrality",
+   "container": "The Journal of Mathematical Sociology",
+   "volume": "25",
+   "issue": "2",
+   "pages": "163-177",
+   "doi": "10.1080/0022250X.2001.9990249"
+  },
+  "string2025": {
+   "authors": [
+    "Szklarczyk D",
+    "Nastou K",
+    "Koutrouli M",
+    "Kirsch R",
+    "Mehryary F",
+    "Hachilif R",
+    "Hu D",
+    "Peluso ME",
+    "Huang Q",
+    "Fang T",
+    "Doncheva NT",
+    "Pyysalo S",
+    "Bork P",
+    "Jensen LJ",
+    "von Mering C"
+   ],
+   "year": 2025,
+   "title": "The STRING database in 2025: protein networks with directionality of regulation",
+   "container": "Nucleic Acids Research",
+   "volume": "53",
+   "issue": "D1",
+   "pages": "D730-D737",
+   "doi": "10.1093/nar/gkae1113"
+  },
+  "intact2022": {
+   "authors": [
+    "del Toro N",
+    "Shrivastava A",
+    "Ragueneau E",
+    "Meldal B",
+    "Combe C",
+    "Barrera E",
+    "Perfetto L",
+    "How K",
+    "Ratan P",
+    "Shirodkar G",
+    "Lu O",
+    "Mészáros B",
+    "Watkins X",
+    "Pundir S",
+    "Licata L",
+    "Iannuccelli M",
+    "Pellegrini M",
+    "Martin MJ",
+    "Panni S",
+    "Duesbury M",
+    "Vallet SD",
+    "Rappsilber J",
+    "Ricard-Blum S",
+    "Cesareni G",
+    "Salwinski L",
+    "Orchard S",
+    "Porras P",
+    "Panneerselvam K",
+    "Hermjakob H"
+   ],
+   "year": 2022,
+   "title": "The IntAct database: efficient access to fine-grained molecular interaction data",
+   "container": "Nucleic Acids Research",
+   "volume": "50",
+   "issue": "D1",
+   "pages": "D648-D653",
+   "doi": "10.1093/nar/gkab1006"
+  },
+  "ndex2017": {
+   "authors": [
+    "Pratt D",
+    "Chen J",
+    "Pillich R",
+    "Rynkov V",
+    "Gary A",
+    "Demchak B",
+    "Ideker T"
+   ],
+   "year": 2017,
+   "title": "NDEx 2.0: A Clearinghouse for Research on Cancer Pathways",
+   "container": "Cancer Research",
+   "volume": "77",
+   "issue": "21",
+   "pages": "e58-e61",
+   "doi": "10.1158/0008-5472.CAN-17-0606"
+  },
+  "gprofiler2023": {
+   "authors": [
+    "Kolberg L",
+    "Raudvere U",
+    "Kuzmin I",
+    "Adler P",
+    "Vilo J",
+    "Peterson H"
+   ],
+   "year": 2023,
+   "title": "g:Profiler—interoperable web service for functional enrichment analysis and gene identifier mapping (2023 update)",
+   "container": "Nucleic Acids Research",
+   "volume": "51",
+   "issue": "W1",
+   "pages": "W207-W212",
+   "doi": "10.1093/nar/gkad347"
+  },
+  "zachary1977": {
+   "authors": [
+    "Zachary WW"
+   ],
+   "year": 1977,
+   "title": "An Information Flow Model for Conflict and Fission in Small Groups",
+   "container": "Journal of Anthropological Research",
+   "volume": "33",
+   "issue": "4",
+   "pages": "452-473",
+   "doi": "10.1086/jar.33.4.3629752"
+  },
+  "networkx2008": {
+   "authors": [
+    "Hagberg AA",
+    "Schult DA",
+    "Swart PJ"
+   ],
+   "year": 2008,
+   "title": "Exploring Network Structure, Dynamics, and Function using NetworkX",
+   "container": "Proceedings of the Python in Science Conference",
+   "pages": "11-15",
+   "doi": "10.25080/TCWV9851"
+  },
+  "newman2006": {
+   "authors": [
+    "Newman MEJ"
+   ],
+   "year": 2006,
+   "title": "Modularity and community structure in networks",
+   "container": "Proceedings of the National Academy of Sciences",
+   "volume": "103",
+   "issue": "23",
+   "pages": "8577-8582",
+   "doi": "10.1073/pnas.0601602103"
+  },
+  "tomita2006": {
+   "authors": [
+    "Tomita E",
+    "Tanaka A",
+    "Takahashi H"
+   ],
+   "year": 2006,
+   "title": "The worst-case time complexity for generating all maximal cliques and computational experiments",
+   "container": "Theoretical Computer Science",
+   "volume": "363",
+   "issue": "1",
+   "pages": "28-42",
+   "doi": "10.1016/j.tcs.2006.06.015"
+  },
+  "airway2014": {
+   "authors": [
+    "Himes BE",
+    "Jiang X",
+    "Wagner P",
+    "Hu R",
+    "Wang Q",
+    "Klanderman B",
+    "Whitaker RM",
+    "Duan Q",
+    "Lasky-Su J",
+    "Nikolos C",
+    "Jester W",
+    "Johnson M",
+    "Panettieri RA",
+    "Tantisira KG",
+    "Weiss ST",
+    "Lu Q"
+   ],
+   "year": 2014,
+   "title": "RNA-Seq Transcriptome Profiling Identifies CRISPLD2 as a Glucocorticoid Responsive Gene that Modulates Cytokine Function in Airway Smooth Muscle Cells",
+   "container": "PLoS ONE",
+   "volume": "9",
+   "issue": "6",
+   "pages": "e99625",
+   "doi": "10.1371/journal.pone.0099625"
+  },
+  "cose2009": {
+   "authors": [
+    "Dogrusoz U",
+    "Giral E",
+    "Cetintas A",
+    "Civril A",
+    "Demir E"
+   ],
+   "year": 2009,
+   "title": "A layout algorithm for undirected compound graphs",
+   "container": "Information Sciences",
+   "volume": "179",
+   "issue": "7",
+   "pages": "980-994",
+   "doi": "10.1016/j.ins.2008.11.017"
+  },
+  "broido2019": {
+   "authors": [
+    "Broido AD",
+    "Clauset A"
+   ],
+   "year": 2019,
+   "title": "Scale-free networks are rare",
+   "container": "Nature Communications",
+   "volume": "10",
+   "issue": "1",
+   "pages": "1017",
+   "doi": "10.1038/s41467-019-08746-5"
+  },
+  "valente1998": {
+   "authors": [
+    "Valente TW",
+    "Foreman RK"
+   ],
+   "year": 1998,
+   "title": "Integration and radiality: Measuring the extent of an individual's connectedness and reachability in a network",
+   "container": "Social Networks",
+   "volume": "20",
+   "issue": "1",
+   "pages": "89-105",
+   "doi": "10.1016/S0378-8733(97)00007-5"
   }
  },
  "programs": {
@@ -1230,6 +1648,122 @@
    "name": "Ensembl VEP",
    "refs": [
     "vep2016"
+   ]
+  },
+  "cytoscapejs": {
+   "name": "Cytoscape.js (the Networks tab)",
+   "refs": [
+    "cytoscapejs2016",
+    "cytoscapejs2023"
+   ]
+  },
+  "fcose": {
+   "name": "fCoSE (the force-directed layout)",
+   "refs": [
+    "fcose2022",
+    "cose2009"
+   ]
+  },
+  "cytoscape": {
+   "name": "Cytoscape (the desktop program whose tools the Networks tab follows)",
+   "refs": [
+    "cytoscape2003"
+   ]
+  },
+  "networkanalyzer": {
+   "name": "NetworkAnalyzer (network statistics)",
+   "refs": [
+    "networkanalyzer2008",
+    "networkanalyzer2012"
+   ]
+  },
+  "brandes": {
+   "name": "Shortest paths and betweenness",
+   "refs": [
+    "brandes2001"
+   ]
+  },
+  "cytohubba": {
+   "name": "cytoHubba (hubs)",
+   "refs": [
+    "cytohubba2014"
+   ]
+  },
+  "mcode": {
+   "name": "MCODE (clusters)",
+   "refs": [
+    "mcode2003",
+    "clustermaker2_2023"
+   ],
+   "note": "The second paper for clusterMaker2, whose implementation of MCODE the Networks tab follows step by step."
+  },
+  "mcl": {
+   "name": "MCL (Markov clustering)",
+   "refs": [
+    "mcl2002",
+    "mcl2008"
+   ]
+  },
+  "louvain": {
+   "name": "Louvain communities",
+   "refs": [
+    "louvain2008",
+    "newman2006"
+   ],
+   "note": "The second paper for modularity, which the Louvain method makes as large as it can."
+  },
+  "networkx": {
+   "name": "NetworkX",
+   "refs": [
+    "networkx2008"
+   ]
+  },
+  "string": {
+   "name": "STRING",
+   "refs": [
+    "string2025"
+   ]
+  },
+  "intact": {
+   "name": "IntAct",
+   "refs": [
+    "intact2022"
+   ]
+  },
+  "ndex": {
+   "name": "NDEx",
+   "refs": [
+    "ndex2017"
+   ]
+  },
+  "gprofiler": {
+   "name": "g:Profiler",
+   "refs": [
+    "gprofiler2023"
+   ]
+  },
+  "karate": {
+   "name": "The karate club network (the example)",
+   "refs": [
+    "zachary1977"
+   ]
+  },
+  "airway": {
+   "name": "The airway experiment (the example)",
+   "refs": [
+    "airway2014"
+   ]
+  },
+  "scalefree": {
+   "name": "Degree distributions (are networks scale-free?)",
+   "refs": [
+    "broido2019"
+   ]
+  },
+  "radiality": {
+   "name": "Radiality, as first defined",
+   "refs": [
+    "valente1998"
    ]
   }
  }

@@ -31,7 +31,7 @@
   const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
   const HOME = () => (MG.app && MG.app.HOME) || '/home/user';
   const pretty = (p) => (MG.app && MG.app.fs ? MG.app.fs.pretty(p) : p);
-  const TAB_NAMES = { notebook: 'Notebook', terminal: 'Terminal', editor: 'Files', galaxy: 'Galaxy', apis: 'Databases', viewer: '3D viewer', igv: 'Genome browser', assistant: 'AI assistant' };
+  const TAB_NAMES = { notebook: 'Notebook', terminal: 'Terminal', editor: 'Files', galaxy: 'Galaxy', apis: 'Databases', viewer: '3D viewer', igv: 'Genome browser', networks: 'Networks', assistant: 'AI assistant' };
   const stamp = () => {
     const d = new Date(), p = (n) => String(n).padStart(2, '0');
     return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}_${p(d.getHours())}${p(d.getMinutes())}`;
@@ -329,7 +329,7 @@
   const AGENT_SECONDS = Math.max(5, +CFG.agentCommandSeconds || 150);
   /* What the agent may not run: cd (each step starts in its folder, where programs put the files they make), and
      what would change the user's set-up or the shell itself. Commands that act on the user's screen refuse the
-     agent themselves (open, nano, igv, download, export-session), and so do curl and wget unless it may use the
+     agent themselves (open, nano, igv, network, download, export-session), and so do curl and wget unless it may use the
      internet (shell-wb.js). Everything else of the terminal is the agent's to use. */
   const AGENT_DENY = new Set(['cd', 'pushd', 'popd', 'exec', 'conda', 'mamba', 'micromamba']);
   const AGENT_ALLOW = { has: (n) => !AGENT_DENY.has(n) };
@@ -556,7 +556,7 @@
       this.busy = false;
       this.tab = 'chat';
       this.settings = Object.assign({}, LIVE_DEFAULTS, store.get('ai:settings', {}));
-      this.ctxOpts = Object.assign({ nb: true, files: true, term: true }, store.get('ai:context', {}));
+      this.ctxOpts = Object.assign({ nb: true, files: true, term: true, net: true }, store.get('ai:context', {}));
       try {
         this.key = window.sessionStorage.getItem(KEY_NAME) || '';
       } catch (e) {
@@ -732,7 +732,8 @@
       R.append(
         cb('nb', 'the open notebook’s code', 'The code cells of the notebook that is open in the Notebook tab – not their outputs, and not your data'),
         cb('files', 'your file names', 'The names and sizes of the files in your home folder – not what is in them'),
-        cb('term', 'your last commands', 'When you come from the Terminal: your last three commands and the end of what they printed')
+        cb('term', 'your last commands', 'When you come from the Terminal: your last three commands and the end of what they printed'),
+        cb('net', 'the open network', 'When you come from the Networks tab: the name, size and columns of the network that is open, its best-connected nodes, what is selected and the latest results')
       );
     }
     newConversation() {
@@ -981,7 +982,7 @@
         '',
         'The workbench:',
         ...envLines(),
-        '- Its tabs: Notebook (Jupyter-style notebooks in Python or R, saved as .ipynb files; in a Python cell !command runs a terminal command, and a cell that begins with %%bash runs terminal commands – in R notebooks too), Terminal, Files (a file browser and editor), Galaxy (a small Galaxy with the same programs), Databases (search forms for UniProt, PDB, Ensembl, NCBI, EBI BLAST and others, each with code to repeat the search), 3D viewer (NGL, for PDB and AlphaFold structures), Genome browser (igv.js: BAM, VCF, BED and GFF files), and AI assistant (you).',
+        '- Its tabs: Notebook (Jupyter-style notebooks in Python or R, saved as .ipynb files; in a Python cell !command runs a terminal command, and a cell that begins with %%bash runs terminal commands – in R notebooks too), Terminal, Files (a file browser and editor), Galaxy (a small Galaxy with the same programs), Databases (search forms for UniProt, PDB, Ensembl, NCBI, EBI BLAST and others, each with code to repeat the search), 3D viewer (NGL, for PDB and AlphaFold structures), Genome browser (igv.js: BAM, VCF, BED and GFF files), Networks (networks of genes, proteins or anything else, drawn with Cytoscape.js: SIF, GraphML, GML, XGMML, Cytoscape JSON and CX2 files, networks from STRING, IntAct and NDEx; styles mapped from table columns, e.g. DESeq2 results on a STRING network; statistics as in Cytoscape\'s Analyzer, hubs as in cytoHubba, clusters with MCODE, MCL and Louvain, enrichment with STRING or g:Profiler; the terminal command  network FILE  opens a file there), and AI assistant (you).',
         '',
         'How to answer:',
         '- Be brief, clear and friendly. Explain in plain words what code does and why – many users are learning.',
@@ -1017,6 +1018,7 @@
           const list = this.fileList(60);
           if (list) parts.push(`The user's files (names and sizes only):\n${list}`);
         }
+        if (this.ctxOpts.net !== false && last === 'networks' && MG.app.networks && MG.app.networks.contextText) parts.push(MG.app.networks.contextText());
         if (this.ctxOpts.term && last === 'terminal' && !extra.error && !extra.cell) {
           const T = MG.app.term;
           const recent = ((T && T.transcript) || []).slice(-3);
@@ -1123,7 +1125,7 @@
         `- Your folder is ${pretty(run)} (= ${run}). Every step starts there, and cd is not available: use paths. Write files only inside your folder – changes anywhere else are undone after each step. You may read files anywhere: the user's files in ~ and the example data in /data/examples. agent-record.ipynb in your folder is the record of your work: leave it alone.`,
         ...envLines({ agent: true, web: this.allowWeb }),
         `- Each step's output is shortened to its last ${AGENT_OUT} characters. A step that has not ended after ${AGENT_SECONDS} seconds is stopped. For Python or R code of more than a line or two, write a script with a here-document (cat > count.py << 'EOF' … EOF) and run it (python count.py); save plots as files (plt.savefig("plot.png"), png("plot.png") … dev.off()).`,
-        "- Commands that act on the user's screen (open, nano, igv, download) are not available to you."
+        "- Commands that act on the user's screen (open, nano, igv, network, download) are not available to you."
       ].join('\n');
     }
     /** one turn of the agent: the model's reply (free-tier limits: wait and ask again, up to 3 times) */

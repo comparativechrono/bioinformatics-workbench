@@ -1,4 +1,4 @@
-<!-- id: h-r | title: R | group: Notebooks: Python and R | summary: webR: packages, Bioconductor, plots, files | keys: r rstats webr ggplot2 dplyr tidyverse tidyr readr bioconductor biostrings genomicranges limma deseq2 edger locfit differential expression rna-seq install.packages library rscript plot data frame -->
+<!-- id: h-r | title: R | group: Notebooks: Python and R | summary: webR: packages, Bioconductor, plots, files | keys: r rstats webr ggplot2 dplyr tidyverse tidyr readr bioconductor biostrings genomicranges limma deseq2 edger locfit differential expression rna-seq install.packages library rscript plot data frame igraph network graph -->
 <h1><!--ICON:rlang-->R</h1>
 <p class="lede">R 4.6 (webR), running in this page. Packages are downloaded the first time you load them; base graphics and ggplot2 plots appear under the cell.</p>
 <div class="tryrow"><button class="do" type="button" data-new-nb="r">New R notebook</button> <button class="do" type="button" data-open-nb="~/notebooks/welcome-r.ipynb">Open the R welcome notebook</button></div>
@@ -40,6 +40,14 @@ ggplot(genes, aes(protein_length, protein_abundance, colour = factor(essential))
   scale_x_log10() + scale_y_log10() +
   labs(x = "protein length (aa)", y = "abundance (ppm)", colour = "essential")</code></pre>
 <p>A data frame on the last line of a cell is shown as a table. The plots of a cell appear after its printed output. <code>ggsave("plot.png", width = 6, height = 4)</code> or <code>png("plot.png")</code> … <code>dev.off()</code> also write the picture as a file.</p>
+
+<h2>Networks with igraph</h2>
+<p>igraph analyses networks in R. Its GraphML reader does not work in the browser: build networks from tables instead – the Networks tab's <b>Save → To a notebook → R</b> saves a network's node and edge tables and adds this code for them.</p>
+<pre class="code" data-run="r"><code>library(igraph)
+g <- make_graph("Zachary")          # the karate club
+c(vcount(g), ecount(g))
+head(sort(degree(g), decreasing = TRUE))
+sizes(cluster_louvain(g))</code></pre>
 
 <h2>Files</h2>
 <p>R reads and writes your files like Python does: the working folder is the notebook's folder (<code>getwd()</code>), <code>~</code> means <code>/home/user</code>, and <code>/data/examples</code> is read-only.</p>

@@ -1,0 +1,42 @@
+{
+ "description": "Networks for the Networks tab: DESeq2's results for the airway experiment, the STRING network of the genes it found changed (padj < 0.01, |log2FoldChange| >= 1.5), and Zachary's karate club.",
+ "files": {
+  "airway_deseq2.csv": {
+   "sha256": "a22d1def77b175895d81ba387c9a77dbec5240b4ff251d9841bbd582cd89c841",
+   "what": "DESeq2's results, dexamethasone-treated against untreated airway smooth muscle cells: 22,369 genes (those with at least 10 reads in all), ordered by padj",
+   "made": "In the workbench itself (webR 0.6.0, R 4.6.0, DESeq2 1.52.0, locfit 1.5-9.12), by the steps 5 to 7 of the help's RNA-seq recipe (h-recipe-rnaseq), on 13 October 2026",
+   "from": [
+    "../rnaseq/airway_counts.tsv",
+    "../rnaseq/airway_samples.tsv"
+   ],
+   "code": "counts <- as.matrix(read.delim(\"/data/examples/rnaseq/airway_counts.tsv\", row.names = 1, check.names = FALSE)); samples <- read.delim(\"/data/examples/rnaseq/airway_samples.tsv\", row.names = 1); samples <- samples[colnames(counts), ]; samples$cell <- factor(samples$cell); samples$dex <- factor(samples$dex, levels = c(\"untrt\", \"trt\")); library(DESeq2); dds <- DESeqDataSetFromMatrix(countData = counts, colData = samples, design = ~ cell + dex); dds <- dds[rowSums(counts(dds)) >= 10, ]; dds <- DESeq(dds); res <- results(dds, contrast = c(\"dex\", \"trt\", \"untrt\"), alpha = 0.05); top <- as.data.frame(res[order(res$padj), ]); write.csv(top, \"deseq2_dex_vs_untreated.csv\")"
+  },
+  "airway_string_nodes.tsv": {
+   "sha256": "490e868a11ad435dc982ebaeb64a5806745a80c1b3488a1a5ac8194fc8a53b8a",
+   "what": "STRING's identifiers of the genes of airway_deseq2.csv with padj < 0.01 and |log2FoldChange| >= 1.5 (409 genes, sent in the order of the table): 357 found",
+   "source": "STRING 12.5 API, 13 October 2026",
+   "request": "POST https://string-db.org/api/json/get_string_ids with identifiers = the 409 Ensembl gene IDs (separated by carriage returns), species = 9606, limit = 1, echo_query = 1, caller_identity = bioinformatics_workbench",
+   "transformation": "None: the answer (JSON) written as a tab-separated table with STRING's own columns (queryIndex, queryItem, stringId, preferredName, ncbiTaxonId, taxonName, annotation)",
+   "not found": "52 of the 409 IDs: 33 long non-coding RNAs, 4 pseudogenes, 1 protein-coding gene, and 14 IDs no longer in Ensembl (Ensembl REST lookup/id, 13 October 2026)"
+  },
+  "airway_string_network.tsv": {
+   "sha256": "4d963273cd33dcd5e7ef3a00c344c96fb3d4d3304e80ea0dcb09b0e4678636b1",
+   "what": "The associations among those 357 proteins with a combined score of at least 0.4: 512",
+   "source": "STRING 12.5 API, 13 October 2026, a second after the request above",
+   "request": "POST https://string-db.org/api/json/network with identifiers = the 357 stringIds of airway_string_nodes.tsv (separated by carriage returns), species = 9606, required_score = 400, network_type = functional (the default), caller_identity = bioinformatics_workbench",
+   "transformation": "None: the answer (JSON) written as a tab-separated table with STRING's own columns (stringId_A, stringId_B, preferredName_A, preferredName_B, ncbiTaxonId, score and the channel scores nscore, fscore, pscore, ascore, escore, dscore, tscore)"
+  },
+  "karate_club.graphml": {
+   "sha256": "6242c47198f195c78fced50cda67a45642704a1106896d4283c4edb6f1ce128a",
+   "what": "Zachary's karate club: 34 members, 78 pairs who met outside the club, and the side each member joined (club: Mr. Hi or Officer)",
+   "source": "NetworkX 3.4.2, networkx.karate_club_graph() (Zachary 1977)",
+   "code": "import networkx as nx; K = nx.karate_club_graph(); G = nx.Graph(name=\"Zachary's karate club\"); [G.add_node(str(v + 1), name=str(v + 1), club=d[\"club\"]) for v, d in K.nodes(data=True)]; [G.add_edge(str(u + 1), str(v + 1)) for u, v in K.edges()]; nx.write_graphml(G, \"karate_club.graphml\")",
+   "transformation": "The members numbered 1 to 34 as in Zachary's paper (NetworkX numbers them 0 to 33); NetworkX's edge weights left out. Running the code gives this file byte for byte."
+  }
+ },
+ "licences": {
+  "STRING": "CC BY 4.0 (https://string-db.org/cgi/access): Szklarczyk D et al. (2025) Nucleic Acids Research 53(D1): D730-D737, doi:10.1093/nar/gkae1113",
+  "airway": "The Bioconductor package airway (LGPL): Himes BE et al. (2014) PLoS ONE 9(6): e99625, doi:10.1371/journal.pone.0099625 – see ../rnaseq/NOTICE.txt",
+  "karate club": "Zachary WW (1977) Journal of Anthropological Research 33(4): 452-473, doi:10.1086/jar.33.4.3629752; NetworkX: BSD 3-Clause"
+ }
+}

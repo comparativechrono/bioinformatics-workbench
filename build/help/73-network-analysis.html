@@ -1,0 +1,110 @@
+<!-- id: h-network-analysis | title: Network analysis | group: Networks | summary: Statistics, hubs, clusters (MCODE, MCL, Louvain), paths and functional enrichment – what they compute, and how they were checked | keys: network analysis networkanalyzer network analyzer topology degree betweenness closeness stress radiality eccentricity clustering coefficient topological coefficient neighbourhood connectivity diameter path length density centralization heterogeneity power law scale-free degree distribution hubs hub cytohubba mcc dmnc mnc epc bottleneck clusters clustering mcode mcl markov louvain modularity community communities k-core core number connected components shortest path enrichment go kegg reactome g:profiler gprofiler string fdr karate | icon: chart -->
+<h1><!--ICON:chart-->Network analysis</h1>
+<p class="lede">The <b>Analyse</b> menu of the Networks tab measures the network and its nodes, ranks its hubs, divides it into clusters and asks what its genes have in common. Everything but the enrichment is computed in your browser, in the background – <b>Stop</b> cancels it; the enrichment sends the names of the genes, and nothing else, to STRING or g:Profiler.</p>
+<div class="tryrow"><button class="do" type="button" data-net="example:karate">Open the karate club</button> <button class="do" type="button" data-net="analyse:stats">Network statistics</button> <button class="do" type="button" data-net="analyse:hubs">Hubs</button> <button class="do" type="button" data-net="analyse:louvain">Louvain communities</button></div>
+
+<h2>Before you start</h2>
+<ul>
+  <li>Every analysis treats the network as <b>undirected</b>: an edge A → B joins A and B. Several edges between the same two nodes count as one, and self-loops are left out (the statistics count them).</li>
+  <li>Each analysis adds its results to the <i>Results</i> panel and <b>columns to the node table</b>: sort by them, colour or size the nodes by them, filter on them, save them. <kbd>Ctrl</kbd>+<kbd>Z</kbd> takes them away again.</li>
+  <li>The statistics and the hub rankings follow every shortest path between every two nodes: a second or two for 2,000 nodes, about 10 seconds for 5,000 nodes and 25,000 edges, half a minute for 10,000 nodes. Clusters take seconds.</li>
+</ul>
+
+<h2>Network statistics</h2>
+<p><b>Analyse → Network statistics</b> computes what Cytoscape's NetworkAnalyzer computes for an undirected network, with the same column names, so that results can be compared with papers that used it. For each node:</p>
+<table>
+<tr><th>Column</th><th>What it is</th></tr>
+<tr><td>Degree</td><td>The number of edges at the node.</td></tr>
+<tr><td>AverageShortestPathLength</td><td>The mean distance, in edges, to the nodes it can reach.</td></tr>
+<tr><td>ClosenessCentrality</td><td>1 / AverageShortestPathLength: high for nodes close to the rest of their part of the network.</td></tr>
+<tr><td>BetweennessCentrality</td><td>The share of the shortest paths between other nodes that pass through it, from 0 to 1 (counted within its connected component). High: a bridge between parts of the network.</td></tr>
+<tr><td>Stress</td><td>The number of shortest paths that pass through it.</td></tr>
+<tr><td>ClusteringCoefficient</td><td>Of the pairs of its neighbours, the share that are neighbours of each other: 1 when they all are.</td></tr>
+<tr><td>NeighborhoodConnectivity</td><td>The mean degree of its neighbours.</td></tr>
+<tr><td>TopologicalCoefficient</td><td>How much it shares neighbours with other nodes.</td></tr>
+<tr><td>Eccentricity</td><td>The largest distance from it to a node it can reach.</td></tr>
+<tr><td>Radiality</td><td>(Δ + 1 − AverageShortestPathLength) / Δ, where Δ is the diameter of its component: near 1 for central nodes.</td></tr>
+</table>
+<p>The edge table gets <b>EdgeBetweenness</b>: the number of shortest paths that run along the edge. The <i>Results</i> panel has the network as a whole – number of nodes and edges, average number of neighbours, diameter and radius, characteristic path length (the mean distance between two nodes), clustering coefficient, density, heterogeneity, centralization, connected components – and three charts.</p>
+<ul>
+  <li><b>Degree distribution</b>, on logarithmic axes, with a power law fitted to it (y = a·x<sup>b</sup>, as NetworkAnalyzer fits it). Many networks have a few hubs and many nodes with few edges, and their points fall near a line here. A line on these axes is a hint, not a proof, that a network is "scale-free": a careful test needs more than a straight line, and finds that few real networks pass it (Broido &amp; Clauset 2019).</li>
+  <li><b>Shortest path lengths</b>: how many pairs of nodes are 1, 2, 3 … edges apart.</li>
+  <li><b>Clustering coefficient by degree</b>: falling with the degree when hubs join groups that are not joined to each other.</li>
+</ul>
+
+<h2>Hubs</h2>
+<p><b>Analyse → Hubs</b> ranks the nodes by the methods of cytoHubba, a Cytoscape app for finding the important nodes of a network. Tick the methods; the <i>Results</i> panel lists the top ones of each (equal scores, equal rank), and every score goes into the node table as <code>hub_MCC</code>, <code>hub_Degree</code> …</p>
+<table>
+<tr><th>Method</th><th>A node scores high when …</th></tr>
+<tr><td>MCC (maximal clique centrality)</td><td>it is in many cliques (groups in which every node is joined to every other), and large ones: the sum of (|C| − 1)! over its maximal cliques C. A node whose neighbours are not joined to each other scores its degree.</td></tr>
+<tr><td>DMNC</td><td>the largest group of its neighbours that are joined to each other is dense: E / N<sup>1.7</sup> for its N nodes and E edges.</td></tr>
+<tr><td>MNC</td><td>that group is large: N.</td></tr>
+<tr><td>Degree</td><td>it has many neighbours.</td></tr>
+<tr><td>EPC (edge percolated component)</td><td>it stays connected to many nodes when edges are removed at random: 1,000 copies of the network, each edge kept with probability ½; the sum, over the copies, of the nodes it is connected to, divided by the number of nodes.</td></tr>
+<tr><td>BottleNeck</td><td>many shortest-path trees – one from each node – have more than a quarter of their nodes under it.</td></tr>
+<tr><td>EcCentricity</td><td>the farthest node from it is near.</td></tr>
+<tr><td>Closeness</td><td>it is near all the others: the sum of 1/distance.</td></tr>
+<tr><td>Radiality</td><td>it is near all the others, compared with the diameter.</td></tr>
+<tr><td>Betweenness</td><td>many shortest paths between other nodes pass through it.</td></tr>
+<tr><td>Stress</td><td>the same, each path counted.</td></tr>
+<tr><td>ClusteringCoefficient</td><td>its neighbours are neighbours of each other.</td></tr>
+</table>
+<p>MCC, DMNC, MNC, Degree and the clustering coefficient look at a node and its neighbours; the others at the whole network. In the paper that introduced it, MCC found the essential proteins of yeast best; degree is simpler and not far behind; betweenness and BottleNeck find the nodes that link groups. A node that several methods put near the top is a better candidate than one that only one method likes. The buttons under the list select the top nodes, make a network of them and their neighbours (cytoHubba's "expanded subnetwork"), or colour them by rank.</p>
+
+<h2>Clusters and communities</h2>
+<table>
+<tr><th>Analyse →</th><th>Finds</th><th>Every node in a cluster?</th><th>Column</th></tr>
+<tr><td>Clusters: MCODE</td><td>Dense regions – in protein networks often complexes</td><td>No: most nodes are in none</td><td><code>MCODE_Cluster</code>, <code>MCODE_Score</code></td></tr>
+<tr><td>Clusters: MCL</td><td>Groups that random walks stay inside</td><td>Yes, in exactly one</td><td><code>MCL_Cluster</code></td></tr>
+<tr><td>Communities: Louvain</td><td>A division with many edges inside groups and few between them</td><td>Yes, in exactly one</td><td><code>Louvain_Community</code></td></tr>
+<tr><td>Connected components</td><td>Parts that no path joins</td><td>Yes</td><td><code>Component</code></td></tr>
+<tr><td>k-cores</td><td>The core number of each node: the largest k for which it belongs to a k-core – a part of the network in which every node has at least k neighbours within the part</td><td>–</td><td><code>CoreNumber</code></td></tr>
+</table>
+<p>The clusters are numbered from the best (MCODE) or the largest (the others); the nodes get the colour of their cluster, and each cluster in the <i>Results</i> panel can be selected, made into a new network, or tested for enrichment. <b>Lay out by cluster</b> puts each cluster in a circle of its own.</p>
+<h3>MCODE</h3>
+<p>MCODE (Bader &amp; Hogue 2003) first scores every node: it finds the most densely connected core of the node's neighbourhood (the highest k-core) and multiplies its density by k. It then grows a cluster from the best-scoring node, taking in the neighbours whose scores are within 20% of the seed's (<i>Node score cutoff</i> 0.2), and so on outwards; then from the best node not yet in a cluster, and so on. A cluster is kept when it has a 2-core (<i>k-core</i>); the <i>haircut</i> removes nodes joined to it by a single edge; <i>fluff</i> (off) would add dense neighbours. The score of a cluster is its density times its number of nodes. The settings are those of the Cytoscape app clusterMaker2, whose implementation the tab follows step by step.</p>
+<h3>MCL</h3>
+<p>The Markov cluster algorithm (van Dongen; Enright et al. 2002) follows random walks on the network: they stay longer within groups that are well joined. In rounds, it spreads the walks one step further (<i>expansion</i>) and strengthens the strong paths and weakens the weak ones (<i>inflation</i>: each value to the power r, here 2), until nothing changes; each group of nodes that the walks no longer leave is a cluster. Larger inflation, more and smaller clusters (1.4 to 6 are usual). With <i>Edge weights</i> – STRING's <code>score</code>, say – strong edges hold clusters together. It runs as the Python package markov_clustering runs it, with a self-loop on each node as strong as its strongest edge (as Cytoscape's clusterMaker2 adds them); values below 0.001 are dropped, and it stops after 100 rounds (the panel says if it stopped before it converged).</p>
+<h3>Louvain</h3>
+<p>The Louvain method (Blondel et al. 2008) looks for the division with the highest <b>modularity</b>: the share of edges inside groups, minus the share expected if the same nodes, with the same numbers of edges, were joined at random (Newman 2006). It moves single nodes to the neighbouring group that raises it most, then treats each group as one node and starts again, until it stops rising. A modularity above about 0.3 means a clear division. <i>Resolution</i> above 1 gives more, smaller communities; below 1, fewer and larger. It runs as networkx's <code>louvain_communities</code> does, but takes the nodes in the order of the table instead of shuffling them: the same network always gives the same communities here (networkx's can differ a little from run to run).</p>
+
+<h2>Paths</h2>
+<p>Select two nodes, then <b>Analyse → Shortest path between the two selected nodes</b> (also in the <i>Select</i> menu): the path with the fewest edges is selected, and listed in the <i>Results</i> panel. When there are several equally short paths, it is one of them. Nodes in different components have no path between them.</p>
+
+<h2>Functional enrichment</h2>
+<p><b>Analyse → Functional enrichment</b> asks which GO terms (processes, functions, cellular components), pathways (KEGG, Reactome, WikiPathways) and other annotations are more common among a set of genes than among all the genes of the species – an over-representation test, corrected for testing thousands of terms. The genes can be all the nodes, the selected ones, or a cluster (the <i>enrichment</i> link of each cluster).</p>
+<ul>
+  <li><b>STRING</b> adds its own annotations (publications, tissues, protein domains, STRING's clusters), reports false discovery rates (Benjamini–Hochberg), and can use the nodes of the network as the background – tick <i>Background</i> when the network is a selection (say, the genes detected in your experiment) rather than a random set.</li>
+  <li><b>g:Profiler</b> reports p-values adjusted with its own method, g:SCS, made for the way GO terms overlap.</li>
+</ul>
+<p>Click a term to select its genes on the network; <b>Save the table</b> writes the terms as CSV. Two cautions: genes that are connected in STRING tend to share annotations, because shared annotations are part of what connects them; and an enriched term says the genes are annotated with it more often than by chance, not that the term explains your experiment.</p>
+
+<h2>Try it on the karate club</h2>
+<p>Wayne Zachary recorded the friendships among the 34 members of a university karate club (Zachary 1977). A quarrel between the instructor (member 1, "Mr. Hi") and the club's administrator (34, "Officer") split the club in two; the column <code>club</code> says which side each member joined, and the example colours the nodes by it. It is small enough to check the analyses by eye:</p>
+<table>
+<tr><th>Analyse →</th><th>What you should see</th></tr>
+<tr><td>Network statistics</td><td>78 edges; diameter 5, radius 3; characteristic path length 2.408; clustering coefficient 0.571; density 0.139.</td></tr>
+<tr><td>Hubs</td><td>Degree: 34 (17 friends), 1 (16), 33 (12), 3 (10), 2 (9). Betweenness: 1, 34, 33, 3, 32. MCC: 1, then 2 and 3 (equal), 4, 34.</td></tr>
+<tr><td>MCODE</td><td>Three clusters: 1, 2, 3, 4, 8, 14 (score 5.6); 15, 16, 19, 21, 23, 33, 34 (3.67); 5, 6, 7, 11 (2.67).</td></tr>
+<tr><td>MCL (inflation 2)</td><td>Two clusters, of 19 and 15 members: the two clubs, but for members 3 and 9.</td></tr>
+<tr><td>Louvain</td><td>Four communities, modularity 0.419: two for each side of the quarrel.</td></tr>
+<tr><td>k-cores</td><td>The highest core is 4: members 1, 2, 3, 4, 8, 9, 14, 31, 33 and 34.</td></tr>
+<tr><td>Shortest path, 17 and 26</td><td>17 → 6 → 1 → 32 → 26: four steps.</td></tr>
+</table>
+
+<h2>How the analyses were checked</h2>
+<p>The analyses were written for the workbench (file <code>assets/js/net-algo.js</code>) and compared with independent programs on five networks – the karate club, the characters of <i>Les Misérables</i>, the Florentine families, a random network and the STRING network of the <a href="#h-recipe-network">recipe</a> – 215 comparisons, all equal:</p>
+<ul>
+  <li><b>networkx 3.4.2</b>: degrees, distances, closeness, betweenness and edge betweenness, clustering coefficients, eccentricity, neighbour degrees, components, core numbers, maximal cliques and modularity;</li>
+  <li><b>markov_clustering</b> (Python): MCL, with and without weights;</li>
+  <li>line-by-line Python versions of clusterMaker2's MCODE and of networkx's Louvain (without the shuffle), and of the definitions in the cytoHubba paper for its other methods.</li>
+</ul>
+<p>Where the published definitions leave a choice, the tab makes these:</p>
+<ul>
+  <li><b>Betweenness and stress</b> count each pair of nodes once (not once from each end); NetworkAnalyzer's BetweennessCentrality is divided by (N − 1)(N − 2)/2, for N the nodes of the node's component.</li>
+  <li><b>EPC</b> draws its 1,000 random networks from a fixed seed, so that the same network always gives the same scores.</li>
+  <li><b>BottleNeck</b> takes the tree of a breadth-first search from each node, each node under the node that reached it first, and counts a node (itself included) under the nodes above it.</li>
+  <li><b>Radiality</b> (cytoHubba): the sum of (Δ + 1 − distance) to the other nodes of the component, divided by their number, as radiality was first defined (Valente &amp; Foreman 1998), times the component's share of all the nodes.</li>
+</ul>
+
+<!--CITE: networkanalyzer brandes cytohubba radiality mcode mcl louvain networkx scalefree string gprofiler karate-->

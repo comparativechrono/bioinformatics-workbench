@@ -1,4 +1,4 @@
-<!-- id: h-python | title: Python | group: Notebooks: Python and R | summary: Packages, files, plots, web data, limits | keys: python pyodide pandas numpy matplotlib seaborn biopython scipy sklearn scikit-learn statsmodels requests pip install import package plot dataframe -->
+<!-- id: h-python | title: Python | group: Notebooks: Python and R | summary: Packages, files, plots, web data, limits | keys: python pyodide pandas numpy matplotlib seaborn biopython scipy sklearn scikit-learn statsmodels requests pip install import package plot dataframe networkx network graph graphml -->
 <h1><!--ICON:python-->Python</h1>
 <p class="lede">Python 3.13 (Pyodide), running in this page. NumPy, pandas and matplotlib load when Python starts; most other packages load the first time you import them, or with <code>%pip install</code>.</p>
 <div class="tryrow"><button class="do" type="button" data-new-nb="python">New Python notebook</button></div>
@@ -27,6 +27,15 @@ from Bio.SeqUtils import gc_fraction
 
 for rec in SeqIO.parse("/data/examples/reads/reference.fa", "fasta"):
     print(rec.id, len(rec.seq), f"GC {gc_fraction(rec.seq):.1%}")</code></pre>
+
+<h2>Networks with NetworkX</h2>
+<p>NetworkX builds and analyses networks; <code>!network FILE</code> opens one in the Networks tab, to style it and look at it. The other way round, the Networks tab's <b>Save → To a notebook</b> writes the network as GraphML and adds the code that reads it.</p>
+<pre class="code" data-run="py"><code>import networkx as nx
+
+G = nx.read_graphml("/data/examples/networks/karate_club.graphml")
+print(G.number_of_nodes(), "members,", G.number_of_edges(), "friendships")
+sorted(nx.betweenness_centrality(G).items(), key=lambda x: -x[1])[:5]</code></pre>
+<pre class="code" data-run="py"><code>!network /data/examples/networks/karate_club.graphml</code></pre>
 
 <h2>Your files</h2>
 <p>Python reads and writes your files: they are given to Python before each cell runs, and what it writes appears in the Files tab afterwards. The working folder is the notebook's folder (see <a href="#h-notebook/files">Files and folders</a>). <code>/data/examples</code> is read-only. Files larger than 300 MB are not passed to Python.</p>
