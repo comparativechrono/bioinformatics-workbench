@@ -48,6 +48,12 @@ Read-only copies that come with the workbench. To change one, copy it into your 
 | | `synthetic_scores.tsv` | 20 of the variants with made-up weights, to try `--score` (not effect sizes of anything) |
 | | `synthetic_glm.vcf`, `synthetic_phenotypes.tsv`, `synthetic_covariates.tsv` | synthetic genotypes of 603 invented people at 30 variants, with three phenotypes and two covariates, from PLINK 2's own tests – for `--glm` |
 | | `provenance.json`, `NOTICE.txt` | where these files came from, and how they were made |
+| `chipseq/` | `CTCF_SE_ChIP_chr22_50k.bed.gz`, `CTCF_SE_CTRL_chr22_50k.bed.gz` | the test data of MACS: 49,622 reads of a ChIP-seq of CTCF and 50,837 of its control (input), on human chromosome 22 (hg19 positions) – BED, one 101-base read per line – for `macs3 callpeak` |
+| | `CTCF_PE_ChIP_chr22_50k.bedpe.gz`, `CTCF_PE_CTRL_chr22_50k.bedpe.gz` | the same experiments read from both ends: one fragment per line (MACS's three-column BEDPE) |
+| | `run_callpeak_narrow0_peaks.narrowPeak` | the peaks that MACS's own test expects from the single-end reads (`-g 52000000`) |
+| | `LICENSE.MACS3`, `provenance.json`, `NOTICE.txt` | MACS's licence; where these files came from |
+| `atacseq/` | `yeast_SRR1822137_chrI.bedpe.gz` | 5,771 ATAC-seq fragments of baker's yeast, those on chromosome I (sacCer3 positions), from MACS's test of HMMRATAC (SRA run SRR1822137; Schep et al. 2015) – for `macs3 hmmratac` |
+| | `LICENSE.MACS3`, `provenance.json`, `NOTICE.txt` | MACS's licence; where the file came from, and how it was made |
 | `networks/` | `airway_deseq2.csv` | DESeq2's results for the airway experiment (dexamethasone-treated against untreated cells; 22,369 genes) – the table the RNA-seq recipe writes |
 | | `airway_string_nodes.tsv`, `airway_string_network.tsv` | the STRING network (version 12.5, 13 October 2026) of the 409 genes with padj < 0.01 and a log2 fold change of at least 1.5 either way: their 357 proteins and the 512 associations among them with a score of at least 0.4 – the Networks tab's example |
 | | `karate_club.graphml` | Zachary's karate club (1977): 34 members, the 78 pairs who met outside the club, and the side each member joined when it split – a classic small network |
@@ -71,7 +77,8 @@ Taxonomy, as prepared by the genomics-wasm project – see `metagenomics/NOTICE.
 release (BSD licence; Pfam and Dfam, CC0; UniProt, CC BY 4.0); for `singlecell/`, the SRA (SRR8599150) by way of kb_python (BSD licence) and
 the BUStools getting_started release, as prepared by the genomics-wasm project; for `plink2/`, the 1000 Genomes Project (Phase 3; The 1000 Genomes
 Project Consortium 2015) by way of PLINK 2's test files (GPL 3), as prepared by the genomics-wasm project; for `networks/`, STRING 12.5 (CC BY 4.0)
-and NetworkX's copy of Zachary's karate club (1977) – see the `NOTICE.txt` of each.
+and NetworkX's copy of Zachary's karate club (1977); for `chipseq/` and `atacseq/`, the test data of MACS 3.0.5 (BSD licence), from
+the SRA (SRR1822137) for the yeast – see the `NOTICE.txt` of each.
 
 ## The columns of `tables/yeast_genes.csv`
 

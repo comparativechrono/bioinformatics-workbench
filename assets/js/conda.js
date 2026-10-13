@@ -4,7 +4,7 @@
    The programs here are real (WebAssembly builds of minimap2, samtools,
    bcftools, htslib, BWA, BWA-MEM2, HISAT2, FreeBayes, StringTie, kallisto,
    mosdepth, featureCounts (Subread), Salmon, Cutadapt, LoFreq, SomaticSniper,
-   Strelka2, Kraken2, Bracken, Prodigal, HMMER, bustools, PLINK 2, Graphviz, and Python 3.13 with pandas
+   Strelka2, Kraken2, Bracken, Prodigal, HMMER, bustools, MACS3, PLINK 2, Graphviz, and Python 3.13 with pandas
    and matplotlib from Pyodide),
    but only one version of each exists in the browser.
    Environments decide which of them a command can use, exactly as on a
@@ -57,6 +57,9 @@
     prodigal: { v: '2.6.3', build: 'h577a1d6_11', ch: 'bioconda', prog: ['prodigal'], deps: ['libzlib'] },
     hmmer: { v: '3.4', build: 'h7d74f8d_5', ch: 'bioconda', prog: ['hmmbuild', 'hmmsearch', 'hmmscan', 'hmmpress', 'hmmfetch', 'hmmalign', 'hmmconvert', 'hmmemit', 'hmmstat', 'phmmer', 'jackhmmer', 'nhmmer', 'nhmmscan'] },
     bustools: { v: '0.45.1', build: 'h6f0a7f7_0', ch: 'bioconda', prog: ['bustools'], deps: ['libzlib'] },
+    // (bioconda's build for Python 3.13. It also asks for scikit-learn, hmmlearn, anndata and libzlib 1.3.2, which are not
+    // modelled: in the browser MACS3 runs in the Python that comes with it, which has them)
+    macs3: { v: '3.0.5', build: 'py313hfeada96_0', ch: 'bioconda', prog: ['macs3'], deps: ['python', 'numpy', 'scipy', 'pandas'] },
     // (bioconda's newest plink2, of 4 October 2026, built with OpenBLAS – which its --pca needs – and asking for libzlib
     // 1.3.2 and zstd, which are not modelled. The PLINK 2 of this browser is a development version of 12 October 2026,
     // built without LAPACK; it stands in for the package, and the install says so)
@@ -82,7 +85,8 @@
     featurecounts: 'featureCounts is in the package subread: conda install subread',
     somaticsniper: 'SomaticSniper is in the package somatic-sniper: conda install somatic-sniper',
     'bam-somaticsniper': 'bam-somaticsniper is in the package somatic-sniper: conda install somatic-sniper',
-    strelka2: 'Strelka2 is in the package strelka: conda install strelka'
+    strelka2: 'Strelka2 is in the package strelka: conda install strelka',
+    macs2: 'MACS2 is not here – MACS3, the version that follows it, is: conda install -c bioconda macs3'
   };
   /* programs whose availability depends on the environment */
   const MANAGED = new Set(); // the workbench: every program is always available (environments only record what a pipeline needs)

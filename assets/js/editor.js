@@ -42,6 +42,8 @@
     if (/\.(fa|fasta|fna|faa|ffn|fas|seq)$/.test(n)) return 'fasta';
     if (/\.ipynb$/.test(n)) return 'notebook';
     if (/\.(pdb|ent|cif|mmcif|bcif|mol2|sdf|pqr|gro|mmtf)(\.gz)?$/.test(n)) return 'structure';
+    // (MACS3's NAME_peaks.xls is a table in plain text – tab-separated, with comment lines – not an Excel workbook)
+    if (/_peaks\.xls$/.test(n)) return 'text';
     if (/\.(gz|bgz|bam|bai|cram|crai|bcf|csi|tbi|zip|pkl|npy|npz|xlsx?|docx?|pptx?|rds|rda|rdata|bt2|bt2l|mmi|sqlite|db|h5|parquet|tar|tgz|bw|bigwig|bb|bigbed|2bit|wasm)$/.test(n)) return 'binary';
     return 'text';
   };
@@ -60,7 +62,7 @@
     if (/\.(sif|graphml|xgmml|gml|cyjs|cx2)$/i.test(name)) return 'network';
     return 'file';
   };
-  const GENOMIC = /\.(bam|cram|vcf|vcf\.gz|bcf|bed|bed\.gz|gff3?|gff3?\.gz|gtf|bedgraph|wig)$/i;
+  const GENOMIC = /\.(bam|cram|vcf|vcf\.gz|bcf|bed|bed\.gz|gff3?|gff3?\.gz|gtf|bedgraph|bdg|narrowpeak|broadpeak|gappedpeak|wig)$/i;
   const STRUCTURE = /\.(pdb|ent|cif|mmcif|bcif|mol2|sdf|pqr|gro|mmtf)(\.gz)?$/i;
   const NETWORK = /\.(sif|graphml|xgmml|gml|cyjs|cx2)$/i;
   const GALAXY_OK = /\.(fastq|fq|fasta|fa|fna|bam|sam|vcf|vcf\.gz|bcf|bed|gff3?|gtf|txt|tsv|csv|tabular|json|fastq\.gz|fq\.gz)$/i;

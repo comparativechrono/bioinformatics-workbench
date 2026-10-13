@@ -1,0 +1,25 @@
+Notices for the files in this folder
+====================================
+
+These are test files of MACS (Model-based Analysis of ChIP-Seq; https://github.com/macs3-project/MACS, the folder test/
+at tag v3.0.5, commit c5443190e3edfeb301cc94acf450e2b2c026a223), unchanged and under their own names, so that the
+commands of MACS's own tests can be run here as they are written. MACS is copyright (c) 2025 the macs3 project team and
+distributed under the BSD 3-clause licence (LICENSE.MACS3, MACS's own); its test data has no licence of its own.
+
+  CTCF_SE_ChIP_chr22_50k.bed.gz    49,622 reads of a ChIP-seq of CTCF, on human chromosome 22 (positions of hg19 /
+                                   GRCh37): BED, one read of 101 bases per line, with its strand
+  CTCF_SE_CTRL_chr22_50k.bed.gz    50,837 reads of its control (the input: the same chromatin, without the antibody)
+  CTCF_PE_ChIP_chr22_50k.bedpe.gz  the same two experiments read from both ends: a fragment per line – chromosome, start
+  CTCF_PE_CTRL_chr22_50k.bedpe.gz  and end (MACS's BEDPE, not the BEDPE of bedtools)
+  run_callpeak_narrow0_peaks.narrowPeak
+                                   the peaks that MACS's test expects from
+                                     macs3 callpeak -g 52000000 -t CTCF_SE_ChIP_chr22_50k.bed.gz -c CTCF_SE_CTRL_chr22_50k.bed.gz
+                                         -n run_callpeak_narrow0 -B --cutoff-analysis
+                                   (test/standard_results_callpeak_narrow/ of the repository)
+
+The files hold the positions of the reads only – no sequences. The repository names their origin only by their file
+names; its change log describes a larger CTCF test set (5 million reads, not included here) as a subsample of an ENCODE
+CTCF ChIP-seq. To cite MACS: Doherty P, Hu Q, Zhuang Z, Zhang H, Penikalapati SC, Liu S, Liu T (2026) MACS3: A
+Peak-calling Platform for Bulk and Single-cell Regulatory Genomics. Genomics, Proteomics & Bioinformatics, qzag097
+(doi:10.1093/gpbjnl/qzag097); and Zhang Y et al. (2008) Model-based Analysis of ChIP-Seq (MACS). Genome Biology 9:
+R137. Where every file came from, its SHA-256 and its git blob: provenance.json.

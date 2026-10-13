@@ -1,0 +1,142 @@
+{
+  "entrypoint": {
+    "filename": "macs3.py",
+    "sha256": "5c954f4ae3e0453d851613f1e797338896cd0b278d78fa6ebac9d5136a0d0931"
+  },
+  "packages": [
+    {
+      "filename": "pyodide/numpy-2.4.6-cp314-cp314-pyemscripten_2026_0_wasm32.whl",
+      "name": "numpy",
+      "sha256": "a292c1f5d7d8a2208cd5e94fc467604c131cabcd2fc14fed6eefde121e7fabdf",
+      "source": "pyodide",
+      "version": "2.4.6"
+    },
+    {
+      "filename": "pyodide/scipy-1.18.0-cp314-cp314-pyemscripten_2026_0_wasm32.whl",
+      "name": "scipy",
+      "sha256": "17ee329a957863516d1bb6a6aaa0c60576fac027e9cd3d43de27f58b5b599b50",
+      "source": "pyodide",
+      "version": "1.18.0"
+    },
+    {
+      "filename": "pyodide/six-1.17.0-py2.py3-none-any.whl",
+      "name": "six",
+      "sha256": "228c50f73aa7addf2c2ccf2979c256802a59ab69cad8152b31b9443cc8140f42",
+      "source": "pyodide",
+      "version": "1.17.0"
+    },
+    {
+      "filename": "pyodide/python_dateutil-2.9.0.post0-py2.py3-none-any.whl",
+      "name": "python-dateutil",
+      "sha256": "9b13365edf9c188f570baf9c540bbb3029ada2a2dacb9694b3659941693ee9e5",
+      "source": "pyodide",
+      "version": "2.9.0.post0"
+    },
+    {
+      "filename": "pyodide/pytz-2026.1.post1-py2.py3-none-any.whl",
+      "name": "pytz",
+      "sha256": "b8249d6450146e0b61e6d710dc02ebb35a904796c4c2f97fe87d4ac5872db36a",
+      "source": "pyodide",
+      "version": "2026.1.post1"
+    },
+    {
+      "filename": "pyodide/tzdata-2025.3-py2.py3-none-any.whl",
+      "name": "tzdata",
+      "sha256": "9ce669f4f075843c7ff6a3f3dc306ebafa504717ec7beb6aa2233693722ddcfc",
+      "source": "pyodide",
+      "version": "2025.3"
+    },
+    {
+      "filename": "pyodide/pandas-3.0.2-cp314-cp314-pyemscripten_2026_0_wasm32.whl",
+      "name": "pandas",
+      "sha256": "45ff57772cc2f366a8582c7d3097cc4e6676342ecd5a3c08184a43462d5a02ae",
+      "source": "pyodide",
+      "version": "3.0.2"
+    },
+    {
+      "filename": "pyodide/joblib-1.5.3-py3-none-any.whl",
+      "name": "joblib",
+      "sha256": "fb2860ff70d0b6b43a3df5e3ce52d3a938ad2fcacd80a3f2f3f37e930843e607",
+      "source": "pyodide",
+      "version": "1.5.3"
+    },
+    {
+      "filename": "pyodide/threadpoolctl-3.6.0-py3-none-any.whl",
+      "name": "threadpoolctl",
+      "sha256": "3521783ffb6bf212e03fb67ec1955af206d6ba7ea09ac21f200875077bbbe7c2",
+      "source": "pyodide",
+      "version": "3.6.0"
+    },
+    {
+      "filename": "pyodide/scikit_learn-1.8.0-cp314-cp314-pyemscripten_2026_0_wasm32.whl",
+      "name": "scikit-learn",
+      "sha256": "432f560f54c5283d13e9d7c11dddc8bdf2f15aec326cc1d7314f600786154181",
+      "source": "pyodide",
+      "version": "1.8.0"
+    },
+    {
+      "filename": "pyodide/pkgconfig-1.6.0-py3-none-any.whl",
+      "name": "pkgconfig",
+      "sha256": "721ee452ae0f46f7d41b0e8bc27ce5e2036e4691f1a8c08ec6b5ace221c6e1f1",
+      "source": "pyodide",
+      "version": "1.6.0"
+    },
+    {
+      "filename": "pyodide/h5py-3.13.0-cp314-cp314-pyemscripten_2026_0_wasm32.whl",
+      "name": "h5py",
+      "sha256": "2e25205901ed3d47d1651ee55fa9eacc29473785fee2b64d9dac5a5d27f738f2",
+      "source": "pyodide",
+      "version": "3.13.0"
+    },
+    {
+      "filename": "pyodide/packaging-26.1-py3-none-any.whl",
+      "name": "packaging",
+      "sha256": "565acbbea54da30348b6d68b6a54373e6f777987db9f1db6966b4b3a5060d303",
+      "source": "pyodide",
+      "version": "26.1"
+    },
+    {
+      "filename": "wheels/array_api_compat-1.11.2-py3-none-any.whl",
+      "name": "array-api-compat",
+      "sha256": "b1d0059714a4153b3ae37c989e47b07418f727be5b22908dd3cf9d19bdc2c547",
+      "source": "wheel",
+      "version": "1.11.2"
+    },
+    {
+      "filename": "wheels/natsort-8.4.0-py3-none-any.whl",
+      "name": "natsort",
+      "sha256": "4732914fb471f56b5cce04d7bae6f164a592c7712e1c85f9ef585e197299521c",
+      "source": "wheel",
+      "version": "8.4.0"
+    },
+    {
+      "filename": "wheels/anndata-0.10.9-py3-none-any.whl",
+      "name": "anndata",
+      "sha256": "e16c259bfd06c0f9ba7fdc9c2208828f5ef5f174356596c33206bb3f015b053a",
+      "source": "wheel",
+      "version": "0.10.9"
+    },
+    {
+      "filename": "wheels/hmmlearn-0.3.3-cp314-cp314-pyemscripten_2026_0_wasm32.whl",
+      "name": "hmmlearn",
+      "sha256": "c0b44c962c9e38da968d7c79ec3c1d9ba21025b1127143a879257180b2c2cfab",
+      "source": "wheel",
+      "version": "0.3.3"
+    },
+    {
+      "filename": "wheels/macs3-3.0.5-cp314-cp314-pyemscripten_2026_0_wasm32.whl",
+      "name": "macs3",
+      "sha256": "729a1ebd95a33881df4a948a33f1ef12f21cd874c9511b285a1fb01b024b850d",
+      "source": "wheel",
+      "version": "3.0.5"
+    }
+  ],
+  "pyodide": {
+    "path": "pyodide/",
+    "python": "3.14.2",
+    "version": "314.0.7"
+  },
+  "schema": 1,
+  "tool": "macs3",
+  "version": "3.0.5"
+}

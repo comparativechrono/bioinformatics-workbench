@@ -1,4 +1,4 @@
-<!-- id: h-genome | title: The genome browser | group: Genome browser | summary: Reads, variants and genes along a genome (igv.js) | keys: genome browser igv igv.js bam bai vcf tbi bed gff gtf bigwig bedgraph track locus reads alignment coverage mismatch variant genotype reference fasta fai hg19 hg38 chromosome name zoom -->
+<!-- id: h-genome | title: The genome browser | group: Genome browser | summary: Reads, variants and genes along a genome (igv.js) | keys: genome browser igv igv.js bam bai vcf tbi bed gff gtf bigwig bedgraph bdg narrowpeak broadpeak peaks track locus reads alignment coverage mismatch variant genotype reference fasta fai hg19 hg38 chromosome name zoom -->
 <h1><!--ICON:genome-->The genome browser</h1>
 <p class="lede">The genome browser (igv.js, the web edition of IGV) draws data along a genome: mapped reads, variants, genes, coverage. It is where you check, with your own eyes, what a program has claimed – a variant call, a deletion, a badly mapped region.</p>
 <div class="tryrow"><button class="do" type="button" data-bench="igv">Open the genome browser</button> <button class="do" type="button" data-igv="human_CYP2C19:11,566-11,666">Go to CYP2C19*2 on the example genome</button></div>
@@ -15,8 +15,8 @@
 
 <h2>Add your files</h2>
 <ul>
-  <li><b>Add my files…</b> lists the files among yours that the browser can show: BAM (with its <code>.bai</code> index – <code>samtools index</code> makes it), VCF (<code>.vcf</code>, or <code>.vcf.gz</code> with its <code>.tbi</code>), BED, GFF and GTF, bedGraph, wig, bigWig and bigBed.</li>
-  <li>In the terminal: <code>igv mapped.bam calls.vcf.gz</code>, and <code>igv --locus human_CYP2C19:11,566-11,666</code> to go somewhere.</li>
+  <li><b>Add my files…</b> lists the files among yours that the browser can show: BAM (with its <code>.bai</code> index – <code>samtools index</code> makes it), VCF (<code>.vcf</code>, or <code>.vcf.gz</code> with its <code>.tbi</code>), BED, GFF and GTF, bedGraph (also MACS's <code>.bdg</code>), the peaks of MACS3 (<code>.narrowPeak</code>, <code>.broadPeak</code>, <code>.gappedPeak</code>), wig, bigWig and bigBed.</li>
+  <li>In the terminal: <code>igv mapped.bam calls.vcf.gz</code>, <code>igv --locus human_CYP2C19:11,566-11,666</code> to go somewhere, and <code>igv --genome hg19 peaks.narrowPeak</code> to change the genome first – a hosted one (<code>hg38</code>, <code>hg19</code>, <code>mm39</code>, <code>mm10</code>, <code>danRer11</code>, <code>dm6</code>, <code>ce11</code>, <code>sacCer3</code>) or a FASTA file of yours (see <a href="#h-peaks">Peaks</a>).</li>
   <li>From the Files tab (⋯ → <i>Show in the Genome browser</i>; a FASTA file: <i>Use as the genome</i>), from a Galaxy dataset (<!--ICON:genome-->), and from the Ensembl and UCSC cards of the Databases tab.</li>
   <li><b>From my computer…</b> shows files from your computer without copying them into your files – choose a BAM file together with its index, or a FASTA file with its <code>.fai</code> to use it as the genome.</li>
 </ul>

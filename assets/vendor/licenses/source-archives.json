@@ -189,6 +189,15 @@
   "origin": "git archive --format=tar --prefix=hiwire-6a1e67280a15d929ebeceee54a6358c9c8d5f697/ 6a1e6728 | gzip -n, from https://github.com/pyodide/hiwire.git – byte for byte GitHub's archive of the commit, as pinned in genomics-wasm's tools/cutadapt/sources.lock.json, 2026-10-11"
  },
  {
+  "package": "pyodide-recipes-314-20260911",
+  "licence": "MPL-2.0",
+  "file": "sources/pyodide-recipes-314-20260911.tar.gz",
+  "sha256": "caf4a2752d74abae09adafb8dfaa9730b8f850885c78d23650be1b4d24f8e925",
+  "bytes": 4441528,
+  "upstream": "https://github.com/pyodide/pyodide-recipes/tree/314-20260911",
+  "origin": "git archive --format=tar --prefix=pyodide-recipes-314-20260911/ 314-20260911 | gzip -n, from https://github.com/pyodide/pyodide-recipes.git – byte for byte GitHub's archive of the tag (https://github.com/pyodide/pyodide-recipes/archive/refs/tags/314-20260911.tar.gz), as pinned in genomics-wasm's tools/macs3/sources.lock.json, 2026-10-13"
+ },
+ {
   "package": "prodigal-2.6.3",
   "licence": "GPL-3.0-or-later",
   "file": "sources/prodigal-2.6.3.tar.gz",

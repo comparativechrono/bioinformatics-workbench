@@ -1,0 +1,63 @@
+{
+ "description": "MACS's own test data: reads of a ChIP-seq of CTCF and of its control (input), on human chromosome 22 (hg19 positions) – single-end reads as BED, and the same experiment's paired-end fragments as MACS's three-column BEDPE – and the peaks that MACS's test of callpeak expects. Unchanged, under their own names.",
+ "source": {
+  "repository": "https://github.com/macs3-project/MACS",
+  "tag": "v3.0.5",
+  "commit": "c5443190e3edfeb301cc94acf450e2b2c026a223",
+  "folder": "test/",
+  "licence": "BSD-3-Clause (the repository; its test data has no licence of its own) – LICENSE.MACS3",
+  "retrieved": "2026-10-13"
+ },
+ "test": "test/cmdlinetest of the repository: macs3 callpeak -g 52000000 -t CTCF_SE_ChIP_chr22_50k.bed.gz -c CTCF_SE_CTRL_chr22_50k.bed.gz -n run_callpeak_narrow0 -B --outdir … --cutoff-analysis; its expected peaks are run_callpeak_narrow0_peaks.narrowPeak (--cutoff-analysis does not change the peaks)",
+ "also": "genomics-wasm (https://github.com/comparativechrono/genomics-wasm, commit c977980) uses the same files, under the names chip.bed.gz, control.bed.gz, chip.bedpe.gz, control.bedpe.gz and upstream-peaks.narrowPeak (datasets/macs3/), with the same SHA-256",
+ "files": {
+  "CTCF_SE_ChIP_chr22_50k.bed.gz": {
+   "member": "test/CTCF_SE_ChIP_chr22_50k.bed.gz",
+   "url": "https://raw.githubusercontent.com/macs3-project/MACS/c5443190e3edfeb301cc94acf450e2b2c026a223/test/CTCF_SE_ChIP_chr22_50k.bed.gz",
+   "bytes": 332681,
+   "sha256": "3f246659d3317de9fe150c4696959dec9668ab458520a1a44307d07a15ba69d1",
+   "gitBlob": "b948c1a4b85d9587a892daf1412fbb875d84d9d5",
+   "change": "none: the file as it is in the repository"
+  },
+  "CTCF_SE_CTRL_chr22_50k.bed.gz": {
+   "member": "test/CTCF_SE_CTRL_chr22_50k.bed.gz",
+   "url": "https://raw.githubusercontent.com/macs3-project/MACS/c5443190e3edfeb301cc94acf450e2b2c026a223/test/CTCF_SE_CTRL_chr22_50k.bed.gz",
+   "bytes": 388072,
+   "sha256": "0d6b01b6894073deb8fe85e1ef200c461dcbd661a7f079c0141c8b1bd648d665",
+   "gitBlob": "5625f0e36e5c9bf107ea1c43de7a1ac108d1bd81",
+   "change": "none: the file as it is in the repository"
+  },
+  "CTCF_PE_ChIP_chr22_50k.bedpe.gz": {
+   "member": "test/CTCF_PE_ChIP_chr22_50k.bedpe.gz",
+   "url": "https://raw.githubusercontent.com/macs3-project/MACS/c5443190e3edfeb301cc94acf450e2b2c026a223/test/CTCF_PE_ChIP_chr22_50k.bedpe.gz",
+   "bytes": 304707,
+   "sha256": "c7713c4d80c832e0d496257d7e4dd1c27f126a7c1a6de6dcef4f27bfb77a43a2",
+   "gitBlob": "b4b0a0f892d8292c223912297c7b2d44a9b072f3",
+   "change": "none: the file as it is in the repository"
+  },
+  "CTCF_PE_CTRL_chr22_50k.bedpe.gz": {
+   "member": "test/CTCF_PE_CTRL_chr22_50k.bedpe.gz",
+   "url": "https://raw.githubusercontent.com/macs3-project/MACS/c5443190e3edfeb301cc94acf450e2b2c026a223/test/CTCF_PE_CTRL_chr22_50k.bedpe.gz",
+   "bytes": 364086,
+   "sha256": "10a728379b105f11acf9b41c9b2a365eb8b5d06e10bb643782e22de48cf00e0f",
+   "gitBlob": "8f127a88253d503e76484da346838210269c73d0",
+   "change": "none: the file as it is in the repository"
+  },
+  "run_callpeak_narrow0_peaks.narrowPeak": {
+   "member": "test/standard_results_callpeak_narrow/run_callpeak_narrow0_peaks.narrowPeak",
+   "url": "https://raw.githubusercontent.com/macs3-project/MACS/c5443190e3edfeb301cc94acf450e2b2c026a223/test/standard_results_callpeak_narrow/run_callpeak_narrow0_peaks.narrowPeak",
+   "bytes": 63619,
+   "sha256": "9dded4214d30b81f29b3614c28980b52f8752db1e1c7a6a3a42edde7d71bb89e",
+   "gitBlob": "a02a008530bff442815717ebd2f1ede4da68f27d",
+   "change": "none: the file as it is in the repository"
+  },
+  "LICENSE.MACS3": {
+   "member": "LICENSE",
+   "url": "https://raw.githubusercontent.com/macs3-project/MACS/c5443190e3edfeb301cc94acf450e2b2c026a223/LICENSE",
+   "bytes": 1526,
+   "sha256": "6b642122b1286229372eaef08c353b76f3bfa687e6c2057339229c1293a96ddc",
+   "gitBlob": "42dbbcb5ad79f1f638965d29775adfa1bfc59e36",
+   "change": "none: the file as it is in the repository"
+  }
+ }
+}

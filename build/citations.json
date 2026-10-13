@@ -1376,6 +1376,59 @@
    "issue": "1",
    "pages": "89-105",
    "doi": "10.1016/S0378-8733(97)00007-5"
+  },
+  "macs2008": {
+   "authors": [
+    "Zhang Y",
+    "Liu T",
+    "Meyer CA",
+    "Eeckhoute J",
+    "Johnson DS",
+    "Bernstein BE",
+    "Nusbaum C",
+    "Myers RM",
+    "Brown M",
+    "Li W",
+    "Liu XS"
+   ],
+   "year": 2008,
+   "title": "Model-based Analysis of ChIP-Seq (MACS)",
+   "container": "Genome Biology",
+   "volume": "9",
+   "issue": "9",
+   "pages": "R137",
+   "doi": "10.1186/gb-2008-9-9-r137"
+  },
+  "macs3_2026": {
+   "authors": [
+    "Doherty P",
+    "Hu Q",
+    "Zhuang Z",
+    "Zhang H",
+    "Penikalapati SC",
+    "Liu S",
+    "Liu T"
+   ],
+   "year": 2026,
+   "title": "MACS3: A Peak-calling Platform for Bulk and Single-cell Regulatory Genomics",
+   "container": "Genomics, Proteomics & Bioinformatics",
+   "volume": "",
+   "issue": "",
+   "pages": "qzag097",
+   "doi": "10.1093/gpbjnl/qzag097"
+  },
+  "hmmratac2019": {
+   "authors": [
+    "Tarbell ED",
+    "Liu T"
+   ],
+   "year": 2019,
+   "title": "HMMRATAC: a Hidden Markov ModeleR for ATAC-seq",
+   "container": "Nucleic Acids Research",
+   "volume": "47",
+   "issue": "16",
+   "pages": "e91",
+   "doi": "10.1093/nar/gkz533"
   }
  },
  "programs": {
@@ -1492,6 +1545,20 @@
     "bustools2021",
     "bus2019",
     "kb2025"
+   ]
+  },
+  "macs3": {
+   "name": "MACS3",
+   "refs": [
+    "macs3_2026",
+    "macs2008"
+   ],
+   "note": "MACS3's README asks for the 2026 paper when MACS 2 or 3 is used, and for the 2008 paper when MACS 1 is; the 2008 paper describes the shifting model and the local lambda that MACS3 still uses. For macs3 hmmratac, the paper of HMMRATAC too."
+  },
+  "hmmratac": {
+   "name": "HMMRATAC (macs3 hmmratac)",
+   "refs": [
+    "hmmratac2019"
    ]
   },
   "bcftools": {

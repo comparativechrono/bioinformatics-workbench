@@ -60,7 +60,7 @@
   const GENOMIC = ['bam', 'vcf', 'vcf_bgzip', 'bed', 'bedgraph', 'gff3', 'gtf'];
   const SNIFF = [
     [/\.(fastq|fq)$/, 'fastqsanger'], [/\.(fa|fasta|fna|faa|fas|afa|mfa)$/, 'fasta'], [/\.sam$/, 'sam'], [/\.bam$/, 'bam'],
-    [/\.vcf\.gz$/, 'vcf_bgzip'], [/\.vcf$/, 'vcf'], [/\.bcf$/, 'bcf'], [/\.bed$/, 'bed'], [/\.(bedgraph|bg)$/, 'bedgraph'],
+    [/\.vcf\.gz$/, 'vcf_bgzip'], [/\.vcf$/, 'vcf'], [/\.bcf$/, 'bcf'], [/\.bed$/, 'bed'], [/\.(narrowpeak|broadpeak|gappedpeak)$/, 'bed'], [/\.(bedgraph|bg|bdg)$/, 'bedgraph'],
     [/\.(gff3|gff)$/, 'gff3'], [/\.gtf$/, 'gtf'], [/\.(gb|gbk|gbff|genbank)$/, 'genbank'], [/\.(hmm|hmm3)$/, 'hmm3'], [/\.(sto|stk|stockholm)$/, 'stockholm'], [/\.bus$/, 'bus'], [/\.mtx$/, 'mtx'], [/\.sif$/, 'sif'], [/\.xgmml$/, 'xgmml'],
     [/\.(tsv|tab|tabular)$/, 'tabular'], [/\.csv$/, 'csv'], [/\.json$/, 'json'],
     [/\.html?$/, 'html'], [/\.(nwk|newick|tree|treefile)$/, 'newick'], [/\.(pdb|ent)$/, 'pdb'], [/\.(txt|log|md)$/, 'txt']
@@ -181,6 +181,9 @@
   ];
   const MINIFAM = ['globins4', 'fn3', 'Pkinase'].map((n) => `/data/examples/hmmer/${n}.hmm`);
   const dsName = (ins, name) => ((ins.find((x) => x.name === name) || {}).ds || {}).name || name;
+  /** MACS3 callpeak: the name of its files (-n), from the treatment dataset's name – as iuc's macs2_callpeak makes it
+      (re.sub('[^\w\-]', '_', element_identifier)) */
+  const macsId = (d) => String((d && d.name) || 'treatment').replace(/[^\w-]/g, '_').replace(/^-/, '_') || 'treatment';
 
   const TOOLS = [
     /* ---------- Quality control ---------- */
@@ -629,6 +632,82 @@
       outputs: [{ name: 'output', short: 'table', ext: 'tabular', file: 'output.tsv', label: (ins) => L('bustools text', ins, 'records as text') }],
       command: (i, p) => `bustools text -o output.tsv${p.flags ? ' -f' : ''}${p.pad ? ' -d' : ''}${p.showall ? ' -a' : ''} ${i.input}`,
       help: '<p>Writes each record of a BUS file as a line of text: the cell barcode, the UMI, the equivalence class and the count – and, if asked, the flag and the padding. A BUS file itself is binary.</p>'
+    },
+    /* ---------- Peak calling: MACS3. The Tool Shed's peak caller (iuc's macs2_callpeak) runs MACS2: this tool has the form
+       of that one and runs MACS3 3.0.5 – the workbench's own, with an ID of its own (as PLINK 2's). As there, the files are
+       named after the treatment dataset (-n), and the R script of the model, the PDF it draws and the HTML summary are
+       left out (in the terminal, Rscript NAME_model.r draws it). ---------- */
+    {
+      id: 'macs3_callpeak', toolId: 'macs3_callpeak_workbench', name: 'MACS3 callpeak', desc: 'Call peaks from alignment results', version: '3.0.5', section: 'Peak calling', needs: 'macs3',
+      requirements: [['macs3', '3.0.5']],
+      cite: ['macs3_2026', 'macs2008'],
+      inputs: [
+        { name: 'treatment', short: 'treatment', label: 'ChIP-Seq Treatment File (-t)', ext: ['bam', 'bed'], nice: (d) => `${macsId(d)}.${d.ext === 'bam' ? 'bam' : 'bed'}`, pick: /chip|treat/i },
+        { name: 'control', short: 'control', label: 'ChIP-Seq Control File (-c)', ext: ['bam', 'bed'], nice: (d) => `macs3_control.${d.ext === 'bam' ? 'bam' : 'bed'}`, pick: /ctrl|control|input/i, optional: true }
+      ],
+      params: [
+        { name: 'format', short: '--format', label: 'Format of Input Files (--format)', type: 'select', default: 'auto', options: [['auto', 'Single-end BAM or BED, as the datatype says'], ['BAM', 'Single-end BAM'], ['BAMPE', 'Paired-end BAM'], ['BED', 'Single-end BED'], ['BEDPE', 'Paired-end BED (BEDPE: one fragment per line)']], help: "For paired-end reads (BAMPE, BEDPE) the 'Build Model' step is ignored and the real fragments are piled up, each from the leftmost to the rightmost position of its pair. MACS's BEDPE has three columns – not bedtools' BEDPE." },
+        { name: 'gsize_sel', short: 'genome size', label: 'Effective genome size', type: 'select', default: 'hs', options: [['hs', 'H. sapiens (2,913,022,398)'], ['mm', 'M. musculus (2,652,783,500)'], ['ce', 'C. elegans (100,286,401)'], ['dm', 'D. melanogaster (142,573,017)'], ['user', 'User-defined (below)']], help: 'The part of the genome that reads can map to (-g); MACS3 takes these numbers from deepTools.' },
+        { name: 'gsize', short: '--gsize', label: 'Effective genome size, user-defined (-g; e.g. 52000000)', type: 'text', default: '', help: 'The example reads of /data/examples/chipseq/ are of human chromosome 22 alone: MACS’s own tests give 52000000.' },
+        { name: 'model', short: 'model', label: 'Build Model', type: 'select', default: 'create_model', options: [['create_model', 'Build the shifting model'], ['nomodel', 'Do not build the shifting model (--nomodel)']] },
+        { name: 'mfold_lower', short: 'mfold lower', label: 'Set lower mfold bound (--mfold; Build the shifting model)', type: 'int', default: 5 },
+        { name: 'mfold_upper', short: 'mfold upper', label: 'Set upper mfold bound (--mfold; Build the shifting model)', type: 'int', default: 50 },
+        { name: 'bw', short: '--bw', label: 'Band width for picking regions to compute fragment size (--bw; Build the shifting model)', type: 'int', default: 300 },
+        { name: 'extsize', short: '--extsize', label: 'Set extension size (--extsize; --nomodel)', type: 'int', default: 200 },
+        { name: 'shift', short: '--shift', label: 'Set shift size (--shift; --nomodel)', type: 'int', default: 0, help: 'Not with paired-end reads (BAMPE, BEDPE): there it must be 0.' },
+        { name: 'cutoff', short: 'cutoff', label: 'Peak detection based on', type: 'select', default: 'qvalue', options: [['qvalue', 'q-value'], ['pvalue', 'p-value']] },
+        { name: 'qvalue', short: '--qvalue', label: 'Minimum FDR (q-value) cutoff for peak detection (--qvalue)', type: 'float', default: 0.05 },
+        { name: 'pvalue', short: '--pvalue', label: 'p-value cutoff for peak detection (--pvalue; “p-value”)', type: 'text', default: '' },
+        { name: 'peaks_tabular', short: 'tabular', label: 'Additional Outputs: Peaks as tabular file', type: 'bool', default: false },
+        { name: 'summits', short: 'summits', label: 'Additional Outputs: Peak summits', type: 'bool', default: false },
+        { name: 'bdg', short: '--bdg', label: 'Additional Outputs: Scores in bedGraph files (--bdg)', type: 'bool', default: false },
+        { name: 'scale_large', short: '--scale-to large', label: 'Advanced: when set, scale the small sample up to the bigger sample (--scale-to large)', type: 'bool', default: false },
+        { name: 'nolambda', short: '--nolambda', label: 'Advanced: use fixed background lambda as local lambda for every peak region (--nolambda)', type: 'bool', default: false },
+        { name: 'spmr', short: '--SPMR', label: 'Advanced: save signal per million reads for fragment pileup profiles (--SPMR; with the bedGraph files)', type: 'bool', default: false },
+        { name: 'slocal', short: '--slocal', label: 'Advanced: the small nearby region in basepairs to calculate dynamic lambda (--slocal; optional, 1000)', type: 'text', default: '' },
+        { name: 'llocal', short: '--llocal', label: 'Advanced: the large nearby region in basepairs to calculate dynamic lambda (--llocal; optional, 10000)', type: 'text', default: '' },
+        { name: 'broad', short: '--broad', label: 'Advanced: Composite broad regions', type: 'select', default: 'nobroad', options: [['nobroad', 'No broad regions'], ['broad', 'broad regions (--broad)']], help: 'Broad regions put nearby highly enriched regions into one with a looser cutoff – for histone marks.' },
+        { name: 'broad_cutoff', short: '--broad-cutoff', label: 'Advanced: Cutoff for broad region (--broad-cutoff; broad regions)', type: 'float', default: 0.1 },
+        { name: 'call_summits', short: '--call-summits', label: 'Advanced: find the subpeak summits in each peak region (--call-summits; no broad regions)', type: 'bool', default: false },
+        { name: 'keep_dup', short: '--keep-dup', label: 'Advanced: How many duplicate tags at the exact same location are allowed? (--keep-dup)', type: 'select', default: '1', options: [['1', '1'], ['auto', 'auto: from the binomial distribution, p 1e-5'], ['all', 'all']] },
+        { name: 'd_min', short: '--d-min', label: 'Advanced: Minimum fragment size in basepair (--d-min)', type: 'int', default: 20 },
+        { name: 'buffer_size', short: '--buffer-size', label: 'Advanced: Buffer size (--buffer-size)', type: 'int', default: 100000 }
+      ],
+      outputs: [
+        { name: 'output_narrowpeaks', short: 'narrow peaks', ext: 'bed', file: 'macs3.narrowPeak', when: (i, p) => p.broad !== 'broad', label: (ins) => L('MACS3 callpeak', ins, 'narrow Peaks') },
+        { name: 'output_broadpeaks', short: 'broad peaks', ext: 'bed', file: 'macs3.broadPeak', when: (i, p) => p.broad === 'broad', label: (ins) => L('MACS3 callpeak', ins, 'broad Peaks') },
+        { name: 'output_gappedpeaks', short: 'gapped peaks', ext: 'bed', file: 'macs3.gappedPeak', when: (i, p) => p.broad === 'broad', label: (ins) => L('MACS3 callpeak', ins, 'gapped Peaks') },
+        { name: 'output_tabular', short: 'tabular', ext: 'tabular', file: 'macs3_peaks.tsv', when: (i, p) => !!p.peaks_tabular, label: (ins) => L('MACS3 callpeak', ins, 'Peaks in tabular format') },
+        { name: 'output_summits', short: 'summits', ext: 'bed', file: 'macs3_summits.bed', when: (i, p) => !!p.summits && p.broad !== 'broad', label: (ins) => L('MACS3 callpeak', ins, 'summits in BED') },
+        { name: 'output_treat_pileup', short: 'treatment pileup', ext: 'bedgraph', file: 'treat_pileup.bedgraph', when: (i, p) => !!p.bdg, label: (ins) => L('MACS3 callpeak', ins, 'Bedgraph Treatment') },
+        { name: 'output_control_lambda', short: 'control lambda', ext: 'bedgraph', file: 'control_lambda.bedgraph', when: (i, p) => !!p.bdg, label: (ins) => L('MACS3 callpeak', ins, 'Bedgraph Control') }
+      ],
+      command: (i, p) => {
+        const n = i.treatment.replace(/\.(bam|bed)$/, '');
+        const fmt = ['BAM', 'BAMPE', 'BED', 'BEDPE'].includes(p.format) ? p.format : /\.bam$/.test(i.treatment) ? 'BAM' : 'BED';
+        const g = p.gsize_sel === 'user' ? hmmNum(p.gsize) : ['hs', 'mm', 'ce', 'dm'].includes(p.gsize_sel) ? p.gsize_sel : 'hs';
+        if (!g) return refuse('MACS3 callpeak: give the effective genome size (a number, such as 52000000), or choose a species.');
+        const pos = (v) => (/^\d+$/.test(String(v == null ? '' : v).trim()) ? String(v).trim() : '');
+        const broad = p.broad === 'broad';
+        const a = [`macs3 callpeak -t ${i.treatment}${i.control ? ' -c ' + i.control : ''} -n ${n} -f ${fmt} -g ${g}`];
+        a.push(p.model === 'nomodel' ? `--nomodel --extsize ${int(p.extsize, 200)} --shift ${int(p.shift, 0)}` : `--mfold ${int(p.mfold_lower, 5)} ${int(p.mfold_upper, 50)} --bw ${int(p.bw, 300)}`);
+        if (p.cutoff === 'pvalue') { if (hmmNum(p.pvalue)) a.push(`--pvalue ${hmmNum(p.pvalue)}`); } else a.push(`--qvalue ${hmmNum(p.qvalue) || 0.05}`);
+        if (p.bdg) a.push('--bdg');
+        if (p.bdg && p.spmr) a.push('--SPMR');
+        if (p.scale_large) a.push('--scale-to large');
+        if (p.nolambda) a.push('--nolambda');
+        if (pos(p.slocal)) a.push(`--slocal ${pos(p.slocal)}`);
+        if (pos(p.llocal)) a.push(`--llocal ${pos(p.llocal)}`);
+        a.push(broad ? `--broad --broad-cutoff ${hmmNum(p.broad_cutoff) || 0.1}` : p.call_summits ? '--call-summits' : '');
+        a.push(`--keep-dup ${['1', 'auto', 'all'].includes(String(p.keep_dup)) ? p.keep_dup : '1'} --d-min ${int(p.d_min, 20)} --buffer-size ${int(p.buffer_size, 100000)}`);
+        // (the files MACS3 wrote, under the names of the outputs)
+        const mv = broad ? [`${n}_peaks.broadPeak macs3.broadPeak`, `${n}_peaks.gappedPeak macs3.gappedPeak`] : [`${n}_peaks.narrowPeak macs3.narrowPeak`];
+        if (p.peaks_tabular) mv.push(`${n}_peaks.xls macs3_peaks.tsv`);
+        if (p.summits && !broad) mv.push(`${n}_summits.bed macs3_summits.bed`);
+        if (p.bdg) mv.push(`${n}_treat_pileup.bdg treat_pileup.bedgraph`, `${n}_control_lambda.bdg control_lambda.bedgraph`);
+        return a.filter(Boolean).join(' ') + mv.map((x) => ` && mv ${x}`).join('');
+      },
+      help: '<p>Finds the <b>peaks</b> of a ChIP-seq experiment: where more reads (tags) pile up than chance – and the control, the same chromatin sequenced without the antibody – would put there. Without <i>--nomodel</i> MACS first works out the length of the DNA fragments from the shift between the reads of the two strands around strong peaks (the model), and extends each read to that length; then it compares the pile-up at each position with a local background (lambda, from the control around it) with a Poisson test, and keeps the regions below the q-value (or p-value) cutoff. The <b>narrow Peaks</b> are in ENCODE’s narrowPeak format: chromosome, start, end, name, score, strand, fold enrichment, −log10 p, −log10 q and the summit (counted from the start). The peaks are named after the treatment dataset. For histone marks, <i>broad regions</i>. Try it with the example reads: upload <code>/data/examples/chipseq/CTCF_SE_ChIP_chr22_50k.bed.gz</code> and <code>CTCF_SE_CTRL_chr22_50k.bed.gz</code>, choose a user-defined genome size of 52000000 – the reads are of human chromosome 22 alone. The tool of the Galaxy Tool Shed (MACS2 callpeak) runs MACS2; this one, with its form, runs MACS3 3.0.5 – the workbench’s own. It leaves out the PDF of the model and the HTML summary; in the terminal, MACS3 writes the model as an R script (see the help page <i>Peaks</i>).</p>'
     },
     /* ---------- Variant calling ---------- */
     {

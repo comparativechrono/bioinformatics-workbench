@@ -18,8 +18,9 @@ sources/                       the source code of the GPL and MPL programs, as r
                                  (../../r-packages/); Bracken 3.1; Prodigal 2.6.3; PLINK 2 (plink-ng,
                                  commit 7211906), with zlib 1.3.2, which is part of it; and, under
                                  the Mozilla Public License 2.0, Pyodide 314.0.7 and hiwire – the
-                                 Python that Cutadapt and Bracken run in – and bustools 0.45.1, for
-                                 the Eigen 3.3.7 in it
+                                 Python that Cutadapt, Bracken and MACS3 run in, with the recipes with which
+                                 Pyodide built the packages that MACS3 uses (pyodide-recipes 314-20260911) –
+                                 and bustools 0.45.1, for the Eigen 3.3.7 in it
 source-archives.json           where each archive came from, its size and SHA-256
 biowasm-build/                 the Biowasm recipes (scripts and patches) with which the programs
                                  other than Bowtie 2, diff, cmp and the grep for "grep -P" were
@@ -33,7 +34,7 @@ diffutils-build/               how diff and cmp (GNU diffutils) were compiled fo
 grep-perl-build/               how GNU grep 3.11 with PCRE2 10.42 ("grep -P") was compiled for the
                                  course: build script, one added function, instructions
 genomics-wasm-build/           how BWA, BWA-MEM2, HISAT2, FreeBayes, featureCounts, StringTie,
-                                 kallisto, Salmon, mosdepth, Cutadapt, LoFreq, SomaticSniper,
+                                 kallisto, Salmon, mosdepth, Cutadapt, MACS3, LoFreq, SomaticSniper,
                                  Strelka2, Kraken2, Bracken, Prodigal, HMMER, bustools and PLINK 2 were
                                  compiled (the recipes of the genomics-wasm project: scripts,
                                  patches, the files that replace upstream ones, lock files with the
