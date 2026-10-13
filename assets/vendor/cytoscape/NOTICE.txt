@@ -1,0 +1,43 @@
+Cytoscape.js 3.34.3 and its layout extensions – the drawing of the Networks tab.
+
+The files are the distribution builds from npm, unmodified:
+
+  cytoscape.min.js        cytoscape 3.34.3, dist/cytoscape.min.js
+                          https://github.com/cytoscape/cytoscape.js – MIT licence, (c) The Cytoscape
+                          Consortium (LICENSE-cytoscape.txt)
+  layout-base.js          layout-base 2.0.1, layout-base.js – MIT, (c) iVis@Bilkent (LICENSE-layout-base.txt)
+  cose-base.js            cose-base 2.2.0, cose-base.js – MIT, (c) iVis@Bilkent (LICENSE-cose-base.txt)
+  cytoscape-fcose.js      cytoscape-fcose 2.2.0, cytoscape-fcose.js – the fCoSE layout; MIT, (c) iVis-at-Bilkent
+                          (LICENSE-cytoscape-fcose.txt)
+  cytoscape-dagre.min.js  cytoscape-dagre 4.0.1, dist/cytoscape-dagre.min.js – the hierarchical layout; MIT,
+                          (c) The Cytoscape Consortium (LICENSE-cytoscape-dagre.txt). It contains the dagre
+                          and graphlib libraries of the dagrejs project (@dagrejs/dagre 3, @dagrejs/graphlib 4;
+                          MIT, (c) Chris Pettitt: LICENSE-dagre.txt, LICENSE-graphlib.txt).
+
+SHA-256 of the npm packages (npm pack):
+  cytoscape-3.34.3.tgz        5d9e479216ed58a5f1ac639e746fd7d9770c4393f8c355dd133abc90bcc9ff3f
+  layout-base-2.0.1.tgz       34165e46d8c4b9d719a592e39a60fa5f7324c21a3edd02733e1116b17013defd
+  cose-base-2.2.0.tgz         612ec91a30b7f2dc158cca4846eeea1b7f89a97fc672951da3c1932107de6da8
+  cytoscape-fcose-2.2.0.tgz   4e1f30e1821fdd4b66f21043c8ea40a8e2ad0ba75e4ccdd2c24d289cf5595432
+  cytoscape-dagre-4.0.1.tgz   830f9ad4860db701cb6f899ef3590f5c1bfb4d53d8108894f00b56131907e514
+SHA-256 of the files here:
+  5f3b5b529546d5af1fc5628590af033b74511a5b6f789f5f4682845863228b91  cytoscape.min.js
+  ec15ab5df9af3f20708f4faab994accf91cda71848cd5bb10a23432cc50b6745  layout-base.js
+  7cae9509bd36235a63a85e71c8d9fa2cd0bc1d0c1ecc5b5a737976f39d040ddf  cose-base.js
+  4b1cab218d74996aa59cd8473f9239cc6398b8c1774d84d7e59ad9a68959cb57  cytoscape-fcose.js
+  ec671a41d2bfcac580352e2997797793949e3489cecaf347fc48670d4bd456b0  cytoscape-dagre.min.js
+
+Please cite Cytoscape.js when you publish what you made with it (its README asks for the first paper):
+  Franz M, Lopes CT, Huck G, Dong Y, Sumer O, Bader GD (2016) Cytoscape.js: a graph theory library for
+  visualisation and analysis. Bioinformatics 32(2): 309-311. doi:10.1093/bioinformatics/btv557
+  Franz M, Lopes CT, Fong D, Kucera M, Cheung M, Siper MC, Huck G, Dong Y, Sumer O, Bader GD (2023)
+  Cytoscape.js 2023 update: a graph theory library for visualization and analysis. Bioinformatics 39(1):
+  btad031. doi:10.1093/bioinformatics/btad031
+and the fCoSE layout, with the CoSE layout it builds on:
+  Balci H, Dogrusoz U (2022) fCoSE: a fast compound graph layout algorithm with constraint support. IEEE
+  Transactions on Visualization and Computer Graphics 28(12): 4582-4593. doi:10.1109/TVCG.2021.3095303
+  Dogrusoz U, Giral E, Cetintas A, Civril A, Demir E (2009) A layout algorithm for undirected compound
+  graphs. Information Sciences 179(7): 980-994. doi:10.1016/j.ins.2008.11.017
+
+The Networks tab is the workbench's own (networks.js, net-algo.js, net-io.js); it is not Cytoscape, the
+desktop program of the Cytoscape Consortium, though it reads and writes Cytoscape's files.

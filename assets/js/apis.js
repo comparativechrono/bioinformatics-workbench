@@ -718,45 +718,165 @@
         }
       }]
     },
-    /* ---------------- function, pathways, interactions ---------------- */
+    /* ---------------- interactions and networks ---------------- */
     {
-      id: 'string', group: 'Function and pathways', name: 'STRING', by: 'STRING Consortium', icon: 'link',
-      blurb: 'Known and predicted protein–protein interactions, as a network.',
-      docs: 'https://string-db.org/help/api/', help: 'h-db-function',
+      id: 'string', group: 'Interactions and networks', name: 'STRING', by: 'STRING Consortium', icon: 'link',
+      blurb: 'Known and predicted protein–protein interactions, as a network – and which functions a list of genes shares.',
+      docs: 'https://string-db.org/help/api/', help: 'h-db-networks',
+      forms: [
+        {
+          id: 'network', label: 'Interaction network',
+          fields: [
+            { name: 'ids', label: 'Proteins or genes (one per line, or separated by commas)', type: 'textarea', value: 'TP53\nMDM2\nCDKN1A', wide: true },
+            { name: 'species', label: 'Species', type: 'select', options: TAXA, value: '9606' },
+            { name: 'score', label: 'Minimum confidence', type: 'select', options: [['400', 'medium (0.4)'], ['700', 'high (0.7)'], ['900', 'highest (0.9)']], value: '700' },
+            { name: 'add', label: 'Add neighbours', type: 'select', options: [['0', 'none'], ['5', '5'], ['10', '10'], ['20', '20']], value: '5' }
+          ],
+          examples: [['p53 and friends', { ids: 'TP53\nMDM2\nCDKN1A', species: '9606' }], ['Yeast GAL genes', { ids: 'GAL1\nGAL4\nGAL80', species: '4932', add: '5' }]],
+          async run(v) {
+            const ids = v.ids.split(/[\s,;]+/).filter(Boolean);
+            if (!ids.length) throw new ApiError('Type at least one protein or gene name.');
+            const params = `identifiers=${enc(ids.join('\r'))}&species=${v.species}&required_score=${v.score}&add_nodes=${v.add}&caller_identity=bioinformatics_workbench`;
+            const data = await call({ url: `https://string-db.org/api/json/network?${params}`, service: 'STRING', label: `network of ${ids.join(', ')}` });
+            const rows = (data || []).map((e) => ({ a: e.preferredName_A, b: e.preferredName_B, score: e.score, exp: e.escore, db: e.dscore, text: e.tscore, coexp: e.ascore }));
+            const img = `https://string-db.org/api/image/network?identifiers=${enc(ids.join('\r'))}&species=${v.species}&required_score=${v.score}&add_white_nodes=${v.add}&network_flavor=confidence&caller_identity=bioinformatics_workbench`;
+            return {
+              title: `${new Set(rows.flatMap((r) => [r.a, r.b])).size} proteins, ${rows.length} interactions`,
+              summary: 'Line thickness in the picture shows how confident STRING is about each interaction. Open in Networks to style the network with your data, find its hubs and clusters.',
+              nodes: [h('figure.api-fig', h('img', { src: img, alt: 'STRING network', loading: 'lazy' }), h('figcaption', 'The STRING network (picture from string-db.org).'))],
+              table: {
+                cols: [{ key: 'a', label: 'Protein A' }, { key: 'b', label: 'Protein B' }, { key: 'score', label: 'Combined score', num: true, fmt: (r) => fmtNum(r.score, 3) }, { key: 'exp', label: 'Experiments', num: true, fmt: (r) => fmtNum(r.exp, 2) }, { key: 'db', label: 'Databases', num: true, fmt: (r) => fmtNum(r.db, 2) }, { key: 'text', label: 'Text mining', num: true, fmt: (r) => fmtNum(r.text, 2) }],
+                rows, name: `string_${ids[0]}.tsv`
+              },
+              json: data,
+              actions: [
+                ['network', 'Open in Networks', () => MG.app.netString({ ids, species: v.species, score: +v.score, add: +v.add })],
+                ['external', 'Open at STRING', () => window.open(`https://string-db.org/cgi/network?identifiers=${enc(ids.join('%0d'))}&species=${v.species}`, '_blank', 'noopener')]
+              ],
+              code: {
+                python: `import requests\nimport pandas as pd\n\nparams = {"identifiers": "\\r".join(${JSON.stringify(ids)}), "species": ${v.species}, "required_score": ${v.score}, "add_nodes": ${v.add}}\nedges = pd.DataFrame(requests.get("https://string-db.org/api/json/network", params=params).json())\nedges[["preferredName_A", "preferredName_B", "score"]]\n\n# as a network (networkx)\nimport networkx as nx\nG = nx.from_pandas_edgelist(edges, "preferredName_A", "preferredName_B", edge_attr="score")\nprint(G.number_of_nodes(), "proteins,", G.number_of_edges(), "interactions")`,
+                r: `library(jsonlite)\n\nedges <- fromJSON(paste0("https://string-db.org/api/json/network?species=${v.species}&required_score=${v.score}&add_nodes=${v.add}&identifiers=", URLencode(paste(${'c(' + ids.map(rStr).join(', ') + ')'}, collapse = "\\r"), reserved = TRUE)))\nedges[, c("preferredName_A", "preferredName_B", "score")]`
+              }
+            };
+          }
+        },
+        {
+          id: 'enrichment', label: 'Functional enrichment',
+          fields: [
+            { name: 'ids', label: 'Genes or proteins (one per line, or separated by commas)', type: 'textarea', value: 'TP53\nMDM2\nCDKN1A\nATM\nCHEK2\nBAX\nBBC3\nGADD45A', wide: true },
+            { name: 'species', label: 'Species', type: 'select', options: TAXA, value: '9606' },
+            { name: 'cat', label: 'Show', type: 'select', options: [['', 'every category'], ['Process', 'GO biological process'], ['Function', 'GO molecular function'], ['Component', 'GO cellular component'], ['KEGG', 'KEGG pathways'], ['RCTM', 'Reactome pathways'], ['WikiPathways', 'WikiPathways']], value: '' }
+          ],
+          examples: [['p53 targets', { ids: 'TP53\nMDM2\nCDKN1A\nATM\nCHEK2\nBAX\nBBC3\nGADD45A' }], ['Dexamethasone-induced genes', { ids: 'FKBP5\nTSC22D3\nPER1\nKLF15\nZBTB16\nDUSP1\nCRISPLD2\nPDK4', cat: 'Process' }]],
+          async run(v) {
+            const ids = v.ids.split(/[\s,;]+/).filter(Boolean);
+            if (ids.length < 2) throw new ApiError('Type at least two genes or proteins.');
+            const data = await call({ method: 'POST', url: 'https://string-db.org/api/json/enrichment', form: { identifiers: ids.join('\r'), species: v.species, caller_identity: 'bioinformatics_workbench' }, service: 'STRING', label: `enrichment of ${ids.length} genes` });
+            const all = (data || []).map((x) => ({ cat: x.category, term: x.term, desc: x.description, k: x.number_of_genes, K: x.number_of_genes_in_background, fdr: x.fdr, genes: (x.preferredNames || []).join(', ') }));
+            const rows = v.cat ? all.filter((x) => x.cat === v.cat) : all;
+            return {
+              title: `${rows.length} enriched term${rows.length === 1 ? '' : 's'}${v.cat ? '' : ` in ${new Set(all.map((x) => x.cat)).size} categories`}`,
+              summary: 'Terms more frequent among these genes than among all the genes of the species (FDR below 0.05). Genes: in your list / with the term in the whole genome.',
+              table: { cols: [{ key: 'cat', label: 'Category' }, { key: 'term', label: 'Term' }, { key: 'desc', label: 'Description' }, { key: 'k', label: 'Genes', num: true, fmt: (r) => `${r.k} / ${r.K}`, text: (r) => `${r.k}/${r.K}` }, { key: 'fdr', label: 'FDR', num: true, fmt: (r) => fmtE(r.fdr) }, { key: 'genes', label: 'Which' }], rows, name: `string_enrichment_${ids[0]}.tsv` },
+              json: data,
+              actions: [['network', 'Their network in Networks', () => MG.app.netString({ ids, species: v.species, score: 400, add: 0 })]],
+              code: {
+                python: `import requests\nimport pandas as pd\n\ngenes = ${JSON.stringify(ids)}\nr = requests.post("https://string-db.org/api/json/enrichment", data={"identifiers": "\\r".join(genes), "species": ${v.species}, "caller_identity": "bioinformatics_workbench"})\nterms = pd.DataFrame(r.json())\nterms[["category", "term", "description", "number_of_genes", "fdr"]].head(20)`,
+                r: `# STRING's enrichment is asked for with a POST request, which R cannot make in the browser:\n# use a Python notebook (Send to notebook → Python), or httr2 on your own computer.`
+              }
+            };
+          }
+        }
+      ]
+    },
+    {
+      id: 'intact', group: 'Interactions and networks', name: 'IntAct', by: 'EMBL-EBI', icon: 'bonds',
+      blurb: 'Molecular interactions from published experiments – who binds whom, how it was shown, in which paper.',
+      docs: 'https://www.ebi.ac.uk/intact/ws/interaction/', help: 'h-db-networks',
       forms: [{
-        id: 'network', label: 'Interaction network',
+        id: 'interactions', label: 'Interactions of a protein',
         fields: [
-          { name: 'ids', label: 'Proteins or genes (one per line, or separated by commas)', type: 'textarea', value: 'TP53\nMDM2\nCDKN1A', wide: true },
-          { name: 'species', label: 'Species', type: 'select', options: TAXA, value: '9606' },
-          { name: 'score', label: 'Minimum confidence', type: 'select', options: [['400', 'medium (0.4)'], ['700', 'high (0.7)'], ['900', 'highest (0.9)']], value: '700' },
-          { name: 'add', label: 'Add neighbours', type: 'select', options: [['0', 'none'], ['5', '5'], ['10', '10'], ['20', '20']], value: '5' }
+          { name: 'q', label: 'UniProt accession or name (several: separated by spaces)', value: 'P04637', wide: true },
+          { name: 'mi', label: 'Minimum MI score', type: 'select', options: [['0', 'any'], ['0.45', '0.45 (medium)'], ['0.6', '0.6 (high)'], ['0.75', '0.75 (very high)']], value: '0.6' },
+          { name: 'n', label: 'At most', type: 'select', options: [['100', '100 pieces of evidence'], ['250', '250'], ['500', '500']], value: '250' }
         ],
-        examples: [['p53 and friends', { ids: 'TP53\nMDM2\nCDKN1A', species: '9606' }], ['Yeast GAL genes', { ids: 'GAL1\nGAL4\nGAL80', species: '4932', add: '5' }]],
+        examples: [['p53 (P04637)', { q: 'P04637' }], ['BRCA1 (P38398)', { q: 'P38398' }], ['Spike protein of SARS-CoV-2 (P0DTC2)', { q: 'P0DTC2', mi: '0.45' }]],
         async run(v) {
-          const ids = v.ids.split(/[\s,;]+/).filter(Boolean);
-          if (!ids.length) throw new ApiError('Type at least one protein or gene name.');
-          const params = `identifiers=${enc(ids.join('\r'))}&species=${v.species}&required_score=${v.score}&add_nodes=${v.add}&caller_identity=bioinformatics_workbench`;
-          const data = await call({ url: `https://string-db.org/api/json/network?${params}`, service: 'STRING', label: `network of ${ids.join(', ')}` });
-          const rows = (data || []).map((e) => ({ a: e.preferredName_A, b: e.preferredName_B, score: e.score, exp: e.escore, db: e.dscore, text: e.tscore, coexp: e.ascore }));
-          const img = `https://string-db.org/api/image/network?identifiers=${enc(ids.join('\r'))}&species=${v.species}&required_score=${v.score}&add_white_nodes=${v.add}&network_flavor=confidence&caller_identity=bioinformatics_workbench`;
+          const terms = v.q.trim().split(/[\s,;]+/).filter(Boolean);
+          if (!terms.length) throw new ApiError('Type a UniProt accession or a protein name.');
+          const url = `https://www.ebi.ac.uk/intact/ws/interaction/findInteractions/${enc(terms.join(' OR '))}?page=0&pageSize=${v.n}${+v.mi ? '&minMIScore=' + v.mi : ''}`;
+          const data = await call({ url, service: 'IntAct', label: `interactions of ${terms.join(', ')}`, timeout: 90000 });
+          const content = (data && data.content) || [];
+          const pairs = new Map();
+          for (const x of content) {
+            if (!x.uniqueIdA || !x.uniqueIdB) continue;
+            const key = [x.uniqueIdA, x.uniqueIdB].sort().join('|');
+            const r = pairs.get(key) || { a: x.moleculeA, ida: x.uniqueIdA, b: x.moleculeB, idb: x.uniqueIdB, mi: 0, n: 0, methods: new Set(), pmids: new Set(), type: x.type };
+            r.mi = Math.max(r.mi, +x.intactMiscore || 0);
+            r.n++;
+            if (x.detectionMethod) r.methods.add(x.detectionMethod);
+            if (x.publicationPubmedIdentifier) r.pmids.add(x.publicationPubmedIdentifier);
+            pairs.set(key, r);
+          }
+          const rows = Array.from(pairs.values()).map((r) => Object.assign(r, { methods: Array.from(r.methods).join('; '), pmids: Array.from(r.pmids).join(', ') })).sort((a, b) => b.mi - a.mi);
           return {
-            title: `${new Set(rows.flatMap((r) => [r.a, r.b])).size} proteins, ${rows.length} interactions`,
-            summary: 'Line thickness in the picture shows how confident STRING is about each interaction.',
-            nodes: [h('figure.api-fig', h('img', { src: img, alt: 'STRING network', loading: 'lazy' }), h('figcaption', 'The STRING network (picture from string-db.org).'))],
-            table: {
-              cols: [{ key: 'a', label: 'Protein A' }, { key: 'b', label: 'Protein B' }, { key: 'score', label: 'Combined score', num: true, fmt: (r) => fmtNum(r.score, 3) }, { key: 'exp', label: 'Experiments', num: true, fmt: (r) => fmtNum(r.exp, 2) }, { key: 'db', label: 'Databases', num: true, fmt: (r) => fmtNum(r.db, 2) }, { key: 'text', label: 'Text mining', num: true, fmt: (r) => fmtNum(r.text, 2) }],
-              rows, name: `string_${ids[0]}.tsv`
-            },
+            title: `${rows.length} interacting pair${rows.length === 1 ? '' : 's'} (${content.length} of ${Number((data && data.totalElements) || 0).toLocaleString('en-GB')} pieces of evidence)`,
+            summary: 'MI score: IntAct’s confidence in an interaction, from how many experiments and of which kind show it (0 to 1).',
+            table: { cols: [{ key: 'a', label: 'Molecule A' }, { key: 'b', label: 'Molecule B' }, { key: 'mi', label: 'MI score', num: true, fmt: (r) => fmtNum(r.mi, 2) }, { key: 'n', label: 'Evidence', num: true }, { key: 'type', label: 'Kind' }, { key: 'methods', label: 'Detected by' }, { key: 'pmids', label: 'PubMed' }], rows, name: `intact_${terms[0]}.tsv` },
             json: data,
-            actions: [['external', 'Open at STRING', () => window.open(`https://string-db.org/cgi/network?identifiers=${enc(ids.join('%0d'))}&species=${v.species}`, '_blank', 'noopener')]],
+            actions: [
+              ['network', 'Open in Networks', async () => (await MG.app.networksReady()).intactNetwork({ terms, mi: +v.mi, max: +v.n })],
+              ['external', 'Open at IntAct', () => window.open(`https://www.ebi.ac.uk/intact/search?query=${enc(terms.join(' '))}`, '_blank', 'noopener')]
+            ],
             code: {
-              python: `import requests\nimport pandas as pd\n\nparams = {"identifiers": "\\r".join(${JSON.stringify(ids)}), "species": ${v.species}, "required_score": ${v.score}, "add_nodes": ${v.add}}\nedges = pd.DataFrame(requests.get("https://string-db.org/api/json/network", params=params).json())\nedges[["preferredName_A", "preferredName_B", "score"]]`,
-              r: `library(jsonlite)\n\nedges <- fromJSON(paste0("https://string-db.org/api/json/network?species=${v.species}&required_score=${v.score}&add_nodes=${v.add}&identifiers=", URLencode(paste(${'c(' + ids.map(rStr).join(', ') + ')'}, collapse = "\\r"), reserved = TRUE)))\nedges[, c("preferredName_A", "preferredName_B", "score")]`
+              python: `import requests\nimport pandas as pd\n\nr = requests.get(${pyStr(url)})\nevidence = pd.DataFrame(r.json()["content"])\nevidence[["moleculeA", "moleculeB", "intactMiscore", "detectionMethod", "type", "publicationPubmedIdentifier"]]`,
+              r: `library(jsonlite)\n\nd <- fromJSON(${rStr(url)})\nd$content[, c("moleculeA", "moleculeB", "intactMiscore", "detectionMethod", "type")]`
             }
           };
         }
       }]
     },
+    {
+      id: 'ndex', group: 'Interactions and networks', name: 'NDEx', by: 'NDEx Project (UC San Diego)', icon: 'globe',
+      blurb: 'Public networks shared by researchers and databases: pathways, interactomes, the networks of papers.',
+      docs: 'https://home.ndexbio.org/using-the-ndex-server-api/', help: 'h-db-networks',
+      forms: [{
+        id: 'search', label: 'Search networks',
+        fields: [{ name: 'q', label: 'Search for', value: 'p53 signaling', wide: true }],
+        examples: [['p53 signalling', { q: 'p53 signaling' }], ['NCI-PID pathways', { q: 'NCI-PID' }], ['SIGNOR', { q: 'SIGNOR' }]],
+        async run(v) {
+          const q = v.q.trim();
+          if (!q) throw new ApiError('Type what to search for.');
+          const data = await call({ method: 'POST', url: 'https://www.ndexbio.org/v2/search/network?start=0&size=50', json: { searchString: q }, service: 'NDEx', label: `networks: ${q}` });
+          const rows = ((data && data.networks) || []).map((n) => {
+            const prop = (k) => ((n.properties || []).find((p) => p.predicateString === k) || {}).value;
+            return { name: n.name, owner: n.owner, nodes: n.nodeCount, edges: n.edgeCount, rights: prop('rights') || '', uuid: n.externalId };
+          });
+          const openBtn = (r) => {
+            const b = h('button.btn.small', { type: 'button', title: `Open ${r.name} in the Networks tab`, disabled: r.edges > 50000 ? true : null }, 'Open in Networks');
+            b.addEventListener('click', async () => {
+              try {
+                await (await MG.app.networksReady()).ndexNetwork(r.uuid, r.name, r.rights);
+              } catch (e) {
+                toast(esc(e.message || String(e)), 'error', 8000);
+              }
+            });
+            return b;
+          };
+          return {
+            title: `${Number((data && data.numFound) || 0).toLocaleString('en-GB')} networks`,
+            summary: rows.length < Number((data && data.numFound) || 0) ? `The first ${rows.length}. Each has its own licence (Rights): check it before you reuse a network.` : 'Each network has its own licence (Rights): check it before you reuse a network.',
+            table: { cols: [{ key: 'name', label: 'Network', fmt: (r) => link(`https://www.ndexbio.org/viewer/networks/${r.uuid}`, r.name), text: (r) => r.name }, { key: 'owner', label: 'Owner' }, { key: 'nodes', label: 'Nodes', num: true }, { key: 'edges', label: 'Edges', num: true }, { key: 'rights', label: 'Rights' }, { key: 'open', label: '', fmt: openBtn, text: () => '' }], rows, name: `ndex_${q.replace(/\W+/g, '_')}.tsv` },
+            json: data,
+            code: {
+              python: `import requests\n\nr = requests.post("https://www.ndexbio.org/v2/search/network?start=0&size=50", json={"searchString": ${pyStr(q)}})\nfor n in r.json()["networks"]:\n    print(n["externalId"], n["nodeCount"], n["edgeCount"], n["name"])\n\n# a network itself (CX2), e.g. the first one:\n# cx2 = requests.get("https://www.ndexbio.org/v3/networks/" + r.json()["networks"][0]["externalId"]).json()`,
+              r: '# NDEx is searched with a POST request, which R cannot make in the browser:\n# use a Python notebook (Send to notebook → Python), or the R package ndexr on your own computer.'
+            }
+          };
+        }
+      }]
+    },
+    /* ---------------- function and pathways ---------------- */
     {
       id: 'reactome', group: 'Function and pathways', name: 'Reactome', by: 'Reactome', icon: 'workflow',
       blurb: 'The biological pathways a protein takes part in, with pathway diagrams.',
@@ -840,6 +960,45 @@
           }
         }
       ]
+    },
+    {
+      id: 'gprofiler', group: 'Function and pathways', name: 'g:Profiler', by: 'University of Tartu', icon: 'chart',
+      blurb: 'Functional enrichment of a list of genes: GO terms, KEGG, Reactome and WikiPathways pathways, regulatory motifs.',
+      docs: 'https://biit.cs.ut.ee/gprofiler/page/apis', help: 'h-db-function',
+      forms: [{
+        id: 'gost', label: 'Enrichment of a gene list (g:GOSt)',
+        fields: [
+          { name: 'genes', label: 'Genes (names or Ensembl IDs, one per line or separated by commas)', type: 'textarea', value: 'FKBP5\nTSC22D3\nPER1\nKLF15\nZBTB16\nDUSP1\nCRISPLD2\nPDK4\nKLF9\nERRFI1', wide: true },
+          { name: 'org', label: 'Organism', type: 'select', options: [['hsapiens', 'Human'], ['mmusculus', 'Mouse'], ['rnorvegicus', 'Rat'], ['drerio', 'Zebrafish'], ['dmelanogaster', 'Fruit fly'], ['celegans', 'C. elegans'], ['scerevisiae', 'Yeast (S. cerevisiae)'], ['athaliana', 'Arabidopsis']], value: 'hsapiens' },
+          { name: 'src', label: 'Sources', type: 'select', options: [['GO:BP,KEGG,REAC,WP', 'GO processes and pathways'], ['GO:BP,GO:MF,GO:CC', 'the three parts of GO'], ['KEGG,REAC,WP', 'pathways only'], ['', 'everything g:Profiler has']], value: 'GO:BP,KEGG,REAC,WP' }
+        ],
+        examples: [['Genes dexamethasone switches on', { genes: 'FKBP5\nTSC22D3\nPER1\nKLF15\nZBTB16\nDUSP1\nCRISPLD2\nPDK4\nKLF9\nERRFI1' }], ['Mouse cell cycle', { genes: 'Ccnb1, Cdk1, Plk1, Aurka, Bub1, Cdc20, Mki67, Top2a', org: 'mmusculus' }]],
+        async run(v) {
+          const genes = v.genes.split(/[\s,;]+/).filter(Boolean);
+          if (genes.length < 2) throw new ApiError('Type at least two genes.');
+          const body = { organism: v.org, query: genes, user_threshold: 0.05, significance_threshold_method: 'g_SCS', no_evidences: false };
+          if (v.src) body.sources = v.src.split(',');
+          const data = await call({ method: 'POST', url: 'https://biit.cs.ut.ee/gprofiler/api/gost/profile/', json: body, service: 'g:Profiler', label: `enrichment of ${genes.length} genes`, timeout: 90000 });
+          // the evidence of each term ("intersections") follows the Ensembl genes the names were mapped to, not the list itself
+          const q = (data && data.meta && data.meta.genes_metadata && data.meta.genes_metadata.query && data.meta.genes_metadata.query.query_1) || {};
+          const back = new Map();
+          for (const [name, ensgs] of Object.entries(q.mapping || {})) for (const e of [].concat(ensgs || [])) if (!back.has(e)) back.set(e, name);
+          const mapped = (q.ensgs || []).map((e) => back.get(e) || e);
+          const failed = (data && data.meta && data.meta.genes_metadata && data.meta.genes_metadata.failed) || [];
+          const rows = ((data && data.result) || []).map((x) => ({ src: x.source, id: x.native, name: x.name, p: x.p_value, k: x.intersection_size, K: x.term_size, genes: Array.from(new Set((x.intersections || []).map((ev, i) => (ev && ev.length ? mapped[i] : null)).filter(Boolean))).join(', ') }));
+          return {
+            title: `${rows.length} enriched term${rows.length === 1 ? '' : 's'}`,
+            summary: 'Adjusted p-values (g:SCS, g:Profiler’s correction for testing many terms) below 0.05. Genes: in your list / annotated with the term.' + (failed.length ? ` g:Profiler did not know: ${failed.join(', ')}.` : ''),
+            table: { cols: [{ key: 'src', label: 'Source' }, { key: 'id', label: 'Term' }, { key: 'name', label: 'Name' }, { key: 'k', label: 'Genes', num: true, fmt: (r) => `${r.k} / ${r.K}`, text: (r) => `${r.k}/${r.K}` }, { key: 'p', label: 'Adjusted p', num: true, fmt: (r) => fmtE(r.p) }, { key: 'genes', label: 'Which' }], rows, name: 'gprofiler.tsv' },
+            json: data,
+            actions: [['external', 'Open at g:Profiler', () => window.open(`https://biit.cs.ut.ee/gprofiler/gost?organism=${enc(v.org)}&query=${enc(genes.join(' '))}`, '_blank', 'noopener')]],
+            code: {
+              python: `import requests\nimport pandas as pd\n\nbody = ${JSON.stringify(body, null, 1).replace(/\btrue\b/g, 'True').replace(/\bfalse\b/g, 'False')}\nr = requests.post("https://biit.cs.ut.ee/gprofiler/api/gost/profile/", json=body)\nres = pd.DataFrame(r.json()["result"])\nres[["source", "native", "name", "p_value", "intersection_size", "term_size"]]`,
+              r: '# g:Profiler is asked with a POST request, which R cannot make in the browser: use a Python notebook,\n# or the R package gprofiler2 on your own computer (gost(query = genes, organism = "hsapiens")).'
+            }
+          };
+        }
+      }]
     },
     /* ---------------- literature and chemistry ---------------- */
     {

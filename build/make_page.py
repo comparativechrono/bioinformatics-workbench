@@ -38,6 +38,7 @@ GROUPS = [
     ('Databases', 'database'),
     ('3D viewer', 'cube'),
     ('Genome browser', 'genome'),
+    ('Networks', 'network'),
     ('AI assistant', 'sparkle'),
     ('Recipes', 'flask'),
     ('Reference', 'info'),

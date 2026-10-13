@@ -23,11 +23,11 @@
      ------------------------------------------------------------------ */
   const TAB_HELP = {
     notebook: 'h-notebook', terminal: 'h-terminal', editor: 'h-files', galaxy: 'h-galaxy',
-    apis: 'h-databases', viewer: 'h-viewer', igv: 'h-genome', assistant: 'h-ai'
+    apis: 'h-databases', viewer: 'h-viewer', igv: 'h-genome', networks: 'h-networks', assistant: 'h-ai'
   };
   const TAB_NAME = {
     notebook: 'Notebook', terminal: 'Terminal', editor: 'Files', galaxy: 'Galaxy',
-    apis: 'Databases', viewer: '3D viewer', igv: 'Genome browser', assistant: 'AI assistant'
+    apis: 'Databases', viewer: '3D viewer', igv: 'Genome browser', networks: 'Networks', assistant: 'AI assistant'
   };
   MG.app.tabHelp = TAB_HELP;
   MG.app.tabName = TAB_NAME;

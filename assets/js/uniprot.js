@@ -769,6 +769,30 @@
       const cp = this._xrefs(d, 'ComplexPortal');
       if (cp.length) links.push(ext('https://www.ebi.ac.uk/complexportal/complex/' + cp[0].id, 'Complex Portal'));
       if (links.length) sec.appendChild(h('p', { html: 'Interaction databases: ' + links.join(' · ') }));
+      // the network of the protein in the Networks tab
+      if (MG.app && MG.app.networksReady) {
+        const acc = d.primaryAccession, tax = String((d.organism || {}).taxonId || '');
+        const fail = (e) => toast(esc((e && e.message) || String(e)), 'error', 8000);
+        const acts = h('span');
+        if (str && tax) {
+          const b = h('button.btn.small', { type: 'button', title: 'The protein and its 10 strongest partners in STRING, in the Networks tab', html: MG.icon('network') + '<span>STRING network</span>' });
+          b.addEventListener('click', () => MG.app.netString({ ids: [acc], species: tax, score: 700, add: 10 }).catch(fail));
+          acts.appendChild(b);
+        }
+        if (inter && inter.interactions && inter.interactions.length) {
+          const b = h('button.btn.small', { type: 'button', title: 'Its interactions from IntAct (MI score at least 0.45), in the Networks tab', html: MG.icon('network') + '<span>IntAct interactions</span>' });
+          b.addEventListener('click', async () => {
+            try {
+              await (await MG.app.networksReady()).intactNetwork({ terms: [acc], mi: 0.45, max: 250 });
+            } catch (e) {
+              fail(e);
+            }
+          });
+          if (acts.children.length) acts.append(' ');
+          acts.appendChild(b);
+        }
+        if (acts.children.length) sec.appendChild(h('p', h('b', 'In the Networks tab: '), acts));
+      }
     }
 
     sec_structure(d, sec, label) {

@@ -49,16 +49,19 @@
     ['json', 'json', 'json'],
     ['html', 'html – a report', 'html'],
     ['newick', 'newick – a phylogenetic tree', 'nwk'],
+    ['sif', 'sif – a network (simple interaction format)', 'sif'],
+    ['xgmml', 'xgmml – a network (XGMML, Cytoscape’s XML)', 'xgmml'],
     ['pdb', 'pdb – a 3D structure', 'pdb']
   ];
   const DOWNLOAD_EXT = Object.fromEntries(FORMATS.map((f) => [f[0], f[2]]));
-  const TEXT = ['tabular', 'txt', 'csv', 'bed', 'bedgraph', 'vcf', 'gff3', 'gtf', 'sam', 'fasta', 'fastqsanger', 'json', 'genbank', 'hmm3', 'stockholm', 'mtx'];
+  const TEXT = ['tabular', 'txt', 'csv', 'bed', 'bedgraph', 'vcf', 'gff3', 'gtf', 'sam', 'fasta', 'fastqsanger', 'json', 'genbank', 'hmm3', 'stockholm', 'mtx', 'sif', 'xgmml'];
+  const NETWORKS = ['sif', 'xgmml'];
   const FEATURES = ['bed', 'bedgraph', 'vcf', 'vcf_bgzip', 'gff3', 'gtf'];
   const GENOMIC = ['bam', 'vcf', 'vcf_bgzip', 'bed', 'bedgraph', 'gff3', 'gtf'];
   const SNIFF = [
     [/\.(fastq|fq)$/, 'fastqsanger'], [/\.(fa|fasta|fna|faa|fas|afa|mfa)$/, 'fasta'], [/\.sam$/, 'sam'], [/\.bam$/, 'bam'],
     [/\.vcf\.gz$/, 'vcf_bgzip'], [/\.vcf$/, 'vcf'], [/\.bcf$/, 'bcf'], [/\.bed$/, 'bed'], [/\.(bedgraph|bg)$/, 'bedgraph'],
-    [/\.(gff3|gff)$/, 'gff3'], [/\.gtf$/, 'gtf'], [/\.(gb|gbk|gbff|genbank)$/, 'genbank'], [/\.(hmm|hmm3)$/, 'hmm3'], [/\.(sto|stk|stockholm)$/, 'stockholm'], [/\.bus$/, 'bus'], [/\.mtx$/, 'mtx'],
+    [/\.(gff3|gff)$/, 'gff3'], [/\.gtf$/, 'gtf'], [/\.(gb|gbk|gbff|genbank)$/, 'genbank'], [/\.(hmm|hmm3)$/, 'hmm3'], [/\.(sto|stk|stockholm)$/, 'stockholm'], [/\.bus$/, 'bus'], [/\.mtx$/, 'mtx'], [/\.sif$/, 'sif'], [/\.xgmml$/, 'xgmml'],
     [/\.(tsv|tab|tabular)$/, 'tabular'], [/\.csv$/, 'csv'], [/\.json$/, 'json'],
     [/\.html?$/, 'html'], [/\.(nwk|newick|tree|treefile)$/, 'newick'], [/\.(pdb|ent)$/, 'pdb'], [/\.(txt|log|md)$/, 'txt']
   ];
@@ -1536,6 +1539,7 @@
           if (d.job && TOOL.get(d.job.toolId)) acts.append(mk('rerun', 'Run this job again', () => this.showTool(d.job.toolId, d.job)));
           if (d.state === 'ok' && GENOMIC.includes(d.ext)) acts.append(mk('genome', 'Show in the Genome browser', () => this.toGenomeBrowser(d.hid)));
           if (d.state === 'ok' && d.ext === 'pdb') acts.append(mk('cube', 'Open in the 3D viewer', () => this.toViewer(d.hid)));
+          if (d.state === 'ok' && NETWORKS.includes(d.ext)) acts.append(mk('network', 'Open in Networks', () => this.toNetworks(d.hid)));
           if (d.state === 'ok') {
             const cp = h('button.gx-link', { type: 'button', title: 'Copy this dataset into your home folder (~/galaxy), to use it in the Terminal or a notebook' }, 'copy to my files');
             cp.addEventListener('click', (e) => {
@@ -1627,6 +1631,11 @@
     async toViewer(hid) {
       const p = this.copyToFiles(hid, true);
       await MG.app.viewStructure(p);
+    }
+    async toNetworks(hid) {
+      const p = this.copyToFiles(hid, true);
+      toast(`Copied to <b>${esc(this.fs.pretty(p))}</b> and opened in the Networks tab.`, null, 4000);
+      await MG.app.netOpen([p]);
     }
 
     /* ================= upload ================= */
@@ -2112,6 +2121,7 @@
       btn('folder', 'Copy to my files', () => this.copyToFiles(hid));
       if (GENOMIC.includes(d.ext)) btn('genome', 'Show in the Genome browser', () => this.toGenomeBrowser(hid));
       if (d.ext === 'pdb') btn('cube', 'Open in the 3D viewer', () => this.toViewer(hid));
+      if (NETWORKS.includes(d.ext)) btn('network', 'Open in Networks', () => this.toNetworks(hid));
       C.appendChild(acts);
       if (d.ext === 'bam' || d.ext === 'bcf' || d.ext === 'bus') {
         C.appendChild(h('p', `This is a binary ${d.ext.toUpperCase()} file, so Galaxy cannot show it as text. Its first records${d.ext === 'bus' ? ' (as bustools text writes them: barcode, UMI, equivalence class, count)' : ''}:`));

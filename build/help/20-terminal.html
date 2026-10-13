@@ -1,4 +1,4 @@
-<!-- id: h-terminal | title: The terminal | group: Terminal and programs | summary: bash, the programs, keys, saving a session | keys: terminal shell bash command line prompt help man history tab completion ctrl-c export-session save session script cd ls user name username whoami your name -->
+<!-- id: h-terminal | title: The terminal | group: Terminal and programs | summary: bash, the programs, keys, saving a session | keys: terminal shell bash command line prompt help man history tab completion ctrl-c export-session save session script cd ls user name username whoami your name open igv network -->
 <h1><!--ICON:terminal-->The terminal</h1>
 <p class="lede">A Linux shell (bash) with real bioinformatics programs – samtools, bcftools, minimap2, Bowtie 2, fastp, bedtools and more, compiled to WebAssembly so that they run in your browser.</p>
 <div class="tryrow"><button class="do" type="button" data-term-run="help">List the programs</button> <button class="do" type="button" data-term-run="ls -R /data/examples">Show the example data</button></div>
@@ -55,9 +55,10 @@ done</code></pre>
 
 <h2>Commands of the workbench</h2>
 <dl>
-<dt><code>open FILE</code></dt><dd>shows a file in its tab: a notebook in Notebook, a structure in the 3D viewer, the rest in Files (tables, pictures, HTML reports, trees).</dd>
+<dt><code>open FILE</code></dt><dd>shows a file in its tab: a notebook in Notebook, a structure in the 3D viewer, a network (SIF, GraphML, XGMML, GML, Cytoscape JSON, CX2) in Networks, the rest in Files (tables, pictures, HTML reports, trees).</dd>
 <dt><code>nano FILE</code></dt><dd>edits a file in the Files tab.</dd>
 <dt><code>igv FILE…</code></dt><dd>shows BAM, VCF, BED or GFF files in the Genome browser.</dd>
+<dt><code>network FILE…</code></dt><dd>opens networks in the Networks tab – network files, or tables of edges (it asks which columns are the two ends); <code>network --table VALUES.csv</code> adds a table of values to the nodes of the open network, <code>network --string TP53 MDM2 …</code> opens the STRING network of some genes, <code>network --example karate</code> an example. <code>man network</code> has the options.</dd>
 <dt><code>download FILE|FOLDER</code></dt><dd>saves a copy on your computer (a folder as a <code>.zip</code>).</dd>
 <dt><code>export-session FILE.ipynb</code></dt><dd>writes the commands of this session, with their output, as a notebook (or <code>FILE.sh</code>: a script).</dd>
 </dl>

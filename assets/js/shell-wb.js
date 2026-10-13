@@ -12,6 +12,7 @@
      curl, wget             downloads from web services that allow it
      unzip, zip, tar        archives
      igv                    show files in the Genome browser tab
+     network                open networks in the Networks tab
      help, man              the programs of the workbench
    ===================================================================== */
 (function () {
@@ -722,6 +723,7 @@
       [/^(esl-[A-Za-z0-9_-]+|hmmpgmd|hmmpgmd_shard|hmmsim|hmmlogo|hmmc2|alimask|makehmmerdb|hmmerfm-exactmatch|pfam_scan\.pl)$/, 'is not installed in this terminal: of HMMER there are hmmbuild, hmmsearch, hmmscan, hmmpress, hmmfetch, hmmalign, hmmconvert, hmmemit, hmmstat, phmmer, jackhmmer, nhmmer and nhmmscan – not its Easel miniapps (esl-…) or its servers.'],
       [/^(kb|cellranger|alevin-fry|velocyto|umi_tools|dropseq|scanpy|seurat)$/, 'is not installed in this terminal. For single-cell RNA-seq there is bustools: it sorts, corrects and counts the BUS records that kallisto bus writes (man bustools). The matrix it writes opens in Python with scipy.io.mmread.'],
       [/^(plink|plink1|plink1\.9|plink19|gcta|gcta64|regenie|bolt|saige|admixture|smartpca|king|beagle|shapeit|shapeit4|shapeit5|impute2|impute5|bgenix|qctool)$/, 'is not installed in this terminal. For the genotypes of many people – quality control, allele frequencies, LD, kinship, association (GWAS), scores – there is PLINK 2:  plink2 --vcf FILE.vcf.gz --freq --out NAME  (man plink2). Many options of PLINK 1.9 are the same in PLINK 2 (--bfile, --maf, --geno, --hwe, --make-bed); --assoc, --linear and --logistic are --glm there, and --recode is --export.'],
+      [/^(cytoscape|Cytoscape|cytoscape\.sh|gephi|graphviz-gui)$/, 'is a desktop program and is not installed in this terminal. The Networks tab draws and analyses networks here – SIF, GraphML, GML, XGMML and Cytoscape JSON files, STRING and IntAct networks:  network FILE  (man network); dot draws graphs written in the DOT language.'],
       [/^(clustalo|clustalw|mafft|t_coffee|prank)$/, 'is not installed in this terminal. For multiple alignments there are kalign and muscle:  kalign -i seqs.fasta -o aligned.fasta'],
       [/^(raxml|raxml-ng|iqtree|iqtree2|phyml|mrbayes)$/, 'is not installed in this terminal. For trees there is FastTree:  fasttree aligned.fasta > tree.nwk  (open tree.nwk in the Files tab to see it).'],
       [/^(perl|ruby|java|julia|node|ipython|jupyter|conda-build)$/, 'is not installed in this terminal. There are Python (python script.py; the Notebook tab), R (Rscript script.R; R notebooks) and the shell with awk, sed, grep, sort, cut …'],
@@ -759,6 +761,7 @@
     zip: 'zip – make a .zip archive.\n\n  zip -r results.zip results/\n  zip notes.zip a.txt b.txt\n\n(To save a folder on your computer as a .zip in one step:  download FOLDER)',
     tar: 'tar – .tar and .tar.gz archives.\n\n  tar -xzf data.tar.gz            unpack (x) a gzipped (z) archive file (f)\n  tar -tzf data.tar.gz            list (t) what is in it\n  tar -xf data.tar -C folder      unpack into a folder\n  tar -czf results.tar.gz results/   make (c) one',
     igv: 'igv – show files in the Genome browser tab.\n\n  igv mapped.bam                    (needs mapped.bam.bai: samtools index mapped.bam)\n  igv calls.vcf.gz regions.bed\n  igv --genome reference.fa mapped.bam      use a FASTA file of yours as the genome (it needs reference.fa.fai: samtools faidx)\n  igv --locus chr17:7,661,779-7,687,538',
+    network: 'network – open networks in the Networks tab.\n\n  network graph.graphml                  a network file: SIF, GraphML, XGMML, GML, Cytoscape JSON (.cyjs), CX2 – or a table of edges (.csv, .tsv: the Networks tab asks which columns)\n  network --table deseq2_results.csv     add a table of values to the nodes of the network that is open (it asks which columns match)\n  network --string TP53 MDM2 CDKN1A      the STRING network of these genes or proteins (string-db.org)\n          [--species 10090] [--score 700] [--add 10]      species (NCBI taxon: 9606 human), minimum confidence (0–1000), interactors to add\n  network --example airway               an example: airway (genes changed by dexamethasone, on STRING) or karate\n\nFrom a Python notebook:  !network ~/networks/graph.graphml  (networkx writes it: nx.write_graphml(G, "graph.graphml"))',
     'export-session': 'export-session – save the commands of this terminal session, with their output.\n\n  export-session session.ipynb    a Jupyter notebook: one %%bash cell per command (it opens in the Notebook tab, and in Jupyter)\n  export-session session.sh       a shell script of the commands\n  export-session --clear          forget the commands so far\n\nThe "Save session" button above the terminal does the same.',
     'needleman_wunsch': 'needleman_wunsch – global pairwise alignment (seq-align).\n\n  needleman_wunsch ACGTTGCA ACGTGCA\n  needleman_wunsch --file seqs.fasta            (aligns the sequences of the file in pairs)\n  needleman_wunsch --match 1 --mismatch -1 --gapopen -2 --gapextend -1 SEQ1 SEQ2\n\nIts options:  needleman_wunsch --help',
     'smith_waterman': 'smith_waterman – local pairwise alignment (seq-align).\n\n  smith_waterman GATTACAGATTACA TTACAG\n  smith_waterman --file seqs.fasta\n\nIts options:  smith_waterman --help'
@@ -1324,6 +1327,52 @@
     return 0;
   };
 
+  /* ------------------------------------------------------------------ network: files → the Networks tab */
+  B.network = async (ctx) => {
+    if (MG.shellUtil.forPerson && MG.shellUtil.forPerson(ctx)) return 1;
+    const a = ctx.args.slice();
+    const files = [], genes = [];
+    let table = null, example = null, string = false, species = '9606', score = 400, add = 0;
+    for (let i = 0; i < a.length; i++) {
+      const x = a[i];
+      const val = () => {
+        if (i + 1 >= a.length) throw userErr(`network: ${x} needs a value (see  man network)`);
+        return a[++i];
+      };
+      if (x === '--help' || x === '-h') {
+        ctx.out(OWN_MAN.network + '\n');
+        return 0;
+      } else if (x === '--table' || x === '-t') table = val();
+      else if (x === '--example') example = val();
+      else if (x === '--string' || x === '-s') string = true;
+      else if (x === '--species') species = val();
+      else if (x === '--score') score = Number(val());
+      else if (x === '--add') add = Number(val());
+      else if (x.startsWith('-')) throw userErr(`network: unknown option ${x} (see  man network)`);
+      else if (string) genes.push(...x.split(/[,;]+/).filter(Boolean));
+      else files.push(x);
+    }
+    if (example && !/^(airway|karate)$/.test(example)) throw userErr(`network: there is no example ${example} (airway, karate)`);
+    if (!/^\d+$/.test(species)) throw userErr('network: --species takes an NCBI taxon number (9606 human, 10090 mouse, 4932 yeast …)');
+    if (!(score >= 0 && score <= 1000)) throw userErr('network: --score takes a number from 0 to 1000 (400 medium confidence, 700 high)');
+    if (string && !genes.length) throw userErr('network: --string needs genes or proteins:  network --string TP53 MDM2');
+    for (const f of files.concat(table ? [table] : [])) {
+      if (!ctx.fs.exists(f)) throw userErr(`network: ${f}: No such file or directory`);
+      if (ctx.fs.isDir(f)) throw userErr(`network: ${f}: Is a directory`);
+    }
+    if (!files.length && !table && !string && !example) throw userErr('usage: network FILE…   |  network --table FILE  |  network --string GENE…  |  network --example airway   (man network)');
+    const N = await MG.app.networksReady();
+    if (example) await N.example(example);
+    if (files.length) await N.openPaths(files.map((f) => ctx.fs.resolve(f)));
+    if (string) await N.stringNetwork({ ids: genes, species, score, add });
+    if (table) {
+      if (!N.cur) throw userErr('network: --table adds a table to the network that is open – open one first');
+      await N.importTableDialog({ path: ctx.fs.resolve(table) });
+    }
+    ctx.io.note('Shown in the Networks tab.');
+    return 0;
+  };
+
   /* ------------------------------------------------------------------ the session as a notebook or a script */
   const HOME = () => (MG.app && MG.app.HOME) || '/home/user';
   const tilde = (p) => (p === HOME() ? '~' : p.startsWith(HOME() + '/') ? '~' + p.slice(HOME().length) : p);
@@ -1500,6 +1549,7 @@
         '  unzip, zip, tar (-xzf, -czf)   curl, wget (web services that allow it: EBI, UniProt, Ensembl, NCBI, PDB …)',
         '  open FILE   show a file in its tab (notebook, picture, table, structure, tree)    nano FILE   edit it in Files',
         '  igv FILE…   show BAM/VCF/BED files in the Genome browser     download FILE|FOLDER   save to your computer',
+        '  network FILE…   open networks (SIF, GraphML, GML, Cytoscape JSON …) in the Networks tab;  network --string TP53 MDM2',
         '  export-session FILE.ipynb   this session\'s commands as a notebook (or FILE.sh as a script)',
         '',
         'The shell is bash: | && || ; > >> < 2> 2>&1, quotes, $VAR, $( ), $(( )), globs, if/for/while/case, functions,',

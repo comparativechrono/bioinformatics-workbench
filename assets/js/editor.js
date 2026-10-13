@@ -26,7 +26,7 @@
     if (/\.(sh|bash)$|^\.bashrc$/i.test(n)) return 'shell';
     if (/\.(md|markdown|rmd|qmd)$/i.test(n)) return 'markdown';
     if (/\.(js|mjs)$/i.test(n)) return 'javascript';
-    if (/\.(json|ipynb|ga)$/i.test(n)) return { name: 'javascript', json: true };
+    if (/\.(json|ipynb|ga|cyjs|cx2)$/i.test(n)) return { name: 'javascript', json: true };
     return null;
   }
   /** how a file is shown: in the editor ('text') or by a viewer */
@@ -57,10 +57,12 @@
     if (/\.(py|r|sh|js|smk)$|^snakefile$/i.test(name)) return 'code';
     if (/\.(zip|tar|tgz|gz)$/i.test(name)) return 'zip';
     if (/\.(nwk|newick|tree|treefile)$/i.test(name)) return 'tree';
+    if (/\.(sif|graphml|xgmml|gml|cyjs|cx2)$/i.test(name)) return 'network';
     return 'file';
   };
   const GENOMIC = /\.(bam|cram|vcf|vcf\.gz|bcf|bed|bed\.gz|gff3?|gff3?\.gz|gtf|bedgraph|wig)$/i;
   const STRUCTURE = /\.(pdb|ent|cif|mmcif|bcif|mol2|sdf|pqr|gro|mmtf)(\.gz)?$/i;
+  const NETWORK = /\.(sif|graphml|xgmml|gml|cyjs|cx2)$/i;
   const GALAXY_OK = /\.(fastq|fq|fasta|fa|fna|bam|sam|vcf|vcf\.gz|bcf|bed|gff3?|gtf|txt|tsv|csv|tabular|json|fastq\.gz|fq\.gz)$/i;
 
   class Editor {
@@ -286,6 +288,8 @@
         if (STRUCTURE.test(p)) items.push(['cube', 'Show in the 3D viewer', () => MG.app.viewStructure(p)]);
         if (GENOMIC.test(p)) items.push(['genome', 'Show in the Genome browser', () => MG.app.igvLoad([p])]);
         if (/\.(fa|fasta|fna)$/i.test(p)) items.push(['genome', 'Use as the genome in the Genome browser', () => MG.app.igvGenome && MG.app.igvGenome(p)]);
+        if (NETWORK.test(p) && MG.app.netOpen) items.push(['network', 'Open in Networks', () => MG.app.netOpen([p]).catch((e) => toast(esc(e.message), 'error', 8000))]);
+        if (/\.(csv|tsv|tab|txt)$/i.test(p) && MG.app.netOpen) items.push(['network', 'Open in Networks (a table of edges, or values for the nodes)…', () => MG.app.netOpen([p]).catch((e) => toast(esc(e.message), 'error', 8000))]);
         if (GALAXY_OK.test(p) && MG.app.toGalaxy) items.push(['workflow', 'Upload to Galaxy', () => MG.app.toGalaxy([p])]);
         if (/\.zip$/i.test(p) && mine) items.push(['zip', 'Unpack (unzip) here', () => this.unzip(p)]);
         items.push(['download', 'Download', () => this.download(p)]);
@@ -451,6 +455,8 @@
       if (!(path === this.home || path.startsWith(this.home + '/'))) add('copy', 'Copy to my files', 'Make your own copy of this file (in ~/examples), which you can change', () => this.copyToHome(path));
       if (GENOMIC.test(path)) add('genome', 'Genome browser', 'Show this file in the Genome browser tab', () => MG.app.igvLoad([path]));
       if (STRUCTURE.test(path)) add('cube', '3D viewer', 'Show this structure in the 3D viewer', () => MG.app.viewStructure(path));
+      if (NETWORK.test(path)) add('network', 'Networks', 'Open this network in the Networks tab', () => MG.app.netOpen([path]).catch((e) => toast(esc(e.message), 'error', 8000)));
+      else if (/\.(csv|tsv|tab)$/i.test(path)) add('network', 'Networks', 'Open this table in the Networks tab: as a table of edges, or as values for the nodes of the network that is open', () => MG.app.netOpen([path]).catch((e) => toast(esc(e.message), 'error', 8000)));
       if (/\.ipynb$/i.test(path)) add('notebook', 'Open as a notebook', 'Open in the Notebook tab', () => MG.app.openFile(path));
       if (/\.(fa|fasta|faa|fna|afa)$/i.test(path)) add('align', 'Align', 'Align these sequences with kalign (in the Terminal)', () => this.alignFasta(path));
     }
