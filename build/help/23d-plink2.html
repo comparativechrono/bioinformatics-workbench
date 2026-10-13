@@ -1,0 +1,76 @@
+<!-- id: h-plink2 | title: Genotypes and association: PLINK 2 | group: Terminal and programs | summary: Quality control, allele frequencies, LD, association tests and scores for the genotypes of many people | keys: plink plink2 plink 2 plink 1.9 gwas genome-wide association study genotype genotyping snp variant vcf pgen pvar psam bed bim fam bfile pfile make-pgen make-bed export allele frequency maf minor allele missingness call rate geno mind hardy-weinberg hwe heterozygosity het linkage disequilibrium ld pruning indep-pairwise r2 kinship king relatedness glm regression logistic linear firth separation odds ratio beta p-value bonferroni covariate phenotype score polygenic risk score prs 1000 genomes population pca -->
+<h1><!--ICON:dna-->Genotypes and association: PLINK 2</h1>
+<p class="lede"><b>PLINK</b> works with the genotypes of many people at once – thousands of people, millions of variants. It checks their quality, counts allele frequencies, measures linkage disequilibrium and relatedness, and tests each variant for association with a trait: a genome-wide association study, or GWAS. Every PLINK command has the same shape: the data (<code>--vcf</code>, <code>--pfile</code>, <code>--bfile</code>), filters, what to compute, and <code>--out</code>, the name of the files it writes.</p>
+<p>The examples work in a folder of your own: <button class="do" type="button" data-term-run="mkdir -p ~/gwas && cd ~/gwas">mkdir -p ~/gwas &amp;&amp; cd ~/gwas</button></p>
+
+<h2>The data, and PLINK's own files</h2>
+<p><code>/data/examples/plink2/1kg-phase3-chr21.vcf.gz</code> holds the genotypes of the 2,504 people of the 1000 Genomes Project (Phase 3) at the first 600 variants of chromosome 21 – real public data, and the test file of PLINK 2 itself. A VCF file has a column for each person:</p>
+<pre class="code" data-run="term"><code>zcat /data/examples/plink2/1kg-phase3-chr21.vcf.gz | grep -v '^##' | head -3 | cut -f 1-5,10-12
+plink2 --vcf /data/examples/plink2/1kg-phase3-chr21.vcf.gz --make-pgen --out chr21
+ls chr21.*</code></pre>
+<p>A genotype such as <code>0|1</code> gives the alleles of the two copies of the chromosome – 0 the reference allele (REF), 1 the alternative (ALT); <code>|</code> means phased: which copy carries which is known. <code>--make-pgen</code> writes PLINK 2's own files: <code>chr21.pgen</code>, the genotypes, packed tightly; <code>chr21.pvar</code>, the variants (the first columns of the VCF); <code>chr21.psam</code>, the people; and <code>chr21.log</code>, a record of what was done. <code>--pfile chr21</code> reads the three back – much quicker than the VCF for every new command. PLINK 1's files, <code>.bed</code>, <code>.bim</code> and <code>.fam</code>, are still common: <code>--make-bed</code> writes them and <code>--bfile</code> reads them.</p>
+<p>The log, and what PLINK prints, begin with the options in effect: besides yours, <code>--threads 1</code> and <code>--memory 640 require</code>, which the terminal adds (see the end of this page).</p>
+
+<h2>Quality control: frequencies, missing genotypes, Hardy–Weinberg</h2>
+<pre class="code" data-run="term"><code>plink2 --pfile chr21 --freq --missing --hardy --out qc
+head -4 qc.afreq
+awk 'NR > 1 && ($5 < 0.01 || $5 > 0.99)' qc.afreq | wc -l
+tail -n +2 qc.hardy | sort -g -k10,10 | head -4</code></pre>
+<p><code>qc.afreq</code> has the frequency of each ALT allele and the number of alleles counted – 5,008, two for each person. Most variants are rare: for 566 of the 600 the less common allele has a frequency below 1%, and hundreds were seen only once among the 5,008 chromosomes (a frequency of 0.0002). <code>qc.smiss</code> and <code>qc.vmiss</code> count the missing genotypes of each person and of each variant: none here, as the 1000 Genomes release gives every genotype – in data of your own, a person or a variant with many missing genotypes is a warning.</p>
+<p><code>qc.hardy</code> holds the Hardy–Weinberg exact test: are there as many heterozygotes as the allele frequency predicts? <code>O(HET_A1)</code> is the share of heterozygotes observed, <code>E(HET_A1)</code> the share expected, <code>P</code> the p-value. A few variants are very far from it, always with too many heterozygotes – 0.88 where 0.50 is expected. These variants lie on the short arm of chromosome 21, near its centromere, among repeated sequences – most likely, reads from two copies of a repeat were aligned to one place, and the difference between the copies looks like a heterozygous genotype in almost everyone. Such errors are what the Hardy–Weinberg filter is for.</p>
+
+<h2>Filters</h2>
+<pre class="code" data-run="term"><code>plink2 --pfile chr21 --maf 0.01 --hwe 1e-6 --make-pgen --out chr21_qc</code></pre>
+<p>Filters act before anything else. <code>--maf 0.01</code> keeps the variants whose minor allele frequency is 1% or more; <code>--hwe 1e-6</code> removes those with a Hardy–Weinberg p-value below 10<sup>−6</sup>; <code>--geno 0.02</code> would remove variants with more than 2% of their genotypes missing, and <code>--mind 0.02</code> such people. The log says what each did: 25 variants removed by <code>--hwe</code> (all with too many heterozygotes), 566 by <code>--maf</code>, 9 remaining. <code>--keep FILE</code> and <code>--remove FILE</code> choose people by their IDs, <code>--extract FILE</code> and <code>--exclude FILE</code> variants, <code>--chr</code> with <code>--from-bp</code> and <code>--to-bp</code> a region.</p>
+
+<h2>Linkage disequilibrium</h2>
+<pre class="code" data-run="term"><code>plink2 --pfile chr21_qc --indep-pairwise 50 5 0.2 --out ld
+cat ld.prune.in
+plink2 --pfile chr21_qc --r2-unphased --ld-window-r2 0.2 --out ld
+cat ld.vcor</code></pre>
+<p>Variants close to each other are inherited together, so their genotypes are correlated: linkage disequilibrium, measured as r<sup>2</sup>. <code>--indep-pairwise 50 5 0.2</code> moves along the chromosome in windows of 50 variants, 5 at a time, and of every pair with r<sup>2</sup> above 0.2 keeps one: <code>ld.prune.in</code> lists the variants kept (6 of the 9), <code>ld.prune.out</code> the others. Analyses that expect independent variants – principal components, relatedness – use the pruned set (<code>--extract ld.prune.in</code>). <code>--r2-unphased</code> lists the pairs: rs559962037 and rs556687069, 229 bases apart, have r<sup>2</sup> = 0.96 – they are nearly always inherited together.</p>
+
+<h2>Association: does a variant go with a trait?</h2>
+<p>The 1000 Genomes data has no trait to study, so these examples use synthetic data made for PLINK's own tests: 603 invented people, 30 variants (v1 … v30) and three phenotypes – <b>BINARY</b> (case 2 or control 1) and <b>QUANT</b> (a number), both drawn at random, and <b>FIRTH</b>, which makes every carrier of v1's ALT allele a case – with two covariates, C1 and C2 (in a real study: age, sex, principal components).</p>
+<pre class="code" data-run="term"><code>D=/data/examples/plink2
+head -3 $D/synthetic_phenotypes.tsv
+plink2 --vcf $D/synthetic_glm.vcf --pheno $D/synthetic_phenotypes.tsv --covar $D/synthetic_covariates.tsv --glm hide-covar --out assoc
+ls assoc.*
+cut -f 3,9,11-16 assoc.QUANT.glm.linear | head -5</code></pre>
+<p><code>--glm</code> tests every variant with every phenotype: linear regression for a quantitative trait (<code>assoc.QUANT.glm.linear</code>), logistic regression for cases and controls (<code>.glm.logistic.hybrid</code>), with the covariates in each model (<code>hide-covar</code>: their own lines are left out). A line gives the variant, the allele tested (A1) and its frequency, the number of people, the effect – <code>BETA</code>, the change of the trait for each copy of A1, or <code>OR</code>, the odds ratio – its standard error, the test statistic and the p-value. QUANT and BINARY are random, so their p-values are spread between 0 and 1: of 30 tests, one or two fall below 0.05 by chance (here one for QUANT, none for BINARY). That is why a study is judged against the number of its tests – 0.05/30 here, and 5×10<sup>−8</sup> for the million tests of a genome-wide study.</p>
+<pre class="code" data-run="term"><code>sort -g -k16,16 assoc.FIRTH.glm.logistic.hybrid | cut -f 3,10,13,16,17 | head -4</code></pre>
+<p>For FIRTH, v1 stands out. Every carrier of its ALT allele is a case – complete separation, for which ordinary logistic regression finds no odds ratio: it grows without end. PLINK then uses Firth's regression (<code>FIRTH?</code> Y), and still marks the result <code>UNFINISHED</code>: the odds ratio is in effect infinite. <code>ERRCODE</code> says when a result is not to be trusted as it stands. No other variant passes 0.05/30 = 0.0017. The p-values as a picture, in Python (a small "Manhattan plot"):</p>
+<pre class="code" data-run="py"><code>import os
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+
+os.chdir(os.path.expanduser("~/gwas"))
+fig, ax = plt.subplots(figsize=(7, 3))
+for name, file in [("QUANT", "assoc.QUANT.glm.linear"), ("BINARY", "assoc.BINARY.glm.logistic.hybrid"),
+                   ("FIRTH", "assoc.FIRTH.glm.logistic.hybrid")]:
+    t = pd.read_csv(file, sep="\t")
+    ax.plot(t["POS"] / 1000, -np.log10(t["P"]), "o", markersize=4, label=name)
+ax.axhline(-np.log10(0.05 / 30), linestyle="--", color="grey", linewidth=1)   # 0.05 for 30 tests
+ax.set_xlabel("position (kb)")
+ax.set_ylabel("−log10 p")
+ax.legend()
+plt.show()</code></pre>
+
+<h2>Scores</h2>
+<pre class="code" data-run="term"><code>head -3 /data/examples/plink2/synthetic_scores.tsv
+plink2 --pfile chr21 --score /data/examples/plink2/synthetic_scores.tsv 1 2 3 header-read cols=+scoresums --out score
+head -4 score.sscore</code></pre>
+<p>A score adds up, for each person, the copies of chosen alleles, each multiplied by a weight. <code>--score FILE 1 2 3</code> takes the variant, the allele and the weight from columns 1, 2 and 3 of the file (<code>header-read</code>: its first line is a header). <code>score.sscore</code> has, for each person, the alleles counted (<code>ALLELE_CT</code>, two for each of the 20 variants), how many of them were the named allele, and the score – the average over the alleles (<code>WEIGHT_AVG</code>) and, with <code>cols=+scoresums</code>, the sum (<code>WEIGHT_SUM</code>). A polygenic risk score is made this way, with the effect sizes of a published GWAS as the weights. The weights of <code>synthetic_scores.tsv</code> are made up: these scores mean nothing.</p>
+
+<h2>More, and what is not here</h2>
+<ul>
+  <li><code>--export vcf</code> (<code>vcf bgz</code>: compressed) writes a VCF file again, <code>--make-bed</code> PLINK 1's files, and <code>--export A</code> a table of 0, 1 or 2 copies for each person and variant, to read in Python or R.</li>
+  <li><code>--make-king-table</code> estimates the kinship of each pair of people (KING), and <code>--king-cutoff</code> removes one of each related pair. It needs thousands of common variants: on 600 variants, most of them rare, its numbers are noise. <code>/data/examples/plink2/keep48.samples.txt</code> lists 48 of the people, for <code>--keep</code>.</li>
+  <li><code>plink2 --help --glm</code> explains an option; <code>plink2</code> alone lists the main ones. The manual is at <a href="https://www.cog-genomics.org/plink/2.0/" target="_blank" rel="noopener">cog-genomics.org/plink/2.0</a>.</li>
+  <li>Not in this build: <code>--pca</code> (principal components, which correct an association study for ancestry) and <code>--pheno-svd</code> need the LAPACK library, which this WebAssembly build of PLINK 2 does not have – PLINK says so and stops. <code>--script</code> and <code>--rerun</code> (options read from a file) are not available either; <code>plink2 $(cat FILE)</code> reads options from a file.</li>
+</ul>
+<p>PLINK 2 here is the development version of 12 October 2026 (2.0.0-b.1), compiled to WebAssembly from its source by the genomics-wasm project; it gives the same files as PLINK 2 built for Linux from the same source (see <a href="#h-programs">Programs and versions</a>). It reads its files on threads of their own, which needs a cross-origin isolated page – the workbench makes its page so as it starts (see <a href="#h-limits/threads">Limits</a>). It computes on one thread and in 640 MiB of working memory, the least that PLINK 2 accepts: the terminal adds <code>--threads 1 --memory 640 require</code> to each command unless you give them – <code>--threads 2</code> and <code>--memory 1024</code> at most. In the Galaxy tab, the tool <b>PLINK 2</b> runs the same program on a VCF of the history.</p>
+<p>The 1000 Genomes data: The 1000 Genomes Project Consortium (2015) A global reference for human genetic variation. <i>Nature</i> 526: 68–74. <a href="https://doi.org/10.1038/nature15393" target="_blank" rel="noopener">doi:10.1038/nature15393</a></p>
+
+<!--CITE: plink2-->

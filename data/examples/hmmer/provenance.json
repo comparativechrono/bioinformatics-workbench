@@ -1,0 +1,142 @@
+{
+ "description": "The tutorial data of HMMER 3.4 (the HMMER User's Guide, chapter Tutorial), unchanged, from the release archive: alignments and profile HMMs of globins, of Pfam's fibronectin type III (fn3) and protein kinase (Pkinase) domains and of the human DNA transposon MADE1 (Dfam), with sequences to search.",
+ "source": {
+  "url": "https://eddylab.org/software/hmmer/hmmer-3.4.tar.gz",
+  "bytes": 19669667,
+  "sha256": "ca70d94fd0cf271bd7063423aabb116d42de533117343a9b27a65c17ff06fbf3",
+  "version": "3.4",
+  "revision": "9acd8b6758a0ca5d21db6d167e0277484341929b"
+ },
+ "members": {
+  "MADE1.sto": {
+   "member": "hmmer-3.4/tutorial/MADE1.sto",
+   "bytes": 35454,
+   "sha256": "0eb2afb1a092c669c99eba3c9e24aa11b26f1aff850d164ec9e2e35cb0652c82"
+  },
+  "Pkinase.hmm": {
+   "member": "hmmer-3.4/tutorial/Pkinase.hmm",
+   "bytes": 122014,
+   "sha256": "17754c407138f16a68dc208418fe9cacc00b9d3833dbf756e1cf0610db76bb0a"
+  },
+  "Pkinase.sto": {
+   "member": "hmmer-3.4/tutorial/Pkinase.sto",
+   "bytes": 67852,
+   "sha256": "0c47730946f72ba51d4e0fb82c167e4b77c70b3eab45d08bd8e068ea04000726"
+  },
+  "dna_target.fa": {
+   "member": "hmmer-3.4/tutorial/dna_target.fa",
+   "bytes": 335516,
+   "sha256": "2355eca4efcea77fdc82b61066e375cf17655885d346f68f6ef32d524d488113"
+  },
+  "MADE1.hmm": {
+   "member": "hmmer-3.4/tutorial/MADE1.hmm",
+   "bytes": 14842,
+   "sha256": "6b2b61b2cfa7d2d5df66908525476c659a32e5a1cd50b8fad3600c28db38df95"
+  },
+  "globins45.fa": {
+   "member": "hmmer-3.4/tutorial/globins45.fa",
+   "bytes": 7210,
+   "sha256": "f22ab65168f200b80fc7c2d6e567c9ffe88f3ebd499fa93c31631e69ae7ed64c"
+  },
+  "fn3.hmm": {
+   "member": "hmmer-3.4/tutorial/fn3.hmm",
+   "bytes": 41101,
+   "sha256": "bc1513993c2dd5d98a242574196805d3adf65c4b72cd61dc94053799fa9f050b"
+  },
+  "fn3.sto": {
+   "member": "hmmer-3.4/tutorial/fn3.sto",
+   "bytes": 24538,
+   "sha256": "239fda955c5b6836b62288ec5c20bd6d16bea48739bd0ff8ef1574ec1da5d043"
+  },
+  "globins4.sto": {
+   "member": "hmmer-3.4/tutorial/globins4.sto",
+   "bytes": 863,
+   "sha256": "8ebe534e622a992224c48f7c166accdf68a0aabfaed26c915932d56434656a85"
+  },
+  "globins4.hmm": {
+   "member": "hmmer-3.4/tutorial/globins4.hmm",
+   "bytes": 70298,
+   "sha256": "a64cd91d934b7b43f962dbd6da1e18afa76e6623970a41116c11cf008d5d2c49"
+  },
+  "7LESS_DROME": {
+   "member": "hmmer-3.4/tutorial/7LESS_DROME",
+   "bytes": 19087,
+   "sha256": "1daa8f4357d71b60f2fe464d748241c3661f295543068e0cd255030de89f5e39"
+  },
+  "HBB_HUMAN": {
+   "member": "hmmer-3.4/tutorial/HBB_HUMAN",
+   "bytes": 183,
+   "sha256": "65af20b13490488d406ff7e477c8255e1e3d6b37ac398274b007f8b9f10128fc"
+  }
+ },
+ "LICENSE": {
+  "member": "hmmer-3.4/LICENSE",
+  "bytes": 3556,
+  "sha256": "d7652641990f11c1167e2888f3cc8ce1d336ae2df0a8d1d802993e131d367453"
+ },
+ "notes": [
+  "globins4.sto: four globins, from the structural alignment of Bashford and colleagues that the User's Guide cites; globins4.hmm was built from it.",
+  "fn3.sto, fn3.hmm, Pkinase.sto, Pkinase.hmm: Pfam seed alignments and profiles. The release has older profiles than its alignments: fn3.hmm is PF00041.13, fn3.sto PF00041.20; Pkinase.hmm is PF00069.17, Pkinase.sto PF00069.24 (their #=GF/ACC lines).",
+  "MADE1.sto, MADE1.hmm: Dfam DF0000629.2, the human MADE1 transposable element.",
+  "globins45.fa: 45 globins; HBB_HUMAN: human beta-haemoglobin (FASTA); 7LESS_DROME: the UniProtKB/Swiss-Prot text record of the Drosophila Sevenless receptor (P13368, entry version 172), which HMMER reads as it is; dna_target.fa: 330 kb of human chromosome 1 (the release does not say which part), with copies of MADE1."
+ ],
+ "genomicsWasm": {
+  "repository": "https://github.com/comparativechrono/genomics-wasm",
+  "commit": "46c94182b10556cc636d634812019e2838e176af",
+  "dataset": "datasets/annotation/hmmer – the same files there, renamed (globins.sto for globins4.sto …; 7LESS_DROME there as FASTA, sevenless-drome.faa); here the release's own names and files"
+ },
+ "files": {
+  "7LESS_DROME": {
+   "bytes": 19087,
+   "sha256": "1daa8f4357d71b60f2fe464d748241c3661f295543068e0cd255030de89f5e39"
+  },
+  "HBB_HUMAN": {
+   "bytes": 183,
+   "sha256": "65af20b13490488d406ff7e477c8255e1e3d6b37ac398274b007f8b9f10128fc"
+  },
+  "LICENSE": {
+   "bytes": 3556,
+   "sha256": "d7652641990f11c1167e2888f3cc8ce1d336ae2df0a8d1d802993e131d367453"
+  },
+  "MADE1.hmm": {
+   "bytes": 14842,
+   "sha256": "6b2b61b2cfa7d2d5df66908525476c659a32e5a1cd50b8fad3600c28db38df95"
+  },
+  "MADE1.sto": {
+   "bytes": 35454,
+   "sha256": "0eb2afb1a092c669c99eba3c9e24aa11b26f1aff850d164ec9e2e35cb0652c82"
+  },
+  "Pkinase.hmm": {
+   "bytes": 122014,
+   "sha256": "17754c407138f16a68dc208418fe9cacc00b9d3833dbf756e1cf0610db76bb0a"
+  },
+  "Pkinase.sto": {
+   "bytes": 67852,
+   "sha256": "0c47730946f72ba51d4e0fb82c167e4b77c70b3eab45d08bd8e068ea04000726"
+  },
+  "dna_target.fa": {
+   "bytes": 335516,
+   "sha256": "2355eca4efcea77fdc82b61066e375cf17655885d346f68f6ef32d524d488113"
+  },
+  "fn3.hmm": {
+   "bytes": 41101,
+   "sha256": "bc1513993c2dd5d98a242574196805d3adf65c4b72cd61dc94053799fa9f050b"
+  },
+  "fn3.sto": {
+   "bytes": 24538,
+   "sha256": "239fda955c5b6836b62288ec5c20bd6d16bea48739bd0ff8ef1574ec1da5d043"
+  },
+  "globins4.hmm": {
+   "bytes": 70298,
+   "sha256": "a64cd91d934b7b43f962dbd6da1e18afa76e6623970a41116c11cf008d5d2c49"
+  },
+  "globins4.sto": {
+   "bytes": 863,
+   "sha256": "8ebe534e622a992224c48f7c166accdf68a0aabfaed26c915932d56434656a85"
+  },
+  "globins45.fa": {
+   "bytes": 7210,
+   "sha256": "f22ab65168f200b80fc7c2d6e567c9ffe88f3ebd499fa93c31631e69ae7ed64c"
+  }
+ }
+}

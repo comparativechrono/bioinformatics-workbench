@@ -64,9 +64,12 @@
 <li><a href="#h-reads">Reads: quality, trimming, simulation<small>fastp, cutadapt, seqtk, wgsim</small></a></li>
 <li><a href="#h-mapping">Mapping reads<small>minimap2, Bowtie 2, BWA, BWA-MEM2, HISAT2, samtools, mosdepth</small></a></li>
 <li><a href="#h-rnaseq-quant">RNA-seq: counts and abundances<small>featureCounts, StringTie, kallisto, Salmon</small></a></li>
+<li><a href="#h-singlecell">Single-cell RNA-seq: bustools<small>From BUS records of kallisto bus to a matrix of cells and genes</small></a></li>
 <li><a href="#h-variants">Variant calling<small>bcftools mpileup, call, filter, query; FreeBayes; bgzip, tabix</small></a></li>
 <li><a href="#h-somatic">Somatic variants: tumour and normal<small>SomaticSniper, LoFreq somatic, Strelka2 on a tumour and its matched normal</small></a></li>
 <li><a href="#h-metagenomics">Metagenomics: who is in the sample<small>Kraken2 and Bracken: a taxon for every read, and how much of each species</small></a></li>
+<li><a href="#h-genes">Genes and protein domains: Prodigal and HMMER<small>Find the genes of a bacterial genome, then search proteins and DNA with profile HMMs</small></a></li>
+<li><a href="#h-plink2">Genotypes and association: PLINK 2<small>Quality control, allele frequencies, LD, association tests and scores for the genotypes of many people</small></a></li>
 <li><a href="#h-intervals">Intervals and annotation<small>bedtools, gffread, BED and GFF files</small></a></li>
 <li><a href="#h-alignment">Alignments and trees<small>pairwise, multiple alignment, phylogenetic trees</small></a></li>
 <li><a href="#h-text">Text tools<small>grep, sed, awk, sort, cut, jq, curl, archives</small></a></li>
@@ -407,9 +410,12 @@ done</code></pre>
 <tr><td>reads</td><td>fastp, cutadapt, seqtk, wgsim</td><td><a href="#h-reads">Reads</a></td></tr>
 <tr><td>mapping</td><td>minimap2, bowtie2, bwa, bwa-mem2, hisat2 (RNA-seq), samtools, mosdepth</td><td><a href="#h-mapping">Mapping reads</a></td></tr>
 <tr><td>RNA-seq counts</td><td>featureCounts, stringtie, kallisto, salmon</td><td><a href="#h-rnaseq-quant">RNA-seq: counts and abundances</a></td></tr>
+<tr><td>single-cell RNA-seq</td><td>bustools</td><td><a href="#h-singlecell">Single-cell RNA-seq</a></td></tr>
 <tr><td>variants</td><td>bcftools, freebayes, bgzip, tabix</td><td><a href="#h-variants">Variant calling</a></td></tr>
 <tr><td>somatic variants (tumour and normal)</td><td>bam-somaticsniper, lofreq, configureStrelkaSomaticWorkflow.py</td><td><a href="#h-somatic">Somatic variants</a></td></tr>
 <tr><td>metagenomics: who is in a sample</td><td>kraken2, kraken2-build, kraken2-inspect, bracken, bracken-build</td><td><a href="#h-metagenomics">Metagenomics</a></td></tr>
+<tr><td>genotypes of many people: quality control, LD, association (GWAS)</td><td>plink2</td><td><a href="#h-plink2">Genotypes and association</a></td></tr>
+<tr><td>genes and protein domains</td><td>prodigal; hmmbuild, hmmsearch, hmmscan, hmmpress, phmmer, jackhmmer, nhmmer, nhmmscan, hmmalign, hmmfetch, hmmstat, hmmemit, hmmconvert</td><td><a href="#h-genes">Genes and protein domains</a></td></tr>
 <tr><td>intervals and annotation</td><td>bedtools, gffread</td><td><a href="#h-intervals">Intervals</a></td></tr>
 <tr><td>alignments and trees</td><td>needleman_wunsch, smith_waterman, kalign, muscle, fasttree, lastz</td><td><a href="#h-alignment">Alignments and trees</a></td></tr>
 <tr><td>text and data</td><td>grep, sed, awk, sort, cut, jq, curl …</td><td><a href="#h-text">Text tools</a></td></tr>
@@ -498,6 +504,19 @@ seqtk comp /data/examples/sequences/myoglobins.fasta | cut -f 1,2</code></pre>
 <pre class="code" data-run="term"><code>wgsim -N 2000 -1 100 -2 100 -e 0.01 -r 0.001 -S 11 /data/examples/reads/reference.fa sim_R1.fastq sim_R2.fastq
 head -4 sim_R1.fastq</code></pre>
 <p><code>-N</code> pairs, <code>-1</code>/<code>-2</code> read lengths, <code>-e</code> error rate, <code>-r</code> mutation rate, <code>-d</code>/<code>-s</code> fragment length and spread, <code>-S</code> seed. A read's name says where it came from (<code>human_CYP2C19_12642_13173_…</code>). This build does not print the list of mutations it made.</p>
+
+<h2 data-anchor="cite">References</h2>
+<p>The papers to cite when you use these programs in your work – with the version you used (<a href="#h-programs">Programs and versions</a>):</p>
+<dl class="cite-list">
+<dt>fastp</dt>
+<dd>Chen S, Zhou Y, Chen Y, Gu J (2018) fastp: an ultra-fast all-in-one FASTQ preprocessor. <i>Bioinformatics</i> 34(17): i884–i890. <a href="https://doi.org/10.1093/bioinformatics/bty560" target="_blank" rel="noopener">doi:10.1093/bioinformatics/bty560</a></dd>
+<dt>Cutadapt</dt>
+<dd>Martin M (2011) Cutadapt removes adapter sequences from high-throughput sequencing reads. <i>EMBnet.journal</i> 17(1): 10–12. <a href="https://doi.org/10.14806/ej.17.1.200" target="_blank" rel="noopener">doi:10.14806/ej.17.1.200</a></dd>
+<dt>seqtk</dt>
+<dd>Li H. seqtk: toolkit for processing sequences in FASTA/Q formats. <a href="https://github.com/lh3/seqtk" target="_blank" rel="noopener">github.com/lh3/seqtk</a></dd>
+<dt>wgsim</dt>
+<dd>Li H. wgsim: a reads simulator. <a href="https://github.com/lh3/wgsim" target="_blank" rel="noopener">github.com/lh3/wgsim</a></dd>
+</dl>
 </article>
 <article class="help-page" id="h-mapping" data-title="Mapping reads" data-group="Terminal and programs" data-group-page="h-terminal" data-keys="map mapping align alignment reads reference minimap2 bowtie2 bowtie2-build bwa bwa-mem bwa-index bwa-mem2 bwamem2 hisat2 hisat2-build hisat2-inspect rna-seq rnaseq spliced splicing intron samtools sam bam sort index flagstat stats depth view faidx coverage tview mosdepth depth coverage windows thresholds" hidden>
 <h1><svg class="ic" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M4 6h16M4 10h11M4 14h16M4 18h9"/></svg>Mapping reads</h1>
@@ -575,6 +594,28 @@ zcat exons.regions.bed.gz | head -5
 zcat exons.thresholds.bed.gz | head -5</code></pre>
 <p>The summary has the length of each sequence, the bases covered by reads, and the mean, smallest and largest depth. <code>cyp2c.mosdepth.global.dist.txt</code> tells which share of the bases has at least each depth – the usual "90% of the exome at 20×". <code>-n</code> leaves out the per-base file; <code>--by 1000</code> gives windows of 1000 bases instead of a BED file; <code>-Q 20</code> counts only reads with a mapping quality of 20 or more. mosdepth keeps an array as long as the longest sequence in the BAM file: yeast chromosomes and the example slices are fine, a whole human chromosome is too big for a browser.</p>
 <div class="callout info"><div class="co-t"><svg class="ic" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7.5h.01"/></svg>SAM flags</div><p>The second column of a SAM line is a sum of bits: 1 paired, 2 properly paired, 4 unmapped, 16 reverse strand, 256 secondary, 1024 duplicate, 2048 supplementary. <code>-f</code> keeps reads that have all the given bits, <code>-F</code> drops reads that have any of them.</p></div>
+
+<h2 data-anchor="cite">References</h2>
+<p>The papers to cite when you use these programs in your work – with the version you used (<a href="#h-programs">Programs and versions</a>):</p>
+<dl class="cite-list">
+<dt>minimap2</dt>
+<dd>Li H (2018) Minimap2: pairwise alignment for nucleotide sequences. <i>Bioinformatics</i> 34(18): 3094–3100. <a href="https://doi.org/10.1093/bioinformatics/bty191" target="_blank" rel="noopener">doi:10.1093/bioinformatics/bty191</a></dd>
+<dd>Li H (2021) New strategies to improve minimap2 alignment accuracy. <i>Bioinformatics</i> 37(23): 4572–4574. <a href="https://doi.org/10.1093/bioinformatics/btab705" target="_blank" rel="noopener">doi:10.1093/bioinformatics/btab705</a></dd>
+<dt>Bowtie 2</dt>
+<dd>Langmead B, Salzberg SL (2012) Fast gapped-read alignment with Bowtie 2. <i>Nature Methods</i> 9(4): 357–359. <a href="https://doi.org/10.1038/nmeth.1923" target="_blank" rel="noopener">doi:10.1038/nmeth.1923</a></dd>
+<dt>BWA (bwa mem)</dt>
+<dd>Li H (2013) Aligning sequence reads, clone sequences and assembly contigs with BWA-MEM. arXiv:1303.3997 [q-bio.GN]. <a href="https://arxiv.org/abs/1303.3997" target="_blank" rel="noopener">arxiv.org/abs/1303.3997</a></dd>
+<dd>Li H, Durbin R (2009) Fast and accurate short read alignment with Burrows–Wheeler transform. <i>Bioinformatics</i> 25(14): 1754–1760. <a href="https://doi.org/10.1093/bioinformatics/btp324" target="_blank" rel="noopener">doi:10.1093/bioinformatics/btp324</a></dd>
+<dt>BWA-MEM2</dt>
+<dd>Vasimuddin M, Misra S, Li H, Aluru S (2019) Efficient Architecture-Aware Acceleration of BWA-MEM for Multicore Systems. <i>2019 IEEE International Parallel and Distributed Processing Symposium (IPDPS)</i>, pp. 314–324. <a href="https://doi.org/10.1109/IPDPS.2019.00041" target="_blank" rel="noopener">doi:10.1109/IPDPS.2019.00041</a></dd>
+<dt>HISAT2</dt>
+<dd>Kim D, Paggi JM, Park C, Bennett C, Salzberg SL (2019) Graph-based genome alignment and genotyping with HISAT2 and HISAT-genotype. <i>Nature Biotechnology</i> 37(8): 907–915. <a href="https://doi.org/10.1038/s41587-019-0201-4" target="_blank" rel="noopener">doi:10.1038/s41587-019-0201-4</a></dd>
+<dt>SAMtools</dt>
+<dd>Danecek P, Bonfield JK, Liddle J, Marshall J, Ohan V, Pollard MO, et al. (2021) Twelve years of SAMtools and BCFtools. <i>GigaScience</i> 10(2): giab008. <a href="https://doi.org/10.1093/gigascience/giab008" target="_blank" rel="noopener">doi:10.1093/gigascience/giab008</a></dd>
+<dd>Li H, Handsaker B, Wysoker A, Fennell T, Ruan J, Homer N, et al. (2009) The Sequence Alignment/Map format and SAMtools. <i>Bioinformatics</i> 25(16): 2078–2079. <a href="https://doi.org/10.1093/bioinformatics/btp352" target="_blank" rel="noopener">doi:10.1093/bioinformatics/btp352</a></dd>
+<dt>mosdepth</dt>
+<dd>Pedersen BS, Quinlan AR (2018) Mosdepth: quick coverage calculation for genomes and exomes. <i>Bioinformatics</i> 34(5): 867–868. <a href="https://doi.org/10.1093/bioinformatics/btx699" target="_blank" rel="noopener">doi:10.1093/bioinformatics/btx699</a></dd>
+</dl>
 </article>
 <article class="help-page" id="h-rnaseq-quant" data-title="RNA-seq: counts and abundances" data-group="Terminal and programs" data-group-page="h-terminal" data-keys="rna-seq rnaseq count counts count table expression quantification quantify abundance abundances featurecounts subread stringtie transcript assembly gtf kallisto pseudoalignment salmon selective alignment quant.sf abundance.tsv tpm fpkm est_counts numreads strand stranded library type isr dutp gffread transcripts deseq2 edger threads" hidden>
 <h1><svg class="ic" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M9 3h6M10 3v6l-5 9a2 2 0 0 0 1.7 3h10.6a2 2 0 0 0 1.7-3l-5-9V3"/><path d="M7.5 15h9"/></svg>RNA-seq: counts and abundances</h1>
@@ -629,7 +670,90 @@ join fc.tsv kallisto.tsv | join - salmon.tsv | sort -k2,2nr | head -8</code></pr
 <li>Counts are what DESeq2 and edgeR need: featureCounts' table as it is; for kallisto and Salmon, R's <i>tximport</i> sums the transcripts of each gene. TPM is for comparing genes within a sample, not for testing.</li>
 <li>Indexes belong to the program that made them: <code>bwa index</code>, <code>hisat2-build</code>, <code>kallisto index</code> and <code>salmon index</code> each make their own. An index that Salmon made on a 64-bit computer cannot be read here, nor one made here there.</li>
 <li>With thousands of reads the numbers here are an exercise, not biology: real samples have millions.</li>
+<li>Reads of single cells carry a cell barcode and a UMI as well: <code>kallisto bus</code> and <b>bustools</b> count them per cell – see <a href="#h-singlecell">Single-cell RNA-seq</a>.</li>
 </ul></div>
+
+<h2 data-anchor="cite">References</h2>
+<p>The papers to cite when you use these programs in your work – with the version you used (<a href="#h-programs">Programs and versions</a>):</p>
+<dl class="cite-list">
+<dt>featureCounts</dt>
+<dd>Liao Y, Smyth GK, Shi W (2014) featureCounts: an efficient general purpose program for assigning sequence reads to genomic features. <i>Bioinformatics</i> 30(7): 923–930. <a href="https://doi.org/10.1093/bioinformatics/btt656" target="_blank" rel="noopener">doi:10.1093/bioinformatics/btt656</a></dd>
+<dt>StringTie</dt>
+<dd>Shinder I, Pertea G, Hu R, Rudnick Z, Pertea M (2026) StringTie3 improves total RNA-seq assembly by resolving nascent and mature transcripts. <i>Nature Methods</i> 23(6): 1126–1137. <a href="https://doi.org/10.1038/s41592-026-03080-3" target="_blank" rel="noopener">doi:10.1038/s41592-026-03080-3</a></dd>
+<dd>Pertea M, Pertea GM, Antonescu CM, Chang TC, Mendell JT, Salzberg SL (2015) StringTie enables improved reconstruction of a transcriptome from RNA-seq reads. <i>Nature Biotechnology</i> 33(3): 290–295. <a href="https://doi.org/10.1038/nbt.3122" target="_blank" rel="noopener">doi:10.1038/nbt.3122</a></dd>
+<dd>Kovaka S, Zimin AV, Pertea GM, Razaghi R, Salzberg SL, Pertea M (2019) Transcriptome assembly from long-read RNA-seq alignments with StringTie2. <i>Genome Biology</i> 20: 278. <a href="https://doi.org/10.1186/s13059-019-1910-1" target="_blank" rel="noopener">doi:10.1186/s13059-019-1910-1</a></dd>
+<dt>kallisto</dt>
+<dd>Bray NL, Pimentel H, Melsted P, Pachter L (2016) Near-optimal probabilistic RNA-seq quantification. <i>Nature Biotechnology</i> 34(5): 525–527. <a href="https://doi.org/10.1038/nbt.3519" target="_blank" rel="noopener">doi:10.1038/nbt.3519</a></dd>
+<dt>Salmon</dt>
+<dd>Patro R, Duggal G, Love MI, Irizarry RA, Kingsford C (2017) Salmon provides fast and bias-aware quantification of transcript expression. <i>Nature Methods</i> 14(4): 417–419. <a href="https://doi.org/10.1038/nmeth.4197" target="_blank" rel="noopener">doi:10.1038/nmeth.4197</a></dd>
+<dt>gffread</dt>
+<dd>Pertea G, Pertea M (2020) GFF Utilities: GffRead and GffCompare. <i>F1000Research</i> 9: 304. <a href="https://doi.org/10.12688/f1000research.23297.2" target="_blank" rel="noopener">doi:10.12688/f1000research.23297.2</a></dd>
+</dl>
+</article>
+<article class="help-page" id="h-singlecell" data-title="Single-cell RNA-seq: bustools" data-group="Terminal and programs" data-group-page="h-terminal" data-keys="single-cell single cell scrna-seq scrnaseq 10x chromium droplet barcode umi cell barcode whitelist on-list allowlist bus busz kallisto bus bustools sort correct count inspect text capture umicorrect equivalence class matrix market mtx cells genes knee plot empty droplets kb_python kb count" hidden>
+<h1><svg class="ic" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M9 3h6M10 3v6l-5 9a2 2 0 0 0 1.7 3h10.6a2 2 0 0 0 1.7-3l-5-9V3"/><path d="M7.5 15h9"/></svg>Single-cell RNA-seq: bustools</h1>
+<p class="lede">In single-cell RNA-seq each cell is in a droplet of its own, and every read carries two tags: the <b>barcode</b> of its droplet – its cell – and a <b>UMI</b>, the tag of the RNA molecule it was copied from. <code>kallisto bus</code> pseudoaligns the reads and writes what each one says as a BUS record. <b>bustools</b> sorts the records, corrects the barcodes and counts the molecules of each gene in each cell.</p>
+<p>The examples work in a folder of your own: <button class="do" type="button" data-term-run="mkdir -p ~/sc && cd ~/sc">mkdir -p ~/sc &amp;&amp; cd ~/sc</button></p>
+
+<h2>The reads and the BUS file</h2>
+<p><code>/data/examples/singlecell/</code> has data of mouse cells, prepared with 10x Chromium v2 (SRA run SRR8599150): 2,500 of its read pairs, and a small BUS file that kallisto bus wrote for reads of the experiment, with the files of the reference it used.</p>
+<pre class="code" data-run="term"><code>head -2 /data/examples/singlecell/R1.fastq
+head -2 /data/examples/singlecell/R2.fastq
+bustools inspect /data/examples/singlecell/input.bus</code></pre>
+<p>Read 1 has 26 bases: the cell's barcode (16) and the UMI (10). Read 2, 98 bases, is the cDNA – the part that says which transcript the molecule came from. kallisto bus (<code>kallisto bus -i INDEX -o DIR -x 10xv2 R1.fastq R2.fastq</code>) needs an index of the mouse transcriptome, which is too big for the browser; <code>input.bus</code> is what it wrote. Each record holds a barcode, a UMI, an <b>equivalence class</b> – the set of transcripts the read fits, numbered as in <code>matrix.ec</code> – and how many reads said exactly that:</p>
+<pre class="code" data-run="term"><code>bustools text -p /data/examples/singlecell/input.bus | head -5
+head -3 /data/examples/singlecell/matrix.ec
+head -3 /data/examples/singlecell/transcripts.txt</code></pre>
+<p>A line of <code>matrix.ec</code> is an equivalence class and its transcripts, by their line in <code>transcripts.txt</code> (counted from 0).</p>
+
+<h2>Sort, correct, sort again</h2>
+<pre class="code" data-run="term"><code>bustools sort -o sorted.bus /data/examples/singlecell/input.bus
+bustools correct -w /data/examples/singlecell/whitelist.txt -o corrected.bus sorted.bus
+bustools sort -o corrected.sorted.bus corrected.bus</code></pre>
+<p>Sorting puts the records of the same barcode and UMI together, and merges those that are the same (34 records become 31). <code>correct</code> compares each barcode with the list of the technology – 10x v2 has 737,280 barcodes, and <code>whitelist.txt</code> holds those near the barcodes of this file: a barcode in the list stays (28 records), one that is a single letter from exactly one barcode of the list takes that barcode (1), and the rest are left out (2) – sequencing errors, or droplets that were not made by the kit. Correction changes barcodes, so the records are sorted again.</p>
+
+<h2>Count: a matrix of cells and genes</h2>
+<pre class="code" data-run="term"><code>mkdir -p counts
+bustools count --genecounts -g /data/examples/singlecell/transcripts-to-genes.txt -e /data/examples/singlecell/matrix.ec \
+    -t /data/examples/singlecell/transcripts.txt -o counts/cells_x_genes corrected.sorted.bus
+ls counts
+head -5 counts/cells_x_genes.mtx</code></pre>
+<p><code>count</code> counts, for each barcode and each gene, the different UMIs – molecules, not reads: the copies of one molecule that PCR made count once. <code>-g</code> gives each transcript its gene, <code>--genecounts</code> counts genes rather than equivalence classes. The matrix is in Matrix Market format, which lists only what is not zero: after the header, its size – barcodes, genes, entries that are not zero – then one line per entry: the barcode's row, the gene's column, the count. <code>cells_x_genes.barcodes.txt</code> and <code>cells_x_genes.genes.txt</code> name the rows and the columns. Here each barcode has one molecule: 34 records are too few for more.</p>
+
+<h2>More cells, and which barcodes are cells</h2>
+<p><code>large/</code> holds 10,235 records of 358 barcodes of the same experiment, already corrected and sorted, with the files of their reference:</p>
+<pre class="code" data-run="term"><code>L=/data/examples/singlecell/large
+bustools inspect -e $L/matrix.ec -w $L/whitelist.txt $L/input.bus | head -12
+mkdir -p large_counts
+bustools count --genecounts -g $L/transcripts-to-genes.txt -e $L/matrix.ec -t $L/transcripts.txt -o large_counts/cells_x_genes $L/input.bus
+head -3 large_counts/cells_x_genes.mtx</code></pre>
+<p>358 barcodes, 3,733 genes. Most droplets hold no cell – only a little free RNA of the cells that broke – so most barcodes have very few molecules, and a few have many: those are the cells. Count the molecules of each barcode in Python, and draw them from the most to the fewest (a "knee plot"):</p>
+<pre class="code" data-run="py"><code>import os
+import numpy as np
+import scipy.io
+import matplotlib.pyplot as plt
+
+folder = os.path.expanduser("~/sc/large_counts")
+m = scipy.io.mmread(f"{folder}/cells_x_genes.mtx").tocsr()
+umis = np.asarray(m.sum(axis=1)).ravel()   # molecules per barcode
+genes = np.asarray((m &gt; 0).sum(axis=1)).ravel()   # genes seen per barcode
+print(m.shape, "– molecules per barcode, the most first:", np.sort(umis)[::-1][:16].astype(int))
+print("barcodes with 100 molecules or more:", (umis &gt;= 100).sum(), "– median molecules per barcode:", np.median(umis))
+plt.loglog(np.arange(1, len(umis) + 1), np.sort(umis)[::-1], marker=".", linestyle="none")
+plt.xlabel("barcodes, by their molecules"); plt.ylabel("molecules (UMIs)")
+plt.show()</code></pre>
+<p>Fourteen barcodes have 100 molecules or more – from 151 to 1,230 –, then the count falls to a few dozen and the median barcode has one: the cells, and then the empty droplets. Where the curve bends (the "knee") is where cells are told from empty droplets; tools such as DropletUtils (R) do this with statistics. These 358 barcodes are the first of the experiment's in alphabetical order, not a sample of it: they show how it is done, not what the experiment found.</p>
+<p>More: <code>bustools capture</code> keeps (or, with <code>-x</code>, leaves out) the records of a list of transcripts or barcodes, <code>bustools allowlist</code> makes a barcode list from the data, <code>bustools umicorrect</code> corrects UMIs, <code>bustools compress</code> and <code>decompress</code> pack a BUS file; <code>bustools COMMAND</code> without arguments lists its options. In the browser bustools runs on one thread – <code>sort -t N</code> becomes <code>-t 1</code>, with a note – and sorts in 64 MB of memory unless told otherwise (1 GB at most: <code>-m 4G</code> becomes <code>-m 64M</code>).</p>
+<p>The same steps are in the Galaxy tab: the tools <b>bustools sort</b>, <b>correct</b>, <b>count</b>, <b>inspect</b> and <b>text</b> (section <i>Single-cell</i>) – upload <code>input.bus</code>, <code>whitelist.txt</code>, <code>matrix.ec</code>, <code>transcripts.txt</code> and <code>transcripts-to-genes.txt</code>, then sort, correct, sort and count. They are the workbench’s own: Galaxy servers have no bustools tools and process single-cell reads with others (RNA STARsolo, Alevin). bustools is compiled to WebAssembly from its released source by the genomics-wasm project, and gives the same records and matrices as bustools built for Linux (see <a href="#h-programs">Programs and versions</a>).</p>
+
+<h2 data-anchor="cite">References</h2>
+<p>The papers to cite when you use this program in your work – with the version you used (<a href="#h-programs">Programs and versions</a>):</p>
+<dl class="cite-list">
+<dt>bustools (and kallisto bus)</dt>
+<dd>Melsted P, Booeshaghi AS, Liu L, Gao F, Lu L, Min KH, et al. (2021) Modular, efficient and constant-memory single-cell RNA-seq preprocessing. <i>Nature Biotechnology</i> 39(7): 813–818. <a href="https://doi.org/10.1038/s41587-021-00870-2" target="_blank" rel="noopener">doi:10.1038/s41587-021-00870-2</a></dd>
+<dd>Melsted P, Ntranos V, Pachter L (2019) The barcode, UMI, set format and BUStools. <i>Bioinformatics</i> 35(21): 4472–4473. <a href="https://doi.org/10.1093/bioinformatics/btz279" target="_blank" rel="noopener">doi:10.1093/bioinformatics/btz279</a></dd>
+<dd>Sullivan DK, Min KH, Hjörleifsson KE, Luebbert L, Holley G, Moses L, et al. (2025) kallisto, bustools and kb-python for quantifying bulk, single-cell and single-nucleus RNA-seq. <i>Nature Protocols</i> 20(3): 587–607. <a href="https://doi.org/10.1038/s41596-024-01057-0" target="_blank" rel="noopener">doi:10.1038/s41596-024-01057-0</a></dd>
+</dl>
 </article>
 <article class="help-page" id="h-variants" data-title="Variant calling" data-group="Terminal and programs" data-group-page="h-terminal" data-keys="variants snp indel mnp vcf bcf bcftools mpileup call filter view query stats norm isec freebayes haplotype bgzip tabix genotype calling" hidden>
 <h1><svg class="ic" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M20.6 13.4l-7.2 7.2a2 2 0 0 1-2.8 0L3 13V3h10l7.6 7.6a2 2 0 0 1 0 2.8z"/><circle cx="7.5" cy="7.5" r="1.4"/></svg>Variant calling</h1>
@@ -684,6 +808,17 @@ tabix again.vcf.gz human_CYP2C19:11000-12000 | cut -f 1-5</code></pre>
 <p>Also useful: <code>bcftools norm</code> (normalise indels against the reference), <code>bcftools isec</code> (compare two call sets), <code>bcftools annotate</code>. <code>bcftools COMMAND --help</code> lists the options of a command. The plugins (<code>bcftools +NAME</code>) cannot run in a browser.</p>
 <p><code>igv filtered.vcf.gz mapped.bam</code> shows the calls next to the reads in the <a href="#h-genome">Genome browser</a>.</p>
 <p>Variants of a tumour that its matched normal sample does not have – somatic variants – need callers that compare the two: see <a href="#h-somatic">Somatic variants</a>. One of them, <code>lofreq call</code>, also calls the variants of a single sample at low frequencies, as in a virus population.</p>
+
+<h2 data-anchor="cite">References</h2>
+<p>The papers to cite when you use these programs in your work – with the version you used (<a href="#h-programs">Programs and versions</a>):</p>
+<dl class="cite-list">
+<dt>BCFtools</dt>
+<dd>Danecek P, Bonfield JK, Liddle J, Marshall J, Ohan V, Pollard MO, et al. (2021) Twelve years of SAMtools and BCFtools. <i>GigaScience</i> 10(2): giab008. <a href="https://doi.org/10.1093/gigascience/giab008" target="_blank" rel="noopener">doi:10.1093/gigascience/giab008</a></dd>
+<dt>FreeBayes</dt>
+<dd>Garrison E, Marth G (2012) Haplotype-based variant detection from short-read sequencing. arXiv:1207.3907 [q-bio.GN]. <a href="https://arxiv.org/abs/1207.3907" target="_blank" rel="noopener">arxiv.org/abs/1207.3907</a></dd>
+<dt>HTSlib (bgzip, tabix)</dt>
+<dd>Bonfield JK, Marshall J, Danecek P, Li H, Ohan V, Whitwham A, et al. (2021) HTSlib: C library for reading/writing high-throughput sequencing data. <i>GigaScience</i> 10(2): giab007. <a href="https://doi.org/10.1093/gigascience/giab007" target="_blank" rel="noopener">doi:10.1093/gigascience/giab007</a></dd>
+</dl>
 </article>
 <article class="help-page" id="h-somatic" data-title="Somatic variants: tumour and normal" data-group="Terminal and programs" data-group-page="h-terminal" data-keys="somatic variant tumour tumor normal matched pair cancer snv indel somaticsniper bam-somaticsniper lofreq somatic indelqual strelka strelka2 configureStrelkaSomaticWorkflow runWorkflow hcc1395 seqc2 loh truth" hidden>
 <h1><svg class="ic" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M20.6 13.4l-7.2 7.2a2 2 0 0 1-2.8 0L3 13V3h10l7.6 7.6a2 2 0 0 1 0 2.8z"/><circle cx="7.5" cy="7.5" r="1.4"/></svg>Somatic variants: tumour and normal</h1>
@@ -744,6 +879,19 @@ for f in sniper lofreq strelka; do echo "$f: $(grep -c -F -x -f truth.tsv $f.tsv
 <h2>In Galaxy</h2>
 <p>Galaxy (the Galaxy tab) has <b>Strelka Somatic</b>, <b>Insert indel qualities</b> and <b>Call variants with LoFreq</b>, which run the same programs. Upload the two BAM files and the reference to a history first.</p>
 <p>LoFreq, SomaticSniper and Strelka2 are compiled to WebAssembly from their released sources by the genomics-wasm project, and give the same calls as the same programs built for Linux (see <a href="#h-programs">Programs and versions</a>).</p>
+
+<h2 data-anchor="cite">References</h2>
+<p>The papers to cite when you use these programs in your work – with the version you used (<a href="#h-programs">Programs and versions</a>):</p>
+<dl class="cite-list">
+<dt>LoFreq</dt>
+<dd class="cite-note">The second paper for the indel qualities of lofreq indelqual --dindel, which are Dindel&#x27;s.</dd>
+<dd>Wilm A, Aw PPK, Bertrand D, Yeo GHT, Ong SH, Wong CH, et al. (2012) LoFreq: a sequence-quality aware, ultra-sensitive variant caller for uncovering cell-population heterogeneity from high-throughput sequencing datasets. <i>Nucleic Acids Research</i> 40(22): 11189–11201. <a href="https://doi.org/10.1093/nar/gks918" target="_blank" rel="noopener">doi:10.1093/nar/gks918</a></dd>
+<dd>Albers CA, Lunter G, MacArthur DG, McVean G, Ouwehand WH, Durbin R (2011) Dindel: accurate indel calls from short-read data. <i>Genome Research</i> 21(6): 961–973. <a href="https://doi.org/10.1101/gr.112326.110" target="_blank" rel="noopener">doi:10.1101/gr.112326.110</a></dd>
+<dt>SomaticSniper</dt>
+<dd>Larson DE, Harris CC, Chen K, Koboldt DC, Abbott TE, Dooling DJ, et al. (2012) SomaticSniper: identification of somatic point mutations in whole genome sequencing data. <i>Bioinformatics</i> 28(3): 311–317. <a href="https://doi.org/10.1093/bioinformatics/btr665" target="_blank" rel="noopener">doi:10.1093/bioinformatics/btr665</a></dd>
+<dt>Strelka2</dt>
+<dd>Kim S, Scheffler K, Halpern AL, Bekritsky MA, Noh E, Källberg M, et al. (2018) Strelka2: fast and accurate calling of germline and somatic variants. <i>Nature Methods</i> 15(8): 591–594. <a href="https://doi.org/10.1038/s41592-018-0051-x" target="_blank" rel="noopener">doi:10.1038/s41592-018-0051-x</a></dd>
+</dl>
 </article>
 <article class="help-page" id="h-metagenomics" data-title="Metagenomics: who is in the sample" data-group="Terminal and programs" data-group-page="h-terminal" data-keys="metagenomics metagenome microbiome microbial community taxonomy taxonomic classification profiling abundance species genus family kraken kraken2 kraken2-build kraken2-inspect bracken bracken-build est_abundance k-mer minimizer database library seqid2taxid nodes.dmp names.dmp taxid mock community zymo shotgun report" hidden>
 <h1><svg class="ic" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M4 20V4M4 20h16"/><path d="M8 16l4-5 3 3 5-7"/></svg>Metagenomics: who is in the sample</h1>
@@ -807,6 +955,171 @@ cmp ~/mydb/database151mers.kmer_distrib /data/examples/metagenomics/db/database1
 <h2>In Galaxy</h2>
 <p>Galaxy (the Galaxy tab) has <b>Kraken2</b> and <b>Bracken</b> in its <i>Metagenomics</i> section, with the example database. Upload the two read files, run Kraken2 with <i>Print a report</i> set to <i>Yes</i>, and give the report to Bracken.</p>
 <p>Kraken2 and Bracken are compiled to WebAssembly from their released sources by the genomics-wasm project, and give the same classifications, reports and estimates as the same programs built for Linux (see <a href="#h-programs">Programs and versions</a>).</p>
+
+<h2 data-anchor="cite">References</h2>
+<p>The papers to cite when you use these programs in your work – with the version you used (<a href="#h-programs">Programs and versions</a>):</p>
+<dl class="cite-list">
+<dt>Kraken 2</dt>
+<dd>Wood DE, Lu J, Langmead B (2019) Improved metagenomic analysis with Kraken 2. <i>Genome Biology</i> 20: 257. <a href="https://doi.org/10.1186/s13059-019-1891-0" target="_blank" rel="noopener">doi:10.1186/s13059-019-1891-0</a></dd>
+<dd>Lu J, Rincon N, Wood DE, Breitwieser FP, Pockrandt C, Langmead B, et al. (2022) Metagenome analysis using the Kraken software suite. <i>Nature Protocols</i> 17(12): 2815–2839. <a href="https://doi.org/10.1038/s41596-022-00738-y" target="_blank" rel="noopener">doi:10.1038/s41596-022-00738-y</a></dd>
+<dt>Bracken</dt>
+<dd>Lu J, Breitwieser FP, Thielen P, Salzberg SL (2017) Bracken: estimating species abundance in metagenomics data. <i>PeerJ Computer Science</i> 3: e104. <a href="https://doi.org/10.7717/peerj-cs.104" target="_blank" rel="noopener">doi:10.7717/peerj-cs.104</a></dd>
+</dl>
+</article>
+<article class="help-page" id="h-genes" data-title="Genes and protein domains: Prodigal and HMMER" data-group="Terminal and programs" data-group-page="h-terminal" data-keys="gene prediction gene finding annotation prokaryote bacteria archaea orf open reading frame cds start codon rbs shine-dalgarno prodigal metagenome hmmer hmm profile hidden markov model domain family pfam dfam hmmbuild hmmsearch hmmscan hmmpress hmmfetch hmmalign hmmconvert hmmemit hmmstat phmmer jackhmmer nhmmer nhmmscan e-value tblout domtblout stockholm globin kinase fibronectin fn3 transposon made1" hidden>
+<h1><svg class="ic" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M7 3c0 6 10 6 10 12s-10 3-10 6M17 3c0 6-10 6-10 12s10 3 10 6M8 7h8M8 17h8M9.5 12h5"/></svg>Genes and protein domains: Prodigal and HMMER</h1>
+<p class="lede">A new bacterial genome is a long string of letters. <b>Prodigal</b> finds the genes in it that code for proteins. <b>HMMER</b> then compares proteins – or DNA – with <i>profile HMMs</i>: models of a whole family, built from an alignment of its members, which find relatives that a search with a single sequence can miss.</p>
+<p>The examples work in a folder of your own: <button class="do" type="button" data-term-run="mkdir -p ~/genes && cd ~/genes">mkdir -p ~/genes &amp;&amp; cd ~/genes</button></p>
+
+<h2>Prodigal: the genes of a bacterium</h2>
+<p><code>/data/examples/bacteria/</code> has the first 60,000 bases of the chromosomes of <i>Escherichia coli</i> K-12 and <i>Salmonella enterica</i> Typhimurium, from NCBI RefSeq.</p>
+<pre class="code" data-run="term"><code>prodigal -i /data/examples/bacteria/ecoli.fna -o ecoli.gff -f gff -a ecoli.faa -d ecoli.ffn
+head -5 ecoli.gff
+grep -c '>' ecoli.faa</code></pre>
+<p>Prodigal first learns the genome – how rich in G and C its coding regions are, which start codons and ribosome binding sites it uses – and then finds its genes. It warns that it would like 100,000 bases or more to learn from; 60,000 are enough to see how it works. It finds 56 genes. A line of <code>ecoli.gff</code> is one gene: the sequence, the program, the type (<code>CDS</code>, coding sequence), start and end, a score, the strand, and in the last column what Prodigal knows about it – <code>partial</code> (<code>10</code>: it runs off the left end of the sequence), the start codon, the ribosome binding site (<code>rbs_motif</code>) and its confidence. The second gene, from 337 to 2,799 on the + strand, is <i>thrA</i>, just where the annotation of the genome has it. The first runs off the start of the window, so Prodigal cannot know where it begins.</p>
+<p><code>ecoli.faa</code> holds the proteins and <code>ecoli.ffn</code> the genes' DNA, one record per gene, named after the sequence and the gene's number:</p>
+<pre class="code" data-run="term"><code>head -2 ecoli.faa
+prodigal -i /data/examples/bacteria/salmonella.fna -o salmonella.gff -f gff -a salmonella.faa -q
+prodigal -p meta -i /data/examples/bacteria/combined.fna -o meta.gff -f gff -q
+grep -c CDS ecoli.gff salmonella.gff meta.gff</code></pre>
+<p><code>-q</code> keeps Prodigal quiet but for warnings. <code>-p meta</code> does not learn: it uses 50 models that come with Prodigal, for genomes of different GC content – right for a metagenome, where the contigs come from many organisms, and for sequences too short to learn from. <code>combined.fna</code> holds both windows. Other options: <code>-c</code> (no genes running off the ends), <code>-g 4</code> (another genetic code: 11 is that of bacteria and archaea), <code>-s FILE</code> (every possible start, with its scores), <code>-t FILE</code> (save what it learnt, and use it again).</p>
+
+<h2>HMMER: a profile from an alignment</h2>
+<p><code>/data/examples/hmmer/</code> holds the tutorial files of HMMER 3.4, under their own names, so the tutorial of the HMMER User's Guide can be followed here as it is written. First a profile of the globins, built from an alignment of four of them, and a search of 45 globins with it:</p>
+<pre class="code" data-run="term"><code>hmmbuild globins4.hmm /data/examples/hmmer/globins4.sto
+hmmsearch globins4.hmm /data/examples/hmmer/globins45.fa &gt; globins.out
+head -24 globins.out</code></pre>
+<p>The profile has 149 match states (<code>M=149</code>): for each column of the alignment, how likely each amino acid is there, and how likely a gap. <code>hmmsearch</code> ranks the sequences by <b>E-value</b> – the number of hits this good that a search of a database of this size would give by chance – and its score in bits. All 45 globins are found, with E-values of 1e-36 or smaller, although the profile was built from only four. The output then shows each sequence's domains and their alignments to the profile. For tables, one line per sequence and one per domain:</p>
+<pre class="code" data-run="term"><code>hmmsearch --tblout globins.tbl --domtblout globins.domtbl --noali globins4.hmm /data/examples/hmmer/globins45.fa &gt; /dev/null
+grep -v '^#' globins.tbl | head -3</code></pre>
+
+<h2>Which domains does a protein have? hmmscan</h2>
+<p>The other way round: one protein against a collection of profiles, as Pfam's are used. The tutorial joins three profiles – globins, fibronectin type III (fn3) and protein kinase – into a small collection, which <code>hmmpress</code> prepares for <code>hmmscan</code>, and scans the Sevenless receptor of <i>Drosophila</i> (<code>7LESS_DROME</code>, a UniProt record, which HMMER reads as it is):</p>
+<pre class="code" data-run="term"><code>cat /data/examples/hmmer/globins4.hmm /data/examples/hmmer/fn3.hmm /data/examples/hmmer/Pkinase.hmm &gt; minifam.hmm
+hmmpress minifam.hmm
+hmmscan --domtblout 7less.domtbl minifam.hmm /data/examples/hmmer/7LESS_DROME &gt; 7less.out
+grep -v '^#' 7less.domtbl | awk '{print $1, $20, $21, $13}'</code></pre>
+<p>Nine fibronectin type III domains and one kinase domain, with where each lies on the protein (columns 20 and 21: from, to) and its E-value (<code>i-Evalue</code>, column 13); a globin, none. Two of the fn3 domains are weak, with E-values of 0.5 and 0.19: a domain like that is a candidate to look at, not a finding. The <b>InterPro</b> card of the Databases tab shows what InterPro, with the whole of Pfam, finds in the same protein (UniProt P13368).</p>
+
+<h2>One sequence as the query: phmmer and jackhmmer</h2>
+<pre class="code" data-run="term"><code>phmmer --tblout hbb.tbl /data/examples/hmmer/HBB_HUMAN /data/examples/hmmer/globins45.fa &gt; hbb.out
+grep -v '^#' hbb.tbl | head -3
+jackhmmer -N 3 /data/examples/hmmer/HBB_HUMAN /data/examples/hmmer/globins45.fa | grep '^@@'</code></pre>
+<p><code>phmmer</code> searches with one protein, as BLASTP does, with HMMER's scores and E-values. <code>jackhmmer</code> searches again and again: it builds a profile from what it found and searches with that, until nothing new comes in – here after two rounds, as all 45 globins are in the first.</p>
+
+<h2>DNA: nhmmer</h2>
+<pre class="code" data-run="term"><code>nhmmer --tblout made1.tbl /data/examples/hmmer/MADE1.hmm /data/examples/hmmer/dna_target.fa &gt; made1.out
+grep -v '^#' made1.tbl | cut -c1-140</code></pre>
+<p>MADE1 is a short DNA transposon of the human genome, from Dfam. <code>nhmmer</code> searches both strands: two copies in this piece of chromosome 1, near 174,500 and 302,400, are each found on both strands, as MADE1 reads almost the same backwards on the other strand (its ends are inverted repeats); the fifth hit, with an E-value above 1, is noise.</p>
+
+<h2>From genes to proteins to relatives</h2>
+<p>The proteins that Prodigal predicted can be searched like any others. E. coli's ThrA, the second gene, against Salmonella's proteins:</p>
+<pre class="code" data-run="term"><code>awk '/^&gt;/{p=($1==">NC_000913.3_1_60000_2")} p' ecoli.faa &gt; thrA.faa
+phmmer --tblout thrA.tbl thrA.faa salmonella.faa &gt; /dev/null
+grep -v '^#' thrA.tbl | cut -c1-100
+hmmscan --tblout ecoli_domains.tbl minifam.hmm ecoli.faa &gt; /dev/null
+grep -v '^#' ecoli_domains.tbl | wc -l</code></pre>
+<p>One hit, the first gene of the Salmonella window – its ThrA – with an E-value of 0, too small for the computer to write. None of E. coli's 56 proteins has a globin, fibronectin or kinase domain of these three profiles: the table has no lines but its comments. To annotate a genome, proteins are scanned against all of Pfam's families – more than 20,000 – which is too big for the browser: use the InterPro card, or a computer.</p>
+<p>More: <code>hmmalign globins4.hmm globins45.fa</code> aligns sequences to a profile; <code>hmmfetch</code> takes one profile out of a collection, <code>hmmstat</code> lists them, <code>hmmemit</code> writes sequences a profile would produce, <code>hmmconvert</code> converts the format; <code>NAME -h</code> lists a program's options. Here HMMER runs on one thread – <code>--cpu</code> is left out, with a note – and cannot read files compressed with gzip (<code>.gz</code>): unpack them first.</p>
+
+<h2>In Galaxy</h2>
+<p>Galaxy (the Galaxy tab) has <b>Prodigal Gene Predictor</b> and <b>hmmbuild</b>, <b>hmmsearch</b>, <b>hmmscan</b>, <b>phmmer</b>, <b>nhmmer</b> and <b>hmmalign</b> in its <i>Annotation</i> section, which run the same programs.</p>
+<p>Prodigal and HMMER are compiled to WebAssembly from their released sources by the genomics-wasm project, and give the same genes, scores and alignments as the same programs built for Linux (see <a href="#h-programs">Programs and versions</a>).</p>
+
+<h2 data-anchor="cite">References</h2>
+<p>The papers to cite when you use these programs in your work – with the version you used (<a href="#h-programs">Programs and versions</a>):</p>
+<dl class="cite-list">
+<dt>Prodigal</dt>
+<dd>Hyatt D, Chen GL, LoCascio PF, Land ML, Larimer FW, Hauser LJ (2010) Prodigal: prokaryotic gene recognition and translation initiation site identification. <i>BMC Bioinformatics</i> 11: 119. <a href="https://doi.org/10.1186/1471-2105-11-119" target="_blank" rel="noopener">doi:10.1186/1471-2105-11-119</a></dd>
+<dt>HMMER</dt>
+<dd class="cite-note">The HMMER User’s Guide asks you to cite the web site, hmmer.org, and the version you used; where a journal wants a paper, Eddy (2011).</dd>
+<dd>HMMER: biosequence analysis using profile hidden Markov models. <a href="http://hmmer.org/" target="_blank" rel="noopener">hmmer.org</a></dd>
+<dd>Eddy SR (2011) Accelerated Profile HMM Searches. <i>PLoS Computational Biology</i> 7(10): e1002195. <a href="https://doi.org/10.1371/journal.pcbi.1002195" target="_blank" rel="noopener">doi:10.1371/journal.pcbi.1002195</a></dd>
+</dl>
+</article>
+<article class="help-page" id="h-plink2" data-title="Genotypes and association: PLINK 2" data-group="Terminal and programs" data-group-page="h-terminal" data-keys="plink plink2 plink 2 plink 1.9 gwas genome-wide association study genotype genotyping snp variant vcf pgen pvar psam bed bim fam bfile pfile make-pgen make-bed export allele frequency maf minor allele missingness call rate geno mind hardy-weinberg hwe heterozygosity het linkage disequilibrium ld pruning indep-pairwise r2 kinship king relatedness glm regression logistic linear firth separation odds ratio beta p-value bonferroni covariate phenotype score polygenic risk score prs 1000 genomes population pca" hidden>
+<h1><svg class="ic" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M7 3c0 6 10 6 10 12s-10 3-10 6M17 3c0 6-10 6-10 12s10 3 10 6M8 7h8M8 17h8M9.5 12h5"/></svg>Genotypes and association: PLINK 2</h1>
+<p class="lede"><b>PLINK</b> works with the genotypes of many people at once – thousands of people, millions of variants. It checks their quality, counts allele frequencies, measures linkage disequilibrium and relatedness, and tests each variant for association with a trait: a genome-wide association study, or GWAS. Every PLINK command has the same shape: the data (<code>--vcf</code>, <code>--pfile</code>, <code>--bfile</code>), filters, what to compute, and <code>--out</code>, the name of the files it writes.</p>
+<p>The examples work in a folder of your own: <button class="do" type="button" data-term-run="mkdir -p ~/gwas && cd ~/gwas">mkdir -p ~/gwas &amp;&amp; cd ~/gwas</button></p>
+
+<h2>The data, and PLINK's own files</h2>
+<p><code>/data/examples/plink2/1kg-phase3-chr21.vcf.gz</code> holds the genotypes of the 2,504 people of the 1000 Genomes Project (Phase 3) at the first 600 variants of chromosome 21 – real public data, and the test file of PLINK 2 itself. A VCF file has a column for each person:</p>
+<pre class="code" data-run="term"><code>zcat /data/examples/plink2/1kg-phase3-chr21.vcf.gz | grep -v '^##' | head -3 | cut -f 1-5,10-12
+plink2 --vcf /data/examples/plink2/1kg-phase3-chr21.vcf.gz --make-pgen --out chr21
+ls chr21.*</code></pre>
+<p>A genotype such as <code>0|1</code> gives the alleles of the two copies of the chromosome – 0 the reference allele (REF), 1 the alternative (ALT); <code>|</code> means phased: which copy carries which is known. <code>--make-pgen</code> writes PLINK 2's own files: <code>chr21.pgen</code>, the genotypes, packed tightly; <code>chr21.pvar</code>, the variants (the first columns of the VCF); <code>chr21.psam</code>, the people; and <code>chr21.log</code>, a record of what was done. <code>--pfile chr21</code> reads the three back – much quicker than the VCF for every new command. PLINK 1's files, <code>.bed</code>, <code>.bim</code> and <code>.fam</code>, are still common: <code>--make-bed</code> writes them and <code>--bfile</code> reads them.</p>
+<p>The log, and what PLINK prints, begin with the options in effect: besides yours, <code>--threads 1</code> and <code>--memory 640 require</code>, which the terminal adds (see the end of this page).</p>
+
+<h2>Quality control: frequencies, missing genotypes, Hardy–Weinberg</h2>
+<pre class="code" data-run="term"><code>plink2 --pfile chr21 --freq --missing --hardy --out qc
+head -4 qc.afreq
+awk 'NR > 1 && ($5 < 0.01 || $5 > 0.99)' qc.afreq | wc -l
+tail -n +2 qc.hardy | sort -g -k10,10 | head -4</code></pre>
+<p><code>qc.afreq</code> has the frequency of each ALT allele and the number of alleles counted – 5,008, two for each person. Most variants are rare: for 566 of the 600 the less common allele has a frequency below 1%, and hundreds were seen only once among the 5,008 chromosomes (a frequency of 0.0002). <code>qc.smiss</code> and <code>qc.vmiss</code> count the missing genotypes of each person and of each variant: none here, as the 1000 Genomes release gives every genotype – in data of your own, a person or a variant with many missing genotypes is a warning.</p>
+<p><code>qc.hardy</code> holds the Hardy–Weinberg exact test: are there as many heterozygotes as the allele frequency predicts? <code>O(HET_A1)</code> is the share of heterozygotes observed, <code>E(HET_A1)</code> the share expected, <code>P</code> the p-value. A few variants are very far from it, always with too many heterozygotes – 0.88 where 0.50 is expected. These variants lie on the short arm of chromosome 21, near its centromere, among repeated sequences – most likely, reads from two copies of a repeat were aligned to one place, and the difference between the copies looks like a heterozygous genotype in almost everyone. Such errors are what the Hardy–Weinberg filter is for.</p>
+
+<h2>Filters</h2>
+<pre class="code" data-run="term"><code>plink2 --pfile chr21 --maf 0.01 --hwe 1e-6 --make-pgen --out chr21_qc</code></pre>
+<p>Filters act before anything else. <code>--maf 0.01</code> keeps the variants whose minor allele frequency is 1% or more; <code>--hwe 1e-6</code> removes those with a Hardy–Weinberg p-value below 10<sup>−6</sup>; <code>--geno 0.02</code> would remove variants with more than 2% of their genotypes missing, and <code>--mind 0.02</code> such people. The log says what each did: 25 variants removed by <code>--hwe</code> (all with too many heterozygotes), 566 by <code>--maf</code>, 9 remaining. <code>--keep FILE</code> and <code>--remove FILE</code> choose people by their IDs, <code>--extract FILE</code> and <code>--exclude FILE</code> variants, <code>--chr</code> with <code>--from-bp</code> and <code>--to-bp</code> a region.</p>
+
+<h2>Linkage disequilibrium</h2>
+<pre class="code" data-run="term"><code>plink2 --pfile chr21_qc --indep-pairwise 50 5 0.2 --out ld
+cat ld.prune.in
+plink2 --pfile chr21_qc --r2-unphased --ld-window-r2 0.2 --out ld
+cat ld.vcor</code></pre>
+<p>Variants close to each other are inherited together, so their genotypes are correlated: linkage disequilibrium, measured as r<sup>2</sup>. <code>--indep-pairwise 50 5 0.2</code> moves along the chromosome in windows of 50 variants, 5 at a time, and of every pair with r<sup>2</sup> above 0.2 keeps one: <code>ld.prune.in</code> lists the variants kept (6 of the 9), <code>ld.prune.out</code> the others. Analyses that expect independent variants – principal components, relatedness – use the pruned set (<code>--extract ld.prune.in</code>). <code>--r2-unphased</code> lists the pairs: rs559962037 and rs556687069, 229 bases apart, have r<sup>2</sup> = 0.96 – they are nearly always inherited together.</p>
+
+<h2>Association: does a variant go with a trait?</h2>
+<p>The 1000 Genomes data has no trait to study, so these examples use synthetic data made for PLINK's own tests: 603 invented people, 30 variants (v1 … v30) and three phenotypes – <b>BINARY</b> (case 2 or control 1) and <b>QUANT</b> (a number), both drawn at random, and <b>FIRTH</b>, which makes every carrier of v1's ALT allele a case – with two covariates, C1 and C2 (in a real study: age, sex, principal components).</p>
+<pre class="code" data-run="term"><code>D=/data/examples/plink2
+head -3 $D/synthetic_phenotypes.tsv
+plink2 --vcf $D/synthetic_glm.vcf --pheno $D/synthetic_phenotypes.tsv --covar $D/synthetic_covariates.tsv --glm hide-covar --out assoc
+ls assoc.*
+cut -f 3,9,11-16 assoc.QUANT.glm.linear | head -5</code></pre>
+<p><code>--glm</code> tests every variant with every phenotype: linear regression for a quantitative trait (<code>assoc.QUANT.glm.linear</code>), logistic regression for cases and controls (<code>.glm.logistic.hybrid</code>), with the covariates in each model (<code>hide-covar</code>: their own lines are left out). A line gives the variant, the allele tested (A1) and its frequency, the number of people, the effect – <code>BETA</code>, the change of the trait for each copy of A1, or <code>OR</code>, the odds ratio – its standard error, the test statistic and the p-value. QUANT and BINARY are random, so their p-values are spread between 0 and 1: of 30 tests, one or two fall below 0.05 by chance (here one for QUANT, none for BINARY). That is why a study is judged against the number of its tests – 0.05/30 here, and 5×10<sup>−8</sup> for the million tests of a genome-wide study.</p>
+<pre class="code" data-run="term"><code>sort -g -k16,16 assoc.FIRTH.glm.logistic.hybrid | cut -f 3,10,13,16,17 | head -4</code></pre>
+<p>For FIRTH, v1 stands out. Every carrier of its ALT allele is a case – complete separation, for which ordinary logistic regression finds no odds ratio: it grows without end. PLINK then uses Firth's regression (<code>FIRTH?</code> Y), and still marks the result <code>UNFINISHED</code>: the odds ratio is in effect infinite. <code>ERRCODE</code> says when a result is not to be trusted as it stands. No other variant passes 0.05/30 = 0.0017. The p-values as a picture, in Python (a small "Manhattan plot"):</p>
+<pre class="code" data-run="py"><code>import os
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+
+os.chdir(os.path.expanduser("~/gwas"))
+fig, ax = plt.subplots(figsize=(7, 3))
+for name, file in [("QUANT", "assoc.QUANT.glm.linear"), ("BINARY", "assoc.BINARY.glm.logistic.hybrid"),
+                   ("FIRTH", "assoc.FIRTH.glm.logistic.hybrid")]:
+    t = pd.read_csv(file, sep="\t")
+    ax.plot(t["POS"] / 1000, -np.log10(t["P"]), "o", markersize=4, label=name)
+ax.axhline(-np.log10(0.05 / 30), linestyle="--", color="grey", linewidth=1)   # 0.05 for 30 tests
+ax.set_xlabel("position (kb)")
+ax.set_ylabel("−log10 p")
+ax.legend()
+plt.show()</code></pre>
+
+<h2>Scores</h2>
+<pre class="code" data-run="term"><code>head -3 /data/examples/plink2/synthetic_scores.tsv
+plink2 --pfile chr21 --score /data/examples/plink2/synthetic_scores.tsv 1 2 3 header-read cols=+scoresums --out score
+head -4 score.sscore</code></pre>
+<p>A score adds up, for each person, the copies of chosen alleles, each multiplied by a weight. <code>--score FILE 1 2 3</code> takes the variant, the allele and the weight from columns 1, 2 and 3 of the file (<code>header-read</code>: its first line is a header). <code>score.sscore</code> has, for each person, the alleles counted (<code>ALLELE_CT</code>, two for each of the 20 variants), how many of them were the named allele, and the score – the average over the alleles (<code>WEIGHT_AVG</code>) and, with <code>cols=+scoresums</code>, the sum (<code>WEIGHT_SUM</code>). A polygenic risk score is made this way, with the effect sizes of a published GWAS as the weights. The weights of <code>synthetic_scores.tsv</code> are made up: these scores mean nothing.</p>
+
+<h2>More, and what is not here</h2>
+<ul>
+  <li><code>--export vcf</code> (<code>vcf bgz</code>: compressed) writes a VCF file again, <code>--make-bed</code> PLINK 1's files, and <code>--export A</code> a table of 0, 1 or 2 copies for each person and variant, to read in Python or R.</li>
+  <li><code>--make-king-table</code> estimates the kinship of each pair of people (KING), and <code>--king-cutoff</code> removes one of each related pair. It needs thousands of common variants: on 600 variants, most of them rare, its numbers are noise. <code>/data/examples/plink2/keep48.samples.txt</code> lists 48 of the people, for <code>--keep</code>.</li>
+  <li><code>plink2 --help --glm</code> explains an option; <code>plink2</code> alone lists the main ones. The manual is at <a href="https://www.cog-genomics.org/plink/2.0/" target="_blank" rel="noopener">cog-genomics.org/plink/2.0</a>.</li>
+  <li>Not in this build: <code>--pca</code> (principal components, which correct an association study for ancestry) and <code>--pheno-svd</code> need the LAPACK library, which this WebAssembly build of PLINK 2 does not have – PLINK says so and stops. <code>--script</code> and <code>--rerun</code> (options read from a file) are not available either; <code>plink2 $(cat FILE)</code> reads options from a file.</li>
+</ul>
+<p>PLINK 2 here is the development version of 12 October 2026 (2.0.0-b.1), compiled to WebAssembly from its source by the genomics-wasm project; it gives the same files as PLINK 2 built for Linux from the same source (see <a href="#h-programs">Programs and versions</a>). It reads its files on threads of their own, which needs a cross-origin isolated page – the workbench makes its page so as it starts (see <a href="#h-limits/threads">Limits</a>). It computes on one thread and in 640 MiB of working memory, the least that PLINK 2 accepts: the terminal adds <code>--threads 1 --memory 640 require</code> to each command unless you give them – <code>--threads 2</code> and <code>--memory 1024</code> at most. In the Galaxy tab, the tool <b>PLINK 2</b> runs the same program on a VCF of the history.</p>
+<p>The 1000 Genomes data: The 1000 Genomes Project Consortium (2015) A global reference for human genetic variation. <i>Nature</i> 526: 68–74. <a href="https://doi.org/10.1038/nature15393" target="_blank" rel="noopener">doi:10.1038/nature15393</a></p>
+
+<h2 data-anchor="cite">References</h2>
+<p>The papers to cite when you use this program in your work – with the version you used (<a href="#h-programs">Programs and versions</a>):</p>
+<dl class="cite-list">
+<dt>PLINK 2</dt>
+<dd class="cite-note">PLINK&#x27;s citation instructions (cog-genomics.org/plink/2.0/general_usage#cite) ask for the program – its version and web site – and the paper of PLINK 2, and also the papers of the methods you used (the Hardy–Weinberg exact test, KING, Firth regression …), which they list.</dd>
+<dd>Chang CC, Chow CC, Tellier LCAM, Vattikuti S, Purcell SM, Lee JJ (2015) Second-generation PLINK: rising to the challenge of larger and richer datasets. <i>GigaScience</i> 4: 7. <a href="https://doi.org/10.1186/s13742-015-0047-8" target="_blank" rel="noopener">doi:10.1186/s13742-015-0047-8</a></dd>
+<dd>Purcell S, Chang C, Demaille B. PLINK 2.0. <a href="https://www.cog-genomics.org/plink/2.0/" target="_blank" rel="noopener">www.cog-genomics.org/plink/2.0</a></dd>
+</dl>
 </article>
 <article class="help-page" id="h-intervals" data-title="Intervals and annotation" data-group="Terminal and programs" data-group-page="h-terminal" data-keys="bed gff gff3 gtf interval intersect overlap bedtools genomecov coverage merge getfasta gffread annotation exons genes" hidden>
 <h1><svg class="ic" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M12 3L2 8l10 5 10-5z"/><path d="M2 13l10 5 10-5"/></svg>Intervals and annotation</h1>
@@ -845,6 +1158,15 @@ head -3 cyp2c.gtf
 gffread /data/examples/annotation/cyp2c_slices.gff3 -g /data/examples/reads/reference.fa -w transcripts.fa -y proteins.fa
 grep ">" proteins.fa</code></pre>
 <p>Other options: <code>-x</code> (coding sequences only), <code>-E</code> (report problems in the file), <code>--table</code>. The proteins can go straight to an alignment (<a href="#h-alignment">Alignments and trees</a>) or to BLAST (<a href="#h-db-blast">BLAST</a>).</p>
+
+<h2 data-anchor="cite">References</h2>
+<p>The papers to cite when you use these programs in your work – with the version you used (<a href="#h-programs">Programs and versions</a>):</p>
+<dl class="cite-list">
+<dt>bedtools</dt>
+<dd>Quinlan AR, Hall IM (2010) BEDTools: a flexible suite of utilities for comparing genomic features. <i>Bioinformatics</i> 26(6): 841–842. <a href="https://doi.org/10.1093/bioinformatics/btq033" target="_blank" rel="noopener">doi:10.1093/bioinformatics/btq033</a></dd>
+<dt>gffread</dt>
+<dd>Pertea G, Pertea M (2020) GFF Utilities: GffRead and GffCompare. <i>F1000Research</i> 9: 304. <a href="https://doi.org/10.12688/f1000research.23297.2" target="_blank" rel="noopener">doi:10.12688/f1000research.23297.2</a></dd>
+</dl>
 </article>
 <article class="help-page" id="h-alignment" data-title="Alignments and trees" data-group="Terminal and programs" data-group-page="h-terminal" data-keys="alignment pairwise global local needleman wunsch smith waterman multiple msa kalign muscle clustal tree phylogeny fasttree newick lastz" hidden>
 <h1><svg class="ic" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M4 4v16M4 8h6M4 16h6M10 6v4M10 14v4M10 6h8M10 10h5M10 14h7M10 18h9"/></svg>Alignments and trees</h1>
@@ -879,6 +1201,24 @@ lastz '/data/examples/reads/reference.fa[multiple]' piece.fa --format=general | 
 <p>Formats: <code>--format=general</code> (a table), <code>maf</code>, <code>sam</code>, <code>axt</code>; <code>--notransition --step=20</code> make it faster on big sequences.</p>
 
 <p>Alignments and trees are also tools in <a href="#h-galaxy">Galaxy</a> (Kalign, MUSCLE, FastTree), and BLAST searches run at EBI from the <a href="#h-db-blast">Databases tab</a>.</p>
+
+<h2 data-anchor="cite">References</h2>
+<p>The papers to cite when you use these programs in your work – with the version you used (<a href="#h-programs">Programs and versions</a>):</p>
+<dl class="cite-list">
+<dt>seq-align (needleman_wunsch, smith_waterman)</dt>
+<dd class="cite-note">seq-align has no paper; cite the algorithms it carries out.</dd>
+<dd>Turner I. seq-align: Smith-Waterman and Needleman-Wunsch alignment in C. <a href="https://github.com/noporpoise/seq-align" target="_blank" rel="noopener">github.com/noporpoise/seq-align</a></dd>
+<dd>Needleman SB, Wunsch CD (1970) A general method applicable to the search for similarities in the amino acid sequence of two proteins. <i>Journal of Molecular Biology</i> 48(3): 443–453. <a href="https://doi.org/10.1016/0022-2836(70)90057-4" target="_blank" rel="noopener">doi:10.1016/0022-2836(70)90057-4</a></dd>
+<dd>Smith TF, Waterman MS (1981) Identification of common molecular subsequences. <i>Journal of Molecular Biology</i> 147(1): 195–197. <a href="https://doi.org/10.1016/0022-2836(81)90087-5" target="_blank" rel="noopener">doi:10.1016/0022-2836(81)90087-5</a></dd>
+<dt>Kalign</dt>
+<dd>Lassmann T (2020) Kalign 3: multiple sequence alignment of large datasets. <i>Bioinformatics</i> 36(6): 1928–1929. <a href="https://doi.org/10.1093/bioinformatics/btz795" target="_blank" rel="noopener">doi:10.1093/bioinformatics/btz795</a></dd>
+<dt>MUSCLE</dt>
+<dd>Edgar RC (2004) MUSCLE: multiple sequence alignment with high accuracy and high throughput. <i>Nucleic Acids Research</i> 32(5): 1792–1797. <a href="https://doi.org/10.1093/nar/gkh340" target="_blank" rel="noopener">doi:10.1093/nar/gkh340</a></dd>
+<dt>FastTree</dt>
+<dd>Price MN, Dehal PS, Arkin AP (2010) FastTree 2 – Approximately Maximum-Likelihood Trees for Large Alignments. <i>PLoS ONE</i> 5(3): e9490. <a href="https://doi.org/10.1371/journal.pone.0009490" target="_blank" rel="noopener">doi:10.1371/journal.pone.0009490</a></dd>
+<dt>LASTZ</dt>
+<dd>Harris RS (2007) Improved pairwise alignment of genomic DNA. PhD thesis, The Pennsylvania State University. <a href="https://github.com/lastz/lastz" target="_blank" rel="noopener">github.com/lastz/lastz</a></dd>
+</dl>
 </article>
 <article class="help-page" id="h-text" data-title="Text tools" data-group="Terminal and programs" data-group-page="h-terminal" data-keys="grep sed awk gawk sort uniq cut paste join wc head tail tr jq json curl wget download web zip unzip tar gzip regular expression pipe" hidden>
 <h1><svg class="ic" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M4 7V4h16v3M9 20h6M12 4v16"/></svg>Text tools</h1>
@@ -1011,6 +1351,13 @@ open steps.svg</code></pre>
 
 <h2>Keep a record</h2>
 <p><b>Save session</b> above the terminal turns the commands you typed into a notebook or a script (see <a href="#h-terminal/session">Saving a session</a>) – a good start for a script of your own.</p>
+
+<h2 data-anchor="cite">References</h2>
+<p>The papers to cite when you use this program in your work – with the version you used (<a href="#h-programs">Programs and versions</a>):</p>
+<dl class="cite-list">
+<dt>Snakemake</dt>
+<dd>Mölder F, Jablonski KP, Letcher B, Hall MB, van Dyken PC, Tomkins-Tinch CH, et al. (2025) Sustainable data analysis with Snakemake. <i>F1000Research</i> 10: 33. <a href="https://doi.org/10.12688/f1000research.29032.3" target="_blank" rel="noopener">doi:10.12688/f1000research.29032.3</a></dd>
+</dl>
 </article>
 <article class="help-page" id="h-files" data-title="Your files" data-group="Files" data-group-page="h-files" data-keys="files folder home storage browser kept indexeddb upload download zip unzip rename delete edit save editor viewer quota storage space backup lost start afresh" hidden>
 <h1><svg class="ic" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v1H7l-4 9z"/><path d="M3 19l3.5-8H22l-3.5 8z"/></svg>Your files</h1>
@@ -1061,7 +1408,7 @@ ls -l ~/example-reads</code></pre>
 <h2>Start afresh</h2>
 <p><b>My files → Start afresh</b> deletes all your files, Galaxy's history and the workbench's settings in this browser – after you have downloaded what you want to keep. The settings of the AI assistant and of the help pane are kept.</p>
 </article>
-<article class="help-page" id="h-galaxy" data-title="Galaxy" data-group="Galaxy" data-group-page="h-galaxy" data-keys="galaxy history dataset upload tool run job provenance usegalaxy bwa-mem bwa-mem2 hisat2 freebayes featurecounts stringtie kallisto salmon mosdepth cutadapt lofreq strelka somatic kraken2 bracken metagenomics datatype format fastqsanger rerun delete purge notebook export" hidden>
+<article class="help-page" id="h-galaxy" data-title="Galaxy" data-group="Galaxy" data-group-page="h-galaxy" data-keys="galaxy history dataset upload tool run job provenance usegalaxy bwa-mem bwa-mem2 hisat2 freebayes featurecounts stringtie kallisto salmon mosdepth cutadapt lofreq strelka somatic kraken2 bracken metagenomics prodigal hmmer hmmbuild hmmsearch hmmscan phmmer nhmmer hmmalign annotation profile hmm hmm3 stockholm genbank single-cell bustools bus mtx matrix market plink plink2 gwas genotypes association datatype format fastqsanger rerun delete purge notebook export" hidden>
 <h1><svg class="ic" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><rect x="3" y="3" width="6" height="5" rx="1"/><rect x="15" y="16" width="6" height="5" rx="1"/><rect x="15" y="3" width="6" height="5" rx="1"/><path d="M9 5.5h6M18 8v8M9 5.5c3 0 3 13 6 13"/></svg>Galaxy</h1>
 <p class="lede">Galaxy runs analysis tools from forms, keeps every result in a <b>history</b> with a record of how it was made, and joins tools into <b>workflows</b>. This one works like usegalaxy.org and its sister servers – and runs in your browser, with the same programs as the terminal.</p>
 <div class="tryrow"><button class="do" type="button" data-bench="galaxy">Open Galaxy</button></div>
@@ -1081,11 +1428,11 @@ ls -l ~/example-reads</code></pre>
   <li><b>From your computer</b> – choose files or drop them.</li>
   <li><b>Paste text</b> – a few sequences, a list of positions …</li>
 </ul>
-<p>Galaxy decides the <b>datatype</b> from the name and content (<code>fastqsanger</code> for reads, <code>fasta</code>, <code>bam</code>, <code>vcf</code>, <code>bed</code>, <code>tabular</code> …); tools offer only the datasets of the types they read. If it guessed wrong, choose the type in the upload form. Compressed text files (<code>.fastq.gz</code>, <code>.fa.gz</code>) are uncompressed on the way in.</p>
+<p>Galaxy decides the <b>datatype</b> from the name and content (<code>fastqsanger</code> for reads, <code>fasta</code>, <code>bam</code>, <code>vcf</code>, <code>bed</code>, <code>tabular</code>, <code>hmm3</code> for profile HMMs, <code>bus</code> for the records of <code>kallisto bus</code> …); tools offer only the datasets of the types they read. If it guessed wrong, choose the type in the upload form. Compressed text files (<code>.fastq.gz</code>, <code>.fa.gz</code>, <code>.hmm.gz</code> …) are uncompressed on the way in.</p>
 
 <h2>Run a tool</h2>
 <ol>
-  <li>Click a tool. Its form lists its inputs – choose datasets from your history – and its settings, with Galaxy's own help under the form.</li>
+  <li>Click a tool. Its form lists its inputs – choose datasets from your history – and its settings, with Galaxy's own help under the form and, at its end, the papers to cite when you use the tool (<i>References</i>), as on a Galaxy server.</li>
   <li><b>Run tool</b>. The new datasets appear at the top of the history; wait for them to turn green.</li>
   <li>Open a dataset: <svg class="ic" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg> shows it (tables as tables, HTML reports, trees drawn), <svg class="ic" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M12 3v12M7 10l5 5 5-5M4 21h16"/></svg> downloads it, <i>copy to my files</i> puts it in <code>~/galaxy</code> for the terminal and notebooks. BAM, VCF and BED datasets have <svg class="ic" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M4 6h16M4 12h16M4 18h16"/><path d="M8 4v4M14 10v4M11 16v4"/></svg> to show them in the Genome browser.</li>
 </ol>
@@ -1098,14 +1445,17 @@ ls -l ~/example-reads</code></pre>
 <tr><td>Mapping</td><td>Map with minimap2, Bowtie2, Map with BWA-MEM, HISAT2 (RNA-seq reads, across introns), Map with BWA-MEM2 – each single- or paired-end</td></tr>
 <tr><td>SAM/BAM</td><td>Samtools flagstat, stats, idxstats, depth, view (filter); mosdepth</td></tr>
 <tr><td>RNA-seq</td><td>featureCounts, StringTie, Kallisto quant, Salmon quant</td></tr>
+<tr><td>Single-cell</td><td>bustools sort, correct, count, inspect, text (the BUS records of <code>kallisto bus</code> to a matrix of cells and genes)</td></tr>
 <tr><td>Variant calling</td><td>bcftools mpileup, call, filter, view, query, stats; FreeBayes; Insert indel qualities and Call variants (LoFreq); Strelka Somatic (tumour and normal)</td></tr>
+<tr><td>Genotypes (GWAS)</td><td>PLINK 2: quality control, filters, LD pruning, kinship, association tests and scores on a VCF of many samples</td></tr>
 <tr><td>Metagenomics</td><td>Kraken2 (with the example database), Bracken</td></tr>
+<tr><td>Annotation</td><td>Prodigal Gene Predictor (genes of bacteria and archaea); hmmbuild, hmmsearch, hmmscan, phmmer, nhmmer, hmmalign (HMMER: profile HMMs)</td></tr>
 <tr><td>Intervals</td><td>bedtools Genome Coverage, Intersect intervals</td></tr>
 <tr><td>FASTA/FASTQ</td><td>seqtk_seq (FASTQ to FASTA), seqtk_sample</td></tr>
 <tr><td>Alignments and trees</td><td>Kalign, MUSCLE, FastTree</td></tr>
 <tr><td>Text manipulation</td><td>Select lines, Cut columns, Sort, Line/Word/Character count, Concatenate</td></tr>
 </table>
-<p>The tool IDs and versions are those of the Galaxy Tool Shed, so a workflow made here opens on usegalaxy.org (see <a href="#h-galaxy-workflows">Workflows</a>) – except Kalign and MUSCLE: the Tool Shed has no tool for the versions here, so a server shows those steps as missing and you choose its own alignment tool there. Kallisto quant and Salmon quant carry the IDs of the newest tools of the Tool Shed, which run kallisto 0.48.0 and Salmon 1.10.1; here they run the terminal's kallisto 0.52.0 and Salmon 2.8.0, so a server's results can differ a little. Call variants with LoFreq runs <code>lofreq call</code> on one core where a server runs <code>lofreq call-parallel</code>. Kraken2 carries the ID of the Tool Shed's newest Kraken2 tool, which runs Kraken2 2.17.1; here it runs the terminal's 2.17.2. Its database is the example one: a server offers the databases its administrators installed. featureCounts and Salmon quant count on several threads: they need the page to be cross-origin isolated (see <a href="#h-limits/threads">Limits</a>).</p>
+<p>The tool IDs and versions are those of the Galaxy Tool Shed, so a workflow made here opens on usegalaxy.org (see <a href="#h-galaxy-workflows">Workflows</a>) – except Kalign and MUSCLE, the five bustools tools and PLINK 2: the Tool Shed has no tool for these programs or versions (its <i>plink</i> tool runs PLINK 1.9), so they are the workbench’s own, and a server shows those steps as missing. Kallisto quant and Salmon quant carry the IDs of the newest tools of the Tool Shed, which run kallisto 0.48.0 and Salmon 1.10.1; here they run the terminal's kallisto 0.52.0 and Salmon 2.8.0, so a server's results can differ a little. Call variants with LoFreq runs <code>lofreq call</code> on one core where a server runs <code>lofreq call-parallel</code>. Kraken2 carries the ID of the Tool Shed's newest Kraken2 tool, which runs Kraken2 2.17.1; here it runs the terminal's 2.17.2. Its database is the example one: a server offers the databases its administrators installed – as for hmmscan, whose built-in database here holds the three profiles of the HMMER tutorial, where a server has Pfam. The HMMER tools run on one thread, without <code>--cpu</code>; Galaxy's tools pass the three filter thresholds with <code>--max</code>, which HMMER refuses, so here <code>--max</code> goes alone. Prodigal's form has no SQN format, which Prodigal 2.6.3 does not write. featureCounts, Salmon quant and PLINK 2 work on several threads: they need the page to be cross-origin isolated (see <a href="#h-limits/threads">Limits</a>).</p>
 
 <h2>How was this made? Dataset details</h2>
 <p>The <svg class="ic" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7.5h.01"/></svg> of a dataset shows Galaxy's record of it: the tool and its version, the versions of the programs (dependencies), the <b>command line</b> that ran, every parameter, and the program's messages. That record is why Galaxy analyses can be repeated – and the first place to look when a dataset is red. <svg class="ic" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M20 11a8 8 0 1 0-2.3 5.7"/><path d="M20 4v7h-7"/></svg> opens the tool again with the same inputs and settings.</p>
@@ -1125,6 +1475,13 @@ ls -l ~/example-reads</code></pre>
   <li>There is one history and no user account; nothing is shared with others.</li>
   <li>Datasets have no genome build ("database: ?") unless a tool passes one on.</li>
 </ul>
+
+<h2 data-anchor="cite">References</h2>
+<p>The papers to cite when you use this program in your work – with the version you used (<a href="#h-programs">Programs and versions</a>):</p>
+<dl class="cite-list">
+<dt>Galaxy</dt>
+<dd>The Galaxy Community (2024) The Galaxy platform for accessible, reproducible, and collaborative data analyses: 2024 update. <i>Nucleic Acids Research</i> 52(W1): W83–W94. <a href="https://doi.org/10.1093/nar/gkae410" target="_blank" rel="noopener">doi:10.1093/nar/gkae410</a></dd>
+</dl>
 </article>
 <article class="help-page" id="h-galaxy-workflows" data-title="Galaxy workflows" data-group="Galaxy" data-group-page="h-galaxy" data-keys="galaxy workflow editor extract history run invocation ga export import usegalaxy canvas connect input dataset" hidden>
 <h1><svg class="ic" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><rect x="3" y="3" width="6" height="5" rx="1"/><rect x="15" y="16" width="6" height="5" rx="1"/><rect x="15" y="3" width="6" height="5" rx="1"/><path d="M9 5.5h6M18 8v8M9 5.5c3 0 3 13 6 13"/></svg>Galaxy workflows</h1>
@@ -1344,7 +1701,7 @@ grep '^HETATM' /data/examples/structures/1mbn.pdb | awk '{print $4}' | sort | un
 <tr><td>Site</td><td>a few important residues: an active site, a binding site, a conserved site, a modification site</td></tr>
 </table>
 <div class="tryrow"><button class="do" type="button" data-api="interpro:domains:P04637">Domains of p53 (P04637)</button> <button class="do" type="button" data-api="interpro:domains:O00206">Domains of TLR4 (O00206)</button></div>
-<p>The UniProt entry of a protein (its <i>Family &amp; Domains</i> section) has the same information in a shorter form; InterPro shows the signatures of each database separately.</p>
+<p>The UniProt entry of a protein (its <i>Family &amp; Domains</i> section) has the same information in a shorter form; InterPro shows the signatures of each database separately. Pfam's signatures are profile HMMs: to search with profiles yourself – a few families, or your own – use HMMER in the terminal (<a href="#h-genes">Genes and protein domains</a>).</p>
 </article>
 <article class="help-page" id="h-db-genes" data-title="Genes, genomes and variants" data-group="Databases" data-group-page="h-databases" data-keys="ensembl gene transcript exon cdna cds canonical biotype vep variant effect predictor consequence sift polyphen hgvs rs dbsnp orthologue homology region ncbi entrez esearch efetch genbank refseq accession clinvar pubmed taxonomy ucsc assembly hg38 hg19 grch38 grch37 soft-masked ena sra fastq run study sample" hidden>
 <h1><svg class="ic" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M4 6h16M4 12h16M4 18h16"/><path d="M8 4v4M14 10v4M11 16v4"/></svg>Genes, genomes and variants</h1>
@@ -1552,6 +1909,14 @@ grep '^HETATM' /data/examples/structures/1mbn.pdb | awk '{print $4}' | sort | un
   <li><b>Views → Save session</b> downloads everything – structures, styles, labels, views – as one file; <b>Open session</b> continues from it.</li>
 </ul>
 <p>The structures, styles and views are not kept when the page is reloaded: save a session to continue later.</p>
+
+<h2 data-anchor="cite">References</h2>
+<p>The papers to cite when you use this program in your work – with the version you used (<a href="#h-programs">Programs and versions</a>):</p>
+<dl class="cite-list">
+<dt>NGL Viewer (the 3D viewer)</dt>
+<dd>Rose AS, Bradley AR, Valasatava Y, Duarte JM, Prlić A, Rose PW (2018) NGL viewer: web-based molecular graphics for large complexes. <i>Bioinformatics</i> 34(21): 3755–3758. <a href="https://doi.org/10.1093/bioinformatics/bty419" target="_blank" rel="noopener">doi:10.1093/bioinformatics/bty419</a></dd>
+<dd>Rose AS, Hildebrand PW (2015) NGL Viewer: a web application for molecular visualization. <i>Nucleic Acids Research</i> 43(W1): W576–W579. <a href="https://doi.org/10.1093/nar/gkv402" target="_blank" rel="noopener">doi:10.1093/nar/gkv402</a></dd>
+</dl>
 </article>
 <article class="help-page" id="h-viewer-commands" data-title="Viewer commands" data-group="3D viewer" data-group-page="h-viewer" data-keys="viewer command line load af show hide only color colour select near site contacts center reset spin background opacity label label2d key distance superpose view export png script semicolon" hidden>
 <h1><svg class="ic" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M4 17l6-5-6-5M12 19h8"/></svg>Viewer commands</h1>
@@ -1657,6 +2022,13 @@ igv mapped.bam /data/examples/variants/NA12878.calls.vcf.gz --locus human_CYP2C1
 
 <h2>Save a picture</h2>
 <p><b>Save image</b> downloads the current view as a PNG file.</p>
+
+<h2 data-anchor="cite">References</h2>
+<p>The papers to cite when you use this program in your work – with the version you used (<a href="#h-programs">Programs and versions</a>):</p>
+<dl class="cite-list">
+<dt>igv.js (the genome browser)</dt>
+<dd>Robinson JT, Thorvaldsdottir H, Turner D, Mesirov JP (2023) igv.js: an embeddable JavaScript implementation of the Integrative Genomics Viewer (IGV). <i>Bioinformatics</i> 39(1): btac830. <a href="https://doi.org/10.1093/bioinformatics/btac830" target="_blank" rel="noopener">doi:10.1093/bioinformatics/btac830</a></dd>
+</dl>
 </article>
 <article class="help-page" id="h-ai" data-title="The AI assistant" data-group="AI assistant" data-group-page="h-ai" data-keys="ai assistant chat gemini claude anthropic openai model api key llm question error explain code notebook terminal prompt privacy check hallucination academic integrity" hidden>
 <h1><svg class="ic" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M12 3l2 5.5L19.5 10 14 12l-2 5.5L10 12l-5.5-2L10 8.5z"/><path d="M19 17l.8 2 2 .8-2 .8-.8 2-.8-2-2-.8 2-.8z"/></svg>The AI assistant</h1>
@@ -1739,7 +2111,19 @@ igv mapped.bam /data/examples/variants/NA12878.calls.vcf.gz --locus human_CYP2C1
   <li><b>Could you do it without the agent?</b> If not, ask the Chat tab to explain each step, and do it yourself in a notebook.</li>
 </ul>
 </article>
-<article class="help-page" id="h-recipe-variants" data-title="Reads to variants, in a notebook" data-group="Recipes" data-group-page="h-recipe-variants" data-keys="recipe pipeline workflow notebook fastp minimap2 samtools bcftools vcf pandas plot quality depth genotype vep consequence cyp2c19 rs4244285 clopidogrel" hidden>
+<article class="help-page" id="h-recipes" data-title="Recipes" data-group="Recipes" data-group-page="h-recipes" data-keys="recipes recipe tutorial walkthrough practical exercise worked example notebook analysis" hidden>
+<h1><svg class="ic" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M9 3h6M10 3v6l-5 9a2 2 0 0 0 1.7 3h10.6a2 2 0 0 0 1.7-3l-5-9V3"/><path d="M7.5 15h9"/></svg>Recipes</h1>
+<p class="lede">A recipe is a whole analysis on the example data, step by step: what to do, why, and the code that does it. Each one opens as a notebook with one button, so that you can run it cell by cell, change it and keep it.</p>
+<ul class="help-grouplist">
+<li><a href="#h-recipe-variants">Reads to variants, in a notebook<small>QC, mapping, calling, a table of the variants, VEP, the genome browser</small></a></li>
+<li><a href="#h-recipe-rnaseq">RNA-seq: reads to differential expression<small>HISAT2, spliced reads in the genome browser, featureCounts, DESeq2 and edgeR</small></a></li>
+<li><a href="#h-recipe-protein">From a protein to its structure<small>UniProt, Biopython, a PDB file, an AlphaFold model, superposition</small></a></li>
+<li><a href="#h-recipe-table">A table, in Python and in R<small>Read, summarise, plot and test the yeast gene table</small></a></li>
+<li><a href="#h-recipe-api">Databases from code<small>requests, batches and loops, retries, Biopython&#x27;s Entrez, part of a big file, R</small></a></li>
+<li><a href="#h-recipe-keep">Keep and share your work<small>Every tab as a notebook; downloads; running a notebook elsewhere; versions</small></a></li>
+</ul>
+</article>
+<article class="help-page" id="h-recipe-variants" data-title="Reads to variants, in a notebook" data-group="Recipes" data-group-page="h-recipes" data-keys="recipe pipeline workflow notebook fastp minimap2 samtools bcftools vcf pandas plot quality depth genotype vep consequence cyp2c19 rs4244285 clopidogrel" hidden>
 <h1><svg class="ic" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M9 3h6M10 3v6l-5 9a2 2 0 0 0 1.7 3h10.6a2 2 0 0 0 1.7-3l-5-9V3"/><path d="M7.5 15h9"/></svg>Reads to variants, in a notebook</h1>
 <p class="lede">A whole analysis in one notebook: check and trim the example reads, map them, call the variants, look at them in a table and a plot, ask Ensembl what they do – and keep every step, so the notebook is the record of the work.</p>
 <div class="tryrow"><button class="do" type="button" data-recipe="python">Open this recipe as a notebook</button></div>
@@ -1832,8 +2216,27 @@ vep</code></pre>
 
 <h2>Keep it</h2>
 <p>Restart Python and run the notebook from the top: if every cell runs, the notebook is a complete record. <b>Download → Jupyter notebook (.ipynb)</b> keeps it; the files it made are in <code>~/recipe-variants</code>. The same steps as Galaxy tools: <a href="#h-galaxy">Galaxy</a>; as a Snakemake pipeline: <a href="#h-scripts">Scripts and pipelines</a>.</p>
+
+<h2 data-anchor="cite">References</h2>
+<p>The papers to cite when you use these programs in your work – with the version you used (<a href="#h-programs">Programs and versions</a>):</p>
+<dl class="cite-list">
+<dt>fastp</dt>
+<dd>Chen S, Zhou Y, Chen Y, Gu J (2018) fastp: an ultra-fast all-in-one FASTQ preprocessor. <i>Bioinformatics</i> 34(17): i884–i890. <a href="https://doi.org/10.1093/bioinformatics/bty560" target="_blank" rel="noopener">doi:10.1093/bioinformatics/bty560</a></dd>
+<dt>minimap2</dt>
+<dd>Li H (2018) Minimap2: pairwise alignment for nucleotide sequences. <i>Bioinformatics</i> 34(18): 3094–3100. <a href="https://doi.org/10.1093/bioinformatics/bty191" target="_blank" rel="noopener">doi:10.1093/bioinformatics/bty191</a></dd>
+<dd>Li H (2021) New strategies to improve minimap2 alignment accuracy. <i>Bioinformatics</i> 37(23): 4572–4574. <a href="https://doi.org/10.1093/bioinformatics/btab705" target="_blank" rel="noopener">doi:10.1093/bioinformatics/btab705</a></dd>
+<dt>SAMtools</dt>
+<dd>Danecek P, Bonfield JK, Liddle J, Marshall J, Ohan V, Pollard MO, et al. (2021) Twelve years of SAMtools and BCFtools. <i>GigaScience</i> 10(2): giab008. <a href="https://doi.org/10.1093/gigascience/giab008" target="_blank" rel="noopener">doi:10.1093/gigascience/giab008</a></dd>
+<dd>Li H, Handsaker B, Wysoker A, Fennell T, Ruan J, Homer N, et al. (2009) The Sequence Alignment/Map format and SAMtools. <i>Bioinformatics</i> 25(16): 2078–2079. <a href="https://doi.org/10.1093/bioinformatics/btp352" target="_blank" rel="noopener">doi:10.1093/bioinformatics/btp352</a></dd>
+<dt>BCFtools</dt>
+<dd>Danecek P, Bonfield JK, Liddle J, Marshall J, Ohan V, Pollard MO, et al. (2021) Twelve years of SAMtools and BCFtools. <i>GigaScience</i> 10(2): giab008. <a href="https://doi.org/10.1093/gigascience/giab008" target="_blank" rel="noopener">doi:10.1093/gigascience/giab008</a></dd>
+<dt>Ensembl VEP</dt>
+<dd>McLaren W, Gil L, Hunt SE, Riat HS, Ritchie GRS, Thormann A, et al. (2016) The Ensembl Variant Effect Predictor. <i>Genome Biology</i> 17: 122. <a href="https://doi.org/10.1186/s13059-016-0974-4" target="_blank" rel="noopener">doi:10.1186/s13059-016-0974-4</a></dd>
+<dt>igv.js (the genome browser)</dt>
+<dd>Robinson JT, Thorvaldsdottir H, Turner D, Mesirov JP (2023) igv.js: an embeddable JavaScript implementation of the Integrative Genomics Viewer (IGV). <i>Bioinformatics</i> 39(1): btac830. <a href="https://doi.org/10.1093/bioinformatics/btac830" target="_blank" rel="noopener">doi:10.1093/bioinformatics/btac830</a></dd>
+</dl>
 </article>
-<article class="help-page" id="h-recipe-rnaseq" data-title="RNA-seq: reads to differential expression" data-group="Recipes" data-group-page="h-recipe-variants" data-keys="recipe rna-seq rnaseq featurecounts count strand stranded transcriptome expression differential deseq2 edger limma locfit hisat2 splice spliced intron cigar counts airway dexamethasone volcano ma pca vst normalisation normalization fold change padj fdr yeast" hidden>
+<article class="help-page" id="h-recipe-rnaseq" data-title="RNA-seq: reads to differential expression" data-group="Recipes" data-group-page="h-recipes" data-keys="recipe rna-seq rnaseq featurecounts count strand stranded transcriptome expression differential deseq2 edger limma locfit hisat2 splice spliced intron cigar counts airway dexamethasone volcano ma pca vst normalisation normalization fold change padj fdr yeast" hidden>
 <h1><svg class="ic" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M9 3h6M10 3v6l-5 9a2 2 0 0 0 1.7 3h10.6a2 2 0 0 0 1.7-3l-5-9V3"/><path d="M7.5 15h9"/></svg>RNA-seq: reads to differential expression</h1>
 <p class="lede">Two halves of an RNA-seq analysis. First, map real RNA-seq reads with HISAT2, see reads split across an intron, and count the reads of each gene with featureCounts. Then, from the gene counts of a published experiment, find the genes that a drug switches on or off – with DESeq2, and with edgeR for comparison.</p>
 <div class="tryrow"><button class="do" type="button" data-recipe="r">Open this recipe as an R notebook</button> <button class="do" type="button" data-open="/data/examples/rnaseq/airway_samples.tsv">Show the samples</button></div>
@@ -1918,8 +2321,25 @@ deseq2_genes <- rownames(top)[which(top$padj < 0.05)]
 c(DESeq2 = length(deseq2_genes), edgeR = length(edger_genes), both = length(intersect(deseq2_genes, edger_genes)))</code></pre>
 
 <div class="callout info"><div class="co-t"><svg class="ic" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7.5h.01"/></svg>Good to know</div><p>DESeq2 and edgeR need raw counts – whole numbers, not normalised values – and biological replicates. In the browser they run as on a computer: locfit, a package they need, was built for the workbench, and a check against R on Linux gave the same results. Download the notebook to run it in RStudio or Jupyter: <code>BiocManager::install(c("DESeq2", "edgeR"))</code> there.</p></div>
+
+<h2 data-anchor="cite">References</h2>
+<p>The papers to cite when you use these programs in your work – with the version you used (<a href="#h-programs">Programs and versions</a>):</p>
+<dl class="cite-list">
+<dt>HISAT2</dt>
+<dd>Kim D, Paggi JM, Park C, Bennett C, Salzberg SL (2019) Graph-based genome alignment and genotyping with HISAT2 and HISAT-genotype. <i>Nature Biotechnology</i> 37(8): 907–915. <a href="https://doi.org/10.1038/s41587-019-0201-4" target="_blank" rel="noopener">doi:10.1038/s41587-019-0201-4</a></dd>
+<dt>SAMtools</dt>
+<dd>Danecek P, Bonfield JK, Liddle J, Marshall J, Ohan V, Pollard MO, et al. (2021) Twelve years of SAMtools and BCFtools. <i>GigaScience</i> 10(2): giab008. <a href="https://doi.org/10.1093/gigascience/giab008" target="_blank" rel="noopener">doi:10.1093/gigascience/giab008</a></dd>
+<dd>Li H, Handsaker B, Wysoker A, Fennell T, Ruan J, Homer N, et al. (2009) The Sequence Alignment/Map format and SAMtools. <i>Bioinformatics</i> 25(16): 2078–2079. <a href="https://doi.org/10.1093/bioinformatics/btp352" target="_blank" rel="noopener">doi:10.1093/bioinformatics/btp352</a></dd>
+<dt>featureCounts</dt>
+<dd>Liao Y, Smyth GK, Shi W (2014) featureCounts: an efficient general purpose program for assigning sequence reads to genomic features. <i>Bioinformatics</i> 30(7): 923–930. <a href="https://doi.org/10.1093/bioinformatics/btt656" target="_blank" rel="noopener">doi:10.1093/bioinformatics/btt656</a></dd>
+<dt>DESeq2</dt>
+<dd>Love MI, Huber W, Anders S (2014) Moderated estimation of fold change and dispersion for RNA-seq data with DESeq2. <i>Genome Biology</i> 15: 550. <a href="https://doi.org/10.1186/s13059-014-0550-8" target="_blank" rel="noopener">doi:10.1186/s13059-014-0550-8</a></dd>
+<dt>edgeR</dt>
+<dd>Chen Y, Chen L, Lun ATL, Baldoni PL, Smyth GK (2025) edgeR v4: powerful differential analysis of sequencing data with expanded functionality and improved support for small counts and larger datasets. <i>Nucleic Acids Research</i> 53(2): gkaf018. <a href="https://doi.org/10.1093/nar/gkaf018" target="_blank" rel="noopener">doi:10.1093/nar/gkaf018</a></dd>
+<dd>Robinson MD, McCarthy DJ, Smyth GK (2010) edgeR: a Bioconductor package for differential expression analysis of digital gene expression data. <i>Bioinformatics</i> 26(1): 139–140. <a href="https://doi.org/10.1093/bioinformatics/btp616" target="_blank" rel="noopener">doi:10.1093/bioinformatics/btp616</a></dd>
+</dl>
 </article>
-<article class="help-page" id="h-recipe-protein" data-title="From a protein to its structure" data-group="Recipes" data-group-page="h-recipe-variants" data-keys="recipe protein uniprot sequence protparam molecular weight isoelectric point structure pdb biopython bio.pdb distance haem heme histidine alphafold plddt superimposer rmsd myoglobin" hidden>
+<article class="help-page" id="h-recipe-protein" data-title="From a protein to its structure" data-group="Recipes" data-group-page="h-recipes" data-keys="recipe protein uniprot sequence protparam molecular weight isoelectric point structure pdb biopython bio.pdb distance haem heme histidine alphafold plddt superimposer rmsd myoglobin" hidden>
 <h1><svg class="ic" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M9 3h6M10 3v6l-5 9a2 2 0 0 0 1.7 3h10.6a2 2 0 0 0 1.7-3l-5-9V3"/><path d="M7.5 15h9"/></svg>From a protein to its structure</h1>
 <p class="lede">Sperm whale myoglobin, from its UniProt entry to its structure: the sequence and its properties, the haem pocket of the experimental structure 1MBN measured with Biopython, and the AlphaFold model compared with the experiment.</p>
 <div class="tryrow"><button class="do" type="button" data-recipe="python">Open this recipe as a notebook</button> <button class="do" type="button" data-api="uniprot:P02185">UniProt entry P02185</button> <button class="do" type="button" data-cmd="load 1MBN; color ss; show sticks HEM or A:64 or A:93; center HEM">1MBN in 3D</button></div>
@@ -2000,8 +2420,18 @@ sup = Superimposer()
 sup.set_atoms(exp_ca, model_ca)
 print(f"RMSD over {len(exp_ca)} Cα atoms: {sup.rms:.2f} Å")</code></pre>
 <p>An RMSD around 1 Å means the prediction matches the experiment closely. To see it, run in the 3D viewer: <code>load 1MBN; load af P02185; superpose AF-P02185-F1:A onto 1MBN:A</code> (<a href="#h-viewer-commands">Viewer commands</a>). The viewer reports a slightly smaller RMSD over a few residues fewer: it pairs the residues by aligning the sequences, leaves out pairs that end up more than 2 Å apart (loose ends) and fits again, as structure programs often do – the code above keeps every pair.</p>
+
+<h2 data-anchor="cite">References</h2>
+<p>The papers to cite when you use these programs in your work – with the version you used (<a href="#h-programs">Programs and versions</a>):</p>
+<dl class="cite-list">
+<dt>Biopython</dt>
+<dd>Cock PJA, Antao T, Chang JT, Chapman BA, Cox CJ, Dalke A, et al. (2009) Biopython: freely available Python tools for computational molecular biology and bioinformatics. <i>Bioinformatics</i> 25(11): 1422–1423. <a href="https://doi.org/10.1093/bioinformatics/btp163" target="_blank" rel="noopener">doi:10.1093/bioinformatics/btp163</a></dd>
+<dt>NGL Viewer (the 3D viewer)</dt>
+<dd>Rose AS, Bradley AR, Valasatava Y, Duarte JM, Prlić A, Rose PW (2018) NGL viewer: web-based molecular graphics for large complexes. <i>Bioinformatics</i> 34(21): 3755–3758. <a href="https://doi.org/10.1093/bioinformatics/bty419" target="_blank" rel="noopener">doi:10.1093/bioinformatics/bty419</a></dd>
+<dd>Rose AS, Hildebrand PW (2015) NGL Viewer: a web application for molecular visualization. <i>Nucleic Acids Research</i> 43(W1): W576–W579. <a href="https://doi.org/10.1093/nar/gkv402" target="_blank" rel="noopener">doi:10.1093/nar/gkv402</a></dd>
+</dl>
 </article>
-<article class="help-page" id="h-recipe-table" data-title="A table, in Python and in R" data-group="Recipes" data-group-page="h-recipe-variants" data-keys="recipe table csv pandas dataframe groupby r data frame dplyr ggplot2 boxplot scatter statistics test mann-whitney wilcoxon chi-squared spearman correlation essential genes yeast" hidden>
+<article class="help-page" id="h-recipe-table" data-title="A table, in Python and in R" data-group="Recipes" data-group-page="h-recipes" data-keys="recipe table csv pandas dataframe groupby r data frame dplyr ggplot2 boxplot scatter statistics test mann-whitney wilcoxon chi-squared spearman correlation essential genes yeast" hidden>
 <h1><svg class="ic" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M9 3h6M10 3v6l-5 9a2 2 0 0 0 1.7 3h10.6a2 2 0 0 0 1.7-3l-5-9V3"/><path d="M7.5 15h9"/></svg>A table, in Python and in R</h1>
 <p class="lede">Are essential genes different? The example table describes 5,481 yeast genes – whether each is essential, how long its protein is, how many partners it has, how abundant it is. The same analysis in both languages: read the table, summarise it, plot it, and test what the plots suggest.</p>
 <div class="tryrow"><button class="do" type="button" data-recipe="python">Open as a Python notebook</button> <button class="do" type="button" data-recipe="r">Open as an R notebook</button> <button class="do" type="button" data-open="/data/examples/tables/yeast_genes.csv">Show the table</button></div>
@@ -2089,7 +2519,7 @@ write.csv(summary, "essential_by_location.csv", row.names = FALSE)
 summary</code></pre>
 <p>The file is written next to the notebook, in <code>~/notebooks</code>. A p-value says how surprising a difference would be by chance; how large the difference is – the medians, the percentages – is what to report with it.</p>
 </article>
-<article class="help-page" id="h-recipe-api" data-title="Databases from code" data-group="Recipes" data-group-page="h-recipe-variants" data-keys="recipe api rest requests json pandas loop rate limit retry 429 batch post ensembl uniprot ncbi entrez biopython efetch genbank ena fastq range jsonlite fromjson r cors" hidden>
+<article class="help-page" id="h-recipe-api" data-title="Databases from code" data-group="Recipes" data-group-page="h-recipes" data-keys="recipe api rest requests json pandas loop rate limit retry 429 batch post ensembl uniprot ncbi entrez biopython efetch genbank ena fastq range jsonlite fromjson r cors" hidden>
 <h1><svg class="ic" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M9 3h6M10 3v6l-5 9a2 2 0 0 0 1.7 3h10.6a2 2 0 0 0 1.7-3l-5-9V3"/><path d="M7.5 15h9"/></svg>Databases from code</h1>
 <p class="lede">The Databases tab asks one question at a time. Code asks a hundred – and keeps the record. This recipe shows the patterns: a request and its answer as a table, many at once, a polite loop, what to do when a service is busy, NCBI with Biopython, and the first reads of a file too big to download.</p>
 <div class="tryrow"><button class="do" type="button" data-recipe="python">Open this recipe as a notebook</button></div>
@@ -2193,8 +2623,17 @@ genes</code></pre>
 
 <h2>Which services work from the browser</h2>
 <p>A web page – and so a notebook here – can only ask services that allow requests from web pages (CORS): Ensembl, UniProt, NCBI's E-utilities, the EBI services (ENA, InterPro, QuickGO, BLAST …), RCSB PDB, AlphaFold DB, STRING, Reactome, Europe PMC, PubChem and the UCSC API do. Many others – KEGG, most web pages – do not: the request fails with <i>no answer</i>. Download such files with your browser and upload them (<a href="#h-files">Your files</a>).</p>
+
+<h2 data-anchor="cite">References</h2>
+<p>The papers to cite when you use these programs in your work – with the version you used (<a href="#h-programs">Programs and versions</a>):</p>
+<dl class="cite-list">
+<dt>Biopython</dt>
+<dd>Cock PJA, Antao T, Chang JT, Chapman BA, Cox CJ, Dalke A, et al. (2009) Biopython: freely available Python tools for computational molecular biology and bioinformatics. <i>Bioinformatics</i> 25(11): 1422–1423. <a href="https://doi.org/10.1093/bioinformatics/btp163" target="_blank" rel="noopener">doi:10.1093/bioinformatics/btp163</a></dd>
+<dt>Ensembl VEP</dt>
+<dd>McLaren W, Gil L, Hunt SE, Riat HS, Ritchie GRS, Thormann A, et al. (2016) The Ensembl Variant Effect Predictor. <i>Genome Biology</i> 17: 122. <a href="https://doi.org/10.1186/s13059-016-0974-4" target="_blank" rel="noopener">doi:10.1186/s13059-016-0974-4</a></dd>
+</dl>
 </article>
-<article class="help-page" id="h-recipe-keep" data-title="Keep and share your work" data-group="Recipes" data-group-page="h-recipe-variants" data-keys="keep save download share ipynb notebook zip backup reproducible reproducibility versions session record jupyter colab conda bioconda environment sessioninfo restart run all hand in submit" hidden>
+<article class="help-page" id="h-recipe-keep" data-title="Keep and share your work" data-group="Recipes" data-group-page="h-recipes" data-keys="keep save download share ipynb notebook zip backup reproducible reproducibility versions session record jupyter colab conda bioconda environment sessioninfo restart run all hand in submit" hidden>
 <h1><svg class="ic" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M5 3h11l5 5v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z"/><path d="M7 3v5h8V3M7 21v-7h10v7"/></svg>Keep and share your work</h1>
 <p class="lede">Everything you run in the workbench can become a notebook – a record that shows what you did and runs again. Your files live in this browser: download what you want to keep.</p>
 
@@ -2256,48 +2695,65 @@ conda create -n workbench-cutadapt -c conda-forge -c bioconda cutadapt=5.2
 conda create -n workbench-somatic -c conda-forge -c bioconda lofreq=2.1.5 somatic-sniper=1.0.5.0
 conda create -n workbench-strelka -c conda-forge -c bioconda strelka=2.9.10
 conda create -n workbench-meta -c conda-forge -c bioconda kraken2=2.17.2 bracken=3.1
+conda create -n workbench-annotation -c conda-forge -c bioconda prodigal=2.6.3 hmmer=3.4 bustools=0.45.1
 conda activate workbench</code></pre>
-<p>bcftools 1.10 needs an older htslib than samtools 1.17, so it has an environment of its own (or take a current bcftools into the first one – its output can differ in details); Bioconda's BWA 0.7.19 needs a newer zlib than samtools 1.17 and FreeBayes 1.3.6, so it goes with a current samtools. featureCounts is in the package <code>subread</code>. StringTie 3.0.3 and mosdepth 0.3.14 each need their own newer HTSlib, and so an environment each. Cutadapt 5.2 needs Python 3.13, where Bowtie 2 2.4.2 needs Python 3.9 or older; LoFreq 2.1.5 needs samtools 1.24 or newer; Strelka 2.9.10 needs Python 2.7 – so each has an environment of its own. Kraken2 and Bracken share one (Kraken2 2.17.2 needs zlib 1.3.2 or newer); a Kraken2 database is not in the package – build one, or download a ready-made one. Bioconda has no Kalign 3.3.1; 3.3.2 is the nearest.</p>
+<p>bcftools 1.10 needs an older htslib than samtools 1.17, so it has an environment of its own (or take a current bcftools into the first one – its output can differ in details); Bioconda's BWA 0.7.19 needs a newer zlib than samtools 1.17 and FreeBayes 1.3.6, so it goes with a current samtools. featureCounts is in the package <code>subread</code>. StringTie 3.0.3 and mosdepth 0.3.14 each need their own newer HTSlib, and so an environment each. Cutadapt 5.2 needs Python 3.13, where Bowtie 2 2.4.2 needs Python 3.9 or older; LoFreq 2.1.5 needs samtools 1.24 or newer; Strelka 2.9.10 needs Python 2.7 – so each has an environment of its own. Kraken2 and Bracken share one (Kraken2 2.17.2 needs zlib 1.3.2 or newer); a Kraken2 database is not in the package – build one, or download a ready-made one. Prodigal, HMMER and bustools share one too; on a computer HMMER reads <code>.gz</code> files and uses several cores (<code>--cpu</code>). Bioconda has no Kalign 3.3.1; 3.3.2 is the nearest.</p>
 <p>Lines that only the workbench understands – <code>igv</code>, <code>open</code>, <code>download</code> – do nothing useful elsewhere: leave them out.</p>
 </article>
-<article class="help-page" id="h-programs" data-title="Programs and versions" data-group="Reference" data-group-page="h-programs" data-keys="programs versions list fastp seqtk wgsim minimap2 bowtie2 bwa bwa-mem2 hisat2 freebayes stringtie kallisto salmon featurecounts subread mosdepth cutadapt dnaio xopen lofreq somaticsniper bam-somaticsniper strelka strelka2 configurestrelkasomaticworkflow kraken2 kraken2-build kraken2-inspect bracken bracken-build samtools bcftools htslib bedtools gffread kalign muscle fasttree seq-align lastz jq coreutils grep sed awk python pyodide numpy pandas matplotlib biopython scipy r webr snakemake graphviz conda igv ngl deseq2 edger locfit" hidden>
+<article class="help-page" id="h-reference" data-title="Reference" data-group="Reference" data-group-page="h-reference" data-keys="reference facts look up" hidden>
+<h1><svg class="ic" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7.5h.01"/></svg>Reference</h1>
+<p class="lede">Facts to look up: the programs and their versions, the keyboard shortcuts, what is different in the browser, what to do when something goes wrong, what happens to your data, and whose work the workbench is built from.</p>
+<ul class="help-grouplist">
+<li><a href="#h-programs">Programs and versions<small>Every program, language and library, with its version</small></a></li>
+<li><a href="#h-shortcuts">Keyboard shortcuts<small>The keys of every tab</small></a></li>
+<li><a href="#h-limits">What is different in the browser<small>Memory, speed, storage, internet, what cannot run</small></a></li>
+<li><a href="#h-troubleshoot">When something goes wrong<small>Common problems and what to do</small></a></li>
+<li><a href="#h-privacy">Your data and privacy<small>What is kept where, and what is sent to whom</small></a></li>
+<li><a href="#h-credits">Credits and licences<small>The software and data the workbench is built from</small></a></li>
+</ul>
+</article>
+<article class="help-page" id="h-programs" data-title="Programs and versions" data-group="Reference" data-group-page="h-reference" data-keys="programs versions list fastp seqtk wgsim minimap2 bowtie2 bwa bwa-mem2 hisat2 freebayes stringtie kallisto salmon featurecounts subread mosdepth cutadapt dnaio xopen lofreq somaticsniper bam-somaticsniper strelka strelka2 configurestrelkasomaticworkflow kraken2 kraken2-build kraken2-inspect bracken bracken-build bustools plink plink2 prodigal hmmer hmmbuild hmmsearch hmmscan hmmpress phmmer jackhmmer nhmmer nhmmscan hmmalign hmmfetch hmmstat hmmemit hmmconvert samtools bcftools htslib bedtools gffread kalign muscle fasttree seq-align lastz jq coreutils grep sed awk python pyodide numpy pandas matplotlib biopython scipy r webr snakemake graphviz conda igv ngl deseq2 edger locfit" hidden>
 <h1><svg class="ic" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M8 6h13M8 12h13M8 18h13M3.5 6h.01M3.5 12h.01M3.5 18h.01"/></svg>Programs and versions</h1>
-<p class="lede">Results depend on versions: cite the ones you used. <code>help</code> in the terminal prints this list too; <code>NAME --version</code> one program's.</p>
+<p class="lede">Results depend on versions: cite the ones you used, with the papers of the programs (<i>To cite</i>; in full at the end of each program's help page). <code>help</code> in the terminal prints this list too; <code>NAME --version</code> one program's.</p>
 
 <h2>The terminal's bioinformatics programs</h2>
-<p>The real programs, compiled to WebAssembly (most by the Biowasm project; BWA, BWA-MEM2, HISAT2, FreeBayes, featureCounts, StringTie, kallisto, Salmon, mosdepth, Cutadapt, LoFreq, SomaticSniper, Strelka2, Kraken2 and Bracken by the genomics-wasm project). Galaxy runs the same ones.</p>
+<p>The real programs, compiled to WebAssembly (most by the Biowasm project; BWA, BWA-MEM2, HISAT2, FreeBayes, featureCounts, StringTie, kallisto, Salmon, mosdepth, Cutadapt, LoFreq, SomaticSniper, Strelka2, Kraken2, Bracken, bustools, Prodigal, HMMER and PLINK 2 by the genomics-wasm project). Galaxy runs the same ones.</p>
 <table>
-<tr><th>Program</th><th>Version</th><th>For</th></tr>
-<tr><td>fastp</td><td>0.20.1</td><td>read quality control and trimming</td></tr>
-<tr><td>Cutadapt (with dnaio 1.2.4 and xopen 2.1.0)</td><td>5.2</td><td>removing adapters and primers; quality trimming. It runs in a Python of its own: Pyodide 314.0.7, CPython 3.14.2</td></tr>
-<tr><td>seqtk</td><td>1.4</td><td>FASTA/FASTQ conversion, sampling, statistics</td></tr>
-<tr><td>wgsim</td><td>0.3.1-r13</td><td>simulating reads</td></tr>
-<tr><td>minimap2</td><td>2.22</td><td>mapping reads (short and long), aligning sequences</td></tr>
-<tr><td>Bowtie 2 (<code>bowtie2</code>, <code>bowtie2-build</code>)</td><td>2.4.2</td><td>mapping short reads</td></tr>
-<tr><td>BWA (<code>bwa index</code>, <code>bwa mem</code>)</td><td>0.7.19</td><td>mapping short reads</td></tr>
-<tr><td>BWA-MEM2 (<code>bwa-mem2 index</code>, <code>bwa-mem2 mem</code>)</td><td>2.2.1</td><td>mapping short reads (bwa mem's algorithm, rewritten for speed)</td></tr>
-<tr><td>HISAT2 (<code>hisat2</code>, <code>hisat2-build</code>, <code>hisat2-inspect</code>)</td><td>2.2.2</td><td>mapping RNA-seq reads across introns</td></tr>
-<tr><td>featureCounts (Subread)</td><td>2.1.1</td><td>counting RNA-seq reads per gene (several threads)</td></tr>
-<tr><td>StringTie</td><td>3.0.3</td><td>assembling transcripts from RNA-seq alignments, and their abundance</td></tr>
-<tr><td>kallisto</td><td>0.52.0</td><td>transcript abundances by pseudoalignment</td></tr>
-<tr><td>Salmon</td><td>2.8.0</td><td>transcript abundances by selective alignment (several threads)</td></tr>
-<tr><td>SAMtools</td><td>1.17</td><td>SAM/BAM files: sort, index, view, statistics, depth, faidx</td></tr>
-<tr><td>mosdepth</td><td>0.3.14</td><td>read depth per base, window or region</td></tr>
-<tr><td>BCFtools</td><td>1.10</td><td>variant calling and VCF/BCF files</td></tr>
-<tr><td>FreeBayes</td><td>1.3.6</td><td>variant calling (haplotype-based)</td></tr>
-<tr><td>LoFreq (<code>lofreq call</code>, <code>indelqual</code>, <code>somatic</code> …)</td><td>2.1.5</td><td>variant calling at low frequencies; somatic variants of a tumour and its normal</td></tr>
-<tr><td>SomaticSniper (<code>bam-somaticsniper</code>)</td><td>1.0.5.0</td><td>somatic SNVs of a tumour and its normal</td></tr>
-<tr><td>Strelka2 (<code>configureStrelkaSomaticWorkflow.py</code>, then <code>runWorkflow.py</code>)</td><td>2.9.10</td><td>somatic SNVs and indels of a tumour and its normal</td></tr>
-<tr><td>Kraken2 (<code>kraken2</code>, <code>kraken2-build</code>, <code>kraken2-inspect</code>)</td><td>2.17.2</td><td>assigning reads to taxa (metagenomics); building and inspecting databases. <code>kraken2 --version</code> says 2.17.1, as the release does</td></tr>
-<tr><td>Bracken (<code>bracken</code>, <code>bracken-build</code>)</td><td>3.1</td><td>the abundance of species (or genera …) from a Kraken2 report. Its Python programs run in the Python of Cutadapt; <code>bracken -v</code> says 3.0.1, as the release does</td></tr>
-<tr><td>HTSlib (<code>bgzip</code>, <code>tabix</code>)</td><td>1.17</td><td>compressing and indexing</td></tr>
-<tr><td>bedtools</td><td>2.31.0</td><td>genomic intervals</td></tr>
-<tr><td>gffread</td><td>0.12.7</td><td>GFF/GTF files; transcript and protein sequences</td></tr>
-<tr><td>Kalign</td><td>3.3.1</td><td>multiple sequence alignment</td></tr>
-<tr><td>MUSCLE</td><td>3.8.1551</td><td>multiple sequence alignment</td></tr>
-<tr><td>FastTree</td><td>2.1.11</td><td>phylogenetic trees</td></tr>
-<tr><td>seq-align (<code>needleman_wunsch</code>, <code>smith_waterman</code>, <code>lcs</code>)</td><td>2017.10.18</td><td>pairwise alignment</td></tr>
-<tr><td>LASTZ</td><td>1.04.52</td><td>aligning long DNA sequences</td></tr>
+<tr><th>Program</th><th>Version</th><th>For</th><th>To cite</th></tr>
+<tr><td>fastp</td><td>0.20.1</td><td>read quality control and trimming</td><td><a href="https://doi.org/10.1093/bioinformatics/bty560" target="_blank" rel="noopener">Chen et al. 2018</a></td></tr>
+<tr><td>Cutadapt (with dnaio 1.2.4 and xopen 2.1.0)</td><td>5.2</td><td>removing adapters and primers; quality trimming. It runs in a Python of its own: Pyodide 314.0.7, CPython 3.14.2</td><td><a href="https://doi.org/10.14806/ej.17.1.200" target="_blank" rel="noopener">Martin 2011</a></td></tr>
+<tr><td>seqtk</td><td>1.4</td><td>FASTA/FASTQ conversion, sampling, statistics</td><td><a href="https://github.com/lh3/seqtk" target="_blank" rel="noopener">github.com/lh3/seqtk</a></td></tr>
+<tr><td>wgsim</td><td>0.3.1-r13</td><td>simulating reads</td><td><a href="https://github.com/lh3/wgsim" target="_blank" rel="noopener">github.com/lh3/wgsim</a></td></tr>
+<tr><td>minimap2</td><td>2.22</td><td>mapping reads (short and long), aligning sequences</td><td><a href="https://doi.org/10.1093/bioinformatics/bty191" target="_blank" rel="noopener">Li 2018</a>; <a href="https://doi.org/10.1093/bioinformatics/btab705" target="_blank" rel="noopener">Li 2021</a></td></tr>
+<tr><td>Bowtie 2 (<code>bowtie2</code>, <code>bowtie2-build</code>)</td><td>2.4.2</td><td>mapping short reads</td><td><a href="https://doi.org/10.1038/nmeth.1923" target="_blank" rel="noopener">Langmead and Salzberg 2012</a></td></tr>
+<tr><td>BWA (<code>bwa index</code>, <code>bwa mem</code>)</td><td>0.7.19</td><td>mapping short reads</td><td><a href="https://arxiv.org/abs/1303.3997" target="_blank" rel="noopener">Li 2013</a>; <a href="https://doi.org/10.1093/bioinformatics/btp324" target="_blank" rel="noopener">Li and Durbin 2009</a></td></tr>
+<tr><td>BWA-MEM2 (<code>bwa-mem2 index</code>, <code>bwa-mem2 mem</code>)</td><td>2.2.1</td><td>mapping short reads (bwa mem's algorithm, rewritten for speed)</td><td><a href="https://doi.org/10.1109/IPDPS.2019.00041" target="_blank" rel="noopener">Vasimuddin et al. 2019</a></td></tr>
+<tr><td>HISAT2 (<code>hisat2</code>, <code>hisat2-build</code>, <code>hisat2-inspect</code>)</td><td>2.2.2</td><td>mapping RNA-seq reads across introns</td><td><a href="https://doi.org/10.1038/s41587-019-0201-4" target="_blank" rel="noopener">Kim et al. 2019</a></td></tr>
+<tr><td>featureCounts (Subread)</td><td>2.1.1</td><td>counting RNA-seq reads per gene (several threads)</td><td><a href="https://doi.org/10.1093/bioinformatics/btt656" target="_blank" rel="noopener">Liao et al. 2014</a></td></tr>
+<tr><td>StringTie</td><td>3.0.3</td><td>assembling transcripts from RNA-seq alignments, and their abundance</td><td><a href="https://doi.org/10.1038/s41592-026-03080-3" target="_blank" rel="noopener">Shinder et al. 2026</a>; <a href="https://doi.org/10.1038/nbt.3122" target="_blank" rel="noopener">Pertea et al. 2015</a>; <a href="https://doi.org/10.1186/s13059-019-1910-1" target="_blank" rel="noopener">Kovaka et al. 2019</a></td></tr>
+<tr><td>kallisto</td><td>0.52.0</td><td>transcript abundances by pseudoalignment</td><td><a href="https://doi.org/10.1038/nbt.3519" target="_blank" rel="noopener">Bray et al. 2016</a></td></tr>
+<tr><td>Salmon</td><td>2.8.0</td><td>transcript abundances by selective alignment (several threads)</td><td><a href="https://doi.org/10.1038/nmeth.4197" target="_blank" rel="noopener">Patro et al. 2017</a></td></tr>
+<tr><td>bustools</td><td>0.45.1</td><td>single-cell RNA-seq: sorting, correcting and counting the BUS records of <code>kallisto bus</code> into a matrix of cells and genes</td><td><a href="https://doi.org/10.1038/s41587-021-00870-2" target="_blank" rel="noopener">Melsted et al. 2021</a>; <a href="https://doi.org/10.1093/bioinformatics/btz279" target="_blank" rel="noopener">Melsted et al. 2019</a>; <a href="https://doi.org/10.1038/s41596-024-01057-0" target="_blank" rel="noopener">Sullivan et al. 2025</a></td></tr>
+<tr><td>SAMtools</td><td>1.17</td><td>SAM/BAM files: sort, index, view, statistics, depth, faidx</td><td><a href="https://doi.org/10.1093/gigascience/giab008" target="_blank" rel="noopener">Danecek et al. 2021</a>; <a href="https://doi.org/10.1093/bioinformatics/btp352" target="_blank" rel="noopener">Li et al. 2009</a></td></tr>
+<tr><td>mosdepth</td><td>0.3.14</td><td>read depth per base, window or region</td><td><a href="https://doi.org/10.1093/bioinformatics/btx699" target="_blank" rel="noopener">Pedersen and Quinlan 2018</a></td></tr>
+<tr><td>BCFtools</td><td>1.10</td><td>variant calling and VCF/BCF files</td><td><a href="https://doi.org/10.1093/gigascience/giab008" target="_blank" rel="noopener">Danecek et al. 2021</a></td></tr>
+<tr><td>FreeBayes</td><td>1.3.6</td><td>variant calling (haplotype-based)</td><td><a href="https://arxiv.org/abs/1207.3907" target="_blank" rel="noopener">Garrison and Marth 2012</a></td></tr>
+<tr><td>LoFreq (<code>lofreq call</code>, <code>indelqual</code>, <code>somatic</code> …)</td><td>2.1.5</td><td>variant calling at low frequencies; somatic variants of a tumour and its normal</td><td><a href="https://doi.org/10.1093/nar/gks918" target="_blank" rel="noopener">Wilm et al. 2012</a>; <a href="https://doi.org/10.1101/gr.112326.110" target="_blank" rel="noopener">Albers et al. 2011</a></td></tr>
+<tr><td>SomaticSniper (<code>bam-somaticsniper</code>)</td><td>1.0.5.0</td><td>somatic SNVs of a tumour and its normal</td><td><a href="https://doi.org/10.1093/bioinformatics/btr665" target="_blank" rel="noopener">Larson et al. 2012</a></td></tr>
+<tr><td>Strelka2 (<code>configureStrelkaSomaticWorkflow.py</code>, then <code>runWorkflow.py</code>)</td><td>2.9.10</td><td>somatic SNVs and indels of a tumour and its normal</td><td><a href="https://doi.org/10.1038/s41592-018-0051-x" target="_blank" rel="noopener">Kim et al. 2018</a></td></tr>
+<tr><td>Kraken2 (<code>kraken2</code>, <code>kraken2-build</code>, <code>kraken2-inspect</code>)</td><td>2.17.2</td><td>assigning reads to taxa (metagenomics); building and inspecting databases. <code>kraken2 --version</code> says 2.17.1, as the release does</td><td><a href="https://doi.org/10.1186/s13059-019-1891-0" target="_blank" rel="noopener">Wood et al. 2019</a>; <a href="https://doi.org/10.1038/s41596-022-00738-y" target="_blank" rel="noopener">Lu et al. 2022</a></td></tr>
+<tr><td>Bracken (<code>bracken</code>, <code>bracken-build</code>)</td><td>3.1</td><td>the abundance of species (or genera …) from a Kraken2 report. Its Python programs run in the Python of Cutadapt; <code>bracken -v</code> says 3.0.1, as the release does</td><td><a href="https://doi.org/10.7717/peerj-cs.104" target="_blank" rel="noopener">Lu et al. 2017</a></td></tr>
+<tr><td>Prodigal</td><td>2.6.3</td><td>finding the genes that code for proteins in genomes of bacteria and archaea, and in metagenomes</td><td><a href="https://doi.org/10.1186/1471-2105-11-119" target="_blank" rel="noopener">Hyatt et al. 2010</a></td></tr>
+<tr><td>HMMER (<code>hmmbuild</code>, <code>hmmsearch</code>, <code>hmmscan</code>, <code>hmmpress</code>, <code>phmmer</code>, <code>jackhmmer</code>, <code>nhmmer</code>, <code>nhmmscan</code>, <code>hmmalign</code>, <code>hmmfetch</code>, <code>hmmstat</code>, <code>hmmemit</code>, <code>hmmconvert</code>)</td><td>3.4</td><td>profile hidden Markov models: protein domains and families (as Pfam's), searches of proteins and DNA (one thread here)</td><td><a href="http://hmmer.org/" target="_blank" rel="noopener">hmmer.org</a>; <a href="https://doi.org/10.1371/journal.pcbi.1002195" target="_blank" rel="noopener">Eddy 2011</a></td></tr>
+<tr><td>PLINK 2</td><td>2.0.0-b.1-dev (12 October 2026)</td><td>the genotypes of many people: quality control, allele frequencies, LD, kinship, association tests (GWAS) and scores (threads: a cross-origin isolated page; no <code>--pca</code> in this build)</td><td><a href="https://doi.org/10.1186/s13742-015-0047-8" target="_blank" rel="noopener">Chang et al. 2015</a>; <a href="https://www.cog-genomics.org/plink/2.0/" target="_blank" rel="noopener">cog-genomics.org/plink/2.0</a></td></tr>
+<tr><td>HTSlib (<code>bgzip</code>, <code>tabix</code>)</td><td>1.17</td><td>compressing and indexing</td><td><a href="https://doi.org/10.1093/gigascience/giab007" target="_blank" rel="noopener">Bonfield et al. 2021</a></td></tr>
+<tr><td>bedtools</td><td>2.31.0</td><td>genomic intervals</td><td><a href="https://doi.org/10.1093/bioinformatics/btq033" target="_blank" rel="noopener">Quinlan and Hall 2010</a></td></tr>
+<tr><td>gffread</td><td>0.12.7</td><td>GFF/GTF files; transcript and protein sequences</td><td><a href="https://doi.org/10.12688/f1000research.23297.2" target="_blank" rel="noopener">Pertea and Pertea 2020</a></td></tr>
+<tr><td>Kalign</td><td>3.3.1</td><td>multiple sequence alignment</td><td><a href="https://doi.org/10.1093/bioinformatics/btz795" target="_blank" rel="noopener">Lassmann 2020</a></td></tr>
+<tr><td>MUSCLE</td><td>3.8.1551</td><td>multiple sequence alignment</td><td><a href="https://doi.org/10.1093/nar/gkh340" target="_blank" rel="noopener">Edgar 2004</a></td></tr>
+<tr><td>FastTree</td><td>2.1.11</td><td>phylogenetic trees</td><td><a href="https://doi.org/10.1371/journal.pone.0009490" target="_blank" rel="noopener">Price et al. 2010</a></td></tr>
+<tr><td>seq-align (<code>needleman_wunsch</code>, <code>smith_waterman</code>, <code>lcs</code>)</td><td>2017.10.18</td><td>pairwise alignment</td><td><a href="https://github.com/noporpoise/seq-align" target="_blank" rel="noopener">github.com/noporpoise/seq-align</a>; <a href="https://doi.org/10.1016/0022-2836(70)90057-4" target="_blank" rel="noopener">Needleman and Wunsch 1970</a>; <a href="https://doi.org/10.1016/0022-2836(81)90087-5" target="_blank" rel="noopener">Smith and Waterman 1981</a></td></tr>
+<tr><td>LASTZ</td><td>1.04.52</td><td>aligning long DNA sequences</td><td><a href="https://github.com/lastz/lastz" target="_blank" rel="noopener">Harris 2007</a></td></tr>
 </table>
 
 <h2>Other tools of the terminal</h2>
@@ -2334,7 +2790,7 @@ conda activate workbench</code></pre>
 </table>
 <p>Their licences: <a href="#h-credits">Credits and licences</a>.</p>
 </article>
-<article class="help-page" id="h-shortcuts" data-title="Keyboard shortcuts" data-group="Reference" data-group-page="h-programs" data-keys="keyboard shortcuts keys hotkeys ctrl shift enter escape tab arrows notebook terminal editor help viewer assistant mac cmd command" hidden>
+<article class="help-page" id="h-shortcuts" data-title="Keyboard shortcuts" data-group="Reference" data-group-page="h-reference" data-keys="keyboard shortcuts keys hotkeys ctrl shift enter escape tab arrows notebook terminal editor help viewer assistant mac cmd command" hidden>
 <h1><svg class="ic" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><rect x="2" y="6" width="20" height="12" rx="2"/><path d="M6 10h.01M10 10h.01M14 10h.01M18 10h.01M7 14h10"/></svg>Keyboard shortcuts</h1>
 <p class="lede">On a Mac, use <kbd>⌘</kbd> (Cmd) where it says <kbd>Ctrl</kbd> – except in the terminal: there <kbd>Ctrl</kbd>+<kbd>C</kbd> and <kbd>Ctrl</kbd>+<kbd>L</kbd> are the Ctrl key, as in the Mac's own Terminal (<kbd>⌘</kbd>+<kbd>C</kbd> copies).</p>
 
@@ -2404,21 +2860,21 @@ conda activate workbench</code></pre>
 <tr><td><kbd>Shift</kbd>+<kbd>Enter</kbd></td><td>a new line in the message</td></tr>
 </table>
 </article>
-<article class="help-page" id="h-limits" data-title="What is different in the browser" data-group="Reference" data-group-page="h-programs" data-keys="limits limitation browser webassembly memory ram speed slow core thread threads storage quota large file internet cors offline install sudo apt background job gpu mobile phone tablet cross-origin isolated isolation sharedarraybuffer service worker featurecounts salmon cutadapt lofreq call-parallel vcfplot strelka strelka2 germline python2 python 2" hidden>
+<article class="help-page" id="h-limits" data-title="What is different in the browser" data-group="Reference" data-group-page="h-reference" data-keys="limits limitation browser webassembly memory ram speed slow core thread threads storage quota large file internet cors offline install sudo apt background job gpu mobile phone tablet cross-origin isolated isolation sharedarraybuffer service worker featurecounts salmon cutadapt lofreq call-parallel vcfplot strelka strelka2 germline python2 python 2 hmmer cpu gzip gz simd prodigal bustools sort memory plink plink2 pca lapack script" hidden>
 <h1><svg class="ic" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7.5h.01"/></svg>What is different in the browser</h1>
 <p class="lede">Everything in the workbench runs on your own computer, inside this web page: the programs are the real ones, compiled to WebAssembly, and Python and R are the real languages. That brings some limits a server would not have.</p>
 
 <h2>Speed and memory</h2>
 <ul>
-  <li>Each program runs on <b>one processor core</b>; options for threads (<code>-t</code>, <code>-p</code>, <code>-@</code>, <code>-j</code>, <code>--threads</code>) are ignored, with a note. Two programs are different: <b>featureCounts</b> counts on up to four threads (<code>-T 1</code> to <code>-T 4</code>), and <b>Salmon</b> runs its own helper threads – see <a href="#h-limits/threads">programs on several threads</a>. Programs run more slowly than on a server, and the speed depends on your computer: keep the data small.</li>
+  <li>Each program runs on <b>one processor core</b>; options for threads (<code>-t</code>, <code>-p</code>, <code>-@</code>, <code>-j</code>, <code>--threads</code>, <code>--cpu</code>) are ignored, with a note. Three programs are different: <b>featureCounts</b> counts on up to four threads (<code>-T 1</code> to <code>-T 4</code>), <b>Salmon</b> runs its own helper threads, and <b>PLINK 2</b> reads its files on threads of their own and computes on one or two (<code>--threads 2</code> at most) – see <a href="#h-limits/threads">programs on several threads</a>. Programs run more slowly than on a server, and the speed depends on your computer: keep the data small.</li>
   <li>A program, Python and R each have <b>a few gigabytes of memory</b> at most (WebAssembly is 32-bit: 4 GB is the ceiling, and browsers often allow less). Mapping reads to a whole human genome does not fit; regions, a few genes, bacterial and viral genomes do.</li>
   <li>Python has no threads, no <code>multiprocessing</code> and no <code>subprocess</code>; <code>input()</code> does not work in a notebook. R cannot run <code>system()</code>: use a <code>%%bash</code> cell.</li>
 </ul>
 
 <h2 id="threads">Programs on several threads</h2>
-<p>featureCounts and Salmon start threads that share the program's memory. A browser allows that only in a page that is <b>cross-origin isolated</b>: the page and its workers come with two headers, <code>Cross-Origin-Opener-Policy</code> and <code>Cross-Origin-Embedder-Policy</code>, which also keep pictures of other sites out unless those sites allow them. Static hosting (GitHub Pages) cannot send the headers, so the workbench adds them itself with a small service worker (<code>isolation-sw.js</code>; it stores nothing): the first time you open the workbench, the page loads once more, at once. <code>serve.py</code> sends the headers itself.</p>
+<p>featureCounts, Salmon and PLINK 2 start threads that share the program's memory. A browser allows that only in a page that is <b>cross-origin isolated</b>: the page and its workers come with two headers, <code>Cross-Origin-Opener-Policy</code> and <code>Cross-Origin-Embedder-Policy</code>, which also keep pictures of other sites out unless those sites allow them. Static hosting (GitHub Pages) cannot send the headers, so the workbench adds them itself with a small service worker (<code>isolation-sw.js</code>; it stores nothing): the first time you open the workbench, the page loads once more, at once. <code>serve.py</code> sends the headers itself.</p>
 <ul>
-  <li>If featureCounts or Salmon say that the page is not isolated, reload the page. It cannot be isolated when it was not opened over <b>https</b> (or from <code>localhost</code>), or when the browser does not allow service workers there – some private windows do not.</li>
+  <li>If featureCounts, Salmon or PLINK 2 say that the page is not isolated, reload the page. It cannot be isolated when it was not opened over <b>https</b> (or from <code>localhost</code>), or when the browser does not allow service workers there – some private windows do not.</li>
   <li>The other programs, Python and R do not need isolation, and work either way.</li>
   <li>To turn isolation off – if a picture of another site does not show, say – open the workbench with <code>?isolation=off</code> at the end of its address; open it without that to turn it on again.</li>
 </ul>
@@ -2429,6 +2885,9 @@ conda activate workbench</code></pre>
   <li><b>LoFreq</b>: <code>lofreq call-parallel</code> and <code>lofreq vcfplot</code> are not here – use <code>lofreq call</code>. <code>lofreq somatic</code> runs its steps one after another.</li>
   <li><b>Kraken2</b> works with small databases: the database must fit in the browser's memory – a few hundred megabytes at most. The databases used for real samples (Kraken2's standard database is tens of gigabytes) do not; <code>kraken2-build</code> cannot download (<code>--download-taxonomy</code>, <code>--download-library</code>, <code>--standard</code>, <code>--special</code>) and has no <code>--add-to-library</code> – a database is built from sequences, a map and a taxonomy that you put in its folder (see <a href="#h-metagenomics">Metagenomics</a>). Reads compressed with bzip2 cannot be read. Kraken2 and Bracken run on one thread.</li>
   <li><b>Bracken</b>: its two Python programs start a Python of their own for each command, as Cutadapt does (a few seconds). Where Bracken's script reports an error but ends with status 0 – a database or a report that is not there – it ends with status 2 here.</li>
+  <li><b>HMMER</b> runs on one thread: <code>--cpu</code> is left out, with a note. It cannot read files compressed with gzip (<code>.gz</code>) – HMMER starts the program gzip to read them, and a web page cannot start programs: unpack them first (<code>gunzip -k FILE.gz</code>). Easel's own programs (<code>esl-reformat</code>, <code>esl-sfetch</code> …) are not here. HMMER needs WebAssembly SIMD, which all current browsers have. Its line “# CPU time” says 0.00u 0.00s: a web page does not tell a program how much processor time it used (the “Elapsed” time is right). Profile databases as big as the whole of Pfam do not fit in the browser's memory: use the InterPro card of the Databases tab for those.</li>
+  <li><b>bustools</b> sorts on one thread (<code>sort -t 4</code> becomes <code>-t 1</code>, with a note) and in 64 MB of memory unless told otherwise – 1 GB at most: a larger <code>-m</code> becomes <code>-m 64M</code>, with a note. Its matrices are those of bustools on Linux; the <code>.ec.txt</code> file that <code>count</code> writes without <code>--genecounts</code> has the same equivalence classes, but those the matrix does not use can be numbered differently.</li>
+  <li><b>PLINK 2</b> is built without the LAPACK library, so <code>--pca</code> and <code>--pheno-svd</code> are not available (PLINK says so and stops). It works in 640 MiB of memory, the least it accepts: the terminal adds <code>--threads 1 --memory 640 require</code> unless you give them, and a larger <code>--memory</code> becomes 1024 (more threads than 2 become 2), with a note. <code>--script</code> and <code>--rerun</code>, which read options from a file, are not available: <code>plink2 $(cat FILE)</code> does the same. Its genotypes must fit in that memory – thousands of people and variants, not a whole biobank. It needs a cross-origin isolated page.</li>
   <li><b>Strelka2</b>: the somatic workflow, not the germline one. Strelka's workflow scripts are Python 2, which is not here: the terminal runs <code>runWorkflow.py</code> itself, with Strelka's own programs – <code>-m local</code> only, the tasks one after another. <code>python2</code> runs these scripts and nothing else.</li>
 </ul>
 
@@ -2463,7 +2922,7 @@ conda activate workbench</code></pre>
 </ul>
 <p>Use a current Chrome, Edge, Firefox or Safari.</p>
 </article>
-<article class="help-page" id="h-troubleshoot" data-title="When something goes wrong" data-group="Reference" data-group-page="h-programs" data-keys="troubleshoot kraken2 bracken kmer_distrib unclassified problem error help isolated isolation cross-origin featurecounts salmon threads not working slow stuck crash files gone lost storage full quota not found no such file network failed to fetch cors 429 genome browser empty galaxy red ai key locked terminal out of memory reload index bai fai chromosome names variant caller strelka lofreq" hidden>
+<article class="help-page" id="h-troubleshoot" data-title="When something goes wrong" data-group="Reference" data-group-page="h-reference" data-keys="troubleshoot kraken2 bracken kmer_distrib unclassified prodigal hmmer hmmscan hmmpress auxfiles pressed format problem 20000 characters problem error help isolated isolation cross-origin featurecounts salmon threads not working slow stuck crash files gone lost storage full quota not found no such file network failed to fetch cors 429 genome browser empty galaxy red ai key locked terminal out of memory reload index bai fai chromosome names variant caller strelka lofreq plink plink2 pca lapack memory glm covariates allow-no-covars" hidden>
 <h1><svg class="ic" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="9"/><path d="M9.2 9a2.9 2.9 0 0 1 5.6 1c0 2-2.8 2.6-2.8 4"/><path d="M12 17.5h.01"/></svg>When something goes wrong</h1>
 <p class="lede">The usual problems, and what to do about them. Error messages in the notebook and the terminal often carry a hint of their own – and <b>Ask the AI assistant about this error</b> explains them (<a href="#h-ai">AI assistant</a>).</p>
 
@@ -2495,14 +2954,26 @@ conda activate workbench</code></pre>
 <dl>
   <dt>"command not found"</dt>
   <dd>The program is not in the workbench: <code>help</code> lists what is. Python packages: <code>%pip install NAME</code>; R packages: <code>install.packages("NAME")</code>.</dd>
-  <dt>featureCounts or salmon: "… this page is not" cross-origin isolated</dt>
-  <dd>These two programs work on several threads, which a browser allows only in a cross-origin isolated page. Reload the page: the workbench isolates it as it starts. It cannot when the page was not opened over https (or from localhost), or in a browser window that allows no service workers (some private windows) – see <a href="#h-limits/threads">programs on several threads</a>.</dd>
+  <dt>featureCounts, salmon or plink2: "… this page is not" cross-origin isolated</dt>
+  <dd>These three programs work on several threads, which a browser allows only in a cross-origin isolated page. Reload the page: the workbench isolates it as it starts. It cannot when the page was not opened over https (or from localhost), or in a browser window that allows no service workers (some private windows) – see <a href="#h-limits/threads">programs on several threads</a>.</dd>
   <dt>A variant caller says an index is missing, or that the chromosomes do not match</dt>
   <dd>Index the BAM files (<code>samtools index</code>) and the reference (<code>samtools faidx</code>) – again after a program has written a new BAM file, as <code>lofreq indelqual</code> does. The reference must be the one the reads were mapped to, with the sequence names of the BAM header (<code>samtools view -H file.bam | grep @SQ</code>). See <a href="#h-somatic">Somatic variants</a>.</dd>
   <dt>bracken: "ERROR: …/database100mers.kmer_distrib does not exist"</dt>
   <dd>Bracken needs the distribution for the length of your reads, and it takes 100 when <code>-r</code> is not given. Give the length: <code>-r 151</code> for the example data (<code>ls DB/*.kmer_distrib</code> shows which lengths a database has); <code>bracken-build -l LENGTH</code> makes one for another length. See <a href="#h-metagenomics">Metagenomics</a>.</dd>
   <dt>Kraken2 leaves most reads unclassified, or names a species that cannot be there</dt>
   <dd>Kraken2 finds only what is in its database: a read of an organism that is not there stays unclassified, or goes to a relative that is – E. coli reads to Shigella, say. Look at what the database holds (<code>kraken2-inspect</code>), raise <code>--confidence</code>, and let Bracken's threshold (<code>-t</code>) leave out species with few reads. See <a href="#h-metagenomics">Metagenomics</a>.</dd>
+  <dt>prodigal: "Sequence must be 20000 characters"</dt>
+  <dd>In its usual mode (<code>-p single</code>) Prodigal learns the genome from the sequences it is given, and fewer than 20,000 bases are too few to learn from. Give it the whole genome – all its contigs in one file – or, for a short sequence or a metagenome, use <code>-p meta</code>.</dd>
+  <dt>hmmscan: "Failed to open binary auxfiles … use hmmpress first"</dt>
+  <dd>hmmscan searches a collection of profiles that <code>hmmpress</code> has prepared: run <code>hmmpress FILE.hmm</code> first, in a folder of your own – it writes four files next to the profiles, which it cannot do in <code>/data/examples</code>. When hmmpress says "Delete old hmmpress indices first", the collection is pressed already; after changing its profiles, press it again with <code>hmmpress -f FILE.hmm</code>.</dd>
+  <dt>hmmsearch or hmmscan: "File format problem in trying to open HMM file"</dt>
+  <dd>The file given as the profile is not one – an alignment, or sequences. Build the profile from the alignment first (<code>hmmbuild NEW.hmm ALIGNMENT.sto</code>), and mind the order: the profiles come first and the sequences second, for <code>hmmsearch</code> and <code>hmmscan</code> alike.</dd>
+  <dt>plink2: "--pca requires plink2 to be built with LAPACK"</dt>
+  <dd>This build of PLINK 2 has no LAPACK, the library its principal components (<code>--pca</code>) and <code>--pheno-svd</code> need: they are not available here. The rest of PLINK works. See <a href="#h-plink2">Genotypes and association</a>.</dd>
+  <dt>plink2 --glm: "invoked without --covar … usually an analytical mistake"</dt>
+  <dd>PLINK asks for covariates in an association test – ancestry (principal components), sex, age – because a test without them is usually confounded. Give them with <code>--covar FILE</code>, or, when you are sure, add the modifier: <code>--glm allow-no-covars</code>.</dd>
+  <dt>plink2: "Failed to open NAME.psam" (or .pgen, .pvar, .bed …)</dt>
+  <dd><code>--pfile NAME</code> reads three files, <code>NAME.pgen</code>, <code>NAME.pvar</code> and <code>NAME.psam</code> (<code>--bfile NAME</code>: <code>.bed</code>, <code>.bim</code>, <code>.fam</code>): give the name without its ending, and make the files first (<code>plink2 --vcf FILE.vcf.gz --make-pgen --out NAME</code>).</dd>
   <dt>A program says it is out of memory, or stops without a message</dt>
   <dd>The data is too big for the browser: take a part of it (<code>samtools view</code> of a region, <code>seqtk sample</code>) – see <a href="#h-limits">What is different in the browser</a>.</dd>
   <dt>Python or R forgot my variables</dt>
@@ -2536,7 +3007,7 @@ conda activate workbench</code></pre>
 <h2>Reporting a problem</h2>
 <p>Say which browser and computer you use, what you did, and what happened – with the exact message (copy it, or take a screenshot). Leave out any personal data.</p>
 </article>
-<article class="help-page" id="h-privacy" data-title="Your data and privacy" data-group="Reference" data-group-page="h-programs" data-keys="privacy data protection personal patient data gdpr storage indexeddb local storage key api key sent service third party cdn tracking cookies shared computer" hidden>
+<article class="help-page" id="h-privacy" data-title="Your data and privacy" data-group="Reference" data-group-page="h-reference" data-keys="privacy data protection personal patient data gdpr storage indexeddb local storage key api key sent service third party cdn tracking cookies shared computer" hidden>
 <h1><svg class="ic" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>Your data and privacy</h1>
 <p class="lede">The workbench has no server of its own that keeps or sees your work: it runs in your browser. What leaves your computer goes to the public services you use, and only when you use them.</p>
 
@@ -2563,7 +3034,7 @@ conda activate workbench</code></pre>
 <div class="callout warn"><div class="co-t"><svg class="ic" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M12 3l10 18H2z"/><path d="M12 10v5M12 18h.01"/></svg>Personal and patient data</div>
 <p>The workbench is for learning, with public data. Never put personal or patient data into it – not into the Databases tab, not into an AI tool, not into your files here. Data you have been given for your studies or your work stays within the rules you were given with it.</p></div>
 </article>
-<article class="help-page" id="h-credits" data-title="Credits and licences" data-group="Reference" data-group-page="h-programs" data-keys="credits licences licenses copyright open source biowasm genomics-wasm featurecounts subread salmon kallisto stringtie mosdepth bwa-mem2 cutadapt dnaio xopen kraken2 bracken lofreq somaticsniper strelka strelka2 boost hcc1395 seqc2 pyodide webr igv ngl codemirror marked dompurify jszip viz graphviz gpl mit data sources cite citation" hidden>
+<article class="help-page" id="h-credits" data-title="Credits and licences" data-group="Reference" data-group-page="h-reference" data-keys="credits licences licenses copyright open source biowasm genomics-wasm featurecounts subread salmon kallisto stringtie mosdepth bwa-mem2 cutadapt dnaio xopen kraken2 bracken bustools croaring eigen plink plink2 libdeflate zstd 1000 genomes prodigal hmmer easel libdivsufsort pfam dfam kb_python lofreq somaticsniper strelka strelka2 boost hcc1395 seqc2 pyodide webr igv ngl codemirror marked dompurify jszip viz graphviz gpl mit data sources cite citation" hidden>
 <h1><svg class="ic" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M4 4h6a3 3 0 0 1 3 3v13a2 2 0 0 0-2-2H4zM20 4h-6a3 3 0 0 0-3 3v13a2 2 0 0 1 2-2h7z"/></svg>Credits and licences</h1>
 <p class="lede">The workbench is built from open-source software and open data, each under its own licence. The full list, with the licence texts and the source code of the GPL programs, is in <a href="THIRD_PARTY.md" target="_blank" rel="noopener">THIRD_PARTY.md</a> and the folder <code>assets/vendor/licenses/</code> of the site.</p>
 
@@ -2585,6 +3056,10 @@ conda activate workbench</code></pre>
 <tr><td>Cutadapt, dnaio, xopen – built for the browser by the genomics-wasm project, with the Python they run in: Pyodide 314.0.7 (CPython 3.14.2)</td><td>MIT; Pyodide MPL 2.0 (Python: PSF licence; the libraries in it their own – listed with the program)</td></tr>
 <tr><td>Kraken2 (Derrick Wood and others; with kseq and code from KrakenUniq) – compiled for the browser by the genomics-wasm project</td><td>MIT</td></tr>
 <tr><td>Bracken (Jennifer Lu) – built for the browser by the genomics-wasm project; its Python programs run in the Pyodide 314.0.7 of Cutadapt</td><td>GNU GPL 3 or later</td></tr>
+<tr><td>bustools (BUStools: Páll Melsted, A. Sina Booeshaghi, Lior Pachter and others; with CRoaring, Eigen, kseq, CppNumericalSolvers, LBFGSpp and zlib) – compiled for the browser by the genomics-wasm project</td><td>BSD 2-Clause (its parts: CRoaring Apache 2.0; Eigen MPL 2.0, its source is with the program; the others MIT and zlib)</td></tr>
+<tr><td>Prodigal (Doug Hyatt, University of Tennessee / UT-Battelle) – compiled for the browser by the genomics-wasm project</td><td>GNU GPL 3 or later</td></tr>
+<tr><td>HMMER (Sean R. Eddy and the HMMER team; with Easel and libdivsufsort) – compiled for the browser by the genomics-wasm project, with a small change of the workbench (see its folder)</td><td>BSD 3-Clause (Easel: BSD 2-Clause; libdivsufsort: MIT)</td></tr>
+<tr><td>PLINK 2 (Shaun Purcell, Christopher Chang, Benjamin Demaille and others; with libdeflate, zstd, SIMDe, SFMT, QD and zlib) – compiled for the browser by the genomics-wasm project</td><td>GNU GPL 3 or later (its library parts also LGPL 3 or later; libdeflate and SIMDe MIT, zstd BSD, SFMT and QD BSD-style, zlib its own)</td></tr>
 <tr><td>FastTree</td><td>GNU GPL 2 or later</td></tr>
 <tr><td>MUSCLE 3.8, seq-align</td><td>public domain</td></tr>
 <tr><td>GNU coreutils, grep, sed, gawk, diffutils</td><td>GNU GPL 3 or later</td></tr>
@@ -2609,7 +3084,7 @@ conda activate workbench</code></pre>
 
 <h2>Data and services</h2>
 <ul>
-  <li>The example reads: the 1000 Genomes Project (sample NA12878, run SRR098401); the reference slices: UCSC (hg19); the genes: Ensembl (GRCh37); sequences: NCBI GenBank and UniProt; the yeast table: SGD, PaxDb, BioGRID, UniProt and AlphaFold DB; the structure 1MBN: RCSB PDB; the RNA-seq reads and yeast chromosome: nf-core/test-datasets (run SRR6357070); the airway counts: the Bioconductor package airway (Himes et al. 2014); the reads with adapters: nf-core/test-datasets (run SRR6357070); the tumour and normal reads and the truth set of <code>somatic/</code>: the SEQC2 consortium, cell lines HCC1395 and HCC1395BL (Fang et al. 2021, Nature Biotechnology), with the reference windows from UCSC (hg38); the reads of <code>metagenomics/</code>: a ZymoBIOMICS mock community sequenced by Nicholls et al. (2019, GigaScience; ENA run ERR2984773), with a database made from NCBI RefSeq and NCBI Taxonomy. Details: <code>/data/examples/README.md</code>.</li>
+  <li>The example reads: the 1000 Genomes Project (sample NA12878, run SRR098401); the reference slices: UCSC (hg19); the genes: Ensembl (GRCh37); sequences: NCBI GenBank and UniProt; the yeast table: SGD, PaxDb, BioGRID, UniProt and AlphaFold DB; the structure 1MBN: RCSB PDB; the RNA-seq reads and yeast chromosome: nf-core/test-datasets (run SRR6357070); the airway counts: the Bioconductor package airway (Himes et al. 2014); the reads with adapters: nf-core/test-datasets (run SRR6357070); the tumour and normal reads and the truth set of <code>somatic/</code>: the SEQC2 consortium, cell lines HCC1395 and HCC1395BL (Fang et al. 2021, Nature Biotechnology), with the reference windows from UCSC (hg38); the reads of <code>metagenomics/</code>: a ZymoBIOMICS mock community sequenced by Nicholls et al. (2019, GigaScience; ENA run ERR2984773), with a database made from NCBI RefSeq and NCBI Taxonomy; the two bacterial windows of <code>bacteria/</code>: NCBI RefSeq (<i>E. coli</i> K-12 MG1655, <i>Salmonella</i> Typhimurium LT2); the files of <code>hmmer/</code>: the tutorial of HMMER 3.4 (with data of Pfam, Dfam and UniProt); the single-cell data of <code>singlecell/</code>: SRA run SRR8599150, as test files of kb_python and the BUStools getting_started release; the genotypes of <code>plink2/</code>: the 1000 Genomes Project, Phase 3 (The 1000 Genomes Project Consortium 2015, Nature), as the test file of PLINK 2, with synthetic files from PLINK 2's tests. Details: <code>/data/examples/README.md</code>.</li>
   <li>The Databases tab uses the public services of EMBL-EBI (UniProt, AlphaFold DB with Google DeepMind, InterPro, Ensembl, ENA, BLAST, QuickGO, OLS, Europe PMC), NCBI (E-utilities, PubChem), RCSB PDB, UCSC, STRING and Reactome. Cite the databases you use in your work: each names the paper to cite on its web site.</li>
 </ul>
 <div class="tryrow"><button class="do" type="button" data-open="/data/examples/README.md">Open the README of the examples</button></div>
@@ -2647,8 +3122,9 @@ conda activate workbench</code></pre>
 
 <noscript><p style="padding:20px">This page needs JavaScript.</p></noscript>
 
-<script>window.WB_EXAMPLES = [{"p":"README.md","s":8128},{"p":"annotation/cyp2c_exons.bed","s":1100},{"p":"annotation/cyp2c_slices.gff3","s":11587},{"p":"metagenomics/NOTICE.txt","s":1727},{"p":"metagenomics/provenance.json","s":7023},{"p":"metagenomics/reads_1.fastq.gz","s":483472},{"p":"metagenomics/reads_2.fastq.gz","s":536175},{"p":"metagenomics/db/database151mers.kmer_distrib","s":191},{"p":"metagenomics/db/hash.k2d","s":4404692},{"p":"metagenomics/db/opts.k2d","s":64},{"p":"metagenomics/db/seqid2taxid.map","s":80},{"p":"metagenomics/db/taxo.k2d","s":1155},{"p":"metagenomics/db/library/reference.fna","s":3037738},{"p":"metagenomics/db/taxonomy/names.dmp","s":621},{"p":"metagenomics/db/taxonomy/nodes.dmp","s":847},{"p":"reads/NA12878_R1.fastq","s":626445},{"p":"reads/NA12878_R2.fastq","s":626445},{"p":"reads/provenance.json","s":4102},{"p":"reads/reference.fa","s":56963},{"p":"reads/reference.fa.fai","s":60},{"p":"rnaseq/NOTICE.txt","s":2321},{"p":"rnaseq/SRR6357070_1.fastq","s":65464},{"p":"rnaseq/SRR6357070_2.fastq","s":65464},{"p":"rnaseq/airway_counts.tsv","s":2287691},{"p":"rnaseq/airway_samples.tsv","s":786},{"p":"rnaseq/provenance.json","s":4080},{"p":"rnaseq/yeast_chrI.fa","s":234058},{"p":"rnaseq/yeast_chrI.fa.fai","s":17},{"p":"rnaseq/yeast_chrI.gtf","s":203927},{"p":"rnaseq/yeast_chrI.splice_sites.tsv","s":88},{"p":"sequences/myoglobins.fasta","s":1325},{"p":"sequences/pBR322.fasta","s":4485},{"p":"sequences/tRNA-Thr.afa","s":582},{"p":"sequences/unknown_myoglobin.fasta","s":157},{"p":"somatic/NOTICE.txt","s":1304},{"p":"somatic/normal.bam","s":827440},{"p":"somatic/normal.bam.bai","s":208},{"p":"somatic/provenance.json","s":4132},{"p":"somatic/reference.fa","s":29534},{"p":"somatic/reference.fa.fai","s":81},{"p":"somatic/regions.bed","s":69},{"p":"somatic/regions.bed.gz","s":101},{"p":"somatic/regions.bed.gz.tbi","s":154},{"p":"somatic/truth.vcf","s":14510},{"p":"somatic/tumor.bam","s":650995},{"p":"somatic/tumor.bam.bai","s":224},{"p":"structures/1mbn.pdb","s":147420},{"p":"tables/yeast_genes.csv","s":2010502},{"p":"trimming/NOTICE.txt","s":1686},{"p":"trimming/SRR6357070_adapters_1.fastq","s":98106},{"p":"trimming/SRR6357070_adapters_2.fastq","s":98106},{"p":"trimming/provenance.json","s":2079},{"p":"variants/NA12878.calls.vcf.gz","s":1787},{"p":"variants/NA12878.calls.vcf.gz.tbi","s":156}];
-window.WB_STARTERS = [{"p":"notebooks/welcome-python.ipynb"},{"p":"notebooks/welcome-r.ipynb"}];</script>
+<script>window.WB_EXAMPLES = [{"p":"README.md","s":11513},{"p":"annotation/cyp2c_exons.bed","s":1100},{"p":"annotation/cyp2c_slices.gff3","s":11587},{"p":"bacteria/NOTICE.txt","s":1113},{"p":"bacteria/combined.fna","s":121681},{"p":"bacteria/ecoli.fna","s":60837},{"p":"bacteria/provenance.json","s":2565},{"p":"bacteria/salmonella.fna","s":60844},{"p":"hmmer/7LESS_DROME","s":19087},{"p":"hmmer/HBB_HUMAN","s":183},{"p":"hmmer/LICENSE","s":3556},{"p":"hmmer/MADE1.hmm","s":14842},{"p":"hmmer/MADE1.sto","s":35454},{"p":"hmmer/NOTICE.txt","s":1713},{"p":"hmmer/Pkinase.hmm","s":122014},{"p":"hmmer/Pkinase.sto","s":67852},{"p":"hmmer/dna_target.fa","s":335516},{"p":"hmmer/fn3.hmm","s":41101},{"p":"hmmer/fn3.sto","s":24538},{"p":"hmmer/globins4.hmm","s":70298},{"p":"hmmer/globins4.sto","s":863},{"p":"hmmer/globins45.fa","s":7210},{"p":"hmmer/provenance.json","s":5532},{"p":"metagenomics/NOTICE.txt","s":1727},{"p":"metagenomics/provenance.json","s":7023},{"p":"metagenomics/reads_1.fastq.gz","s":483472},{"p":"metagenomics/reads_2.fastq.gz","s":536175},{"p":"metagenomics/db/database151mers.kmer_distrib","s":191},{"p":"metagenomics/db/hash.k2d","s":4404692},{"p":"metagenomics/db/opts.k2d","s":64},{"p":"metagenomics/db/seqid2taxid.map","s":80},{"p":"metagenomics/db/taxo.k2d","s":1155},{"p":"metagenomics/db/library/reference.fna","s":3037738},{"p":"metagenomics/db/taxonomy/names.dmp","s":621},{"p":"metagenomics/db/taxonomy/nodes.dmp","s":847},{"p":"plink2/1kg-phase3-chr21.vcf.gz","s":78046},{"p":"plink2/NOTICE.txt","s":3063},{"p":"plink2/keep48.samples.txt","s":389},{"p":"plink2/provenance.json","s":4753},{"p":"plink2/synthetic_covariates.tsv","s":14061},{"p":"plink2/synthetic_glm.vcf","s":76158},{"p":"plink2/synthetic_phenotypes.tsv","s":11095},{"p":"plink2/synthetic_scores.tsv","s":409},{"p":"reads/NA12878_R1.fastq","s":626445},{"p":"reads/NA12878_R2.fastq","s":626445},{"p":"reads/provenance.json","s":4102},{"p":"reads/reference.fa","s":56963},{"p":"reads/reference.fa.fai","s":60},{"p":"rnaseq/NOTICE.txt","s":2321},{"p":"rnaseq/SRR6357070_1.fastq","s":65464},{"p":"rnaseq/SRR6357070_2.fastq","s":65464},{"p":"rnaseq/airway_counts.tsv","s":2287691},{"p":"rnaseq/airway_samples.tsv","s":786},{"p":"rnaseq/provenance.json","s":4080},{"p":"rnaseq/yeast_chrI.fa","s":234058},{"p":"rnaseq/yeast_chrI.fa.fai","s":17},{"p":"rnaseq/yeast_chrI.gtf","s":203927},{"p":"rnaseq/yeast_chrI.splice_sites.tsv","s":88},{"p":"sequences/myoglobins.fasta","s":1325},{"p":"sequences/pBR322.fasta","s":4485},{"p":"sequences/tRNA-Thr.afa","s":582},{"p":"sequences/unknown_myoglobin.fasta","s":157},{"p":"singlecell/LICENSE.kb_python","s":1321},{"p":"singlecell/NOTICE.txt","s":2350},{"p":"singlecell/R1.fastq","s":449434},{"p":"singlecell/R2.fastq","s":809434},{"p":"singlecell/input.bus","s":1137},{"p":"singlecell/matrix.ec","s":44146},{"p":"singlecell/provenance.json","s":9778},{"p":"singlecell/transcripts-to-genes.txt","s":43725},{"p":"singlecell/transcripts.txt","s":18173},{"p":"singlecell/whitelist.txt","s":544},{"p":"singlecell/large/input.bus","s":327569},{"p":"singlecell/large/matrix.ec","s":76645},{"p":"singlecell/large/transcripts-to-genes.txt","s":405234},{"p":"singlecell/large/transcripts.txt","s":163134},{"p":"singlecell/large/whitelist.txt","s":6086},{"p":"somatic/NOTICE.txt","s":1304},{"p":"somatic/normal.bam","s":827440},{"p":"somatic/normal.bam.bai","s":208},{"p":"somatic/provenance.json","s":4132},{"p":"somatic/reference.fa","s":29534},{"p":"somatic/reference.fa.fai","s":81},{"p":"somatic/regions.bed","s":69},{"p":"somatic/regions.bed.gz","s":101},{"p":"somatic/regions.bed.gz.tbi","s":154},{"p":"somatic/truth.vcf","s":14510},{"p":"somatic/tumor.bam","s":650995},{"p":"somatic/tumor.bam.bai","s":224},{"p":"structures/1mbn.pdb","s":147420},{"p":"tables/yeast_genes.csv","s":2010502},{"p":"trimming/NOTICE.txt","s":1686},{"p":"trimming/SRR6357070_adapters_1.fastq","s":98106},{"p":"trimming/SRR6357070_adapters_2.fastq","s":98106},{"p":"trimming/provenance.json","s":2079},{"p":"variants/NA12878.calls.vcf.gz","s":1787},{"p":"variants/NA12878.calls.vcf.gz.tbi","s":156}];
+window.WB_STARTERS = [{"p":"notebooks/welcome-python.ipynb"},{"p":"notebooks/welcome-r.ipynb"}];
+window.WB_CITATIONS = {"fastp2018":"Chen S, Zhou Y, Chen Y, Gu J (2018) fastp: an ultra-fast all-in-one FASTQ preprocessor. <i>Bioinformatics<\/i> 34(17): i884–i890. <a href=\"https://doi.org/10.1093/bioinformatics/bty560\" target=\"_blank\" rel=\"noopener\">doi:10.1093/bioinformatics/bty560<\/a>","cutadapt2011":"Martin M (2011) Cutadapt removes adapter sequences from high-throughput sequencing reads. <i>EMBnet.journal<\/i> 17(1): 10–12. <a href=\"https://doi.org/10.14806/ej.17.1.200\" target=\"_blank\" rel=\"noopener\">doi:10.14806/ej.17.1.200<\/a>","seqtk":"Li H. seqtk: toolkit for processing sequences in FASTA/Q formats. <a href=\"https://github.com/lh3/seqtk\" target=\"_blank\" rel=\"noopener\">github.com/lh3/seqtk<\/a>","wgsim":"Li H. wgsim: a reads simulator. <a href=\"https://github.com/lh3/wgsim\" target=\"_blank\" rel=\"noopener\">github.com/lh3/wgsim<\/a>","minimap2_2018":"Li H (2018) Minimap2: pairwise alignment for nucleotide sequences. <i>Bioinformatics<\/i> 34(18): 3094–3100. <a href=\"https://doi.org/10.1093/bioinformatics/bty191\" target=\"_blank\" rel=\"noopener\">doi:10.1093/bioinformatics/bty191<\/a>","minimap2_2021":"Li H (2021) New strategies to improve minimap2 alignment accuracy. <i>Bioinformatics<\/i> 37(23): 4572–4574. <a href=\"https://doi.org/10.1093/bioinformatics/btab705\" target=\"_blank\" rel=\"noopener\">doi:10.1093/bioinformatics/btab705<\/a>","samtools2009":"Li H, Handsaker B, Wysoker A, Fennell T, Ruan J, Homer N, et al. (2009) The Sequence Alignment/Map format and SAMtools. <i>Bioinformatics<\/i> 25(16): 2078–2079. <a href=\"https://doi.org/10.1093/bioinformatics/btp352\" target=\"_blank\" rel=\"noopener\">doi:10.1093/bioinformatics/btp352<\/a>","samtools_bcftools2021":"Danecek P, Bonfield JK, Liddle J, Marshall J, Ohan V, Pollard MO, et al. (2021) Twelve years of SAMtools and BCFtools. <i>GigaScience<\/i> 10(2): giab008. <a href=\"https://doi.org/10.1093/gigascience/giab008\" target=\"_blank\" rel=\"noopener\">doi:10.1093/gigascience/giab008<\/a>","htslib2021":"Bonfield JK, Marshall J, Danecek P, Li H, Ohan V, Whitwham A, et al. (2021) HTSlib: C library for reading/writing high-throughput sequencing data. <i>GigaScience<\/i> 10(2): giab007. <a href=\"https://doi.org/10.1093/gigascience/giab007\" target=\"_blank\" rel=\"noopener\">doi:10.1093/gigascience/giab007<\/a>","baq2011":"Li H (2011) Improving SNP discovery by base alignment quality. <i>Bioinformatics<\/i> 27(8): 1157–1158. <a href=\"https://doi.org/10.1093/bioinformatics/btr076\" target=\"_blank\" rel=\"noopener\">doi:10.1093/bioinformatics/btr076<\/a>","bowtie2009":"Langmead B, Trapnell C, Pop M, Salzberg SL (2009) Ultrafast and memory-efficient alignment of short DNA sequences to the human genome. <i>Genome Biology<\/i> 10: R25. <a href=\"https://doi.org/10.1186/gb-2009-10-3-r25\" target=\"_blank\" rel=\"noopener\">doi:10.1186/gb-2009-10-3-r25<\/a>","bowtie2_2012":"Langmead B, Salzberg SL (2012) Fast gapped-read alignment with Bowtie 2. <i>Nature Methods<\/i> 9(4): 357–359. <a href=\"https://doi.org/10.1038/nmeth.1923\" target=\"_blank\" rel=\"noopener\">doi:10.1038/nmeth.1923<\/a>","bwa2009":"Li H, Durbin R (2009) Fast and accurate short read alignment with Burrows–Wheeler transform. <i>Bioinformatics<\/i> 25(14): 1754–1760. <a href=\"https://doi.org/10.1093/bioinformatics/btp324\" target=\"_blank\" rel=\"noopener\">doi:10.1093/bioinformatics/btp324<\/a>","bwasw2010":"Li H, Durbin R (2010) Fast and accurate long-read alignment with Burrows–Wheeler transform. <i>Bioinformatics<\/i> 26(5): 589–595. <a href=\"https://doi.org/10.1093/bioinformatics/btp698\" target=\"_blank\" rel=\"noopener\">doi:10.1093/bioinformatics/btp698<\/a>","bwamem2013":"Li H (2013) Aligning sequence reads, clone sequences and assembly contigs with BWA-MEM. arXiv:1303.3997 [q-bio.GN]. <a href=\"https://arxiv.org/abs/1303.3997\" target=\"_blank\" rel=\"noopener\">arxiv.org/abs/1303.3997<\/a>","bwamem2_2019":"Vasimuddin M, Misra S, Li H, Aluru S (2019) Efficient Architecture-Aware Acceleration of BWA-MEM for Multicore Systems. <i>2019 IEEE International Parallel and Distributed Processing Symposium (IPDPS)<\/i>, pp. 314–324. <a href=\"https://doi.org/10.1109/IPDPS.2019.00041\" target=\"_blank\" rel=\"noopener\">doi:10.1109/IPDPS.2019.00041<\/a>","hisat2015":"Kim D, Langmead B, Salzberg SL (2015) HISAT: a fast spliced aligner with low memory requirements. <i>Nature Methods<\/i> 12(4): 357–360. <a href=\"https://doi.org/10.1038/nmeth.3317\" target=\"_blank\" rel=\"noopener\">doi:10.1038/nmeth.3317<\/a>","hisat2_2019":"Kim D, Paggi JM, Park C, Bennett C, Salzberg SL (2019) Graph-based genome alignment and genotyping with HISAT2 and HISAT-genotype. <i>Nature Biotechnology<\/i> 37(8): 907–915. <a href=\"https://doi.org/10.1038/s41587-019-0201-4\" target=\"_blank\" rel=\"noopener\">doi:10.1038/s41587-019-0201-4<\/a>","mosdepth2018":"Pedersen BS, Quinlan AR (2018) Mosdepth: quick coverage calculation for genomes and exomes. <i>Bioinformatics<\/i> 34(5): 867–868. <a href=\"https://doi.org/10.1093/bioinformatics/btx699\" target=\"_blank\" rel=\"noopener\">doi:10.1093/bioinformatics/btx699<\/a>","featurecounts2014":"Liao Y, Smyth GK, Shi W (2014) featureCounts: an efficient general purpose program for assigning sequence reads to genomic features. <i>Bioinformatics<\/i> 30(7): 923–930. <a href=\"https://doi.org/10.1093/bioinformatics/btt656\" target=\"_blank\" rel=\"noopener\">doi:10.1093/bioinformatics/btt656<\/a>","stringtie2015":"Pertea M, Pertea GM, Antonescu CM, Chang TC, Mendell JT, Salzberg SL (2015) StringTie enables improved reconstruction of a transcriptome from RNA-seq reads. <i>Nature Biotechnology<\/i> 33(3): 290–295. <a href=\"https://doi.org/10.1038/nbt.3122\" target=\"_blank\" rel=\"noopener\">doi:10.1038/nbt.3122<\/a>","stringtie2_2019":"Kovaka S, Zimin AV, Pertea GM, Razaghi R, Salzberg SL, Pertea M (2019) Transcriptome assembly from long-read RNA-seq alignments with StringTie2. <i>Genome Biology<\/i> 20: 278. <a href=\"https://doi.org/10.1186/s13059-019-1910-1\" target=\"_blank\" rel=\"noopener\">doi:10.1186/s13059-019-1910-1<\/a>","stringtie3_2026":"Shinder I, Pertea G, Hu R, Rudnick Z, Pertea M (2026) StringTie3 improves total RNA-seq assembly by resolving nascent and mature transcripts. <i>Nature Methods<\/i> 23(6): 1126–1137. <a href=\"https://doi.org/10.1038/s41592-026-03080-3\" target=\"_blank\" rel=\"noopener\">doi:10.1038/s41592-026-03080-3<\/a>","kallisto2016":"Bray NL, Pimentel H, Melsted P, Pachter L (2016) Near-optimal probabilistic RNA-seq quantification. <i>Nature Biotechnology<\/i> 34(5): 525–527. <a href=\"https://doi.org/10.1038/nbt.3519\" target=\"_blank\" rel=\"noopener\">doi:10.1038/nbt.3519<\/a>","kb2025":"Sullivan DK, Min KH, Hjörleifsson KE, Luebbert L, Holley G, Moses L, et al. (2025) kallisto, bustools and kb-python for quantifying bulk, single-cell and single-nucleus RNA-seq. <i>Nature Protocols<\/i> 20(3): 587–607. <a href=\"https://doi.org/10.1038/s41596-024-01057-0\" target=\"_blank\" rel=\"noopener\">doi:10.1038/s41596-024-01057-0<\/a>","salmon2017":"Patro R, Duggal G, Love MI, Irizarry RA, Kingsford C (2017) Salmon provides fast and bias-aware quantification of transcript expression. <i>Nature Methods<\/i> 14(4): 417–419. <a href=\"https://doi.org/10.1038/nmeth.4197\" target=\"_blank\" rel=\"noopener\">doi:10.1038/nmeth.4197<\/a>","alevin2019":"Srivastava A, Malik L, Smith T, Sudbery I, Patro R (2019) Alevin efficiently estimates accurate gene abundances from dscRNA-seq data. <i>Genome Biology<\/i> 20: 65. <a href=\"https://doi.org/10.1186/s13059-019-1670-y\" target=\"_blank\" rel=\"noopener\">doi:10.1186/s13059-019-1670-y<\/a>","gffread2020":"Pertea G, Pertea M (2020) GFF Utilities: GffRead and GffCompare. <i>F1000Research<\/i> 9: 304. <a href=\"https://doi.org/10.12688/f1000research.23297.2\" target=\"_blank\" rel=\"noopener\">doi:10.12688/f1000research.23297.2<\/a>","bustools2021":"Melsted P, Booeshaghi AS, Liu L, Gao F, Lu L, Min KH, et al. (2021) Modular, efficient and constant-memory single-cell RNA-seq preprocessing. <i>Nature Biotechnology<\/i> 39(7): 813–818. <a href=\"https://doi.org/10.1038/s41587-021-00870-2\" target=\"_blank\" rel=\"noopener\">doi:10.1038/s41587-021-00870-2<\/a>","bus2019":"Melsted P, Ntranos V, Pachter L (2019) The barcode, UMI, set format and BUStools. <i>Bioinformatics<\/i> 35(21): 4472–4473. <a href=\"https://doi.org/10.1093/bioinformatics/btz279\" target=\"_blank\" rel=\"noopener\">doi:10.1093/bioinformatics/btz279<\/a>","busz2023":"Einarsson PH, Melsted P (2023) BUSZ: compressed BUS files. <i>Bioinformatics<\/i> 39(5): btad295. <a href=\"https://doi.org/10.1093/bioinformatics/btad295\" target=\"_blank\" rel=\"noopener\">doi:10.1093/bioinformatics/btad295<\/a>","freebayes2012":"Garrison E, Marth G (2012) Haplotype-based variant detection from short-read sequencing. arXiv:1207.3907 [q-bio.GN]. <a href=\"https://arxiv.org/abs/1207.3907\" target=\"_blank\" rel=\"noopener\">arxiv.org/abs/1207.3907<\/a>","lofreq2012":"Wilm A, Aw PPK, Bertrand D, Yeo GHT, Ong SH, Wong CH, et al. (2012) LoFreq: a sequence-quality aware, ultra-sensitive variant caller for uncovering cell-population heterogeneity from high-throughput sequencing datasets. <i>Nucleic Acids Research<\/i> 40(22): 11189–11201. <a href=\"https://doi.org/10.1093/nar/gks918\" target=\"_blank\" rel=\"noopener\">doi:10.1093/nar/gks918<\/a>","dindel2011":"Albers CA, Lunter G, MacArthur DG, McVean G, Ouwehand WH, Durbin R (2011) Dindel: accurate indel calls from short-read data. <i>Genome Research<\/i> 21(6): 961–973. <a href=\"https://doi.org/10.1101/gr.112326.110\" target=\"_blank\" rel=\"noopener\">doi:10.1101/gr.112326.110<\/a>","somaticsniper2012":"Larson DE, Harris CC, Chen K, Koboldt DC, Abbott TE, Dooling DJ, et al. (2012) SomaticSniper: identification of somatic point mutations in whole genome sequencing data. <i>Bioinformatics<\/i> 28(3): 311–317. <a href=\"https://doi.org/10.1093/bioinformatics/btr665\" target=\"_blank\" rel=\"noopener\">doi:10.1093/bioinformatics/btr665<\/a>","strelka2_2018":"Kim S, Scheffler K, Halpern AL, Bekritsky MA, Noh E, Källberg M, et al. (2018) Strelka2: fast and accurate calling of germline and somatic variants. <i>Nature Methods<\/i> 15(8): 591–594. <a href=\"https://doi.org/10.1038/s41592-018-0051-x\" target=\"_blank\" rel=\"noopener\">doi:10.1038/s41592-018-0051-x<\/a>","kraken2014":"Wood DE, Salzberg SL (2014) Kraken: ultrafast metagenomic sequence classification using exact alignments. <i>Genome Biology<\/i> 15: R46. <a href=\"https://doi.org/10.1186/gb-2014-15-3-r46\" target=\"_blank\" rel=\"noopener\">doi:10.1186/gb-2014-15-3-r46<\/a>","kraken2_2019":"Wood DE, Lu J, Langmead B (2019) Improved metagenomic analysis with Kraken 2. <i>Genome Biology<\/i> 20: 257. <a href=\"https://doi.org/10.1186/s13059-019-1891-0\" target=\"_blank\" rel=\"noopener\">doi:10.1186/s13059-019-1891-0<\/a>","kraken_protocol2022":"Lu J, Rincon N, Wood DE, Breitwieser FP, Pockrandt C, Langmead B, et al. (2022) Metagenome analysis using the Kraken software suite. <i>Nature Protocols<\/i> 17(12): 2815–2839. <a href=\"https://doi.org/10.1038/s41596-022-00738-y\" target=\"_blank\" rel=\"noopener\">doi:10.1038/s41596-022-00738-y<\/a>","bracken2017":"Lu J, Breitwieser FP, Thielen P, Salzberg SL (2017) Bracken: estimating species abundance in metagenomics data. <i>PeerJ Computer Science<\/i> 3: e104. <a href=\"https://doi.org/10.7717/peerj-cs.104\" target=\"_blank\" rel=\"noopener\">doi:10.7717/peerj-cs.104<\/a>","prodigal2010":"Hyatt D, Chen GL, LoCascio PF, Land ML, Larimer FW, Hauser LJ (2010) Prodigal: prokaryotic gene recognition and translation initiation site identification. <i>BMC Bioinformatics<\/i> 11: 119. <a href=\"https://doi.org/10.1186/1471-2105-11-119\" target=\"_blank\" rel=\"noopener\">doi:10.1186/1471-2105-11-119<\/a>","hmmer_web2011":"Finn RD, Clements J, Eddy SR (2011) HMMER web server: interactive sequence similarity searching. <i>Nucleic Acids Research<\/i> 39(Web Server issue): W29–W37. <a href=\"https://doi.org/10.1093/nar/gkr367\" target=\"_blank\" rel=\"noopener\">doi:10.1093/nar/gkr367<\/a>","hmmer3_2011":"Eddy SR (2011) Accelerated Profile HMM Searches. <i>PLoS Computational Biology<\/i> 7(10): e1002195. <a href=\"https://doi.org/10.1371/journal.pcbi.1002195\" target=\"_blank\" rel=\"noopener\">doi:10.1371/journal.pcbi.1002195<\/a>","hmmer_site":"HMMER: biosequence analysis using profile hidden Markov models. <a href=\"http://hmmer.org/\" target=\"_blank\" rel=\"noopener\">hmmer.org<\/a>","bedtools2010":"Quinlan AR, Hall IM (2010) BEDTools: a flexible suite of utilities for comparing genomic features. <i>Bioinformatics<\/i> 26(6): 841–842. <a href=\"https://doi.org/10.1093/bioinformatics/btq033\" target=\"_blank\" rel=\"noopener\">doi:10.1093/bioinformatics/btq033<\/a>","kalign3_2020":"Lassmann T (2020) Kalign 3: multiple sequence alignment of large datasets. <i>Bioinformatics<\/i> 36(6): 1928–1929. <a href=\"https://doi.org/10.1093/bioinformatics/btz795\" target=\"_blank\" rel=\"noopener\">doi:10.1093/bioinformatics/btz795<\/a>","muscle2004":"Edgar RC (2004) MUSCLE: multiple sequence alignment with high accuracy and high throughput. <i>Nucleic Acids Research<\/i> 32(5): 1792–1797. <a href=\"https://doi.org/10.1093/nar/gkh340\" target=\"_blank\" rel=\"noopener\">doi:10.1093/nar/gkh340<\/a>","fasttree2_2010":"Price MN, Dehal PS, Arkin AP (2010) FastTree 2 – Approximately Maximum-Likelihood Trees for Large Alignments. <i>PLoS ONE<\/i> 5(3): e9490. <a href=\"https://doi.org/10.1371/journal.pone.0009490\" target=\"_blank\" rel=\"noopener\">doi:10.1371/journal.pone.0009490<\/a>","nw1970":"Needleman SB, Wunsch CD (1970) A general method applicable to the search for similarities in the amino acid sequence of two proteins. <i>Journal of Molecular Biology<\/i> 48(3): 443–453. <a href=\"https://doi.org/10.1016/0022-2836(70)90057-4\" target=\"_blank\" rel=\"noopener\">doi:10.1016/0022-2836(70)90057-4<\/a>","sw1981":"Smith TF, Waterman MS (1981) Identification of common molecular subsequences. <i>Journal of Molecular Biology<\/i> 147(1): 195–197. <a href=\"https://doi.org/10.1016/0022-2836(81)90087-5\" target=\"_blank\" rel=\"noopener\">doi:10.1016/0022-2836(81)90087-5<\/a>","seqalign":"Turner I. seq-align: Smith-Waterman and Needleman-Wunsch alignment in C. <a href=\"https://github.com/noporpoise/seq-align\" target=\"_blank\" rel=\"noopener\">github.com/noporpoise/seq-align<\/a>","lastz2007":"Harris RS (2007) Improved pairwise alignment of genomic DNA. PhD thesis, The Pennsylvania State University. <a href=\"https://github.com/lastz/lastz\" target=\"_blank\" rel=\"noopener\">github.com/lastz/lastz<\/a>","plink2_2015":"Chang CC, Chow CC, Tellier LCAM, Vattikuti S, Purcell SM, Lee JJ (2015) Second-generation PLINK: rising to the challenge of larger and richer datasets. <i>GigaScience<\/i> 4: 7. <a href=\"https://doi.org/10.1186/s13742-015-0047-8\" target=\"_blank\" rel=\"noopener\">doi:10.1186/s13742-015-0047-8<\/a>","plink2_site":"Purcell S, Chang C, Demaille B. PLINK 2.0. <a href=\"https://www.cog-genomics.org/plink/2.0/\" target=\"_blank\" rel=\"noopener\">www.cog-genomics.org/plink/2.0<\/a>","snakemake2025":"Mölder F, Jablonski KP, Letcher B, Hall MB, van Dyken PC, Tomkins-Tinch CH, et al. (2025) Sustainable data analysis with Snakemake. <i>F1000Research<\/i> 10: 33. <a href=\"https://doi.org/10.12688/f1000research.29032.3\" target=\"_blank\" rel=\"noopener\">doi:10.12688/f1000research.29032.3<\/a>","galaxy2024":"The Galaxy Community (2024) The Galaxy platform for accessible, reproducible, and collaborative data analyses: 2024 update. <i>Nucleic Acids Research<\/i> 52(W1): W83–W94. <a href=\"https://doi.org/10.1093/nar/gkae410\" target=\"_blank\" rel=\"noopener\">doi:10.1093/nar/gkae410<\/a>","ngl2018":"Rose AS, Bradley AR, Valasatava Y, Duarte JM, Prlić A, Rose PW (2018) NGL viewer: web-based molecular graphics for large complexes. <i>Bioinformatics<\/i> 34(21): 3755–3758. <a href=\"https://doi.org/10.1093/bioinformatics/bty419\" target=\"_blank\" rel=\"noopener\">doi:10.1093/bioinformatics/bty419<\/a>","ngl2015":"Rose AS, Hildebrand PW (2015) NGL Viewer: a web application for molecular visualization. <i>Nucleic Acids Research<\/i> 43(W1): W576–W579. <a href=\"https://doi.org/10.1093/nar/gkv402\" target=\"_blank\" rel=\"noopener\">doi:10.1093/nar/gkv402<\/a>","igvjs2023":"Robinson JT, Thorvaldsdottir H, Turner D, Mesirov JP (2023) igv.js: an embeddable JavaScript implementation of the Integrative Genomics Viewer (IGV). <i>Bioinformatics<\/i> 39(1): btac830. <a href=\"https://doi.org/10.1093/bioinformatics/btac830\" target=\"_blank\" rel=\"noopener\">doi:10.1093/bioinformatics/btac830<\/a>","deseq2_2014":"Love MI, Huber W, Anders S (2014) Moderated estimation of fold change and dispersion for RNA-seq data with DESeq2. <i>Genome Biology<\/i> 15: 550. <a href=\"https://doi.org/10.1186/s13059-014-0550-8\" target=\"_blank\" rel=\"noopener\">doi:10.1186/s13059-014-0550-8<\/a>","edger2010":"Robinson MD, McCarthy DJ, Smyth GK (2010) edgeR: a Bioconductor package for differential expression analysis of digital gene expression data. <i>Bioinformatics<\/i> 26(1): 139–140. <a href=\"https://doi.org/10.1093/bioinformatics/btp616\" target=\"_blank\" rel=\"noopener\">doi:10.1093/bioinformatics/btp616<\/a>","edger4_2025":"Chen Y, Chen L, Lun ATL, Baldoni PL, Smyth GK (2025) edgeR v4: powerful differential analysis of sequencing data with expanded functionality and improved support for small counts and larger datasets. <i>Nucleic Acids Research<\/i> 53(2): gkaf018. <a href=\"https://doi.org/10.1093/nar/gkaf018\" target=\"_blank\" rel=\"noopener\">doi:10.1093/nar/gkaf018<\/a>","biopython2009":"Cock PJA, Antao T, Chang JT, Chapman BA, Cox CJ, Dalke A, et al. (2009) Biopython: freely available Python tools for computational molecular biology and bioinformatics. <i>Bioinformatics<\/i> 25(11): 1422–1423. <a href=\"https://doi.org/10.1093/bioinformatics/btp163\" target=\"_blank\" rel=\"noopener\">doi:10.1093/bioinformatics/btp163<\/a>","vep2016":"McLaren W, Gil L, Hunt SE, Riat HS, Ritchie GRS, Thormann A, et al. (2016) The Ensembl Variant Effect Predictor. <i>Genome Biology<\/i> 17: 122. <a href=\"https://doi.org/10.1186/s13059-016-0974-4\" target=\"_blank\" rel=\"noopener\">doi:10.1186/s13059-016-0974-4<\/a>"};</script>
 <script src="assets/js/config.js"></script>
 <script src="assets/js/core.js"></script>
 <script src="assets/js/icons.js"></script>

@@ -1,0 +1,1236 @@
+{
+ "about": "The papers to cite for the programs of the workbench (help pages: <!--CITE: program …-->; the Programs page: <!--CITE-SHORT: program-->; the Galaxy tools: cite: [reference …] in assets/js/galaxy.js). Every entry with a DOI was checked against its CrossRef record.",
+ "refs": {
+  "fastp2018": {
+   "authors": [
+    "Chen S",
+    "Zhou Y",
+    "Chen Y",
+    "Gu J"
+   ],
+   "year": 2018,
+   "title": "fastp: an ultra-fast all-in-one FASTQ preprocessor",
+   "container": "Bioinformatics",
+   "volume": "34",
+   "issue": "17",
+   "pages": "i884-i890",
+   "doi": "10.1093/bioinformatics/bty560"
+  },
+  "cutadapt2011": {
+   "authors": [
+    "Martin M"
+   ],
+   "year": 2011,
+   "title": "Cutadapt removes adapter sequences from high-throughput sequencing reads",
+   "container": "EMBnet.journal",
+   "volume": "17",
+   "issue": "1",
+   "pages": "10–12",
+   "doi": "10.14806/ej.17.1.200"
+  },
+  "seqtk": {
+   "authors": [
+    "Li H"
+   ],
+   "title": "seqtk: toolkit for processing sequences in FASTA/Q formats",
+   "note": "no paper – its repository",
+   "url": "https://github.com/lh3/seqtk",
+   "short": "github.com/lh3/seqtk"
+  },
+  "wgsim": {
+   "authors": [
+    "Li H"
+   ],
+   "title": "wgsim: a reads simulator",
+   "note": "no paper – its repository",
+   "url": "https://github.com/lh3/wgsim",
+   "short": "github.com/lh3/wgsim"
+  },
+  "minimap2_2018": {
+   "authors": [
+    "Li H"
+   ],
+   "year": 2018,
+   "title": "Minimap2: pairwise alignment for nucleotide sequences",
+   "container": "Bioinformatics",
+   "volume": "34",
+   "issue": "18",
+   "pages": "3094-3100",
+   "doi": "10.1093/bioinformatics/bty191"
+  },
+  "minimap2_2021": {
+   "authors": [
+    "Li H"
+   ],
+   "year": 2021,
+   "title": "New strategies to improve minimap2 alignment accuracy",
+   "container": "Bioinformatics",
+   "volume": "37",
+   "issue": "23",
+   "pages": "4572-4574",
+   "doi": "10.1093/bioinformatics/btab705"
+  },
+  "samtools2009": {
+   "authors": [
+    "Li H",
+    "Handsaker B",
+    "Wysoker A",
+    "Fennell T",
+    "Ruan J",
+    "Homer N",
+    "Marth G",
+    "Abecasis G",
+    "Durbin R",
+    "1000 Genome Project Data Processing Subgroup"
+   ],
+   "year": 2009,
+   "title": "The Sequence Alignment/Map format and SAMtools",
+   "container": "Bioinformatics",
+   "volume": "25",
+   "issue": "16",
+   "pages": "2078-2079",
+   "doi": "10.1093/bioinformatics/btp352"
+  },
+  "samtools_bcftools2021": {
+   "authors": [
+    "Danecek P",
+    "Bonfield JK",
+    "Liddle J",
+    "Marshall J",
+    "Ohan V",
+    "Pollard MO",
+    "Whitwham A",
+    "Keane T",
+    "McCarthy SA",
+    "Davies RM",
+    "Li H"
+   ],
+   "year": 2021,
+   "title": "Twelve years of SAMtools and BCFtools",
+   "container": "GigaScience",
+   "volume": "10",
+   "issue": "2",
+   "pages": "giab008",
+   "doi": "10.1093/gigascience/giab008"
+  },
+  "htslib2021": {
+   "authors": [
+    "Bonfield JK",
+    "Marshall J",
+    "Danecek P",
+    "Li H",
+    "Ohan V",
+    "Whitwham A",
+    "Keane T",
+    "Davies RM"
+   ],
+   "year": 2021,
+   "title": "HTSlib: C library for reading/writing high-throughput sequencing data",
+   "container": "GigaScience",
+   "volume": "10",
+   "issue": "2",
+   "pages": "giab007",
+   "doi": "10.1093/gigascience/giab007"
+  },
+  "baq2011": {
+   "authors": [
+    "Li H"
+   ],
+   "year": 2011,
+   "title": "Improving SNP discovery by base alignment quality",
+   "container": "Bioinformatics",
+   "volume": "27",
+   "issue": "8",
+   "pages": "1157-1158",
+   "doi": "10.1093/bioinformatics/btr076"
+  },
+  "bowtie2009": {
+   "authors": [
+    "Langmead B",
+    "Trapnell C",
+    "Pop M",
+    "Salzberg SL"
+   ],
+   "year": 2009,
+   "title": "Ultrafast and memory-efficient alignment of short DNA sequences to the human genome",
+   "container": "Genome Biology",
+   "volume": "10",
+   "issue": "",
+   "pages": "R25",
+   "doi": "10.1186/gb-2009-10-3-r25"
+  },
+  "bowtie2_2012": {
+   "authors": [
+    "Langmead B",
+    "Salzberg SL"
+   ],
+   "year": 2012,
+   "title": "Fast gapped-read alignment with Bowtie 2",
+   "container": "Nature Methods",
+   "volume": "9",
+   "issue": "4",
+   "pages": "357-359",
+   "doi": "10.1038/nmeth.1923"
+  },
+  "bwa2009": {
+   "authors": [
+    "Li H",
+    "Durbin R"
+   ],
+   "year": 2009,
+   "title": "Fast and accurate short read alignment with Burrows–Wheeler transform",
+   "container": "Bioinformatics",
+   "volume": "25",
+   "issue": "14",
+   "pages": "1754-1760",
+   "doi": "10.1093/bioinformatics/btp324"
+  },
+  "bwasw2010": {
+   "authors": [
+    "Li H",
+    "Durbin R"
+   ],
+   "year": 2010,
+   "title": "Fast and accurate long-read alignment with Burrows–Wheeler transform",
+   "container": "Bioinformatics",
+   "volume": "26",
+   "issue": "5",
+   "pages": "589-595",
+   "doi": "10.1093/bioinformatics/btp698"
+  },
+  "bwamem2013": {
+   "authors": [
+    "Li H"
+   ],
+   "year": 2013,
+   "title": "Aligning sequence reads, clone sequences and assembly contigs with BWA-MEM",
+   "container": "arXiv",
+   "pages": "1303.3997 [q-bio.GN]",
+   "url": "https://arxiv.org/abs/1303.3997"
+  },
+  "bwamem2_2019": {
+   "authors": [
+    "Vasimuddin M",
+    "Misra S",
+    "Li H",
+    "Aluru S"
+   ],
+   "year": 2019,
+   "title": "Efficient Architecture-Aware Acceleration of BWA-MEM for Multicore Systems",
+   "container": "2019 IEEE International Parallel and Distributed Processing Symposium (IPDPS)",
+   "volume": "",
+   "issue": "",
+   "pages": "314-324",
+   "doi": "10.1109/IPDPS.2019.00041"
+  },
+  "hisat2015": {
+   "authors": [
+    "Kim D",
+    "Langmead B",
+    "Salzberg SL"
+   ],
+   "year": 2015,
+   "title": "HISAT: a fast spliced aligner with low memory requirements",
+   "container": "Nature Methods",
+   "volume": "12",
+   "issue": "4",
+   "pages": "357-360",
+   "doi": "10.1038/nmeth.3317"
+  },
+  "hisat2_2019": {
+   "authors": [
+    "Kim D",
+    "Paggi JM",
+    "Park C",
+    "Bennett C",
+    "Salzberg SL"
+   ],
+   "year": 2019,
+   "title": "Graph-based genome alignment and genotyping with HISAT2 and HISAT-genotype",
+   "container": "Nature Biotechnology",
+   "volume": "37",
+   "issue": "8",
+   "pages": "907-915",
+   "doi": "10.1038/s41587-019-0201-4"
+  },
+  "mosdepth2018": {
+   "authors": [
+    "Pedersen BS",
+    "Quinlan AR"
+   ],
+   "year": 2018,
+   "title": "Mosdepth: quick coverage calculation for genomes and exomes",
+   "container": "Bioinformatics",
+   "volume": "34",
+   "issue": "5",
+   "pages": "867-868",
+   "doi": "10.1093/bioinformatics/btx699"
+  },
+  "featurecounts2014": {
+   "authors": [
+    "Liao Y",
+    "Smyth GK",
+    "Shi W"
+   ],
+   "year": 2014,
+   "title": "featureCounts: an efficient general purpose program for assigning sequence reads to genomic features",
+   "container": "Bioinformatics",
+   "volume": "30",
+   "issue": "7",
+   "pages": "923-930",
+   "doi": "10.1093/bioinformatics/btt656"
+  },
+  "stringtie2015": {
+   "authors": [
+    "Pertea M",
+    "Pertea GM",
+    "Antonescu CM",
+    "Chang TC",
+    "Mendell JT",
+    "Salzberg SL"
+   ],
+   "year": 2015,
+   "title": "StringTie enables improved reconstruction of a transcriptome from RNA-seq reads",
+   "container": "Nature Biotechnology",
+   "volume": "33",
+   "issue": "3",
+   "pages": "290-295",
+   "doi": "10.1038/nbt.3122"
+  },
+  "stringtie2_2019": {
+   "authors": [
+    "Kovaka S",
+    "Zimin AV",
+    "Pertea GM",
+    "Razaghi R",
+    "Salzberg SL",
+    "Pertea M"
+   ],
+   "year": 2019,
+   "title": "Transcriptome assembly from long-read RNA-seq alignments with StringTie2",
+   "container": "Genome Biology",
+   "volume": "20",
+   "issue": "",
+   "pages": "278",
+   "doi": "10.1186/s13059-019-1910-1"
+  },
+  "stringtie3_2026": {
+   "authors": [
+    "Shinder I",
+    "Pertea G",
+    "Hu R",
+    "Rudnick Z",
+    "Pertea M"
+   ],
+   "year": 2026,
+   "title": "StringTie3 improves total RNA-seq assembly by resolving nascent and mature transcripts",
+   "container": "Nature Methods",
+   "volume": "23",
+   "issue": "6",
+   "pages": "1126-1137",
+   "doi": "10.1038/s41592-026-03080-3"
+  },
+  "kallisto2016": {
+   "authors": [
+    "Bray NL",
+    "Pimentel H",
+    "Melsted P",
+    "Pachter L"
+   ],
+   "year": 2016,
+   "title": "Near-optimal probabilistic RNA-seq quantification",
+   "container": "Nature Biotechnology",
+   "volume": "34",
+   "issue": "5",
+   "pages": "525-527",
+   "doi": "10.1038/nbt.3519"
+  },
+  "kb2025": {
+   "authors": [
+    "Sullivan DK",
+    "Min KH",
+    "Hjörleifsson KE",
+    "Luebbert L",
+    "Holley G",
+    "Moses L",
+    "Gustafsson J",
+    "Bray NL",
+    "Pimentel H",
+    "Booeshaghi AS",
+    "Melsted P",
+    "Pachter L"
+   ],
+   "year": 2025,
+   "title": "kallisto, bustools and kb-python for quantifying bulk, single-cell and single-nucleus RNA-seq",
+   "container": "Nature Protocols",
+   "volume": "20",
+   "issue": "3",
+   "pages": "587-607",
+   "doi": "10.1038/s41596-024-01057-0"
+  },
+  "salmon2017": {
+   "authors": [
+    "Patro R",
+    "Duggal G",
+    "Love MI",
+    "Irizarry RA",
+    "Kingsford C"
+   ],
+   "year": 2017,
+   "title": "Salmon provides fast and bias-aware quantification of transcript expression",
+   "container": "Nature Methods",
+   "volume": "14",
+   "issue": "4",
+   "pages": "417-419",
+   "doi": "10.1038/nmeth.4197"
+  },
+  "alevin2019": {
+   "authors": [
+    "Srivastava A",
+    "Malik L",
+    "Smith T",
+    "Sudbery I",
+    "Patro R"
+   ],
+   "year": 2019,
+   "title": "Alevin efficiently estimates accurate gene abundances from dscRNA-seq data",
+   "container": "Genome Biology",
+   "volume": "20",
+   "issue": "",
+   "pages": "65",
+   "doi": "10.1186/s13059-019-1670-y"
+  },
+  "gffread2020": {
+   "authors": [
+    "Pertea G",
+    "Pertea M"
+   ],
+   "year": 2020,
+   "title": "GFF Utilities: GffRead and GffCompare",
+   "container": "F1000Research",
+   "volume": "9",
+   "issue": "",
+   "pages": "304",
+   "doi": "10.12688/f1000research.23297.2"
+  },
+  "bustools2021": {
+   "authors": [
+    "Melsted P",
+    "Booeshaghi AS",
+    "Liu L",
+    "Gao F",
+    "Lu L",
+    "Min KH",
+    "da Veiga Beltrame E",
+    "Hjörleifsson KE",
+    "Gehring J",
+    "Pachter L"
+   ],
+   "year": 2021,
+   "title": "Modular, efficient and constant-memory single-cell RNA-seq preprocessing",
+   "container": "Nature Biotechnology",
+   "volume": "39",
+   "issue": "7",
+   "pages": "813-818",
+   "doi": "10.1038/s41587-021-00870-2"
+  },
+  "bus2019": {
+   "authors": [
+    "Melsted P",
+    "Ntranos V",
+    "Pachter L"
+   ],
+   "year": 2019,
+   "title": "The barcode, UMI, set format and BUStools",
+   "container": "Bioinformatics",
+   "volume": "35",
+   "issue": "21",
+   "pages": "4472-4473",
+   "doi": "10.1093/bioinformatics/btz279"
+  },
+  "busz2023": {
+   "authors": [
+    "Einarsson PH",
+    "Melsted P"
+   ],
+   "year": 2023,
+   "title": "BUSZ: compressed BUS files",
+   "container": "Bioinformatics",
+   "volume": "39",
+   "issue": "5",
+   "pages": "btad295",
+   "doi": "10.1093/bioinformatics/btad295"
+  },
+  "freebayes2012": {
+   "authors": [
+    "Garrison E",
+    "Marth G"
+   ],
+   "year": 2012,
+   "title": "Haplotype-based variant detection from short-read sequencing",
+   "container": "arXiv",
+   "pages": "1207.3907 [q-bio.GN]",
+   "url": "https://arxiv.org/abs/1207.3907"
+  },
+  "lofreq2012": {
+   "authors": [
+    "Wilm A",
+    "Aw PPK",
+    "Bertrand D",
+    "Yeo GHT",
+    "Ong SH",
+    "Wong CH",
+    "Khor CC",
+    "Petric R",
+    "Hibberd ML",
+    "Nagarajan N"
+   ],
+   "year": 2012,
+   "title": "LoFreq: a sequence-quality aware, ultra-sensitive variant caller for uncovering cell-population heterogeneity from high-throughput sequencing datasets",
+   "container": "Nucleic Acids Research",
+   "volume": "40",
+   "issue": "22",
+   "pages": "11189-11201",
+   "doi": "10.1093/nar/gks918"
+  },
+  "dindel2011": {
+   "authors": [
+    "Albers CA",
+    "Lunter G",
+    "MacArthur DG",
+    "McVean G",
+    "Ouwehand WH",
+    "Durbin R"
+   ],
+   "year": 2011,
+   "title": "Dindel: accurate indel calls from short-read data",
+   "container": "Genome Research",
+   "volume": "21",
+   "issue": "6",
+   "pages": "961-973",
+   "doi": "10.1101/gr.112326.110"
+  },
+  "somaticsniper2012": {
+   "authors": [
+    "Larson DE",
+    "Harris CC",
+    "Chen K",
+    "Koboldt DC",
+    "Abbott TE",
+    "Dooling DJ",
+    "Ley TJ",
+    "Mardis ER",
+    "Wilson RK",
+    "Ding L"
+   ],
+   "year": 2012,
+   "title": "SomaticSniper: identification of somatic point mutations in whole genome sequencing data",
+   "container": "Bioinformatics",
+   "volume": "28",
+   "issue": "3",
+   "pages": "311-317",
+   "doi": "10.1093/bioinformatics/btr665"
+  },
+  "strelka2_2018": {
+   "authors": [
+    "Kim S",
+    "Scheffler K",
+    "Halpern AL",
+    "Bekritsky MA",
+    "Noh E",
+    "Källberg M",
+    "Chen X",
+    "Kim Y",
+    "Beyter D",
+    "Krusche P",
+    "Saunders CT"
+   ],
+   "year": 2018,
+   "title": "Strelka2: fast and accurate calling of germline and somatic variants",
+   "container": "Nature Methods",
+   "volume": "15",
+   "issue": "8",
+   "pages": "591-594",
+   "doi": "10.1038/s41592-018-0051-x"
+  },
+  "kraken2014": {
+   "authors": [
+    "Wood DE",
+    "Salzberg SL"
+   ],
+   "year": 2014,
+   "title": "Kraken: ultrafast metagenomic sequence classification using exact alignments",
+   "container": "Genome Biology",
+   "volume": "15",
+   "issue": "",
+   "pages": "R46",
+   "doi": "10.1186/gb-2014-15-3-r46"
+  },
+  "kraken2_2019": {
+   "authors": [
+    "Wood DE",
+    "Lu J",
+    "Langmead B"
+   ],
+   "year": 2019,
+   "title": "Improved metagenomic analysis with Kraken 2",
+   "container": "Genome Biology",
+   "volume": "20",
+   "issue": "",
+   "pages": "257",
+   "doi": "10.1186/s13059-019-1891-0"
+  },
+  "kraken_protocol2022": {
+   "authors": [
+    "Lu J",
+    "Rincon N",
+    "Wood DE",
+    "Breitwieser FP",
+    "Pockrandt C",
+    "Langmead B",
+    "Salzberg SL",
+    "Steinegger M"
+   ],
+   "year": 2022,
+   "title": "Metagenome analysis using the Kraken software suite",
+   "container": "Nature Protocols",
+   "volume": "17",
+   "issue": "12",
+   "pages": "2815-2839",
+   "doi": "10.1038/s41596-022-00738-y"
+  },
+  "bracken2017": {
+   "authors": [
+    "Lu J",
+    "Breitwieser FP",
+    "Thielen P",
+    "Salzberg SL"
+   ],
+   "year": 2017,
+   "title": "Bracken: estimating species abundance in metagenomics data",
+   "container": "PeerJ Computer Science",
+   "volume": "3",
+   "issue": "",
+   "pages": "e104",
+   "doi": "10.7717/peerj-cs.104"
+  },
+  "prodigal2010": {
+   "authors": [
+    "Hyatt D",
+    "Chen GL",
+    "LoCascio PF",
+    "Land ML",
+    "Larimer FW",
+    "Hauser LJ"
+   ],
+   "year": 2010,
+   "title": "Prodigal: prokaryotic gene recognition and translation initiation site identification",
+   "container": "BMC Bioinformatics",
+   "volume": "11",
+   "issue": "",
+   "pages": "119",
+   "doi": "10.1186/1471-2105-11-119"
+  },
+  "hmmer_web2011": {
+   "authors": [
+    "Finn RD",
+    "Clements J",
+    "Eddy SR"
+   ],
+   "year": 2011,
+   "title": "HMMER web server: interactive sequence similarity searching",
+   "container": "Nucleic Acids Research",
+   "volume": "39",
+   "issue": "Web Server issue",
+   "pages": "W29-W37",
+   "doi": "10.1093/nar/gkr367"
+  },
+  "hmmer3_2011": {
+   "authors": [
+    "Eddy SR"
+   ],
+   "year": 2011,
+   "title": "Accelerated Profile HMM Searches",
+   "container": "PLoS Computational Biology",
+   "volume": "7",
+   "issue": "10",
+   "pages": "e1002195",
+   "doi": "10.1371/journal.pcbi.1002195"
+  },
+  "hmmer_site": {
+   "authors": [],
+   "title": "HMMER: biosequence analysis using profile hidden Markov models",
+   "note": "its User’s Guide asks you to cite the web site and the version you used",
+   "url": "http://hmmer.org/",
+   "short": "hmmer.org"
+  },
+  "bedtools2010": {
+   "authors": [
+    "Quinlan AR",
+    "Hall IM"
+   ],
+   "year": 2010,
+   "title": "BEDTools: a flexible suite of utilities for comparing genomic features",
+   "container": "Bioinformatics",
+   "volume": "26",
+   "issue": "6",
+   "pages": "841-842",
+   "doi": "10.1093/bioinformatics/btq033"
+  },
+  "kalign3_2020": {
+   "authors": [
+    "Lassmann T"
+   ],
+   "year": 2020,
+   "title": "Kalign 3: multiple sequence alignment of large datasets",
+   "container": "Bioinformatics",
+   "volume": "36",
+   "issue": "6",
+   "pages": "1928-1929",
+   "doi": "10.1093/bioinformatics/btz795"
+  },
+  "muscle2004": {
+   "authors": [
+    "Edgar RC"
+   ],
+   "year": 2004,
+   "title": "MUSCLE: multiple sequence alignment with high accuracy and high throughput",
+   "container": "Nucleic Acids Research",
+   "volume": "32",
+   "issue": "5",
+   "pages": "1792-1797",
+   "doi": "10.1093/nar/gkh340"
+  },
+  "fasttree2_2010": {
+   "authors": [
+    "Price MN",
+    "Dehal PS",
+    "Arkin AP"
+   ],
+   "year": 2010,
+   "title": "FastTree 2 – Approximately Maximum-Likelihood Trees for Large Alignments",
+   "container": "PLoS ONE",
+   "volume": "5",
+   "issue": "3",
+   "pages": "e9490",
+   "doi": "10.1371/journal.pone.0009490"
+  },
+  "nw1970": {
+   "authors": [
+    "Needleman SB",
+    "Wunsch CD"
+   ],
+   "year": 1970,
+   "title": "A general method applicable to the search for similarities in the amino acid sequence of two proteins",
+   "container": "Journal of Molecular Biology",
+   "volume": "48",
+   "issue": "3",
+   "pages": "443-453",
+   "doi": "10.1016/0022-2836(70)90057-4"
+  },
+  "sw1981": {
+   "authors": [
+    "Smith TF",
+    "Waterman MS"
+   ],
+   "year": 1981,
+   "title": "Identification of common molecular subsequences",
+   "container": "Journal of Molecular Biology",
+   "volume": "147",
+   "issue": "1",
+   "pages": "195-197",
+   "doi": "10.1016/0022-2836(81)90087-5"
+  },
+  "seqalign": {
+   "authors": [
+    "Turner I"
+   ],
+   "title": "seq-align: Smith-Waterman and Needleman-Wunsch alignment in C",
+   "note": "no paper – its repository",
+   "url": "https://github.com/noporpoise/seq-align",
+   "short": "github.com/noporpoise/seq-align"
+  },
+  "lastz2007": {
+   "authors": [
+    "Harris RS"
+   ],
+   "year": 2007,
+   "title": "Improved pairwise alignment of genomic DNA",
+   "container": "PhD thesis, The Pennsylvania State University",
+   "url": "https://github.com/lastz/lastz"
+  },
+  "plink2_2015": {
+   "authors": [
+    "Chang CC",
+    "Chow CC",
+    "Tellier LCAM",
+    "Vattikuti S",
+    "Purcell SM",
+    "Lee JJ"
+   ],
+   "year": 2015,
+   "title": "Second-generation PLINK: rising to the challenge of larger and richer datasets",
+   "container": "GigaScience",
+   "volume": "4",
+   "issue": "",
+   "pages": "7",
+   "doi": "10.1186/s13742-015-0047-8"
+  },
+  "plink2_site": {
+   "authors": [
+    "Purcell S",
+    "Chang C",
+    "Demaille B"
+   ],
+   "title": "PLINK 2.0",
+   "note": "the software, with the version you used, as PLINK's citation instructions ask",
+   "url": "https://www.cog-genomics.org/plink/2.0/",
+   "short": "cog-genomics.org/plink/2.0"
+  },
+  "snakemake2025": {
+   "authors": [
+    "Mölder F",
+    "Jablonski KP",
+    "Letcher B",
+    "Hall MB",
+    "van Dyken PC",
+    "Tomkins-Tinch CH",
+    "Sochat V",
+    "Forster J",
+    "Vieira FG",
+    "Meesters C",
+    "Lee S",
+    "Twardziok SO",
+    "Kanitz A",
+    "VanCampen J",
+    "Malladi V",
+    "Wilm A",
+    "Holtgrewe M",
+    "Rahmann S",
+    "Nahnsen S",
+    "Köster J"
+   ],
+   "year": 2025,
+   "title": "Sustainable data analysis with Snakemake",
+   "container": "F1000Research",
+   "volume": "10",
+   "issue": "",
+   "pages": "33",
+   "doi": "10.12688/f1000research.29032.3"
+  },
+  "galaxy2024": {
+   "authors": [],
+   "corporate": "The Galaxy Community",
+   "year": 2024,
+   "title": "The Galaxy platform for accessible, reproducible, and collaborative data analyses: 2024 update",
+   "container": "Nucleic Acids Research",
+   "volume": "52",
+   "issue": "W1",
+   "pages": "W83-W94",
+   "doi": "10.1093/nar/gkae410"
+  },
+  "ngl2018": {
+   "authors": [
+    "Rose AS",
+    "Bradley AR",
+    "Valasatava Y",
+    "Duarte JM",
+    "Prlić A",
+    "Rose PW"
+   ],
+   "year": 2018,
+   "title": "NGL viewer: web-based molecular graphics for large complexes",
+   "container": "Bioinformatics",
+   "volume": "34",
+   "issue": "21",
+   "pages": "3755-3758",
+   "doi": "10.1093/bioinformatics/bty419"
+  },
+  "ngl2015": {
+   "authors": [
+    "Rose AS",
+    "Hildebrand PW"
+   ],
+   "year": 2015,
+   "title": "NGL Viewer: a web application for molecular visualization",
+   "container": "Nucleic Acids Research",
+   "volume": "43",
+   "issue": "W1",
+   "pages": "W576-W579",
+   "doi": "10.1093/nar/gkv402"
+  },
+  "igvjs2023": {
+   "authors": [
+    "Robinson JT",
+    "Thorvaldsdottir H",
+    "Turner D",
+    "Mesirov JP"
+   ],
+   "year": 2023,
+   "title": "igv.js: an embeddable JavaScript implementation of the Integrative Genomics Viewer (IGV)",
+   "container": "Bioinformatics",
+   "volume": "39",
+   "issue": "1",
+   "pages": "btac830",
+   "doi": "10.1093/bioinformatics/btac830"
+  },
+  "deseq2_2014": {
+   "authors": [
+    "Love MI",
+    "Huber W",
+    "Anders S"
+   ],
+   "year": 2014,
+   "title": "Moderated estimation of fold change and dispersion for RNA-seq data with DESeq2",
+   "container": "Genome Biology",
+   "volume": "15",
+   "issue": "",
+   "pages": "550",
+   "doi": "10.1186/s13059-014-0550-8"
+  },
+  "edger2010": {
+   "authors": [
+    "Robinson MD",
+    "McCarthy DJ",
+    "Smyth GK"
+   ],
+   "year": 2010,
+   "title": "edgeR: a Bioconductor package for differential expression analysis of digital gene expression data",
+   "container": "Bioinformatics",
+   "volume": "26",
+   "issue": "1",
+   "pages": "139-140",
+   "doi": "10.1093/bioinformatics/btp616"
+  },
+  "edger4_2025": {
+   "authors": [
+    "Chen Y",
+    "Chen L",
+    "Lun ATL",
+    "Baldoni PL",
+    "Smyth GK"
+   ],
+   "year": 2025,
+   "title": "edgeR v4: powerful differential analysis of sequencing data with expanded functionality and improved support for small counts and larger datasets",
+   "container": "Nucleic Acids Research",
+   "volume": "53",
+   "issue": "2",
+   "pages": "gkaf018",
+   "doi": "10.1093/nar/gkaf018"
+  },
+  "biopython2009": {
+   "authors": [
+    "Cock PJA",
+    "Antao T",
+    "Chang JT",
+    "Chapman BA",
+    "Cox CJ",
+    "Dalke A",
+    "Friedberg I",
+    "Hamelryck T",
+    "Kauff F",
+    "Wilczynski B",
+    "de Hoon MJL"
+   ],
+   "year": 2009,
+   "title": "Biopython: freely available Python tools for computational molecular biology and bioinformatics",
+   "container": "Bioinformatics",
+   "volume": "25",
+   "issue": "11",
+   "pages": "1422-1423",
+   "doi": "10.1093/bioinformatics/btp163"
+  },
+  "vep2016": {
+   "authors": [
+    "McLaren W",
+    "Gil L",
+    "Hunt SE",
+    "Riat HS",
+    "Ritchie GRS",
+    "Thormann A",
+    "Flicek P",
+    "Cunningham F"
+   ],
+   "year": 2016,
+   "title": "The Ensembl Variant Effect Predictor",
+   "container": "Genome Biology",
+   "volume": "17",
+   "issue": "",
+   "pages": "122",
+   "doi": "10.1186/s13059-016-0974-4"
+  }
+ },
+ "programs": {
+  "fastp": {
+   "name": "fastp",
+   "refs": [
+    "fastp2018"
+   ]
+  },
+  "cutadapt": {
+   "name": "Cutadapt",
+   "refs": [
+    "cutadapt2011"
+   ]
+  },
+  "seqtk": {
+   "name": "seqtk",
+   "refs": [
+    "seqtk"
+   ]
+  },
+  "wgsim": {
+   "name": "wgsim",
+   "refs": [
+    "wgsim"
+   ]
+  },
+  "minimap2": {
+   "name": "minimap2",
+   "refs": [
+    "minimap2_2018",
+    "minimap2_2021"
+   ]
+  },
+  "bowtie2": {
+   "name": "Bowtie 2",
+   "refs": [
+    "bowtie2_2012"
+   ]
+  },
+  "bwa": {
+   "name": "BWA (bwa mem)",
+   "refs": [
+    "bwamem2013",
+    "bwa2009"
+   ]
+  },
+  "bwa-mem2": {
+   "name": "BWA-MEM2",
+   "refs": [
+    "bwamem2_2019"
+   ]
+  },
+  "hisat2": {
+   "name": "HISAT2",
+   "refs": [
+    "hisat2_2019"
+   ]
+  },
+  "samtools": {
+   "name": "SAMtools",
+   "refs": [
+    "samtools_bcftools2021",
+    "samtools2009"
+   ]
+  },
+  "htslib": {
+   "name": "HTSlib (bgzip, tabix)",
+   "refs": [
+    "htslib2021"
+   ]
+  },
+  "mosdepth": {
+   "name": "mosdepth",
+   "refs": [
+    "mosdepth2018"
+   ]
+  },
+  "featurecounts": {
+   "name": "featureCounts",
+   "refs": [
+    "featurecounts2014"
+   ]
+  },
+  "stringtie": {
+   "name": "StringTie",
+   "refs": [
+    "stringtie3_2026",
+    "stringtie2015",
+    "stringtie2_2019"
+   ]
+  },
+  "kallisto": {
+   "name": "kallisto",
+   "refs": [
+    "kallisto2016"
+   ]
+  },
+  "salmon": {
+   "name": "Salmon",
+   "refs": [
+    "salmon2017"
+   ]
+  },
+  "gffread": {
+   "name": "gffread",
+   "refs": [
+    "gffread2020"
+   ]
+  },
+  "bustools": {
+   "name": "bustools (and kallisto bus)",
+   "refs": [
+    "bustools2021",
+    "bus2019",
+    "kb2025"
+   ]
+  },
+  "bcftools": {
+   "name": "BCFtools",
+   "refs": [
+    "samtools_bcftools2021"
+   ]
+  },
+  "freebayes": {
+   "name": "FreeBayes",
+   "refs": [
+    "freebayes2012"
+   ]
+  },
+  "lofreq": {
+   "name": "LoFreq",
+   "refs": [
+    "lofreq2012",
+    "dindel2011"
+   ],
+   "note": "The second paper for the indel qualities of lofreq indelqual --dindel, which are Dindel's."
+  },
+  "somaticsniper": {
+   "name": "SomaticSniper",
+   "refs": [
+    "somaticsniper2012"
+   ]
+  },
+  "strelka2": {
+   "name": "Strelka2",
+   "refs": [
+    "strelka2_2018"
+   ]
+  },
+  "kraken2": {
+   "name": "Kraken 2",
+   "refs": [
+    "kraken2_2019",
+    "kraken_protocol2022"
+   ]
+  },
+  "bracken": {
+   "name": "Bracken",
+   "refs": [
+    "bracken2017"
+   ]
+  },
+  "prodigal": {
+   "name": "Prodigal",
+   "refs": [
+    "prodigal2010"
+   ]
+  },
+  "hmmer": {
+   "name": "HMMER",
+   "refs": [
+    "hmmer_site",
+    "hmmer3_2011"
+   ],
+   "note": "The HMMER User’s Guide asks you to cite the web site, hmmer.org, and the version you used; where a journal wants a paper, Eddy (2011)."
+  },
+  "bedtools": {
+   "name": "bedtools",
+   "refs": [
+    "bedtools2010"
+   ]
+  },
+  "kalign": {
+   "name": "Kalign",
+   "refs": [
+    "kalign3_2020"
+   ]
+  },
+  "muscle": {
+   "name": "MUSCLE",
+   "refs": [
+    "muscle2004"
+   ]
+  },
+  "fasttree": {
+   "name": "FastTree",
+   "refs": [
+    "fasttree2_2010"
+   ]
+  },
+  "seqalign": {
+   "name": "seq-align (needleman_wunsch, smith_waterman)",
+   "refs": [
+    "seqalign",
+    "nw1970",
+    "sw1981"
+   ],
+   "note": "seq-align has no paper; cite the algorithms it carries out."
+  },
+  "lastz": {
+   "name": "LASTZ",
+   "refs": [
+    "lastz2007"
+   ]
+  },
+  "plink2": {
+   "name": "PLINK 2",
+   "refs": [
+    "plink2_2015",
+    "plink2_site"
+   ],
+   "note": "PLINK's citation instructions (cog-genomics.org/plink/2.0/general_usage#cite) ask for the program – its version and web site – and the paper of PLINK 2, and also the papers of the methods you used (the Hardy–Weinberg exact test, KING, Firth regression …), which they list."
+  },
+  "snakemake": {
+   "name": "Snakemake",
+   "refs": [
+    "snakemake2025"
+   ]
+  },
+  "galaxy": {
+   "name": "Galaxy",
+   "refs": [
+    "galaxy2024"
+   ]
+  },
+  "ngl": {
+   "name": "NGL Viewer (the 3D viewer)",
+   "refs": [
+    "ngl2018",
+    "ngl2015"
+   ]
+  },
+  "igvjs": {
+   "name": "igv.js (the genome browser)",
+   "refs": [
+    "igvjs2023"
+   ]
+  },
+  "deseq2": {
+   "name": "DESeq2",
+   "refs": [
+    "deseq2_2014"
+   ]
+  },
+  "edger": {
+   "name": "edgeR",
+   "refs": [
+    "edger4_2025",
+    "edger2010"
+   ]
+  },
+  "biopython": {
+   "name": "Biopython",
+   "refs": [
+    "biopython2009"
+   ]
+  },
+  "vep": {
+   "name": "Ensembl VEP",
+   "refs": [
+    "vep2016"
+   ]
+  }
+ }
+}

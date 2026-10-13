@@ -83,3 +83,5 @@ deseq2_genes <- rownames(top)[which(top$padj < 0.05)]
 c(DESeq2 = length(deseq2_genes), edgeR = length(edger_genes), both = length(intersect(deseq2_genes, edger_genes)))</code></pre>
 
 <div class="callout info"><div class="co-t"><!--ICON:info-->Good to know</div><p>DESeq2 and edgeR need raw counts – whole numbers, not normalised values – and biological replicates. In the browser they run as on a computer: locfit, a package they need, was built for the workbench, and a check against R on Linux gave the same results. Download the notebook to run it in RStudio or Jupyter: <code>BiocManager::install(c("DESeq2", "edgeR"))</code> there.</p></div>
+
+<!--CITE: hisat2 samtools featurecounts deseq2 edger-->

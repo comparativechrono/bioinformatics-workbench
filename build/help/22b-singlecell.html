@@ -1,0 +1,57 @@
+<!-- id: h-singlecell | title: Single-cell RNA-seq: bustools | group: Terminal and programs | summary: From BUS records of kallisto bus to a matrix of cells and genes | keys: single-cell single cell scrna-seq scrnaseq 10x chromium droplet barcode umi cell barcode whitelist on-list allowlist bus busz kallisto bus bustools sort correct count inspect text capture umicorrect equivalence class matrix market mtx cells genes knee plot empty droplets kb_python kb count -->
+<h1><!--ICON:flask-->Single-cell RNA-seq: bustools</h1>
+<p class="lede">In single-cell RNA-seq each cell is in a droplet of its own, and every read carries two tags: the <b>barcode</b> of its droplet – its cell – and a <b>UMI</b>, the tag of the RNA molecule it was copied from. <code>kallisto bus</code> pseudoaligns the reads and writes what each one says as a BUS record. <b>bustools</b> sorts the records, corrects the barcodes and counts the molecules of each gene in each cell.</p>
+<p>The examples work in a folder of your own: <button class="do" type="button" data-term-run="mkdir -p ~/sc && cd ~/sc">mkdir -p ~/sc &amp;&amp; cd ~/sc</button></p>
+
+<h2>The reads and the BUS file</h2>
+<p><code>/data/examples/singlecell/</code> has data of mouse cells, prepared with 10x Chromium v2 (SRA run SRR8599150): 2,500 of its read pairs, and a small BUS file that kallisto bus wrote for reads of the experiment, with the files of the reference it used.</p>
+<pre class="code" data-run="term"><code>head -2 /data/examples/singlecell/R1.fastq
+head -2 /data/examples/singlecell/R2.fastq
+bustools inspect /data/examples/singlecell/input.bus</code></pre>
+<p>Read 1 has 26 bases: the cell's barcode (16) and the UMI (10). Read 2, 98 bases, is the cDNA – the part that says which transcript the molecule came from. kallisto bus (<code>kallisto bus -i INDEX -o DIR -x 10xv2 R1.fastq R2.fastq</code>) needs an index of the mouse transcriptome, which is too big for the browser; <code>input.bus</code> is what it wrote. Each record holds a barcode, a UMI, an <b>equivalence class</b> – the set of transcripts the read fits, numbered as in <code>matrix.ec</code> – and how many reads said exactly that:</p>
+<pre class="code" data-run="term"><code>bustools text -p /data/examples/singlecell/input.bus | head -5
+head -3 /data/examples/singlecell/matrix.ec
+head -3 /data/examples/singlecell/transcripts.txt</code></pre>
+<p>A line of <code>matrix.ec</code> is an equivalence class and its transcripts, by their line in <code>transcripts.txt</code> (counted from 0).</p>
+
+<h2>Sort, correct, sort again</h2>
+<pre class="code" data-run="term"><code>bustools sort -o sorted.bus /data/examples/singlecell/input.bus
+bustools correct -w /data/examples/singlecell/whitelist.txt -o corrected.bus sorted.bus
+bustools sort -o corrected.sorted.bus corrected.bus</code></pre>
+<p>Sorting puts the records of the same barcode and UMI together, and merges those that are the same (34 records become 31). <code>correct</code> compares each barcode with the list of the technology – 10x v2 has 737,280 barcodes, and <code>whitelist.txt</code> holds those near the barcodes of this file: a barcode in the list stays (28 records), one that is a single letter from exactly one barcode of the list takes that barcode (1), and the rest are left out (2) – sequencing errors, or droplets that were not made by the kit. Correction changes barcodes, so the records are sorted again.</p>
+
+<h2>Count: a matrix of cells and genes</h2>
+<pre class="code" data-run="term"><code>mkdir -p counts
+bustools count --genecounts -g /data/examples/singlecell/transcripts-to-genes.txt -e /data/examples/singlecell/matrix.ec \
+    -t /data/examples/singlecell/transcripts.txt -o counts/cells_x_genes corrected.sorted.bus
+ls counts
+head -5 counts/cells_x_genes.mtx</code></pre>
+<p><code>count</code> counts, for each barcode and each gene, the different UMIs – molecules, not reads: the copies of one molecule that PCR made count once. <code>-g</code> gives each transcript its gene, <code>--genecounts</code> counts genes rather than equivalence classes. The matrix is in Matrix Market format, which lists only what is not zero: after the header, its size – barcodes, genes, entries that are not zero – then one line per entry: the barcode's row, the gene's column, the count. <code>cells_x_genes.barcodes.txt</code> and <code>cells_x_genes.genes.txt</code> name the rows and the columns. Here each barcode has one molecule: 34 records are too few for more.</p>
+
+<h2>More cells, and which barcodes are cells</h2>
+<p><code>large/</code> holds 10,235 records of 358 barcodes of the same experiment, already corrected and sorted, with the files of their reference:</p>
+<pre class="code" data-run="term"><code>L=/data/examples/singlecell/large
+bustools inspect -e $L/matrix.ec -w $L/whitelist.txt $L/input.bus | head -12
+mkdir -p large_counts
+bustools count --genecounts -g $L/transcripts-to-genes.txt -e $L/matrix.ec -t $L/transcripts.txt -o large_counts/cells_x_genes $L/input.bus
+head -3 large_counts/cells_x_genes.mtx</code></pre>
+<p>358 barcodes, 3,733 genes. Most droplets hold no cell – only a little free RNA of the cells that broke – so most barcodes have very few molecules, and a few have many: those are the cells. Count the molecules of each barcode in Python, and draw them from the most to the fewest (a "knee plot"):</p>
+<pre class="code" data-run="py"><code>import os
+import numpy as np
+import scipy.io
+import matplotlib.pyplot as plt
+
+folder = os.path.expanduser("~/sc/large_counts")
+m = scipy.io.mmread(f"{folder}/cells_x_genes.mtx").tocsr()
+umis = np.asarray(m.sum(axis=1)).ravel()   # molecules per barcode
+genes = np.asarray((m &gt; 0).sum(axis=1)).ravel()   # genes seen per barcode
+print(m.shape, "– molecules per barcode, the most first:", np.sort(umis)[::-1][:16].astype(int))
+print("barcodes with 100 molecules or more:", (umis &gt;= 100).sum(), "– median molecules per barcode:", np.median(umis))
+plt.loglog(np.arange(1, len(umis) + 1), np.sort(umis)[::-1], marker=".", linestyle="none")
+plt.xlabel("barcodes, by their molecules"); plt.ylabel("molecules (UMIs)")
+plt.show()</code></pre>
+<p>Fourteen barcodes have 100 molecules or more – from 151 to 1,230 –, then the count falls to a few dozen and the median barcode has one: the cells, and then the empty droplets. Where the curve bends (the "knee") is where cells are told from empty droplets; tools such as DropletUtils (R) do this with statistics. These 358 barcodes are the first of the experiment's in alphabetical order, not a sample of it: they show how it is done, not what the experiment found.</p>
+<p>More: <code>bustools capture</code> keeps (or, with <code>-x</code>, leaves out) the records of a list of transcripts or barcodes, <code>bustools allowlist</code> makes a barcode list from the data, <code>bustools umicorrect</code> corrects UMIs, <code>bustools compress</code> and <code>decompress</code> pack a BUS file; <code>bustools COMMAND</code> without arguments lists its options. In the browser bustools runs on one thread – <code>sort -t N</code> becomes <code>-t 1</code>, with a note – and sorts in 64 MB of memory unless told otherwise (1 GB at most: <code>-m 4G</code> becomes <code>-m 64M</code>).</p>
+<p>The same steps are in the Galaxy tab: the tools <b>bustools sort</b>, <b>correct</b>, <b>count</b>, <b>inspect</b> and <b>text</b> (section <i>Single-cell</i>) – upload <code>input.bus</code>, <code>whitelist.txt</code>, <code>matrix.ec</code>, <code>transcripts.txt</code> and <code>transcripts-to-genes.txt</code>, then sort, correct, sort and count. They are the workbench’s own: Galaxy servers have no bustools tools and process single-cell reads with others (RNA STARsolo, Alevin). bustools is compiled to WebAssembly from its released source by the genomics-wasm project, and gives the same records and matrices as bustools built for Linux (see <a href="#h-programs">Programs and versions</a>).</p>
+
+<!--CITE: bustools-->

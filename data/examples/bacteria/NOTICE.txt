@@ -1,0 +1,14 @@
+Notices for the files in this folder
+====================================
+
+ecoli.fna and salmonella.fna hold the first 60,000 bases (positions 1-60,000) of two bacterial chromosomes from NCBI
+RefSeq, sequence letters unchanged: Escherichia coli K-12 MG1655 (NC_000913.3, assembly GCF_000005845.2) and Salmonella
+enterica serovar Typhimurium LT2 (NC_003197.2, assembly GCF_000006945.2). Only the FASTA header and the line length (80
+bases) are new. combined.fna holds both, one after the other: contigs of two genomes, as in a small metagenome. Both
+windows begin with the threonine operon (thrL, thrA, thrB, thrC).
+
+They are the windows that the genomics-wasm project chose for testing Prodigal (https://github.com/comparativechrono/
+genomics-wasm, commit 46c9418: datasets/annotation/prodigal), by the same rule for both genomes, without looking at
+Prodigal's results. 60,000 bases are less than Prodigal asks for when it learns a genome (100,000) – it says so: enough
+to learn how it works, not for a real annotation. Where every file came from, and its SHA-256: provenance.json. NCBI's
+sequences are public.

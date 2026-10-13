@@ -7,6 +7,11 @@
   its first line is a comment with its id, title, group, summary, keywords and icon:
     <!-- id: h-terminal | title: The terminal | group: Terminal and programs | summary: … | keys: bash shell | icon: terminal -->
 - the first page (h-home) gets the index of all topics, grouped (<!--TOPICS-->);
+- a page with "index: yes" in its header introduces its group: <!--GROUP--> becomes the list of the group's other
+  pages, and the breadcrumbs of those pages lead to it (else to the first page of the group);
+- <!--CITE: program …--> becomes the section "References" with the papers of those programs, and
+  <!--CITE-SHORT: program--> a short link to them (author, year), from build/citations.json – which is also written
+  into the page (window.WB_CITATIONS) for the tool forms of Galaxy;
 - the list of example files (site/data/examples) and of the starter notebooks (site/data/starter)
   is written into the page (window.WB_EXAMPLES, window.WB_STARTERS).
 
@@ -100,7 +105,7 @@ def topics(pages):
     for g, ic in GROUPS:
         if g == 'Start here':
             continue
-        ps = [p for p in pages if p['group'] == g and p['id'] != 'h-home']
+        ps = [p for p in pages if p['group'] == g and p['id'] != 'h-home' and p.get('index') != 'yes']
         if not ps:
             continue
         out.append(f'<section><h2>{icon(ic)}{html.escape(g)}</h2><ul>')
@@ -110,6 +115,103 @@ def topics(pages):
         out.append('</ul></section>')
     out.append('</div>')
     return '\n'.join(out)
+
+
+def group_list(pages, group, self_id):
+    """the pages of a group, for its index page (<!--GROUP-->): a page with "index: yes" in its header introduces the
+    group, and the breadcrumbs of the group's pages lead to it"""
+    out = ['<ul class="help-grouplist">']
+    for p in pages:
+        if p['group'] != group or p['id'] == self_id or p.get('index') == 'yes':
+            continue
+        summ = f'<small>{html.escape(p["summary"])}</small>' if p.get('summary') else ''
+        out.append(f'<li><a href="#{p["id"]}">{html.escape(p["title"])}{summ}</a></li>')
+    out.append('</ul>')
+    return '\n'.join(out)
+
+
+CITATIONS = json.load(open(os.path.join(HERE, 'citations.json'), encoding='utf-8'))
+
+
+def cite_authors(r):
+    if r.get('corporate') and not r.get('authors'):
+        return r['corporate']
+    a = r.get('authors') or []
+    return ', '.join(a[:6]) + (', et al.' if len(a) > 6 else '')
+
+
+def cite_html(key):
+    """one reference, formatted: authors (year) title. journal volume(issue): pages. link"""
+    r = CITATIONS['refs'][key]
+    e = html.escape
+    title = r['title'] + ('' if r['title'][-1:] in '.?!' else '.')
+    who = cite_authors(r)
+    if r.get('year'):
+        parts = [f'{e(who)} ({r["year"]}) {e(title)}']
+    else:  # a program's web site or repository
+        parts = [(f'{e(who)}. ' if who else '') + e(title)]
+    if r.get('container') == 'arXiv':
+        parts.append(f'arXiv:{e(r["pages"])}.')
+    elif r.get('container', '').startswith('PhD thesis'):
+        parts.append(f'{e(r["container"])}.')
+    elif r.get('container'):
+        where = f'<i>{e(r["container"])}</i>'
+        if r.get('volume'):
+            where += f' {e(str(r["volume"]))}' + (f'({e(str(r["issue"]))})' if r.get('issue') else '')
+        if r.get('pages'):
+            pages = e(str(r['pages']).replace('-', '–') if r.get('doi') else str(r['pages']))
+            where += f': {pages}' if r.get('volume') else f', pp. {pages}' if '–' in pages else f' {pages}'
+        parts.append(where + '.')
+    if r.get('doi'):
+        parts.append(f'<a href="https://doi.org/{e(r["doi"], quote=True)}" target="_blank" rel="noopener">doi:{e(r["doi"])}</a>')
+    elif r.get('url'):
+        parts.append(f'<a href="{e(r["url"], quote=True)}" target="_blank" rel="noopener">{e(r["url"].split("://", 1)[-1].rstrip("/"))}</a>')
+    return ' '.join(parts)
+
+
+def cite_short(key):
+    """author and year, for a table: Chen et al. 2018, Li and Durbin 2009, Li 2018"""
+    r = CITATIONS['refs'][key]
+    if r.get('short'):
+        who = r['short']
+    elif r.get('corporate') and not r.get('authors'):
+        who = r['corporate']
+    else:
+        fam = [a.rsplit(' ', 1)[0] if ' ' in a else a for a in r['authors']]
+        who = fam[0] if len(fam) == 1 else f'{fam[0]} and {fam[1]}' if len(fam) == 2 else f'{fam[0]} et al.'
+    when = f' {r["year"]}' if r.get('year') else ''
+    url = f'https://doi.org/{r["doi"]}' if r.get('doi') else r.get('url', '')
+    return f'<a href="{html.escape(url, quote=True)}" target="_blank" rel="noopener">{html.escape(who + when)}</a>'
+
+
+def cite_section(ids):
+    progs = CITATIONS['programs']
+    unknown = [i for i in ids if i not in progs]
+    if unknown:
+        raise SystemExit(f'<!--CITE--> names programs that build/citations.json does not have: {unknown}')
+    out = ['<h2 data-anchor="cite">References</h2>',
+           '<p>The papers to cite when you use ' + ('this program' if len(ids) == 1 else 'these programs') +
+           ' in your work – with the version you used (<a href="#h-programs">Programs and versions</a>):</p>',
+           '<dl class="cite-list">']
+    for i in ids:
+        p = progs[i]
+        out.append(f'<dt>{html.escape(p["name"])}</dt>')
+        if p.get('note'):
+            out.append(f'<dd class="cite-note">{html.escape(p["note"])}</dd>')
+        out.extend(f'<dd>{cite_html(k)}</dd>' for k in p['refs'])
+    out.append('</dl>')
+    return '\n'.join(out)
+
+
+def citations_json():
+    # every reference, formatted, for the tool forms of Galaxy (no "</" inside a script element)
+    return json.dumps({k: cite_html(k) for k in CITATIONS['refs']}, separators=(',', ':'), ensure_ascii=False).replace('</', '<\\/')
+
+
+def with_citations(body):
+    body = re.sub(r'<!--CITE:\s*([^>]*?)\s*-->', lambda m: cite_section(m.group(1).split()), body)
+    return re.sub(r'<!--CITE-SHORT:\s*([^>]*?)\s*-->',
+                  lambda m: '; '.join(cite_short(k) for i in m.group(1).split() for k in CITATIONS['programs'][i]['refs']), body)
 
 
 def check_links(pages):
@@ -146,12 +248,16 @@ def starters():
 def main():
     tpl = open(os.path.join(HERE, 'template.html'), encoding='utf-8').read()
     pages = read_pages()
+    # the page that introduces a group: its index page if it has one, else its first page
     first_of = {}
+    for p in pages:
+        if p.get('index') == 'yes':
+            first_of[p['group']] = p['id']
     for p in pages:
         first_of.setdefault(p['group'], p['id'])
     parts = []
     for p in pages:
-        body = p['body'].replace('<!--TOPICS-->', topics(pages))
+        body = with_citations(p['body'].replace('<!--TOPICS-->', topics(pages)).replace('<!--GROUP-->', group_list(pages, p['group'], p['id'])))
         attrs = {
             'class': 'help-page',
             'id': p['id'],
@@ -165,10 +271,11 @@ def main():
     check_links(pages)
     out = tpl.replace('<!--HELP-->', '\n'.join(parts))
     data = (f'<script>window.WB_EXAMPLES = {json.dumps(examples(), separators=(",", ":"))};\n'
-            f'window.WB_STARTERS = {json.dumps(starters(), separators=(",", ":"))};</script>')
+            f'window.WB_STARTERS = {json.dumps(starters(), separators=(",", ":"))};\n'
+            f'window.WB_CITATIONS = {citations_json()};</script>')
     out = out.replace('<!--DATA-->', data)
     out = with_icons(out)
-    left = re.findall(r'<!--ICON:\w+-->|<!--HELP-->|<!--DATA-->|<!--TOPICS-->', out)
+    left = re.findall(r'<!--ICON:\w+-->|<!--HELP-->|<!--DATA-->|<!--TOPICS-->|<!--GROUP-->|<!--CITE', out)
     if left:
         raise SystemExit(f'placeholders left: {left[:5]}')
     open(os.path.join(SITE, 'index.html'), 'w', encoding='utf-8').write(out)

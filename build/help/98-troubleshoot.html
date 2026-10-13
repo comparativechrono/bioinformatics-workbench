@@ -1,4 +1,4 @@
-<!-- id: h-troubleshoot | title: When something goes wrong | group: Reference | summary: Common problems and what to do | keys: troubleshoot kraken2 bracken kmer_distrib unclassified problem error help isolated isolation cross-origin featurecounts salmon threads not working slow stuck crash files gone lost storage full quota not found no such file network failed to fetch cors 429 genome browser empty galaxy red ai key locked terminal out of memory reload index bai fai chromosome names variant caller strelka lofreq -->
+<!-- id: h-troubleshoot | title: When something goes wrong | group: Reference | summary: Common problems and what to do | keys: troubleshoot kraken2 bracken kmer_distrib unclassified prodigal hmmer hmmscan hmmpress auxfiles pressed format problem 20000 characters problem error help isolated isolation cross-origin featurecounts salmon threads not working slow stuck crash files gone lost storage full quota not found no such file network failed to fetch cors 429 genome browser empty galaxy red ai key locked terminal out of memory reload index bai fai chromosome names variant caller strelka lofreq plink plink2 pca lapack memory glm covariates allow-no-covars -->
 <h1><!--ICON:help-->When something goes wrong</h1>
 <p class="lede">The usual problems, and what to do about them. Error messages in the notebook and the terminal often carry a hint of their own – and <b>Ask the AI assistant about this error</b> explains them (<a href="#h-ai">AI assistant</a>).</p>
 
@@ -30,14 +30,26 @@
 <dl>
   <dt>"command not found"</dt>
   <dd>The program is not in the workbench: <code>help</code> lists what is. Python packages: <code>%pip install NAME</code>; R packages: <code>install.packages("NAME")</code>.</dd>
-  <dt>featureCounts or salmon: "… this page is not" cross-origin isolated</dt>
-  <dd>These two programs work on several threads, which a browser allows only in a cross-origin isolated page. Reload the page: the workbench isolates it as it starts. It cannot when the page was not opened over https (or from localhost), or in a browser window that allows no service workers (some private windows) – see <a href="#h-limits/threads">programs on several threads</a>.</dd>
+  <dt>featureCounts, salmon or plink2: "… this page is not" cross-origin isolated</dt>
+  <dd>These three programs work on several threads, which a browser allows only in a cross-origin isolated page. Reload the page: the workbench isolates it as it starts. It cannot when the page was not opened over https (or from localhost), or in a browser window that allows no service workers (some private windows) – see <a href="#h-limits/threads">programs on several threads</a>.</dd>
   <dt>A variant caller says an index is missing, or that the chromosomes do not match</dt>
   <dd>Index the BAM files (<code>samtools index</code>) and the reference (<code>samtools faidx</code>) – again after a program has written a new BAM file, as <code>lofreq indelqual</code> does. The reference must be the one the reads were mapped to, with the sequence names of the BAM header (<code>samtools view -H file.bam | grep @SQ</code>). See <a href="#h-somatic">Somatic variants</a>.</dd>
   <dt>bracken: "ERROR: …/database100mers.kmer_distrib does not exist"</dt>
   <dd>Bracken needs the distribution for the length of your reads, and it takes 100 when <code>-r</code> is not given. Give the length: <code>-r 151</code> for the example data (<code>ls DB/*.kmer_distrib</code> shows which lengths a database has); <code>bracken-build -l LENGTH</code> makes one for another length. See <a href="#h-metagenomics">Metagenomics</a>.</dd>
   <dt>Kraken2 leaves most reads unclassified, or names a species that cannot be there</dt>
   <dd>Kraken2 finds only what is in its database: a read of an organism that is not there stays unclassified, or goes to a relative that is – E. coli reads to Shigella, say. Look at what the database holds (<code>kraken2-inspect</code>), raise <code>--confidence</code>, and let Bracken's threshold (<code>-t</code>) leave out species with few reads. See <a href="#h-metagenomics">Metagenomics</a>.</dd>
+  <dt>prodigal: "Sequence must be 20000 characters"</dt>
+  <dd>In its usual mode (<code>-p single</code>) Prodigal learns the genome from the sequences it is given, and fewer than 20,000 bases are too few to learn from. Give it the whole genome – all its contigs in one file – or, for a short sequence or a metagenome, use <code>-p meta</code>.</dd>
+  <dt>hmmscan: "Failed to open binary auxfiles … use hmmpress first"</dt>
+  <dd>hmmscan searches a collection of profiles that <code>hmmpress</code> has prepared: run <code>hmmpress FILE.hmm</code> first, in a folder of your own – it writes four files next to the profiles, which it cannot do in <code>/data/examples</code>. When hmmpress says "Delete old hmmpress indices first", the collection is pressed already; after changing its profiles, press it again with <code>hmmpress -f FILE.hmm</code>.</dd>
+  <dt>hmmsearch or hmmscan: "File format problem in trying to open HMM file"</dt>
+  <dd>The file given as the profile is not one – an alignment, or sequences. Build the profile from the alignment first (<code>hmmbuild NEW.hmm ALIGNMENT.sto</code>), and mind the order: the profiles come first and the sequences second, for <code>hmmsearch</code> and <code>hmmscan</code> alike.</dd>
+  <dt>plink2: "--pca requires plink2 to be built with LAPACK"</dt>
+  <dd>This build of PLINK 2 has no LAPACK, the library its principal components (<code>--pca</code>) and <code>--pheno-svd</code> need: they are not available here. The rest of PLINK works. See <a href="#h-plink2">Genotypes and association</a>.</dd>
+  <dt>plink2 --glm: "invoked without --covar … usually an analytical mistake"</dt>
+  <dd>PLINK asks for covariates in an association test – ancestry (principal components), sex, age – because a test without them is usually confounded. Give them with <code>--covar FILE</code>, or, when you are sure, add the modifier: <code>--glm allow-no-covars</code>.</dd>
+  <dt>plink2: "Failed to open NAME.psam" (or .pgen, .pvar, .bed …)</dt>
+  <dd><code>--pfile NAME</code> reads three files, <code>NAME.pgen</code>, <code>NAME.pvar</code> and <code>NAME.psam</code> (<code>--bfile NAME</code>: <code>.bed</code>, <code>.bim</code>, <code>.fam</code>): give the name without its ending, and make the files first (<code>plink2 --vcf FILE.vcf.gz --make-pgen --out NAME</code>).</dd>
   <dt>A program says it is out of memory, or stops without a message</dt>
   <dd>The data is too big for the browser: take a part of it (<code>samtools view</code> of a region, <code>seqtk sample</code>) – see <a href="#h-limits">What is different in the browser</a>.</dd>
   <dt>Python or R forgot my variables</dt>

@@ -1,0 +1,61 @@
+{
+ "description": "The first 60,000 bases of two bacterial chromosomes from NCBI RefSeq – Escherichia coli K-12 MG1655 and Salmonella enterica Typhimurium LT2 – for Prodigal; combined.fna holds both, as contigs of a small metagenome (prodigal -p meta). From the annotation test data of the genomics-wasm project.",
+ "genomicsWasm": {
+  "repository": "https://github.com/comparativechrono/genomics-wasm",
+  "commit": "46c94182b10556cc636d634812019e2838e176af",
+  "dataset": "datasets/annotation/prodigal (manifest.json, provenance/)"
+ },
+ "sequences": [
+  {
+   "accession": "NC_000913.3",
+   "chromosomeBases": 4641652,
+   "end": 60000,
+   "name": "Escherichia coli K-12 MG1655",
+   "sequenceId": "NC_000913.3_1_60000",
+   "source": "GCF_000005845.2_ASM584v2_genomic.fna.gz",
+   "start": 1,
+   "taxid": 562,
+   "transformation": "First 60000 chromosome bases unchanged; descriptive FASTA header and 80-column wrapping.",
+   "windowSequenceSha256": "c8d5ec4b04f4ddf3b7cbc4c10581fe34771d168b56c4d12770b86280bee1694b"
+  },
+  {
+   "accession": "NC_003197.2",
+   "chromosomeBases": 4857450,
+   "end": 60000,
+   "name": "Salmonella enterica Typhimurium LT2",
+   "sequenceId": "NC_003197.2_1_60000",
+   "source": "GCF_000006945.2_ASM694v2_genomic.fna.gz",
+   "start": 1,
+   "taxid": 28901,
+   "transformation": "First 60000 chromosome bases unchanged; descriptive FASTA header and 80-column wrapping.",
+   "windowSequenceSha256": "846e6c7e9cd7f4f75aa51fd9edfe9f2b0fddbe7c9196890e15bba21ef70ef516"
+  }
+ ],
+ "combined.fna": "Concatenate the two complete FASTA inputs in the listed order.",
+ "sources": {
+  "GCF_000005845.2_ASM584v2_genomic.fna.gz": {
+   "bytes": 1379902,
+   "sha256": "a96d3cfa58c88d477013c768f90a11d2386d42a70d566abfb6d9013dcbd24255",
+   "url": "https://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/000/005/845/GCF_000005845.2_ASM584v2/GCF_000005845.2_ASM584v2_genomic.fna.gz"
+  },
+  "GCF_000006945.2_ASM694v2_genomic.fna.gz": {
+   "bytes": 1471540,
+   "sha256": "2996f647c223d4c5b3e0f1a0940025614b39cad5c0c1a00b73f264e3b718d59a",
+   "url": "https://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/000/006/945/GCF_000006945.2_ASM694v2/GCF_000006945.2_ASM694v2_genomic.fna.gz"
+  }
+ },
+ "files": {
+  "combined.fna": {
+   "bytes": 121681,
+   "sha256": "e465c106dfea6bb73257aa456d34936467a0d2efe76a06455494938807e2f880"
+  },
+  "ecoli.fna": {
+   "bytes": 60837,
+   "sha256": "32171ad2e0b62b131282fea8a4c49b909030542b319995dd4cbfd401d6aa69dc"
+  },
+  "salmonella.fna": {
+   "bytes": 60844,
+   "sha256": "661f24999eb635b8a25a2b7c04d9135006bd00864824e55428fd8f40c968304d"
+  }
+ }
+}

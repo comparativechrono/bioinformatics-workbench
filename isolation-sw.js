@@ -1,7 +1,7 @@
 /* Cross-origin isolation for the workbench, where the web server cannot send the headers itself (GitHub Pages).
 
-   Two programs of the terminal, featureCounts and Salmon, count on several threads that share the program's memory
-   (SharedArrayBuffer). A browser allows that only in a page that is "cross-origin isolated": the page and its workers
+   Three programs of the terminal, featureCounts, Salmon and PLINK 2, work on several threads that share the program's
+   memory (SharedArrayBuffer). A browser allows that only in a page that is "cross-origin isolated": the page and its workers
    must come with the headers Cross-Origin-Opener-Policy: same-origin and Cross-Origin-Embedder-Policy: require-corp.
    This service worker adds them to the pages and workers of this site (assets/js/isolation.js registers it). It
    stores nothing and changes no content.

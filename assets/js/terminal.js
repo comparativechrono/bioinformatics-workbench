@@ -151,6 +151,30 @@
       const last = this.outEl.lastElementChild;
       // (colours and the like of a terminal – ESC [ … m – are shown as such: see _ansi)
       const ansi = text.indexOf('\x1b') >= 0 || !!(this._sgr && Object.keys(this._sgr).length);
+      // (\r and \b – the progress that a program writes in place: PLINK 2 counts 0% … 99% over itself – do what a
+      // terminal does: \r goes back to the start of the line, \b one character back, and what follows is written over
+      // what was there. The line goes on from the last piece of output of the same kind.)
+      if (!ansi && /[\r\b]/.test(text)) {
+        const join = last && last.dataset.cls === cls && !last.classList.contains('cmdline') && !last.firstElementChild && last.textContent.length < 20000;
+        const was = join ? last.textContent : '';
+        const nl = was.lastIndexOf('\n');
+        let done = was.slice(0, nl + 1), line = Array.from(was.slice(nl + 1)), at = line.length;
+        for (const ch of text) {
+          if (ch === '\r') at = 0;
+          else if (ch === '\b') at = Math.max(0, at - 1);
+          else if (ch === '\n') { done += line.join('') + '\n'; line = []; at = 0; }
+          else line[at++] = ch;
+        }
+        if (join) last.textContent = done + line.join('');
+        else {
+          const el = h('div.tl.' + cls);
+          el.dataset.cls = cls;
+          el.textContent = done + line.join('');
+          this.outEl.appendChild(el);
+        }
+        this._scroll();
+        return;
+      }
       if (last && last.dataset.cls === cls && !last.classList.contains('cmdline') && last.textContent.length < 20000) {
         if (ansi) this._ansi(last, text);
         else last.appendChild(document.createTextNode(text));
@@ -365,7 +389,8 @@
         this.cancelled = true;
         const program = MG.wasm.running;
         const lost = MG.wasm.kill(this.fs);
-        // (featureCounts, Salmon, Cutadapt, LoFreq, SomaticSniper, Strelka2, Kraken2 and Bracken run in a worker of their own: only that one is stopped)
+        // (featureCounts, Salmon, PLINK 2, Cutadapt, LoFreq, SomaticSniper, Strelka2, Kraken2, Bracken, Prodigal, HMMER and bustools run in a worker
+        // of their own: only that one is stopped)
         this.note(MG.wasm.lastKill === 'threads' ? `${program} was stopped by force.` : `${program} was stopped by force, and the programs were started again.`);
         // files that programs had written lived in the stopped programs' memory: the copies kept in the browser come back.
         // (Not here for a command of the AI agent: there the files come back as they were before the command, when what

@@ -1,6 +1,7 @@
 BWA, BWA-MEM2, HISAT2, FreeBayes, featureCounts, StringTie, kallisto, Salmon, mosdepth, Cutadapt, LoFreq,
-SomaticSniper, Strelka2, Kraken2, Bracken and the R package locfit – from the genomics-wasm project
-===========================================================================================================
+SomaticSniper, Strelka2, Kraken2, Bracken, Prodigal, HMMER, bustools, PLINK 2 and the R package locfit – from the
+genomics-wasm project
+======================================================================================================================
 The WebAssembly builds of BWA 0.7.19, HISAT2 2.2.2 and FreeBayes 1.3.6 in ../../biowasm/, and of the
 R package locfit 1.5-9.12 in ../../r-packages/, come from the genomics-wasm project:
 https://github.com/comparativechrono/genomics-wasm, commit 0e5df1fba226dbfd606f719600336aeeccbe754a
@@ -230,3 +231,111 @@ Kraken2 and Bracken (added on 12 October 2026)
   taxonomy/ that are there, without masking (--no-masking). A file of reads that is not there is an error here
   (upstream's kraken2 counts it as no reads); - is such a file name, as upstream – the standard input is /dev/stdin.
   Where Bracken's shell script reports an error but ends with status 0, bracken here ends with status 2.
+
+Prodigal, HMMER and bustools (added on 13 October 2026)
+  Prodigal 2.6.3, HMMER 3.4 and bustools 0.45.1 in ../../genomics-wasm/, and the example data in data/examples/bacteria/,
+  data/examples/hmmer/ and data/examples/singlecell/, come from the same project at commit
+  46c94182b10556cc636d634812019e2838e176af (13 October 2026). Their parts of the repository, in its layout:
+  scripts/           build-prodigal.sh, build-hmmer.sh, build-bustools.sh, fetch-annotation-test-data.py and
+                     fetch-bustools-test-data.py (how the test data was made from its sources, and checked)
+  tools/prodigal/    README.md, browser.patch, abi-check.c (the layout of training files), build.py, sources.lock.json,
+                     the licences
+  tools/hmmer/       README.md, browser.patch, abi-check.c, compat/x86intrin.h (Emscripten's SSE2 header in place of
+                     Clang's x86 one), build.py, sources.lock.json, the licences (LICENSE.embedded: the source files
+                     with further notices)
+  tools/bustools/    README.md, browser.patch, abi-check.cpp (the layout of BUS records), pre.js, build.py,
+                     sources.lock.json, the licences
+  runtime/           prodigal.mjs, hmmer.mjs, bustools.mjs and PRODIGAL.md, HMMER.md, BUSTOOLS.md (how genomics-wasm
+                     runs them). The workbench does not use these three modules: its terminal starts each program in a
+                     worker of its own (assets/js/threads-worker.mjs) and gives it its files (assets/js/tools-wasm.js).
+  datasets/annotation/, datasets/bustools/  README.md (what the test data is), manifest.json (its files, with their
+                     SHA-256), provenance/ (the sources: NCBI RefSeq; HMMER's release archive; kb_python's test files
+                     and the BUStools getting_started release – and the maps of how the larger BUS file was renumbered)
+  Source code included here (in ../sources/): Prodigal 2.6.3 (GNU GPL 3 or later) and bustools 0.45.1 – BSD itself, but
+  it contains Eigen 3.3.7, under the Mozilla Public License 2.0, which asks for its source to be offered with it.
+  HMMER is under the BSD licence; its source is where tools/hmmer/sources.lock.json points (eddylab.org's archive).
+  What was done for this site:
+    workbench/build-prodigal-hmmer-bustools-for-workbench.sh  the builds, step by step (as for Kraken2: the build
+                                            machine's folders mapped out of the programs' strings, and GitHub's
+                                            archives made again with recreate-github-archive.sh)
+    workbench/build-hmmer-workbench.py      runs tools/hmmer/build.py unchanged for the WebAssembly programs, with one
+                                            patch more after genomics-wasm's browser.patch:
+    workbench/hmmer-easel-messages.patch    Easel takes a program whose parent process is process 1 for a daemon, and
+                                            sends its error messages to syslog; Emscripten's getppid() always answers
+                                            1, so the WebAssembly programs lost their messages (hmmpress's "Delete old
+                                            hmmpress indices first", the reasons of "Failed to parse command line" …).
+                                            Under Emscripten getppid() answers 2. A change of the workbench, not of
+                                            genomics-wasm; the native programs are not changed.
+  None is linked again: each program runs as built, each command in a worker of its own, with no need for a
+  cross-origin isolated page. HMMER needs WebAssembly SIMD (its SSE2 code); Prodigal and bustools do not.
+
+  How they were made and checked (13 October 2026)
+  1. Native programs from the unchanged sources, native programs with the port's changes, and the WebAssembly programs,
+     with each tool's script ("all"); Emscripten 3.1.64. Then HMMER's WebAssembly programs again, with the patch above.
+  2. The project's comparison in Node.js 22 passed: validate-annotation.mjs --tool all (Prodigal 15 of 15 cases, HMMER
+     33 of 33), validate-bustools.mjs (bustools 56 of 56) – and, after the second build, HMMER's 33 cases again: the
+     same genes, training files, profiles, pressed databases, hits and alignments, BUS files, matrices and compressed
+     files, with files made by one build read by the other.
+  3. In the workbench's terminal and in its Galaxy, with the example data, the results were compared with the native
+     programs: Prodigal's genes, proteins, gene sequences, starts and training files (GFF, GenBank, SCO; single and meta
+     mode; from a file, a pipe and a redirection) and messages; the profiles, pressed databases, outputs and tables of
+     hmmbuild, hmmsearch, hmmscan, hmmpress, phmmer, jackhmmer, nhmmer, nhmmscan, hmmalign, hmmemit, hmmfetch, hmmstat
+     and hmmconvert, and their error messages; bustools' sorted, corrected and captured records, text, matrices (also
+     with --genecounts and --umi-gene), barcode lists, compressed files and messages – all the same, byte for byte, but
+     for what changes from one run to the next (HMMER's dates, times, working folder and command line; bustools sort's
+     times) and the numbers of the equivalence classes that count lists without using them (see the NOTICE.txt of
+     bustools).
+
+  In the terminal of the workbench
+  prodigal, the thirteen HMMER programs and bustools run these programs. HMMER's --cpu and bustools sort's -t N are left
+  out (or made -t 1) with a note: everything runs on one thread; bustools sort's -m is at most 1 GB here (a larger one
+  becomes -m 64M, with a note). HMMER cannot read files compressed with gzip – it starts gzip for them, which a web page
+  cannot do – and says so; Easel's miniapps (esl-*), hmmpgmd and HMMER's MPI mode are not here. Prodigal reading from a
+  pipe copies its input to a file first, as upstream does, with upstream's message.
+
+PLINK 2 (added on 13 October 2026)
+  PLINK 2.0.0-b.1-dev (12 Oct 2026) in ../../genomics-wasm/plink2/2.0.0-b.1-dev/, and the example data in
+  data/examples/plink2/, come from the same project at commit 8eea96b9 (13 October 2026; its PLINK 2 port is commit
+  d68433f). Their parts of the repository, in its layout:
+  scripts/           build-plink2.sh, fetch-plink2-test-data.py (how the test data was made from its sources, and
+                     checked)
+  tools/plink2/      README.md, browser.patch (the port's two changes, under PLINK2_WASM_PORT), abi-check.cpp, build.py
+                     (the NOLAPACK build: native, native with the port's changes, WebAssembly), mailbox.js (Emscripten's
+                     mailbox for the threads, as for featureCounts), sources.lock.json, the licences
+  runtime/           plink2.mjs and PLINK2.md (how genomics-wasm runs it: --threads 1 --memory 640 require unless given,
+                     --threads 1 or 2, --memory 640 to 1024, no --script or --rerun). The workbench does not use this
+                     module: its terminal starts each command in a worker of its own (assets/js/threads-worker.mjs),
+                     gives it its files and adds those options itself (assets/js/tools-wasm.js).
+  datasets/plink2/   README.md, manifest.json, provenance/ (DATA_REUSE.md: the 1000 Genomes data and its citation;
+                     fixture-sources.json: how each file was made; sources.lock.json; upstream/: PLINK 2's test recipes;
+                     PLINK2-COPYING, the GPL of those recipes)
+  Source code included here (in ../sources/): PLINK 2 – GitHub's archive of plink-ng at commit 7211906, with the
+  libraries it bundles – and zlib 1.3.2, which is part of it.
+  What was done for this site:
+    workbench/build-plink2-for-workbench.sh  the build, step by step (as for Prodigal, HMMER and bustools: the build
+                                            machine's folders mapped out of the programs' strings, and GitHub's
+                                            archives made again with recreate-github-archive.sh)
+  Nothing is linked again: the program runs as built – plink2.mjs and plink2.wasm; Emscripten's plink2.worker.mjs is a
+  placeholder that is never loaded, and is left out. PLINK 2 starts threads that share its memory (it reads its files on
+  threads of their own even with --threads 1), so it needs a cross-origin isolated page, as featureCounts and Salmon do,
+  and WebAssembly SIMD.
+
+  How it was made and checked (13 October 2026)
+  1. The native program from the unchanged source, the native program with the port's changes, and the WebAssembly
+     program, with build-plink2.sh all; Emscripten 3.1.64.
+  2. The project's comparison in Node.js 22 passed: validate-plink2.mjs --engine node, 41 of 41 cases – every result
+     file the same as both native programs', byte for byte (the comparison allows printed rounding in the columns of
+     numbers; none was needed), files written by one build read by the other, and the commands that must fail (--pca,
+     --pheno-svd, a missing file) failing with native PLINK's status and message.
+  3. In the workbench's terminal, with the example data, the results were compared with the unchanged native program:
+     every command of the help page – import, frequencies, missingness, Hardy-Weinberg, filters, LD pruning and r2,
+     linear, logistic and Firth regression, scores – and --make-bed with --bfile, --keep with --make-king-table,
+     --export vcf, --pmerge-list, two threads and the errors: the same files, byte for byte (the VCF but for its date),
+     and the same logs but for the host, the working folder, the times, the random seed and the memory found.
+
+  In the terminal of the workbench
+  plink2 runs this program. Unless they are given, the terminal adds --threads 1 --memory 640 require (640 MiB is the
+  least working memory PLINK 2 takes); --threads above 2 becomes 2 and --memory above 1024 becomes 1024, with a note.
+  --script and --rerun are refused (the terminal must see those options; in this development version --script also
+  stops the native program, with a buffer overflow): plink2 $(cat FILE) does the same. Not in this build, which has no
+  LAPACK: --pca and --pheno-svd – PLINK says so and stops.

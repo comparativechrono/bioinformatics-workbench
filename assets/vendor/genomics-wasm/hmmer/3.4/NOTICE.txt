@@ -1,0 +1,36 @@
+HMMER 3.4 – hmmbuild, hmmsearch, hmmscan, hmmpress, hmmfetch, hmmalign, hmmconvert, hmmemit, hmmstat, phmmer, jackhmmer,
+nhmmer and nhmmscan
+Licence: BSD 3-Clause (LICENSE in this folder, HMMER's own, with its copyright notices and the sublicence for Michael
+Farrar's SIMD code). HMMER contains Easel 0.49 (BSD 2-Clause: LICENSE.easel) and libdivsufsort-lite 2.0.0 (MIT:
+LICENSE.libdivsufsort); LICENSE.embedded keeps the source files that carry further notices (FreeBSD, Makoto Matsumoto
+and Takuji Nishimura, Julien Pommier, Stephen Moshier, David Robert Nadeau – CC BY 3.0 –, Henry Spencer and others). The
+loaders are Emscripten's runtime (MIT and NCSA: LICENSE.emscripten). THIRD_PARTY_LICENSES.txt is genomics-wasm's
+summary; the "sources/" it mentions is that project's folder: the source archive is
+https://eddylab.org/software/hmmer/hmmer-3.4.tar.gz (SHA-256
+ca70d94fd0cf271bd7063423aabb116d42de533117343a9b27a65c17ff06fbf3; revision 9acd8b6758a0ca5d21db6d167e0277484341929b).
+
+Compiled to WebAssembly by the genomics-wasm project (https://github.com/comparativechrono/genomics-wasm, commit
+46c9418): Emscripten 3.1.64, one thread (HMMER's serial build: no --cpu, no MPI), HMMER's SSE2 code turned into
+WebAssembly SIMD – a browser needs WebAssembly SIMD to run it, as all current ones have. The page runs each program in a
+worker of its own (assets/js/threads-worker.mjs); assets/js/tools-wasm.js gives it its files. Everything needed to build
+them again is described in ../../../licenses/genomics-wasm-build/.
+
+Changes to the source: genomics-wasm's (tools/hmmer/browser.patch there) – Easel's test of the processor answers with
+the SIMD that this build has (WebAssembly has no CPUID), config.sub knows Emscripten, and two conversions of a negative
+float to an unsigned byte go through int, as HMMER's own code for other processors does (the C standard leaves such a
+conversion undefined, and WebAssembly does it otherwise than x86). And one of the workbench, for the WebAssembly
+programs only (../../../licenses/genomics-wasm-build/workbench/hmmer-easel-messages.patch, applied by
+build-hmmer-workbench.py there): Easel takes a program whose parent process is process 1 for a daemon and sends its
+error messages to the system log instead of the screen, and Emscripten's getppid() always answers 1 – so without the
+change the programs of genomics-wasm lose their error messages (hmmpress's "Delete old hmmpress indices first", nhmmer's
+"GA bit thresholds unavailable …", the reasons of "Failed to parse command line"). With it, getppid() answers 2 under
+Emscripten. The modules here are those of that second build; nothing else differs from genomics-wasm's. Scores, filters,
+profiles, the random numbers (--seed) and alignments are HMMER's.
+
+Checked against HMMER 3.4 built natively from the same source (genomics-wasm's comparison, before and after the
+workbench's change: 33 of 33 cases – every program, profiles and pressed databases made by one build and read by the
+other, errors), and in the workbench, against the native programs, with the tutorial data of HMMER – in the terminal and
+in Galaxy: the same profiles (but for their DATE line), pressed databases, hits, scores, E-values, domains, alignments
+and tables. Where HMMER writes dates, times, the working folder or its command line into its output, those differ, as
+they would between two runs on a computer; the "CPU time" line says 0.00u 0.00s here (a web page does not tell a program
+the processor time it used).

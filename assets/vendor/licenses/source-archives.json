@@ -187,5 +187,41 @@
   "bytes": 27264,
   "upstream": "https://github.com/pyodide/hiwire/tree/6a1e67280a15d929ebeceee54a6358c9c8d5f697",
   "origin": "git archive --format=tar --prefix=hiwire-6a1e67280a15d929ebeceee54a6358c9c8d5f697/ 6a1e6728 | gzip -n, from https://github.com/pyodide/hiwire.git – byte for byte GitHub's archive of the commit, as pinned in genomics-wasm's tools/cutadapt/sources.lock.json, 2026-10-11"
+ },
+ {
+  "package": "prodigal-2.6.3",
+  "licence": "GPL-3.0-or-later",
+  "file": "sources/prodigal-2.6.3.tar.gz",
+  "sha256": "89094ad4bff5a8a8732d899f31cec350f5a4c27bcbdd12663f87c9d1f0ec599f",
+  "bytes": 610934,
+  "upstream": "https://github.com/hyattpd/Prodigal/tree/v2.6.3",
+  "origin": "git archive --format=tar --prefix=Prodigal-2.6.3/ v2.6.3 | gzip -n, from https://github.com/hyattpd/Prodigal.git – byte for byte GitHub's archive of the tag (https://codeload.github.com/hyattpd/Prodigal/tar.gz/refs/tags/v2.6.3), as pinned in genomics-wasm's tools/prodigal/sources.lock.json, 2026-10-13"
+ },
+ {
+  "package": "bustools-0.45.1",
+  "licence": "BSD-2-Clause (bustools); MPL-2.0 (Eigen 3.3.7, in dependencies/eigen-3.3.7/: the reason its source is here), Apache-2.0 (CRoaring), MIT and others – see ../genomics-wasm/bustools/0.45.1/",
+  "file": "sources/bustools-0.45.1.tar.gz",
+  "sha256": "b014317ea4501c3314ac358eb074dbbe3a10ed6daec53587f17a897e670e40df",
+  "bytes": 2766093,
+  "upstream": "https://github.com/BUStools/bustools/tree/d4d7a283dbe9d34d2106e9ba31e2566413be6a70",
+  "origin": "git archive --format=tar --prefix=bustools-d4d7a283dbe9d34d2106e9ba31e2566413be6a70/ d4d7a283 | gzip -n, from https://github.com/BUStools/bustools.git – byte for byte GitHub's archive of the commit (https://codeload.github.com/BUStools/bustools/tar.gz/d4d7a283dbe9d34d2106e9ba31e2566413be6a70), as pinned in genomics-wasm's tools/bustools/sources.lock.json, 2026-10-13"
+ },
+ {
+  "package": "plink-ng-72119068234ce0acf7189e53dfe67a527bc53e2c",
+  "licence": "GPL-3.0-or-later (PLINK 2; its library parts LGPL-3.0-or-later); the libraries it bundles their own – libdeflate and SIMDe MIT, zstd BSD-3-Clause or GPL-2.0, SFMT and QD BSD-style – see ../genomics-wasm/plink2/2.0.0-b.1-dev/",
+  "file": "sources/plink-ng-72119068234ce0acf7189e53dfe67a527bc53e2c.tar.gz",
+  "sha256": "99cc4a517249847cfb1d3b4599dd8bc231bcd9aaff08d88e8fa569b4af060f9c",
+  "bytes": 7800686,
+  "upstream": "https://github.com/chrchang/plink-ng/tree/72119068234ce0acf7189e53dfe67a527bc53e2c",
+  "origin": "git archive --format=tar --prefix=plink-ng-72119068234ce0acf7189e53dfe67a527bc53e2c/ 72119068 | gzip -n, from https://github.com/chrchang/plink-ng.git – byte for byte GitHub's archive of the commit (https://codeload.github.com/chrchang/plink-ng/tar.gz/72119068234ce0acf7189e53dfe67a527bc53e2c), as pinned in genomics-wasm's tools/plink2/sources.lock.json, 2026-10-13"
+ },
+ {
+  "package": "zlib-1.3.2",
+  "licence": "Zlib (part of PLINK 2 here)",
+  "file": "sources/zlib-1.3.2-github.tar.gz",
+  "sha256": "b99a0b86c0ba9360ec7e78c4f1e43b1cbdf1e6936c8fa0f6835c0cd694a495a1",
+  "bytes": 1566911,
+  "upstream": "https://github.com/madler/zlib/tree/v1.3.2",
+  "origin": "git archive --format=tar --prefix=zlib-1.3.2/ v1.3.2 | gzip -n, from https://github.com/madler/zlib.git – byte for byte GitHub's archive of the tag (https://codeload.github.com/madler/zlib/tar.gz/refs/tags/v1.3.2), as pinned in genomics-wasm's tools/plink2/sources.lock.json, 2026-10-13"
  }
 ]

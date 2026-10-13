@@ -79,3 +79,5 @@ sup = Superimposer()
 sup.set_atoms(exp_ca, model_ca)
 print(f"RMSD over {len(exp_ca)} Cα atoms: {sup.rms:.2f} Å")</code></pre>
 <p>An RMSD around 1 Å means the prediction matches the experiment closely. To see it, run in the 3D viewer: <code>load 1MBN; load af P02185; superpose AF-P02185-F1:A onto 1MBN:A</code> (<a href="#h-viewer-commands">Viewer commands</a>). The viewer reports a slightly smaller RMSD over a few residues fewer: it pairs the residues by aligning the sequences, leaves out pairs that end up more than 2 Å apart (loose ends) and fits again, as structure programs often do – the code above keeps every pair.</p>
+
+<!--CITE: biopython ngl-->
