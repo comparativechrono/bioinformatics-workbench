@@ -148,6 +148,10 @@ table.mono td { font-family: var(--mono); font-size: 12px; }
 .gx-fhelp { color: var(--muted); font-size: 0.78rem; }
 .gx-runrow { padding-top: 4px; }
 .gx-help { margin-top: 18px; border-top: 1px solid var(--line); padding-top: 8px; color: var(--ink-2); font-size: 0.84rem; max-width: 70ch; }
+.gx-cite { margin-top: 14px; border-top: 1px solid var(--line); padding-top: 8px; color: var(--ink-2); font-size: 0.82rem; max-width: 70ch; }
+.gx-cite h4 { margin: 0 0 4px; font-size: 0.86rem; }
+.gx-cite ul { margin: 0; padding-left: 1.1em; }
+.gx-cite li { margin: 0.25em 0; line-height: 1.4; overflow-wrap: anywhere; }
 .gx-queued { padding: 16px; background: var(--good-soft); border-radius: var(--radius); }
 .gx-hh { padding: 0 10px 8px; border-bottom: 1px solid var(--line); }
 .gx-hname { font-weight: 700; }

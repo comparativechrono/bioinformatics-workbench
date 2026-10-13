@@ -15,10 +15,11 @@ sources/                       the source code of the GPL and MPL programs, as r
                                  all its submodules) and featureCounts (Subread 2.1.1), with zlib
                                  1.3.1 and SIMDe 0.8.2, which are part of them; Strelka2 2.9.10
                                  (with what it bundles); the R package locfit 1.5-9.12
-                                 (../../r-packages/); Bracken 3.1; Prodigal 2.6.3; and, under the
-                                 Mozilla Public License 2.0, Pyodide 314.0.7 and hiwire – the Python
-                                 that Cutadapt and Bracken run in – and bustools 0.45.1, for the
-                                 Eigen 3.3.7 in it
+                                 (../../r-packages/); Bracken 3.1; Prodigal 2.6.3; PLINK 2 (plink-ng,
+                                 commit 7211906), with zlib 1.3.2, which is part of it; and, under
+                                 the Mozilla Public License 2.0, Pyodide 314.0.7 and hiwire – the
+                                 Python that Cutadapt and Bracken run in – and bustools 0.45.1, for
+                                 the Eigen 3.3.7 in it
 source-archives.json           where each archive came from, its size and SHA-256
 biowasm-build/                 the Biowasm recipes (scripts and patches) with which the programs
                                  other than Bowtie 2, diff, cmp and the grep for "grep -P" were
@@ -33,7 +34,7 @@ grep-perl-build/               how GNU grep 3.11 with PCRE2 10.42 ("grep -P") wa
                                  course: build script, one added function, instructions
 genomics-wasm-build/           how BWA, BWA-MEM2, HISAT2, FreeBayes, featureCounts, StringTie,
                                  kallisto, Salmon, mosdepth, Cutadapt, LoFreq, SomaticSniper,
-                                 Strelka2, Kraken2, Bracken, Prodigal, HMMER and bustools were
+                                 Strelka2, Kraken2, Bracken, Prodigal, HMMER, bustools and PLINK 2 were
                                  compiled (the recipes of the genomics-wasm project: scripts,
                                  patches, the files that replace upstream ones, lock files with the
                                  SHA-256 of every source archive),

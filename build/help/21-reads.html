@@ -59,3 +59,5 @@ seqtk comp /data/examples/sequences/myoglobins.fasta | cut -f 1,2</code></pre>
 <pre class="code" data-run="term"><code>wgsim -N 2000 -1 100 -2 100 -e 0.01 -r 0.001 -S 11 /data/examples/reads/reference.fa sim_R1.fastq sim_R2.fastq
 head -4 sim_R1.fastq</code></pre>
 <p><code>-N</code> pairs, <code>-1</code>/<code>-2</code> read lengths, <code>-e</code> error rate, <code>-r</code> mutation rate, <code>-d</code>/<code>-s</code> fragment length and spread, <code>-S</code> seed. A read's name says where it came from (<code>human_CYP2C19_12642_13173_…</code>). This build does not print the list of mutations it made.</p>
+
+<!--CITE: fastp cutadapt seqtk wgsim-->

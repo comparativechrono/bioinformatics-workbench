@@ -205,5 +205,23 @@
   "bytes": 2766093,
   "upstream": "https://github.com/BUStools/bustools/tree/d4d7a283dbe9d34d2106e9ba31e2566413be6a70",
   "origin": "git archive --format=tar --prefix=bustools-d4d7a283dbe9d34d2106e9ba31e2566413be6a70/ d4d7a283 | gzip -n, from https://github.com/BUStools/bustools.git – byte for byte GitHub's archive of the commit (https://codeload.github.com/BUStools/bustools/tar.gz/d4d7a283dbe9d34d2106e9ba31e2566413be6a70), as pinned in genomics-wasm's tools/bustools/sources.lock.json, 2026-10-13"
+ },
+ {
+  "package": "plink-ng-72119068234ce0acf7189e53dfe67a527bc53e2c",
+  "licence": "GPL-3.0-or-later (PLINK 2; its library parts LGPL-3.0-or-later); the libraries it bundles their own – libdeflate and SIMDe MIT, zstd BSD-3-Clause or GPL-2.0, SFMT and QD BSD-style – see ../genomics-wasm/plink2/2.0.0-b.1-dev/",
+  "file": "sources/plink-ng-72119068234ce0acf7189e53dfe67a527bc53e2c.tar.gz",
+  "sha256": "99cc4a517249847cfb1d3b4599dd8bc231bcd9aaff08d88e8fa569b4af060f9c",
+  "bytes": 7800686,
+  "upstream": "https://github.com/chrchang/plink-ng/tree/72119068234ce0acf7189e53dfe67a527bc53e2c",
+  "origin": "git archive --format=tar --prefix=plink-ng-72119068234ce0acf7189e53dfe67a527bc53e2c/ 72119068 | gzip -n, from https://github.com/chrchang/plink-ng.git – byte for byte GitHub's archive of the commit (https://codeload.github.com/chrchang/plink-ng/tar.gz/72119068234ce0acf7189e53dfe67a527bc53e2c), as pinned in genomics-wasm's tools/plink2/sources.lock.json, 2026-10-13"
+ },
+ {
+  "package": "zlib-1.3.2",
+  "licence": "Zlib (part of PLINK 2 here)",
+  "file": "sources/zlib-1.3.2-github.tar.gz",
+  "sha256": "b99a0b86c0ba9360ec7e78c4f1e43b1cbdf1e6936c8fa0f6835c0cd694a495a1",
+  "bytes": 1566911,
+  "upstream": "https://github.com/madler/zlib/tree/v1.3.2",
+  "origin": "git archive --format=tar --prefix=zlib-1.3.2/ v1.3.2 | gzip -n, from https://github.com/madler/zlib.git – byte for byte GitHub's archive of the tag (https://codeload.github.com/madler/zlib/tar.gz/refs/tags/v1.3.2), as pinned in genomics-wasm's tools/plink2/sources.lock.json, 2026-10-13"
  }
 ]

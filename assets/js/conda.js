@@ -4,8 +4,8 @@
    The programs here are real (WebAssembly builds of minimap2, samtools,
    bcftools, htslib, BWA, BWA-MEM2, HISAT2, FreeBayes, StringTie, kallisto,
    mosdepth, featureCounts (Subread), Salmon, Cutadapt, LoFreq, SomaticSniper,
-   Strelka2, Kraken2, Bracken, Prodigal, HMMER, bustools, Graphviz, and Python 3.13 with pandas and
-   matplotlib from Pyodide),
+   Strelka2, Kraken2, Bracken, Prodigal, HMMER, bustools, PLINK 2, Graphviz, and Python 3.13 with pandas
+   and matplotlib from Pyodide),
    but only one version of each exists in the browser.
    Environments decide which of them a command can use, exactly as on a
    real computer: a program outside the active environment is "not found".
@@ -57,6 +57,10 @@
     prodigal: { v: '2.6.3', build: 'h577a1d6_11', ch: 'bioconda', prog: ['prodigal'], deps: ['libzlib'] },
     hmmer: { v: '3.4', build: 'h7d74f8d_5', ch: 'bioconda', prog: ['hmmbuild', 'hmmsearch', 'hmmscan', 'hmmpress', 'hmmfetch', 'hmmalign', 'hmmconvert', 'hmmemit', 'hmmstat', 'phmmer', 'jackhmmer', 'nhmmer', 'nhmmscan'] },
     bustools: { v: '0.45.1', build: 'h6f0a7f7_0', ch: 'bioconda', prog: ['bustools'], deps: ['libzlib'] },
+    // (bioconda's newest plink2, of 4 October 2026, built with OpenBLAS – which its --pca needs – and asking for libzlib
+    // 1.3.2 and zstd, which are not modelled. The PLINK 2 of this browser is a development version of 12 October 2026,
+    // built without LAPACK; it stands in for the package, and the install says so)
+    plink2: { v: '2.0.0a.7.8', build: 'hea6131b_0', ch: 'bioconda', prog: ['plink2'], note: 'plink2 2.0.0a.7.8 is bioconda’s newest package. The PLINK 2 of this browser is a development version of a week later (plink2 --version: PLINK v2.0.0-b.1-devNL), built without LAPACK: it has no --pca.' },
     tabix: { v: '1.17', build: 'h81da01d_2', ch: 'bioconda', prog: ['tabix', 'bgzip'], alias: 'htslib' },
     graphviz: { v: '16.1.0', build: 'wasm_viz3.31', ch: 'conda-forge', prog: ['dot'] },
     python: { v: '3.13.2', build: 'pyodide_0.29', ch: 'conda-forge', prog: ['python', 'python3'], py: true, deps: ['pip'], needs313: { libzlib: ['1.3.1', '2'] } },
@@ -190,6 +194,8 @@
         if (chosen && chosen !== c.v && !c.py) pins[c.alias || name] = chosen;
         if (want) asked[c.alias || name] = { op: op || '=', want, spec };
         pkgs.push(c.alias || name);
+        // (a package whose program here is not exactly bioconda's says so – plink2)
+        if (c.note && !notes.includes(c.note)) notes.push(c.note);
       }
       // an environment holds ONE version of each library. Every package that needs htslib
       // gives a range (samtools 1.17: >=1.17,<1.25; bcftools 1.10: >=1.10,<1.25); conda takes

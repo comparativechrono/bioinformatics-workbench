@@ -1,8 +1,8 @@
-/* Cross-origin isolation – what lets featureCounts and Salmon count on several threads (see isolation-sw.js).
+/* Cross-origin isolation – what lets featureCounts, Salmon and PLINK 2 work on several threads (see isolation-sw.js).
    Where the server sends the headers itself (serve.py), the page is isolated from the start. Elsewhere (GitHub Pages)
    the service worker isolation-sw.js adds them: the first time the workbench is opened, the worker is installed and the
    page is loaded once more, at once – before anything has been done in it. It is not loaded again and again: if the
-   page is still not isolated after that, it stays as it is (and featureCounts and Salmon say why they cannot run).
+   page is still not isolated after that, it stays as it is (and featureCounts, Salmon and PLINK 2 say why they cannot run).
 
    window.WB_ISOLATION = { isolated, reason } – reason, when the page is not isolated: 'insecure' (not https, nor
    localhost), 'no-service-worker' (the browser has none here: a private window in some browsers), 'off' (opened with

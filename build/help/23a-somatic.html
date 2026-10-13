@@ -57,3 +57,5 @@ for f in sniper lofreq strelka; do echo "$f: $(grep -c -F -x -f truth.tsv $f.tsv
 <h2>In Galaxy</h2>
 <p>Galaxy (the Galaxy tab) has <b>Strelka Somatic</b>, <b>Insert indel qualities</b> and <b>Call variants with LoFreq</b>, which run the same programs. Upload the two BAM files and the reference to a history first.</p>
 <p>LoFreq, SomaticSniper and Strelka2 are compiled to WebAssembly from their released sources by the genomics-wasm project, and give the same calls as the same programs built for Linux (see <a href="#h-programs">Programs and versions</a>).</p>
+
+<!--CITE: lofreq somaticsniper strelka2-->

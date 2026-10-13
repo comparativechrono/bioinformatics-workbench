@@ -51,3 +51,5 @@ tabix again.vcf.gz human_CYP2C19:11000-12000 | cut -f 1-5</code></pre>
 <p>Also useful: <code>bcftools norm</code> (normalise indels against the reference), <code>bcftools isec</code> (compare two call sets), <code>bcftools annotate</code>. <code>bcftools COMMAND --help</code> lists the options of a command. The plugins (<code>bcftools +NAME</code>) cannot run in a browser.</p>
 <p><code>igv filtered.vcf.gz mapped.bam</code> shows the calls next to the reads in the <a href="#h-genome">Genome browser</a>.</p>
 <p>Variants of a tumour that its matched normal sample does not have – somatic variants – need callers that compare the two: see <a href="#h-somatic">Somatic variants</a>. One of them, <code>lofreq call</code>, also calls the variants of a single sample at low frequencies, as in a virus population.</p>
+
+<!--CITE: bcftools freebayes htslib-->

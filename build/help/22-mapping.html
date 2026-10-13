@@ -74,3 +74,5 @@ zcat exons.regions.bed.gz | head -5
 zcat exons.thresholds.bed.gz | head -5</code></pre>
 <p>The summary has the length of each sequence, the bases covered by reads, and the mean, smallest and largest depth. <code>cyp2c.mosdepth.global.dist.txt</code> tells which share of the bases has at least each depth – the usual "90% of the exome at 20×". <code>-n</code> leaves out the per-base file; <code>--by 1000</code> gives windows of 1000 bases instead of a BED file; <code>-Q 20</code> counts only reads with a mapping quality of 20 or more. mosdepth keeps an array as long as the longest sequence in the BAM file: yeast chromosomes and the example slices are fine, a whole human chromosome is too big for a browser.</p>
 <div class="callout info"><div class="co-t"><!--ICON:info-->SAM flags</div><p>The second column of a SAM line is a sum of bits: 1 paired, 2 properly paired, 4 unmapped, 16 reverse strand, 256 secondary, 1024 duplicate, 2048 supplementary. <code>-f</code> keeps reads that have all the given bits, <code>-F</code> drops reads that have any of them.</p></div>
+
+<!--CITE: minimap2 bowtie2 bwa bwa-mem2 hisat2 samtools mosdepth-->

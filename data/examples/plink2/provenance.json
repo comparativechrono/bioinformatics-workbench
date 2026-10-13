@@ -1,0 +1,81 @@
+{
+ "description": "Genotypes for PLINK 2: the first 600 biallelic variants of chromosome 21 of the 1000 Genomes Project's Phase 3 release for its 2,504 people (the test file of PLINK 2 itself, unchanged), with a list of 48 of the sample IDs and synthetic weights for --score; and synthetic genotypes, phenotypes and covariates of 603 invented samples for association tests (--glm). From the PLINK 2 test data of the genomics-wasm project.",
+ "genomicsWasm": {
+  "repository": "https://github.com/comparativechrono/genomics-wasm",
+  "commit": "8eea96b9",
+  "dataset": "datasets/plink2 (README.md, manifest.json, provenance/) – copied to assets/vendor/licenses/genomics-wasm-build/datasets/plink2/"
+ },
+ "data citation (1000 Genomes)": "The 1000 Genomes Project Consortium (2015) A global reference for human genetic variation. Nature 526: 68–74. doi:10.1038/nature15393 – data reuse: https://www.internationalgenome.org/IGSR_disclaimer/ (consulted by genomics-wasm on 13 October 2026; see DATA_REUSE.md there)",
+ "files how made": {
+  "1kg-phase3-chr21.vcf.gz": {
+   "genomics-wasm file": "datasets/plink2/plink2/real/1kg-phase3-chr21.vcf.gz",
+   "source": "2.0/Tests/TEST_PHASED_VCF/1kg_phase3_chr21_start.vcf.gz",
+   "transformation": "Unchanged original source bytes."
+  },
+  "keep48.samples.txt": {
+   "genomics-wasm file": "datasets/plink2/plink2/real/keep48.samples.txt",
+   "source": "2.0/Tests/TEST_PHASED_VCF/1kg_phase3_chr21_start.vcf.gz",
+   "transformation": "First 48 unchanged sample identifiers, in source order; an explicit bounded test subset."
+  },
+  "synthetic_scores.tsv": {
+   "genomics-wasm file": "datasets/plink2/plink2/real/scores.tsv",
+   "source": "2.0/Tests/TEST_PHASED_VCF/1kg_phase3_chr21_start.vcf.gz",
+   "transformation": "Choose 20 variants with greatest ALT allele count, source order breaks ties. Assign arbitrary coefficient ((rank % 7)-3)/8. Synthetic software-test coefficients, not measured effects or a clinical score."
+  },
+  "synthetic_glm.vcf": {
+   "genomics-wasm file": "datasets/plink2/plink2/synthetic/glm-missing/input.vcf",
+   "sources": [
+    "2.0/Tests/TEST_GLM_LOGISTIC_MISSING/run_tests.sh",
+    "2.0/Tests/TEST_MULTIALLELIC_PHASED_R/run_tests.sh"
+   ],
+   "transformation": "Synthetic adaptation: retain upstream 603 samples, 30 variants and exact alternating missingness formula. Replace PLINK --dummy and implementation-dependent awk rand with the explicit upstream LCG (seed 3), common-allele frequencies 0.12+0.36*U and two Bernoulli allele draws per genotype."
+  },
+  "synthetic_phenotypes.tsv": {
+   "genomics-wasm file": "datasets/plink2/plink2/synthetic/glm-missing/phenotypes.tsv",
+   "source": "2.0/Tests/TEST_GLM_LOGISTIC_MISSING/run_tests.sh",
+   "transformation": "BINARY uses upstream 0.4 case probability, LCG seed 11 replacing awk rand. QUANT is independent 4*U-2 (seed19). FIRTH is intentionally 2 for v1 ALT carriers, 1 otherwise to force separation. All labels synthetic; no biological association claim."
+  },
+  "synthetic_covariates.tsv": {
+   "genomics-wasm file": "datasets/plink2/plink2/synthetic/glm-missing/covariates.tsv",
+   "source": "2.0/Tests/TEST_GLM_LOGISTIC_MISSING/run_tests.sh",
+   "transformation": "Upstream two-covariate formulas and seed 7, with explicit LCG replacing awk rand; entirely synthetic."
+  }
+ },
+ "upstream": {
+  "repository": "https://github.com/chrchang/plink-ng",
+  "commit": "72119068234ce0acf7189e53dfe67a527bc53e2c",
+  "1kg_phase3_chr21_start.vcf.gz": {
+   "upstreamPath": "2.0/Tests/TEST_PHASED_VCF/1kg_phase3_chr21_start.vcf.gz",
+   "url": "https://raw.githubusercontent.com/chrchang/plink-ng/72119068234ce0acf7189e53dfe67a527bc53e2c/2.0/Tests/TEST_PHASED_VCF/1kg_phase3_chr21_start.vcf.gz",
+   "bytes": 78046,
+   "sha256": "db71978e9bc08df06ef798256cff6781f4f1bf9788b38dd22a94b987da67ea73"
+  },
+  "licence of the test recipes": "GPL-3.0-or-later (2.0/COPYING of plink-ng; ../../../assets/vendor/licenses/GPL-3.0.txt)"
+ },
+ "files": {
+  "1kg-phase3-chr21.vcf.gz": {
+   "bytes": 78046,
+   "sha256": "db71978e9bc08df06ef798256cff6781f4f1bf9788b38dd22a94b987da67ea73"
+  },
+  "keep48.samples.txt": {
+   "bytes": 389,
+   "sha256": "4619512d3d7540e965b83e57975e6eb386b80dc48a2d3714352174e98f576601"
+  },
+  "synthetic_scores.tsv": {
+   "bytes": 409,
+   "sha256": "17a11ea0babf5e7a5341c26fac5ea49ddb12732f5d4f99fb4481b7ecd4616770"
+  },
+  "synthetic_glm.vcf": {
+   "bytes": 76158,
+   "sha256": "09d683d5ac9ba1997134f107584a2f46ffa1489cb7317b715d37f9ca2d66e2c3"
+  },
+  "synthetic_phenotypes.tsv": {
+   "bytes": 11095,
+   "sha256": "d97009c6cbd629b99b8a02dda4a828c6daab060a0a02fc451279a54b6d8e19b2"
+  },
+  "synthetic_covariates.tsv": {
+   "bytes": 14061,
+   "sha256": "5a3b3fc5f3e5f9a23fb85ea7dbe24540bb580c75d8e0490709f8f1bbbf9f0e8a"
+  }
+ }
+}

@@ -1,10 +1,11 @@
 /* Real, pinned programs compiled to WebAssembly (Biowasm builds; Bowtie 2, diff and cmp built for
  * this practical; BWA, BWA-MEM2, HISAT2, FreeBayes, StringTie, kallisto, mosdepth, featureCounts, Salmon, Cutadapt,
- * LoFreq, SomaticSniper, Strelka2, Kraken2 and Bracken from the genomics-wasm ports). One shared filesystem backs the
- * terminal and the AI agent. Pipes use byte-preserving temporary files (run one after another, not as concurrent
- * processes). Aioli's local execIO patch binds real file descriptors and reports each exit status.
- * featureCounts, Salmon, Cutadapt, LoFreq, SomaticSniper, Strelka2's, Kraken2's and Bracken's programs run as
- * genomics-wasm built them: each command in a worker of its own (threads-worker.mjs; python-worker.mjs for the Python
+ * LoFreq, SomaticSniper, Strelka2, Kraken2, Bracken, Prodigal, HMMER, bustools and PLINK 2 from the genomics-wasm
+ * ports). One shared filesystem backs the terminal and the AI agent. Pipes use byte-preserving temporary files (run one
+ * after another, not as concurrent processes). Aioli's local execIO patch binds real file descriptors and reports each
+ * exit status. featureCounts, Salmon, PLINK 2, Cutadapt, LoFreq, SomaticSniper, Strelka2's, Kraken2's and Bracken's
+ * programs, Prodigal, HMMER and bustools run as genomics-wasm built them: each command in a worker of its own
+ * (threads-worker.mjs; python-worker.mjs for the Python
  * programs – Cutadapt, Bracken's), with the files it needs, and what it writes comes back into the shared file system
  * (see execWorker). lofreq somatic and Strelka's runWorkflow.py are workflows of several such commands (somatic.js), and
  * so are Kraken2's and Bracken's commands, wrapper scripts upstream (metagenomics.js).
@@ -72,7 +73,10 @@
     // Prodigal (the genes of bacteria and archaea) and bustools (single-cell BUS files): one thread each, in any page.
     // Prodigal reads a genome from its standard input twice (it learns the genome's model first): see prodigalFlow
     prodigal:{name:'prodigal',module:'prodigal/2.6.3/prodigal.mjs',outputs:()=>PRODIGAL_OUTS,flow:()=>prodigalFlow},
-    bustools:{name:'bustools',module:'bustools/0.45.1/bustools.mjs',outputs:()=>['-o','--output','-T','--temp']}
+    bustools:{name:'bustools',module:'bustools/0.45.1/bustools.mjs',outputs:()=>['-o','--output','-T','--temp']},
+    // PLINK 2: threads even with --threads 1 (it reads its files on threads of their own), so a cross-origin isolated
+    // page, as featureCounts and Salmon. Its inputs are often filesets named by a prefix: see plink2Flow
+    plink2:{name:'plink2',module:'plink2/2.0.0-b.1-dev/plink2.mjs',threads:true,outputs:()=>['--out','-out'],flow:()=>plink2Flow}
   };
   // HMMER 3.4: thirteen programs, a module each (the SIMD of WebAssembly stands in for SSE2: every browser of the last
   // years has it). Their options that name a file they write:
@@ -114,6 +118,81 @@
     }
     return {exitCode:r.exitCode,stdout:r.stdout,stderr,order,files:r.files,stdinPos:copy?h.stdin.length:r.stdinPos};
   }
+  /* PLINK 2 and its files. Its inputs are often filesets named by a prefix: --pfile NAME reads NAME.pgen, NAME.pvar (or
+     NAME.pvar.zst) and NAME.psam, --bfile NAME the PLINK 1 files NAME.bed, .bim and .fam – and so do --bpfile, --pmerge,
+     --pgen-diff …; --pmerge-list FILE names filesets in a file (in the folder of --pmerge-list-dir, if given). The
+     program is given every file that an argument names and, for an argument NAME, every file NAME.EXT of a fileset
+     (PLINK_EXTS). It writes its files with the prefix of --out (plink2 without it) – PREFIX.log, PREFIX.afreq … – in the
+     folder of the prefix; temporary files (PREFIX-temporary.pgen …) it removes itself. The paths are the terminal's: the
+     log names the files and the working folder as they were typed. */
+  const PLINK_EXTS=['pgen','pgen.pgi','pvar','pvar.zst','psam','bed','bim','bim.zst','fam','gen','gen.zst','sample','bgen','bgen.bgi'];
+  // (an argument of PLINK 2 is an option when it starts with - and goes on with neither a digit nor a dot: -1 is a number)
+  const plinkFlag=a=>a.length>1&&a[0]==='-'&&!/[\d.]/.test(a[1])?a.replace(/^--?/,''):null;
+  async function plink2Flow(args,h){
+    const T={name:'plink2',module:OWN_WORKER.plink2.module};
+    let out='plink2',list=null,listDir='';
+    args.forEach((a,i)=>{
+      const f=plinkFlag(a),v=args[i+1];
+      if(v==null||plinkFlag(v)!=null)return;
+      if(f==='out')out=v;else if(f==='pmerge-list')list=v;else if(f==='pmerge-list-dir')listDir=v.replace(/\/?$/,'/');
+    });
+    // (and the files of modifiers: --glm local-covar=FILE, --freq refbins-file=FILE …)
+    const words=[];
+    args.forEach((a,i)=>{
+      if(plinkFlag(a)!=null||(i&&plinkFlag(args[i-1])==='out'))return;
+      words.push(a);
+      if(a.indexOf('=')>0)words.push(a.slice(a.indexOf('=')+1));
+    });
+    // (the filesets that --pmerge-list names: a prefix, or the files of a fileset, on each line)
+    if(list&&h.isFile(h.abs(list)))for(const w of (await h.readText(h.abs(list))).split(/\s+/).filter(Boolean))words.push(w.startsWith('/')?w:listDir+w);
+    const files=await h.inputsOf([...words,...words.flatMap(w=>PLINK_EXTS.map(e=>`${w}.${e}`))],[]);
+    const outDir=(p=>p.slice(0,p.lastIndexOf('/'))||'/')(h.abs(out));
+    const roots=[...new Set([h.cwd,outDir])];
+    const r=await h.spawn(T,{args,thisProgram:'plink2',files,roots,dirs:roots.filter(d=>d==='/'||h.isDir(d)),stdin:h.stdin});
+    if(r.error)throw new Error(r.error);
+    return {exitCode:r.exitCode,stdout:r.stdout,stderr:r.stderr,order:r.order||[],files:r.files,stdinPos:r.stdinPos};
+  }
+  /* PLINK 2's threads and working memory. In the browser it computes on one or two threads, in 640 to 1024 MiB (640 is
+     the least PLINK 2 takes): without --threads and --memory the terminal adds  --threads 1 --memory 640 require , as
+     genomics-wasm's runner does; more threads become 2, more memory 1024 – with a note. --script and --rerun (options
+     read from a file) are not available: the terminal must see those two options – and in this development version of
+     PLINK 2, --script stops even the native program (a buffer overflow). --help, -h, --version and --zst-decompress need
+     no memory; plink2 alone prints its summary. → the arguments, or {refuse: message} */
+  function plink2Args(args,io){
+    const names=args.map(plinkFlag);
+    const bad=args.find((a,i)=>names[i]==='script'||names[i]==='rerun');
+    if(bad)return {refuse:`plink2: ${bad} is not available here – the terminal must see every option of PLINK 2 (it sets its threads and its memory). Give the options on the command line, or read them from the file:  plink2 $(cat FILE)`};
+    if(!args.length||['zst-decompress','zd'].includes(names[0])||names.some(n=>['help','h','version'].includes(n)))return args;
+    const out=[];let threads=false,memory=false;
+    for(let i=0;i<args.length;i++){
+      const a=args[i],n=names[i];
+      // (the values of an option: the arguments up to the next option)
+      let j=i+1;while(j<args.length&&names[j]==null)j++;
+      const vals=args.slice(i+1,j);
+      if(['threads','thread-num','num_threads'].includes(n)){
+        threads=true;
+        if(vals.length===1&&/^\d+$/.test(vals[0])&&+vals[0]>2){
+          out.push(a,'2');
+          if(io&&io.note)io.note(`plink2: ${a} ${vals[0]} is ${a} 2 here – in the browser PLINK 2 computes on two threads at most.`);
+        }else out.push(a,...vals);
+        i=j-1;continue;
+      }
+      if(n==='memory'){
+        memory=true;
+        const k=vals.findIndex(v=>/^\d+$/.test(v));
+        if(vals.length<=2&&k>=0&&+vals[k]>1024){
+          const was=vals.join(' ');vals[k]='1024';
+          if(io&&io.note)io.note(`plink2: ${a} ${was} is ${a} ${vals.join(' ')} here – in the browser PLINK 2 works in 1024 MiB of memory at most.`);
+        }
+        out.push(a,...vals);
+        i=j-1;continue;
+      }
+      out.push(a);
+    }
+    if(!threads)out.push('--threads','1');
+    if(!memory)out.push('--memory','640','require');
+    return out;
+  }
   // the index files that a program finds next to a file it is given (NAME.bam: NAME.bam.bai or NAME.bai; a FASTA file:
   // its .fai, and the .gzi of a compressed one; a compressed VCF or BED: its .tbi or .csi; HMMER's profiles: the four
   // files of hmmpress, and the SSI index of hmmfetch --index – of the pressed file, .h3m.ssi, when it is pressed) – handed
@@ -123,7 +202,7 @@
     ready:false, loading:null, cli:null, pipeN:0, mountN:0,
     synced:new Map(), placed:new Map(), managed:new Set(), dirs:new Set(), gone:[], denied:[], refused:[],
     gen:0, kept:new Map(), keepN:0,
-    versions:{fastp:'0.20.1',minimap2:'2.22',bowtie2:'2.4.2',bwa:'0.7.19','bwa-mem2':'2.2.1',hisat2:'2.2.2',freebayes:'1.3.6',stringtie:'3.0.3',kallisto:'0.52.0',mosdepth:'0.3.14',featurecounts:'2.1.1',salmon:'2.8.0',cutadapt:'5.2',lofreq:'2.1.5',somaticsniper:'1.0.5.0',strelka2:'2.9.10',kraken2:'2.17.2',bracken:'3.1',prodigal:'2.6.3',hmmer:'3.4',bustools:'0.45.1',samtools:'1.17',bcftools:'1.10',htslib:'1.17',seqtk:'1.4',bedtools:'2.31.0',jq:'1.7',gawk:'5.1.0',grep:'3.7',sed:'4.8',coreutils:'8.32',diffutils:'3.10',kalign:'3.3.1',muscle:'3.8.1551',fasttree:'2.1.11','seq-align':'2017.10.18',wgsim:'0.3.1-r13',gffread:'0.12.7',lastz:'1.04.52'},
+    versions:{fastp:'0.20.1',minimap2:'2.22',bowtie2:'2.4.2',bwa:'0.7.19','bwa-mem2':'2.2.1',hisat2:'2.2.2',freebayes:'1.3.6',stringtie:'3.0.3',kallisto:'0.52.0',mosdepth:'0.3.14',featurecounts:'2.1.1',salmon:'2.8.0',cutadapt:'5.2',lofreq:'2.1.5',somaticsniper:'1.0.5.0',strelka2:'2.9.10',kraken2:'2.17.2',bracken:'3.1',prodigal:'2.6.3',hmmer:'3.4',bustools:'0.45.1',plink2:'2.0.0-b.1-dev',samtools:'1.17',bcftools:'1.10',htslib:'1.17',seqtk:'1.4',bedtools:'2.31.0',jq:'1.7',gawk:'5.1.0',grep:'3.7',sed:'4.8',coreutils:'8.32',diffutils:'3.10',kalign:'3.3.1',muscle:'3.8.1551',fasttree:'2.1.11','seq-align':'2017.10.18',wgsim:'0.3.1-r13',gffread:'0.12.7',lastz:'1.04.52'},
     apath(abs) { return ROOT+abs; },
     ensure(status) {
       if(this.ready)return Promise.resolve(this.cli);
@@ -1040,6 +1119,7 @@
     nhmmer:['nhmmer','3.4',"HMMER: searches DNA sequences with a DNA profile HMM (or a sequence, or an alignment) – on both strands","nhmmer /data/examples/hmmer/MADE1.hmm /data/examples/hmmer/dna_target.fa\nnhmmer --tblout made1.tbl /data/examples/hmmer/MADE1.hmm /data/examples/hmmer/dna_target.fa\n\nOne thread here: --cpu is left out, with a note. Files compressed with gzip (.gz) cannot be read here – HMMER would\nstart gzip for them: unpack them first (gunzip -k FILE.gz). -h lists every option; the HMMER User's Guide explains them."],
     nhmmscan:['nhmmscan','3.4',"HMMER: searches DNA sequences against a database of DNA profile HMMs","cp /data/examples/hmmer/MADE1.hmm . && hmmpress MADE1.hmm\nnhmmscan MADE1.hmm /data/examples/hmmer/dna_target.fa\n\nOne thread here: --cpu is left out, with a note. Files compressed with gzip (.gz) cannot be read here – HMMER would\nstart gzip for them: unpack them first (gunzip -k FILE.gz). -h lists every option; the HMMER User's Guide explains them."],
     bustools:['bustools','0.45.1',"bustools: single-cell RNA-seq – sorts, corrects and counts the BUS records of kallisto bus (cells × genes)","bustools sort -o sorted.bus /data/examples/singlecell/input.bus\nbustools correct -w /data/examples/singlecell/whitelist.txt -o corrected.bus sorted.bus\nbustools sort -o corrected.sorted.bus corrected.bus\nmkdir -p counts\nbustools count --genecounts -g /data/examples/singlecell/transcripts-to-genes.txt -e /data/examples/singlecell/matrix.ec \\\n    -t /data/examples/singlecell/transcripts.txt -o counts/cells_x_genes corrected.sorted.bus\nbustools inspect corrected.sorted.bus        bustools text -p corrected.sorted.bus | head\n\nA BUS file has a record for each molecule seen: the cell's barcode, the UMI, the equivalence class (the transcripts the\nread fits) and how often it was seen – kallisto bus writes it from single-cell reads. sort; correct (cell barcodes, against\nthe technology's list); count (cells × genes, in Matrix Market format, with .barcodes.txt and .genes.txt); inspect, text,\ncapture, allowlist, umicorrect, compress … – bustools COMMAND without arguments lists its options.\nOne thread here: sort -t N becomes -t 1, with a note; sort keeps 64 MB in memory by default, 1 GB at most (-m 4G becomes\n-m 64M)."],
+    plink2:['plink2','2.0.0-b.1-dev',"PLINK 2: the genotypes of many people – quality control, allele frequencies, LD, kinship, association (GWAS) and scores","plink2 --vcf /data/examples/plink2/1kg-phase3-chr21.vcf.gz --make-pgen --out chr21   (PLINK's own files: chr21.pgen, .pvar, .psam)\nplink2 --pfile chr21 --freq --out chr21                    (allele frequencies: chr21.afreq)\nplink2 --pfile chr21 --missing --hardy --het --out qc      (missing calls, Hardy-Weinberg, heterozygosity)\nplink2 --pfile chr21 --maf 0.05 --indep-pairwise 50 5 0.2 --out ld      (LD pruning: ld.prune.in, ld.prune.out)\nplink2 --pfile chr21 --keep /data/examples/plink2/keep48.samples.txt --make-king-table --out king   (kinship)\nplink2 --vcf /data/examples/plink2/synthetic_glm.vcf --pheno /data/examples/plink2/synthetic_phenotypes.tsv \\\n    --pheno-name BINARY --covar /data/examples/plink2/synthetic_covariates.tsv --glm hide-covar --out assoc   (association)\nplink2 --help --glm                                         (what an option does)\n\nEach command writes NAME.log and the files of what it was asked for, named by --out NAME (plink2.* without --out).\n--pfile NAME reads NAME.pgen, NAME.pvar and NAME.psam; --bfile NAME the PLINK 1 files NAME.bed, NAME.bim and NAME.fam.\nPLINK 2 computes here on one thread, in 640 MiB of working memory: the terminal adds  --threads 1 --memory 640 require\nunless you give them (--threads 2 at most; --memory 640 to 1024). It needs a cross-origin isolated page, as featureCounts.\nNot in this build of PLINK 2, which has no LAPACK: --pca and --pheno-svd. Not here: --script and --rerun."],
     freebayes:['freebayes','1.3.6','FreeBayes: haplotype-based variant caller – SNPs, indels and MNPs from aligned reads (BAM)','freebayes -f /data/examples/reads/reference.fa mapped.bam > freebayes.vcf\nfreebayes -f /data/examples/reads/reference.fa -r human_CYP2C19:11000-12500 mapped.bam    (one region: needs mapped.bam.bai – samtools index mapped.bam)\nfreebayes -f /data/examples/reads/reference.fa --min-alternate-count 3 --min-mapping-quality 20 mapped.bam > strict.vcf\n\nThe reads must be sorted by position (samtools sort); the reference needs its .fai index (samtools faidx).']
   };
   for(const [name,[program,version,summary,man]] of Object.entries(definitions))T[name]={version,summary,man:`${name} ${version} · compiled program, running in your browser\n\n${man}`,run:ctx=>{
@@ -1068,6 +1148,12 @@
       return 2;
     }
     if(OWN_WORKER[program]&&OWN_WORKER[program].threads&&!window.crossOriginIsolated)return notIsolated(ctx,name);
+    // PLINK 2: its threads and memory (--threads 1 --memory 640 require unless given; at most 2 and 1024), not --script
+    if(name==='plink2'){
+      const a=plink2Args(ctx.args,ctx.io);
+      if(a.refuse){here('plink2 '+(ctx.args.find(x=>/^--?(script|rerun)$/.test(x))||'--script'));ctx.err(a.refuse+'\n');return 1;}
+      return withArgs(ctx,a,program);
+    }
     // bustools sort -m: the memory for sorting (bustools' own default, 4 GB, is more than a browser tab has: here the
     // default is 64 MB, and 1 GB the most). A larger value becomes 64M, with a note
     if(name==='bustools'&&ctx.args[0]==='sort')return withArgs(ctx,bustoolsMemory(oneThread(name,ctx.args,ctx.io),ctx.io),program);
@@ -1091,7 +1177,7 @@
     if(dropped&&io&&io.note)io.note(`bustools: ${dropped} becomes ${dropped.replace(/(\s|=|^-m)\S+$/,'$164M')} here – in the browser bustools sorts in 1 GB of memory at most.`);
     return out;
   }
-  /* featureCounts and Salmon outside a cross-origin isolated page: why they cannot run here, and what to do */
+  /* featureCounts, Salmon and PLINK 2 outside a cross-origin isolated page: why they cannot run here, and what to do */
   function notIsolated(ctx,name){
     const why=(window.WB_ISOLATION||{}).reason||'';
     const how=why==='insecure'?'Only a page opened over https, or from localhost, can be isolated – this one was not.'
@@ -1100,7 +1186,7 @@
       :'The workbench isolates its page as it starts: reload the page.';
     ctx.err(`${name}: this program counts on several threads that share their memory, and a browser allows that only in a page that is cross-origin isolated – this page is not. ${how} (See Limits in the help.)\n`);
     // (once, also as a note – which is seen where the program's messages go into a file: 2> log.txt)
-    if(!W.isolationNoted&&ctx.io&&ctx.io.note){W.isolationNoted=true;ctx.io.note(`featureCounts and salmon cannot run in this page: it is not cross-origin isolated. ${how}`);}
+    if(!W.isolationNoted&&ctx.io&&ctx.io.note){W.isolationNoted=true;ctx.io.note(`featureCounts, salmon and plink2 cannot run in this page: it is not cross-origin isolated. ${how}`);}
     return 1;
   }
   /* bowtie2 is a wrapper script (perl) around the aligner, bowtie2-align-s. This terminal runs the aligner itself –

@@ -43,6 +43,11 @@ Read-only copies that come with the workbench. To change one, copy it into your 
 | | `R1.fastq`, `R2.fastq` | 2,500 read pairs of the experiment: R1 holds the 16-base cell barcode and the 10-base UMI, R2 the cDNA |
 | | `large/` | 10,235 records of 358 barcodes, already corrected and sorted, with their own `matrix.ec`, `transcripts.txt`, `transcripts-to-genes.txt` and `whitelist.txt` – for `bustools count` |
 | | `LICENSE.kb_python`, `provenance.json`, `NOTICE.txt` | the licence of the kb_python test files; where these files came from, and how they were made |
+| `plink2/` | `1kg-phase3-chr21.vcf.gz` | the genotypes of the 2,504 people of the 1000 Genomes Project (Phase 3) at the first 600 variants of chromosome 21 (GRCh37), phased – the test file of PLINK 2 itself, unchanged |
+| | `keep48.samples.txt` | 48 of their sample IDs, for `--keep` |
+| | `synthetic_scores.tsv` | 20 of the variants with made-up weights, to try `--score` (not effect sizes of anything) |
+| | `synthetic_glm.vcf`, `synthetic_phenotypes.tsv`, `synthetic_covariates.tsv` | synthetic genotypes of 603 invented people at 30 variants, with three phenotypes and two covariates, from PLINK 2's own tests – for `--glm` |
+| | `provenance.json`, `NOTICE.txt` | where these files came from, and how they were made |
 
 Positions on the slices: add 96,530,000 (human_CYP2C19) or 96,699,000 (human_CYP2C9) to get the GRCh37
 chromosome 10 position. In `somatic/`, add 10,572,000 (`chr21_10572001_10582000`) or 21,404,500
@@ -52,14 +57,16 @@ features that reach beyond a slice are cut at its ends and marked `partial=true`
 
 All of it is public data: NA12878 is the widely used public reference sample (Coriell cell line GM12878);
 HCC1395 and HCC1395BL are public research cell lines (ATCC), whose sequences SEQC2 released for benchmarking; the
-metagenomic reads are of a commercial mock community; the single-cell reads are of mouse cells. No patient data is included. Sources: 1000 Genomes Project; UCSC (genome sequence); Ensembl GRCh37
+metagenomic reads are of a commercial mock community; the single-cell reads are of mouse cells; the genotypes of `plink2/` are of the
+1000 Genomes Project's participants, released openly with their consent, and of invented people. No patient data is included. Sources: 1000 Genomes Project; UCSC (genome sequence); Ensembl GRCh37
 (annotation, from grch37.rest.ensembl.org); NCBI GenBank; UniProt (CC BY 4.0); SGD (CC BY 4.0) and the other databases named above; RCSB PDB (CC0);
 for `rnaseq/` and `trimming/`, nf-core/test-datasets (MIT licence) and the Bioconductor package airway 1.26.0 (LGPL), as prepared by the
 genomics-wasm project – see `rnaseq/NOTICE.txt` and `trimming/NOTICE.txt`; for `somatic/`, the SEQC2 consortium (NCBI) and
 UCSC – see `somatic/NOTICE.txt`; for `metagenomics/`, ENA (study PRJEB29504; Nicholls et al. 2019) and NCBI RefSeq and
 Taxonomy, as prepared by the genomics-wasm project – see `metagenomics/NOTICE.txt`; for `bacteria/`, NCBI RefSeq; for `hmmer/`, the HMMER 3.4
 release (BSD licence; Pfam and Dfam, CC0; UniProt, CC BY 4.0); for `singlecell/`, the SRA (SRR8599150) by way of kb_python (BSD licence) and
-the BUStools getting_started release, as prepared by the genomics-wasm project – see the `NOTICE.txt` of each.
+the BUStools getting_started release, as prepared by the genomics-wasm project; for `plink2/`, the 1000 Genomes Project (Phase 3; The 1000 Genomes
+Project Consortium 2015) by way of PLINK 2's test files (GPL 3), as prepared by the genomics-wasm project – see the `NOTICE.txt` of each.
 
 ## The columns of `tables/yeast_genes.csv`
 

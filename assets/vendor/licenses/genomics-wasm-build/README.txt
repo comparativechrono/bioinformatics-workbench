@@ -1,6 +1,6 @@
 BWA, BWA-MEM2, HISAT2, FreeBayes, featureCounts, StringTie, kallisto, Salmon, mosdepth, Cutadapt, LoFreq,
-SomaticSniper, Strelka2, Kraken2, Bracken, Prodigal, HMMER, bustools and the R package locfit – from the genomics-wasm
-project
+SomaticSniper, Strelka2, Kraken2, Bracken, Prodigal, HMMER, bustools, PLINK 2 and the R package locfit – from the
+genomics-wasm project
 ======================================================================================================================
 The WebAssembly builds of BWA 0.7.19, HISAT2 2.2.2 and FreeBayes 1.3.6 in ../../biowasm/, and of the
 R package locfit 1.5-9.12 in ../../r-packages/, come from the genomics-wasm project:
@@ -292,3 +292,50 @@ Prodigal, HMMER and bustools (added on 13 October 2026)
   becomes -m 64M, with a note). HMMER cannot read files compressed with gzip – it starts gzip for them, which a web page
   cannot do – and says so; Easel's miniapps (esl-*), hmmpgmd and HMMER's MPI mode are not here. Prodigal reading from a
   pipe copies its input to a file first, as upstream does, with upstream's message.
+
+PLINK 2 (added on 13 October 2026)
+  PLINK 2.0.0-b.1-dev (12 Oct 2026) in ../../genomics-wasm/plink2/2.0.0-b.1-dev/, and the example data in
+  data/examples/plink2/, come from the same project at commit 8eea96b9 (13 October 2026; its PLINK 2 port is commit
+  d68433f). Their parts of the repository, in its layout:
+  scripts/           build-plink2.sh, fetch-plink2-test-data.py (how the test data was made from its sources, and
+                     checked)
+  tools/plink2/      README.md, browser.patch (the port's two changes, under PLINK2_WASM_PORT), abi-check.cpp, build.py
+                     (the NOLAPACK build: native, native with the port's changes, WebAssembly), mailbox.js (Emscripten's
+                     mailbox for the threads, as for featureCounts), sources.lock.json, the licences
+  runtime/           plink2.mjs and PLINK2.md (how genomics-wasm runs it: --threads 1 --memory 640 require unless given,
+                     --threads 1 or 2, --memory 640 to 1024, no --script or --rerun). The workbench does not use this
+                     module: its terminal starts each command in a worker of its own (assets/js/threads-worker.mjs),
+                     gives it its files and adds those options itself (assets/js/tools-wasm.js).
+  datasets/plink2/   README.md, manifest.json, provenance/ (DATA_REUSE.md: the 1000 Genomes data and its citation;
+                     fixture-sources.json: how each file was made; sources.lock.json; upstream/: PLINK 2's test recipes;
+                     PLINK2-COPYING, the GPL of those recipes)
+  Source code included here (in ../sources/): PLINK 2 – GitHub's archive of plink-ng at commit 7211906, with the
+  libraries it bundles – and zlib 1.3.2, which is part of it.
+  What was done for this site:
+    workbench/build-plink2-for-workbench.sh  the build, step by step (as for Prodigal, HMMER and bustools: the build
+                                            machine's folders mapped out of the programs' strings, and GitHub's
+                                            archives made again with recreate-github-archive.sh)
+  Nothing is linked again: the program runs as built – plink2.mjs and plink2.wasm; Emscripten's plink2.worker.mjs is a
+  placeholder that is never loaded, and is left out. PLINK 2 starts threads that share its memory (it reads its files on
+  threads of their own even with --threads 1), so it needs a cross-origin isolated page, as featureCounts and Salmon do,
+  and WebAssembly SIMD.
+
+  How it was made and checked (13 October 2026)
+  1. The native program from the unchanged source, the native program with the port's changes, and the WebAssembly
+     program, with build-plink2.sh all; Emscripten 3.1.64.
+  2. The project's comparison in Node.js 22 passed: validate-plink2.mjs --engine node, 41 of 41 cases – every result
+     file the same as both native programs', byte for byte (the comparison allows printed rounding in the columns of
+     numbers; none was needed), files written by one build read by the other, and the commands that must fail (--pca,
+     --pheno-svd, a missing file) failing with native PLINK's status and message.
+  3. In the workbench's terminal, with the example data, the results were compared with the unchanged native program:
+     every command of the help page – import, frequencies, missingness, Hardy-Weinberg, filters, LD pruning and r2,
+     linear, logistic and Firth regression, scores – and --make-bed with --bfile, --keep with --make-king-table,
+     --export vcf, --pmerge-list, two threads and the errors: the same files, byte for byte (the VCF but for its date),
+     and the same logs but for the host, the working folder, the times, the random seed and the memory found.
+
+  In the terminal of the workbench
+  plink2 runs this program. Unless they are given, the terminal adds --threads 1 --memory 640 require (640 MiB is the
+  least working memory PLINK 2 takes); --threads above 2 becomes 2 and --memory above 1024 becomes 1024, with a note.
+  --script and --rerun are refused (the terminal must see those options; in this development version --script also
+  stops the native program, with a buffer overflow): plink2 $(cat FILE) does the same. Not in this build, which has no
+  LAPACK: --pca and --pheno-svd – PLINK says so and stops.

@@ -79,6 +79,8 @@ body.dragging { user-select: none; cursor: col-resize; }
 .help-page dl { margin: 0.6em 0; }
 .help-page dt { font-weight: 650; margin-top: 0.6em; }
 .help-page dd { margin: 0.1em 0 0 1.2em; color: var(--ink-2); font-size: 0.92rem; }
+.help-page dl.cite-list dd { margin: 0.25em 0 0 1.2em; font-size: 0.86rem; line-height: 1.45; overflow-wrap: anywhere; }
+.help-page dl.cite-list dd.cite-note { color: var(--muted); }
 .help-page .do { margin: 2px 2px; }
 .help-page .tryrow { display: flex; flex-wrap: wrap; gap: 6px; margin: 0.6em 0; }
 .code-box { margin: 0.6em 0 0.9em; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; background: var(--code-bg); }
@@ -100,6 +102,12 @@ pre.code:not(.code-box pre) { background: var(--code-bg); border: 1px solid var(
 .help-topics a { display: block; padding: 3px 0; color: var(--ink); text-decoration: none; font-size: 0.92rem; border-bottom: 1px solid transparent; }
 .help-topics a:hover { color: var(--accent-2); border-bottom-color: var(--accent-soft); }
 .help-topics a small { color: var(--muted); font-size: 0.78rem; display: block; line-height: 1.25; }
+.help-page ul.help-grouplist { list-style: none; padding: 0; margin: 1em 0 1.4em; }
+.help-grouplist li { margin: 0; border-top: 1px solid var(--line); }
+.help-grouplist li:last-child { border-bottom: 1px solid var(--line); }
+.help-grouplist a { display: block; padding: 9px 2px; color: var(--ink); text-decoration: none; font-weight: 600; }
+.help-grouplist a:hover, .help-grouplist a:focus-visible { color: var(--accent-2); }
+.help-grouplist a small { color: var(--muted); font-size: 0.86rem; font-weight: 400; display: block; line-height: 1.35; margin-top: 2px; }
 .help-start { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 8px; margin: 0.8em 0; }
 .help-start button { text-align: left; border: 1px solid var(--line); background: var(--panel-2); border-radius: 10px; padding: 10px 12px; cursor: pointer; display: flex; flex-direction: column; gap: 3px; }
 .help-start button:hover { border-color: var(--accent); background: var(--accent-soft); }

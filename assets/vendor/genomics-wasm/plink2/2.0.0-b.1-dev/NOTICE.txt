@@ -1,0 +1,45 @@
+PLINK 2.0.0-b.1-dev (12 Oct 2026) – plink2, built without LAPACK (upstream's NOLAPACK profile: "v2.0.0-b.1-devNL")
+Licence: GNU GPL 3 or later (LICENSE in this folder); its library parts also carry LGPL 3 or later notices
+(LICENSE.LGPL). (C) 2005-2026 S Purcell, C Chang, B Demaille, as the program says. PLINK contains libdeflate 1.25
+(MIT: LICENSE.libdeflate), zstd 1.5.7 (BSD 3-Clause or GPL 2: LICENSE.zstd, LICENSE.zstd.GPL), SIMDe 0.8.2 (MIT:
+LICENSE.simde), SFMT and a part of the QD library (BSD-style: LICENSE.embedded, LICENSE.QD), and is linked with zlib 1.3.2
+(LICENSE.zlib). LICENSE.embedded keeps the upstream source files that carry further notices (SFMT, fmath, the Boost
+Software License parts of the statistics, QD, libdeflate's processor detection). The loader is Emscripten's runtime, with
+the mailbox change of the genomics-wasm port (MIT and NCSA: LICENSE.emscripten). THIRD_PARTY_LICENSES.txt is
+genomics-wasm's summary; the "sources/" it mentions is that project's folder.
+Upstream source: https://github.com/chrchang/plink-ng (commit 72119068234ce0acf7189e53dfe67a527bc53e2c, the development
+version on the way to 2.0.0-b.1: not a release). The source code, as GitHub's archive of that commit (SHA-256
+99cc4a517249847cfb1d3b4599dd8bc231bcd9aaff08d88e8fa569b4af060f9c; with libdeflate, zstd, SIMDe and the rest that it
+bundles): ../../../licenses/sources/plink-ng-72119068234ce0acf7189e53dfe67a527bc53e2c.tar.gz. zlib 1.3.2, GitHub's
+archive of its tag (SHA-256 b99a0b86c0ba9360ec7e78c4f1e43b1cbdf1e6936c8fa0f6835c0cd694a495a1):
+../../../licenses/sources/zlib-1.3.2-github.tar.gz. The changes made to PLINK:
+../../../licenses/genomics-wasm-build/tools/plink2/browser.patch.
+
+Compiled to WebAssembly by the genomics-wasm project (https://github.com/comparativechrono/genomics-wasm, commit 8eea96b:
+its PLINK 2 port, d68433f): Emscripten 3.1.64, with threads (pthreads in shared WebAssembly memory; the program's main
+function on a thread of its own) and WebAssembly SIMD (upstream's SSE code, through SIMDe), without LAPACK. plink2.mjs
+and plink2.wasm are used here as that project built them; plink2.worker.mjs, which Emscripten 3.1.64 still writes but
+only as a placeholder that throws if it is loaded, is left out (the threads start from plink2.mjs itself). The page runs
+each command in a worker of its own (assets/js/threads-worker.mjs), which needs a cross-origin isolated page: PLINK reads
+its files on threads of their own even with --threads 1. assets/js/tools-wasm.js gives it its files – those that the
+arguments name, and the files of each fileset named by a prefix (--pfile, --bfile, --pmerge-list …). Everything needed
+to build it again is described in ../../../licenses/genomics-wasm-build/.
+
+Changes to the source (browser.patch, under PLINK2_WASM_PORT only): the program does not turn on flush-to-zero for
+subnormal numbers (WebAssembly has no such switch; the patched native build of the comparison does the same), and it
+counts one processor unless told otherwise (a web page has no CPU affinity to ask). Statistics, file formats and
+messages are PLINK's. Not in this build, which has no LAPACK: --pca and --pheno-svd (PLINK says so and stops, status 8).
+
+In the workbench's terminal: unless they are given, the terminal adds --threads 1 --memory 640 require – as
+genomics-wasm's runner does; 640 MiB is the least working memory that PLINK 2 takes – and --threads above 2 becomes 2,
+--memory above 1024 becomes 1024, with a note. --script and --rerun (options read from a file) are refused: the terminal
+must see those two options (and in this development version --script stops even the native program, with a buffer
+overflow); plink2 $(cat FILE) does the same. --help, -h, --version and --zst-decompress are passed as they are.
+
+Checked against PLINK 2 built natively from the same source (genomics-wasm's comparison: 41 of 41 cases, with the
+unchanged native program and the native program with the port's changes – import, PGEN, VCF and BED files written by one
+build and read by the other, frequencies, missingness, Hardy-Weinberg, heterozygosity, filters, LD, KING, GRM, scores,
+linear, logistic and Firth regression on one and two threads, and the commands that must fail), and in the workbench,
+against the unchanged native program, with the example data: every command of the help page and more (--make-bed and
+--bfile, --keep, --make-king-table, --export vcf, --pmerge-list, two threads, the errors) – the same files, byte for byte,
+and the same logs but for the host, the working folder, the times, the random seed and the memory found.

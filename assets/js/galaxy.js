@@ -41,6 +41,8 @@
     ['genbank', 'genbank – annotated sequences (GenBank)', 'genbank'],
     ['hmm3', 'hmm3 – profile HMMs (HMMER 3)', 'hmm3'],
     ['stockholm', 'stockholm – a multiple alignment (Stockholm)', 'stockholm'],
+    ['bus', 'bus – single-cell records of kallisto bus (binary BUS)', 'bus'],
+    ['mtx', 'mtx – a sparse matrix (Matrix Market)', 'mtx'],
     ['tabular', 'tabular – a table with tab-separated columns', 'tsv'],
     ['csv', 'csv – a table with comma-separated columns', 'csv'],
     ['txt', 'txt – plain text', 'txt'],
@@ -50,13 +52,13 @@
     ['pdb', 'pdb – a 3D structure', 'pdb']
   ];
   const DOWNLOAD_EXT = Object.fromEntries(FORMATS.map((f) => [f[0], f[2]]));
-  const TEXT = ['tabular', 'txt', 'csv', 'bed', 'bedgraph', 'vcf', 'gff3', 'gtf', 'sam', 'fasta', 'fastqsanger', 'json', 'genbank', 'hmm3', 'stockholm'];
+  const TEXT = ['tabular', 'txt', 'csv', 'bed', 'bedgraph', 'vcf', 'gff3', 'gtf', 'sam', 'fasta', 'fastqsanger', 'json', 'genbank', 'hmm3', 'stockholm', 'mtx'];
   const FEATURES = ['bed', 'bedgraph', 'vcf', 'vcf_bgzip', 'gff3', 'gtf'];
   const GENOMIC = ['bam', 'vcf', 'vcf_bgzip', 'bed', 'bedgraph', 'gff3', 'gtf'];
   const SNIFF = [
     [/\.(fastq|fq)$/, 'fastqsanger'], [/\.(fa|fasta|fna|faa|fas|afa|mfa)$/, 'fasta'], [/\.sam$/, 'sam'], [/\.bam$/, 'bam'],
     [/\.vcf\.gz$/, 'vcf_bgzip'], [/\.vcf$/, 'vcf'], [/\.bcf$/, 'bcf'], [/\.bed$/, 'bed'], [/\.(bedgraph|bg)$/, 'bedgraph'],
-    [/\.(gff3|gff)$/, 'gff3'], [/\.gtf$/, 'gtf'], [/\.(gb|gbk|gbff|genbank)$/, 'genbank'], [/\.(hmm|hmm3)$/, 'hmm3'], [/\.(sto|stk|stockholm)$/, 'stockholm'],
+    [/\.(gff3|gff)$/, 'gff3'], [/\.gtf$/, 'gtf'], [/\.(gb|gbk|gbff|genbank)$/, 'genbank'], [/\.(hmm|hmm3)$/, 'hmm3'], [/\.(sto|stk|stockholm)$/, 'stockholm'], [/\.bus$/, 'bus'], [/\.mtx$/, 'mtx'],
     [/\.(tsv|tab|tabular)$/, 'tabular'], [/\.csv$/, 'csv'], [/\.json$/, 'json'],
     [/\.html?$/, 'html'], [/\.(nwk|newick|tree|treefile)$/, 'newick'], [/\.(pdb|ent)$/, 'pdb'], [/\.(txt|log|md)$/, 'txt']
   ];
@@ -71,6 +73,8 @@
     if (/^##gff-version 3/.test(t)) return 'gff3';
     if (/^HMMER3\//.test(t)) return 'hmm3';
     if (/^# STOCKHOLM 1\.0/.test(t)) return 'stockholm';
+    if (/^%%MatrixMarket/.test(t)) return 'mtx';
+    if (/^BUS\0/.test(t)) return 'bus';
     if (/^LOCUS {7}/.test(t)) return 'genbank';
     if (/^(HEADER|ATOM  |HETATM|REMARK)/.test(t)) return 'pdb';
     if (/^\s*[{[]/.test(t)) return 'json';
@@ -85,7 +89,14 @@
      params:  {name, short, label, type: select|bool|int|float|text, default, options?, help?}
      outputs: {name, short, ext: 'type' | (params) => type | {from: input, map?}, file, when?: (inputs, params) => bool, label}
      command: (inputs: name → file in the job's folder, params) => the command line
-     needs:   a program of the terminal – the tool is offered only if the program is there */
+     needs:   a program of the terminal – the tool is offered only if the program is there
+     cite:    the references of the tool (keys of build/citations.json, in the page as window.WB_CITATIONS): those of the
+              Galaxy Tool Shed tool – with the published paper in place of a preprint (fastp), and the paper of the
+              program's own version added where the tool cites only an earlier one (Kraken, HISAT, BWA for BWA-MEM2, the
+              HMMER web server, SAMtools 2009 for BCFtools); not GNU Parallel, which Galaxy's FreeBayes tool cites because
+              it runs FreeBayes through it (here it does not). The workbench's own tools (Kalign, MUSCLE, bustools,
+              PLINK 2) cite the papers that their programs ask for. Shown at the end of the tool's form, as Galaxy shows
+              them. */
   const TS = 'toolshed.g2.bx.psu.edu/repos';
   const L = (tool, ins, what) => `${tool} on ${dataList(ins)}${what ? ': ' + what : ''}`;
 
@@ -173,6 +184,7 @@
     {
       id: 'fastp', toolId: `${TS}/iuc/fastp/fastp/0.20.1+galaxy0`, name: 'fastp', desc: 'fast all-in-one preprocessing for FASTQ files', version: '0.20.1+galaxy0', section: 'Quality control', needs: 'fastp',
       requirements: [['fastp', '0.20.1']],
+      cite: ['fastp2018'],
       inputs: [
         { name: 'in1', short: 'reads 1', label: 'Reads (forward reads, or single-end reads)', ext: ['fastqsanger'], nice: 'input_1.fastq', pick: /_1\b|R1|forward/i },
         { name: 'in2', short: 'reads 2', label: 'Reverse reads (for paired-end reads; leave empty for single-end)', ext: ['fastqsanger'], nice: 'input_2.fastq', pick: /_2\b|R2|reverse/i, optional: true }
@@ -196,6 +208,7 @@
     {
       id: 'cutadapt', toolId: `${TS}/lparsons/cutadapt/cutadapt/5.2+galaxy2`, name: 'Cutadapt', desc: 'Remove adapter sequences from FASTQ/FASTA', version: '5.2+galaxy2', section: 'Quality control', needs: 'cutadapt',
       requirements: [['cutadapt', '5.2']],
+      cite: ['cutadapt2011'],
       inputs: [
         { name: 'input_1', short: 'reads 1', label: 'FASTQ/A file #1 (or the single-end reads)', ext: ['fastqsanger'], nice: 'input_1.fastq', pick: /_1\b|R1|forward/i },
         { name: 'input_2', short: 'reads 2', label: 'FASTQ/A file #2 (for paired-end reads; leave empty for single-end)', ext: ['fastqsanger'], nice: 'input_2.fastq', pick: /_2\b|R2|reverse/i, optional: true }
@@ -226,6 +239,7 @@
     {
       id: 'seqtk_comp', toolId: `${TS}/iuc/seqtk/seqtk_comp/1.4+galaxy0`, name: 'seqtk_comp', desc: 'get the nucleotide composition of FASTA/Q', version: '1.4+galaxy0', section: 'Quality control', needs: 'seqtk',
       requirements: [['seqtk', '1.4']],
+      cite: ['seqtk'],
       inputs: [{ name: 'input', short: 'sequences', label: 'Input FASTA/Q file', ext: ['fastqsanger', 'fasta'], nice: (d) => 'input.' + DOWNLOAD_EXT[d.ext] }],
       params: [],
       outputs: [{ name: 'default', short: 'composition', ext: 'tabular', file: 'output.tsv', label: (ins) => L('seqtk_comp', ins) }],
@@ -236,6 +250,7 @@
     {
       id: 'minimap2', toolId: `${TS}/iuc/minimap2/minimap2/2.22+galaxy0`, name: 'Map with minimap2', desc: 'A fast pairwise aligner for genomic and spliced nucleotide sequences', version: '2.22+galaxy0', section: 'Mapping', needs: 'minimap2',
       requirements: [['minimap2', '2.22'], ['samtools', '1.17']],
+      cite: ['minimap2_2018', 'samtools2009'],
       inputs: [
         { name: 'reference', short: 'reference', label: 'Use the following dataset as the reference sequence', ext: ['fasta'], nice: 'reference.fa' },
         { name: 'fastq1', short: 'reads 1', label: 'Select fastq dataset (forward reads, or single-end reads)', ext: ['fastqsanger'], nice: 'input_f.fastq', pick: /_1\b|R1|forward/i },
@@ -253,6 +268,7 @@
     {
       id: 'bowtie2', toolId: `${TS}/devteam/bowtie2/bowtie2/2.4.2+galaxy0`, name: 'Bowtie2', desc: '- map reads against reference genome', version: '2.4.2+galaxy0', section: 'Mapping', needs: 'bowtie2',
       requirements: [['bowtie2', '2.4.2'], ['samtools', '1.17']],
+      cite: ['bowtie2009', 'bowtie2_2012'],
       inputs: [
         { name: 'reference', short: 'reference', label: 'Select reference genome (from the history; it is indexed first)', ext: ['fasta'], nice: 'reference.fa' },
         { name: 'fastq1', short: 'reads 1', label: 'FASTQ file (forward reads, or single-end reads)', ext: ['fastqsanger'], nice: 'input_f.fastq', pick: /_1\b|R1|forward/i },
@@ -273,6 +289,7 @@
     {
       id: 'bwa_mem', toolId: `${TS}/devteam/bwa/bwa_mem/0.7.19`, name: 'Map with BWA-MEM', desc: '- map medium and long reads (> 100 bp) against reference genome', version: '0.7.19', section: 'Mapping', needs: 'bwa',
       requirements: [['bwa', '0.7.19'], ['samtools', '1.17']],
+      cite: ['bwa2009', 'bwasw2010', 'bwamem2013'],
       inputs: [
         { name: 'reference', short: 'reference', label: 'Use the following dataset as the reference sequence (from the history; it is indexed first)', ext: ['fasta'], nice: 'reference.fa' },
         { name: 'fastq1', short: 'reads 1', label: 'Select first set of reads (forward reads, or single-end reads)', ext: ['fastqsanger'], nice: 'input_f.fastq', pick: /_1\b|R1|forward/i },
@@ -291,6 +308,7 @@
     {
       id: 'hisat2', toolId: `${TS}/iuc/hisat2/hisat2/2.2.2+galaxy0`, name: 'HISAT2', desc: 'A fast and sensitive alignment program', version: '2.2.2+galaxy0', section: 'Mapping', needs: 'hisat2',
       requirements: [['hisat2', '2.2.2'], ['samtools', '1.17']],
+      cite: ['hisat2015', 'hisat2_2019'],
       inputs: [
         { name: 'reference', short: 'reference', label: 'Use a genome from history and build index (FASTA)', ext: ['fasta'], nice: 'genome.fa' },
         { name: 'fastq1', short: 'reads 1', label: 'FASTQ file (forward reads, or single-end reads)', ext: ['fastqsanger'], nice: 'input_f.fastq', pick: /_1\b|R1|forward/i },
@@ -313,6 +331,7 @@
     {
       id: 'bwa_mem2', toolId: `${TS}/iuc/bwa_mem2/bwa_mem2/2.2.1+galaxy4`, name: 'Map with BWA-MEM2', desc: '- map medium and long reads (> 100 bp) against reference genome', version: '2.2.1+galaxy4', section: 'Mapping', needs: 'bwa-mem2',
       requirements: [['bwa-mem2', '2.2.1'], ['samtools', '1.17']],
+      cite: ['bwa2009', 'bwasw2010', 'bwamem2013', 'bwamem2_2019'],
       inputs: [
         { name: 'reference', short: 'reference', label: 'Use the following dataset as the reference sequence (from the history; it is indexed first)', ext: ['fasta'], nice: 'reference.fa' },
         { name: 'fastq1', short: 'reads 1', label: 'Select first set of reads (forward reads, or single-end reads)', ext: ['fastqsanger'], nice: 'input_f.fastq', pick: /_1\b|R1|forward/i },
@@ -332,6 +351,7 @@
     {
       id: 'samtools_flagstat', toolId: `${TS}/devteam/samtools_flagstat/samtools_flagstat/2.0.5`, name: 'Samtools flagstat', desc: 'tabulate descriptive stats for BAM datset', version: '2.0.5', section: 'SAM/BAM', needs: 'samtools',
       requirements: [['samtools', '1.17']],
+      cite: ['samtools_bcftools2021', 'baq2011'],
       inputs: [{ name: 'input1', short: 'BAM', label: 'BAM File to Convert', ext: ['bam'], nice: 'input.bam' }],
       params: [],
       outputs: [{ name: 'output1', short: 'stats', ext: 'txt', file: 'output.txt', label: (ins) => L('Samtools flagstat', ins) }],
@@ -341,6 +361,7 @@
     {
       id: 'samtools_stats', toolId: `${TS}/devteam/samtools_stats/samtools_stats/2.0.5`, name: 'Samtools stats', desc: 'generate statistics for BAM dataset', version: '2.0.5', section: 'SAM/BAM', needs: 'samtools',
       requirements: [['samtools', '1.17']],
+      cite: ['samtools_bcftools2021', 'baq2011'],
       inputs: [{ name: 'input', short: 'BAM', label: 'BAM file', ext: ['bam'], nice: 'input.bam' }],
       params: [],
       outputs: [{ name: 'output', short: 'stats', ext: 'txt', file: 'output.txt', label: (ins) => L('Samtools stats', ins) }],
@@ -350,6 +371,7 @@
     {
       id: 'samtools_idxstats', toolId: `${TS}/devteam/samtools_idxstats/samtools_idxstats/2.0.4`, name: 'Samtools idxstats', desc: 'reports stats of the BAM index file', version: '2.0.4', section: 'SAM/BAM', needs: 'samtools',
       requirements: [['samtools', '1.17']],
+      cite: ['samtools_bcftools2021', 'baq2011'],
       inputs: [{ name: 'input', short: 'BAM', label: 'BAM file', ext: ['bam'], nice: 'input.bam' }],
       params: [],
       outputs: [{ name: 'output', short: 'per sequence', ext: 'tabular', file: 'output.tsv', label: (ins) => L('Samtools idxstats', ins) }],
@@ -359,6 +381,7 @@
     {
       id: 'samtools_depth', toolId: `${TS}/iuc/samtools_depth/samtools_depth/1.17`, name: 'Samtools depth', desc: 'compute the depth at each position or region', version: '1.17', section: 'SAM/BAM', needs: 'samtools',
       requirements: [['samtools', '1.17']],
+      cite: ['samtools_bcftools2021', 'baq2011'],
       inputs: [{ name: 'input', short: 'BAM', label: 'BAM file', ext: ['bam'], nice: 'input.bam' }],
       params: [
         { name: 'all', short: 'all positions', label: 'Output all positions, also those with depth 0 (-a)', type: 'bool', default: false },
@@ -371,6 +394,7 @@
     {
       id: 'samtools_view', toolId: `${TS}/iuc/samtools_view/samtools_view/1.17+galaxy0`, name: 'Samtools view', desc: '- reformat, filter, or subsample SAM, BAM or CRAM', version: '1.17+galaxy0', section: 'SAM/BAM', needs: 'samtools',
       requirements: [['samtools', '1.17']],
+      cite: ['samtools_bcftools2021', 'baq2011'],
       inputs: [{ name: 'input', short: 'BAM', label: 'SAM/BAM/CRAM data set', ext: ['bam', 'sam'], nice: (d) => 'input.' + DOWNLOAD_EXT[d.ext] }],
       params: [
         { name: 'region', short: 'region', label: 'Region (e.g. chr10:1000-2000; empty: everything)', type: 'text', default: '' },
@@ -386,6 +410,7 @@
     {
       id: 'mosdepth', toolId: `${TS}/iuc/mosdepth/mosdepth/0.3.14+galaxy0`, name: 'mosdepth', desc: 'compute depth of BAM/CRAM files', version: '0.3.14+galaxy0', section: 'SAM/BAM', needs: 'mosdepth',
       requirements: [['mosdepth', '0.3.14']],
+      cite: ['mosdepth2018'],
       inputs: [
         { name: 'input', short: 'BAM', label: 'BAM file (sorted by position)', ext: ['bam'], nice: 'input.bam' },
         { name: 'by_bed', short: 'regions', label: 'Regions: the mean depth of each interval of this BED file (optional)', ext: ['bed'], nice: 'regions.bed', optional: true }
@@ -414,6 +439,7 @@
     {
       id: 'featurecounts', toolId: `${TS}/iuc/featurecounts/featurecounts/2.1.1+galaxy1`, name: 'featureCounts', desc: 'Measure gene expression in RNA-Seq experiments from SAM or BAM files', version: '2.1.1+galaxy1', section: 'RNA-seq', needs: 'featureCounts',
       requirements: [['subread', '2.1.1']],
+      cite: ['featurecounts2014'],
       inputs: [
         { name: 'alignment', short: 'BAM', label: 'Alignment file (BAM)', ext: ['bam'], nice: 'input.bam' },
         { name: 'anno', short: 'annotation', label: 'Gene annotation file: in your history (GTF)', ext: ['gtf'], nice: 'annotation.gtf' }
@@ -442,6 +468,7 @@
     {
       id: 'stringtie', toolId: `${TS}/iuc/stringtie/stringtie/3.0.3+galaxy2`, name: 'StringTie', desc: 'transcript assembly and quantification', version: '3.0.3+galaxy2', section: 'RNA-seq', needs: 'stringtie',
       requirements: [['stringtie', '3.0.3']],
+      cite: ['stringtie2_2019', 'stringtie2015', 'stringtie3_2026'],
       inputs: [
         { name: 'input_bam', short: 'BAM', label: 'Input short mapped reads (BAM, sorted by position)', ext: ['bam'], nice: 'input.bam' },
         { name: 'guide_gff', short: 'guide', label: 'Use a reference file to guide assembly: GTF from your history (optional)', ext: ['gtf', 'gff3'], nice: (d) => 'guide.' + DOWNLOAD_EXT[d.ext], optional: true }
@@ -465,6 +492,7 @@
     {
       id: 'kallisto_quant', toolId: `${TS}/iuc/kallisto_quant/kallisto_quant/0.48.0+galaxy1`, name: 'Kallisto quant', desc: '- quantify abundances of RNA-Seq transcripts', version: '0.48.0+galaxy1', section: 'RNA-seq', needs: 'kallisto',
       requirements: [['kallisto', '0.52.0']],
+      cite: ['kallisto2016'],
       inputs: [
         { name: 'transcripts', short: 'transcripts', label: 'Transcript sequences: a FASTA file from your history (it is indexed first)', ext: ['fasta'], nice: 'transcripts.fa' },
         { name: 'reads1', short: 'reads 1', label: 'FASTQ file (forward reads, or single-end reads)', ext: ['fastqsanger'], nice: 'reads_1.fastq', pick: /_1\b|R1|forward/i },
@@ -490,6 +518,7 @@
     {
       id: 'salmon', toolId: `${TS}/bgruening/salmon/salmon/1.10.1+galaxy5`, name: 'Salmon quant', desc: 'Perform dual-phase, selective alignment-based estimation of transcript abundance from RNA-seq reads', version: '1.10.1+galaxy5', section: 'RNA-seq', needs: 'salmon',
       requirements: [['salmon', '2.8.0']],
+      cite: ['alevin2019', 'salmon2017'],
       inputs: [
         { name: 'transcripts', short: 'transcripts', label: 'Transcripts FASTA file from your history (it is indexed first)', ext: ['fasta'], nice: 'transcripts.fa' },
         { name: 'reads1', short: 'reads 1', label: 'FASTQ file (forward reads, or single-end reads)', ext: ['fastqsanger'], nice: 'reads_1.fastq', pick: /_1\b|R1|forward/i },
@@ -511,10 +540,98 @@
       },
       help: '<p>Indexes the transcript sequences, maps the reads to them (selective alignment) and estimates the abundance of each transcript: the number of reads (NumReads) and TPM. Library type A lets Salmon work out how the reads were made; the second output says what it found. Salmon works on several threads, which needs a cross-origin isolated page (see Limits in the help). (Galaxy\'s tool of this version runs Salmon 1.10.1; here it runs Salmon 2.8.0, the program of the terminal.)</p>'
     },
+    /* ---------- Single-cell: bustools. The Galaxy Tool Shed has no bustools tools, so these are the workbench's own,
+       with IDs of their own (as Kalign's): a workflow with them does not open on a Galaxy server. ---------- */
+    {
+      id: 'bustools_sort', toolId: 'bustools_sort_workbench', name: 'bustools sort', desc: 'sort the records of a BUS file', version: '0.45.1', section: 'Single-cell', needs: 'bustools',
+      requirements: [['bustools', '0.45.1']],
+      cite: ['bustools2021', 'bus2019'],
+      inputs: [{ name: 'input', short: 'BUS', label: 'BUS file (written by kallisto bus)', ext: ['bus'], nice: 'input.bus' }],
+      params: [
+        { name: 'order', short: 'order', label: 'Sort the records by', type: 'select', default: '', options: [['', 'barcode, UMI, equivalence class, then flag (default)'], ['--umi', 'UMI, barcode, then equivalence class (--umi)'], ['--count', 'multiplicity, barcode, UMI, then equivalence class (--count)'], ['--flags', 'flag, equivalence class, barcode, then UMI (--flags)'], ['--flags-bc', 'flag, barcode, UMI, then equivalence class (--flags-bc)']] },
+        { name: 'no_flags', short: '--no-flags', label: 'Ignore and reset the flag while sorting (--no-flags)', type: 'bool', default: false }
+      ],
+      outputs: [{ name: 'output', short: 'sorted', ext: 'bus', file: 'output.bus', label: (ins) => L('bustools sort', ins, 'sorted BUS') }],
+      command: (i, p) => `bustools sort -t 1 -o output.bus${['--umi', '--count', '--flags', '--flags-bc'].includes(p.order) ? ' ' + p.order : ''}${p.no_flags ? ' --no-flags' : ''} ${i.input}`,
+      help: '<p>Sorts the records of a BUS file – by default by cell barcode, then UMI and equivalence class – and merges the records that are the same, adding up how often each was seen. A BUS file has a record for each molecule seen: the barcode of its droplet (its cell), its UMI, the equivalence class of its read (the transcripts the read fits, numbered as in matrix.ec of kallisto bus) and a count. <b>bustools correct</b> and <b>bustools count</b> need sorted records; sort again after correcting barcodes. Here bustools sorts on one thread.</p>'
+    },
+    {
+      id: 'bustools_correct', toolId: 'bustools_correct_workbench', name: 'bustools correct', desc: 'correct cell barcodes against an on-list', version: '0.45.1', section: 'Single-cell', needs: 'bustools',
+      requirements: [['bustools', '0.45.1']],
+      cite: ['bustools2021', 'bus2019'],
+      inputs: [
+        { name: 'input', short: 'BUS', label: 'Sorted BUS file', ext: ['bus'], nice: 'input.bus' },
+        { name: 'onlist', short: 'on-list', label: 'On-list of barcodes (-w): the barcodes of the technology, one per line', ext: ['txt', 'tabular'], nice: 'onlist.txt', pick: /white|on-?list|allow/i }
+      ],
+      params: [{ name: 'nocorrect', short: '--nocorrect', label: 'Keep perfect matches only: no correction (--nocorrect)', type: 'bool', default: false }],
+      outputs: [{ name: 'output', short: 'corrected', ext: 'bus', file: 'output.bus', label: (ins) => L('bustools correct', ins, 'corrected BUS') }],
+      command: (i, p) => `bustools correct -w ${i.onlist}${p.nocorrect ? ' --nocorrect' : ''} -o output.bus ${i.input}`,
+      help: '<p>Compares the cell barcode of each record with the list of barcodes that the technology uses (its on-list, or whitelist: 737,280 barcodes for 10x Chromium v2). A barcode in the list stays; one that is a single letter from exactly one barcode of the list takes that barcode – a sequencing error, corrected –; the others are left out. The job’s messages (in the details of the dataset) say how many records were on the list, corrected and left out. Correcting changes barcodes: sort the output again before <b>bustools count</b>.</p>'
+    },
+    {
+      id: 'bustools_count', toolId: 'bustools_count_workbench', name: 'bustools count', desc: 'count the molecules of each gene in each cell', version: '0.45.1', section: 'Single-cell', needs: 'bustools',
+      requirements: [['bustools', '0.45.1']],
+      cite: ['bustools2021', 'bus2019'],
+      inputs: [
+        { name: 'input', short: 'BUS', label: 'Sorted BUS file (corrected, then sorted again)', ext: ['bus'], nice: 'input.bus' },
+        { name: 'genemap', short: 'gene map', label: 'Transcripts to genes (-g): a transcript and its gene on each line', ext: ['txt', 'tabular'], nice: 'genemap.txt', pick: /genes|t2g/i },
+        { name: 'ecmap', short: 'equivalence classes', label: 'Equivalence classes (-e): the matrix.ec of kallisto bus', ext: ['tabular', 'txt'], nice: 'matrix.ec', pick: /\.ec$/i },
+        { name: 'txnames', short: 'transcripts', label: 'Transcript names (-t): the transcripts.txt of kallisto bus', ext: ['txt', 'tabular'], nice: 'transcripts.txt', pick: /^transcripts\.txt$/i }
+      ],
+      params: [
+        { name: 'genecounts', short: '--genecounts', label: 'Aggregate counts to genes (--genecounts)', type: 'bool', default: true, help: 'Without it the matrix has a column for each equivalence class, and the output lists the classes in place of the genes.' },
+        { name: 'umi_gene', short: '--umi-gene', label: 'Perform gene-level collapsing of UMIs (--umi-gene)', type: 'bool', default: false },
+        { name: 'cm', short: '--cm', label: 'Count multiplicities instead of UMIs (--cm)', type: 'bool', default: false },
+        { name: 'multimapping', short: '-m', label: 'Include records that pseudoalign to more than one gene (-m)', type: 'bool', default: false }
+      ],
+      outputs: [
+        { name: 'matrix', short: 'matrix', ext: 'mtx', file: 'cells_x_genes.mtx', label: (ins) => L('bustools count', ins, 'matrix') },
+        { name: 'barcodes', short: 'barcodes', ext: 'txt', file: 'cells_x_genes.barcodes.txt', label: (ins) => L('bustools count', ins, 'barcodes (rows)') },
+        { name: 'genes', short: 'genes', ext: 'txt', file: 'cells_x_genes.genes.txt', when: (i, p) => !!p.genecounts, label: (ins) => L('bustools count', ins, 'genes (columns)') },
+        { name: 'ecs', short: 'equivalence classes', ext: 'tabular', file: 'cells_x_genes.ec.txt', when: (i, p) => !p.genecounts, label: (ins) => L('bustools count', ins, 'equivalence classes (columns)') }
+      ],
+      command: (i, p) => `bustools count -o cells_x_genes -g ${i.genemap} -e ${i.ecmap} -t ${i.txnames}${p.genecounts ? ' --genecounts' : ''}${p.umi_gene ? ' --umi-gene' : ''}${p.cm ? ' --cm' : ''}${p.multimapping ? ' -m' : ''} ${i.input}`,
+      help: '<p>Counts, for each barcode and each gene, the different UMIs – molecules, not reads: the copies that PCR made of one molecule count once. The <b>matrix</b> is in Matrix Market format, which lists only what is not zero: after its header, its size (barcodes, genes, entries), then a line for each entry – the barcode’s row, the gene’s column, the count. The <b>barcodes</b> and <b>genes</b> name the rows and the columns. In Python, <code>scipy.io.mmread</code> reads the matrix; Scanpy and Seurat take the three files. The records must be sorted, and their barcodes corrected.</p>'
+    },
+    {
+      id: 'bustools_inspect', toolId: 'bustools_inspect_workbench', name: 'bustools inspect', desc: 'summarize a sorted BUS file', version: '0.45.1', section: 'Single-cell', needs: 'bustools',
+      requirements: [['bustools', '0.45.1']],
+      cite: ['bustools2021', 'bus2019'],
+      inputs: [
+        { name: 'input', short: 'BUS', label: 'Sorted BUS file', ext: ['bus'], nice: 'input.bus' },
+        { name: 'ecmap', short: 'equivalence classes', label: 'Equivalence classes (-e; optional): the matrix.ec of kallisto bus – for the counts of targets', ext: ['tabular', 'txt'], nice: 'matrix.ec', pick: /\.ec$/i, optional: true },
+        { name: 'onlist', short: 'on-list', label: 'On-list of barcodes (-w; optional): how many barcodes and reads are on it', ext: ['txt', 'tabular'], nice: 'onlist.txt', pick: /white|on-?list|allow/i, optional: true }
+      ],
+      params: [],
+      outputs: [
+        { name: 'report', short: 'report', ext: 'txt', file: 'inspect.txt', label: (ins) => L('bustools inspect', ins, 'report') },
+        { name: 'json', short: 'JSON', ext: 'json', file: 'inspect.json', label: (ins) => L('bustools inspect', ins, 'report (JSON)') }
+      ],
+      command: (i) => {
+        const o = `${i.ecmap ? ' -e ' + i.ecmap : ''}${i.onlist ? ' -w ' + i.onlist : ''}`;
+        return `bustools inspect${o} ${i.input} > inspect.txt && bustools inspect -o inspect.json${o} ${i.input}`;
+      },
+      help: '<p>Counts what a sorted BUS file holds: records, reads, barcodes and UMIs, the reads and UMIs of a barcode (median and mean), how many new records twice the sequencing would bring – and, with the equivalence classes and the on-list, the transcripts the reads fit and how many barcodes and reads are on the list. The <b>report</b> is text; the <b>JSON</b> has the same numbers for a program to read (bustools writes it with <code>-o</code>).</p>'
+    },
+    {
+      id: 'bustools_text', toolId: 'bustools_text_workbench', name: 'bustools text', desc: 'write the records of a BUS file as a table', version: '0.45.1', section: 'Single-cell', needs: 'bustools',
+      requirements: [['bustools', '0.45.1']],
+      cite: ['bustools2021', 'bus2019'],
+      inputs: [{ name: 'input', short: 'BUS', label: 'BUS file', ext: ['bus'], nice: 'input.bus' }],
+      params: [
+        { name: 'flags', short: '-f', label: 'Write the flag column (-f)', type: 'bool', default: false },
+        { name: 'pad', short: '-d', label: 'Write the pad column (-d)', type: 'bool', default: false },
+        { name: 'showall', short: '-a', label: 'Show hidden metadata in barcodes (-a)', type: 'bool', default: false }
+      ],
+      outputs: [{ name: 'output', short: 'table', ext: 'tabular', file: 'output.tsv', label: (ins) => L('bustools text', ins, 'records as text') }],
+      command: (i, p) => `bustools text -o output.tsv${p.flags ? ' -f' : ''}${p.pad ? ' -d' : ''}${p.showall ? ' -a' : ''} ${i.input}`,
+      help: '<p>Writes each record of a BUS file as a line of text: the cell barcode, the UMI, the equivalence class and the count – and, if asked, the flag and the padding. A BUS file itself is binary.</p>'
+    },
     /* ---------- Variant calling ---------- */
     {
       id: 'bcftools_mpileup', toolId: `${TS}/iuc/bcftools_mpileup/bcftools_mpileup/1.10`, name: 'bcftools mpileup', desc: 'Generate VCF or BCF containing genotype likelihoods for one or multiple alignment (BAM or CRAM) files', version: '1.10', section: 'Variant calling', needs: 'bcftools',
       requirements: [['bcftools', '1.10']],
+      cite: ['samtools2009', 'samtools_bcftools2021'],
       inputs: [
         { name: 'reference', short: 'reference', label: 'Choose the source for the reference genome: use a genome from the history', ext: ['fasta'], nice: 'ref.fa' },
         { name: 'input_bam', short: 'BAM', label: 'Input BAM/CRAM', ext: ['bam'], nice: 'input.bam' }
@@ -531,6 +648,7 @@
     {
       id: 'bcftools_call', toolId: `${TS}/iuc/bcftools_call/bcftools_call/1.10`, name: 'bcftools call', desc: 'SNP/indel variant calling from VCF/BCF', version: '1.10', section: 'Variant calling', needs: 'bcftools',
       requirements: [['bcftools', '1.10']],
+      cite: ['samtools2009', 'samtools_bcftools2021'],
       inputs: [{ name: 'input_file', short: 'likelihoods', label: 'VCF/BCF Data', ext: ['bcf', 'vcf', 'vcf_bgzip'], nice: 'input.bcf' }],
       params: [
         { name: 'method', short: 'caller', label: 'Calling method', type: 'select', default: 'm', options: [['m', 'Multiallelic and rare-variant caller (-m)'], ['c', 'Consensus caller (-c)']] },
@@ -544,6 +662,7 @@
     {
       id: 'freebayes', toolId: `${TS}/devteam/freebayes/freebayes/1.3.6+galaxy0`, name: 'FreeBayes', desc: 'bayesian genetic variant detector', version: '1.3.6+galaxy0', section: 'Variant calling', needs: 'freebayes',
       requirements: [['freebayes', '1.3.6'], ['samtools', '1.17']],
+      cite: ['freebayes2012'],
       inputs: [
         { name: 'reference', short: 'reference', label: 'Choose the source for the reference genome: use a genome from the history', ext: ['fasta'], nice: 'ref.fa' },
         { name: 'input_bam', short: 'BAM', label: 'BAM dataset (sorted by position)', ext: ['bam'], nice: 'input.bam' }
@@ -565,6 +684,7 @@
     {
       id: 'lofreq_indelqual', toolId: `${TS}/iuc/lofreq_indelqual/lofreq_indelqual/2.1.5+galaxy1`, name: 'Insert indel qualities', desc: 'into a BAM file', version: '2.1.5+galaxy1', section: 'Variant calling', needs: 'lofreq',
       requirements: [['lofreq', '2.1.5'], ['samtools', '1.17']],
+      cite: ['lofreq2012', 'dindel2011'],
       inputs: [
         { name: 'reads', short: 'BAM', label: 'Reads (BAM)', ext: ['bam'], nice: 'reads.bam' },
         { name: 'ref', short: 'reference', label: 'Reference (for Dindel): use a genome from the history', ext: ['fasta'], nice: 'ref.fa', optional: true }
@@ -582,6 +702,7 @@
     {
       id: 'lofreq_call', toolId: `${TS}/iuc/lofreq_call/lofreq_call/2.1.5+galaxy3`, name: 'Call variants', desc: 'with LoFreq', version: '2.1.5+galaxy3', section: 'Variant calling', needs: 'lofreq',
       requirements: [['lofreq', '2.1.5'], ['samtools', '1.17']],
+      cite: ['lofreq2012'],
       inputs: [
         { name: 'reads', short: 'BAM', label: 'Input reads in BAM format', ext: ['bam'], nice: 'reads.bam' },
         { name: 'ref', short: 'reference', label: 'Choose the source for the reference genome: use a genome from the history', ext: ['fasta'], nice: 'ref.fa' },
@@ -603,6 +724,7 @@
     {
       id: 'strelka_somatic', toolId: `${TS}/iuc/strelka_somatic/strelka_somatic/2.9.10+galaxy0`, name: 'Strelka Somatic', desc: 'small variant caller for somatic variation in tumor/normal sample pairs', version: '2.9.10+galaxy0', section: 'Variant calling', needs: 'configureStrelkaSomaticWorkflow.py',
       requirements: [['strelka', '2.9.10'], ['samtools', '1.17'], ['htslib', '1.17']],
+      cite: ['strelka2_2018'],
       inputs: [
         { name: 'normalBam', short: 'normal', label: 'Select normal sample file (BAM)', ext: ['bam'], nice: 'input_normal.bam', pick: /normal/i },
         { name: 'tumorBam', short: 'tumor', label: 'Select tumor sample file (BAM)', ext: ['bam'], nice: 'input_tumor.bam', pick: /tumou?r/i },
@@ -630,9 +752,95 @@
       },
       help: '<p>Calls somatic SNVs and small indels: variants in the tumour that its matched normal sample does not have. Strelka runs its own workflow – depth of each chromosome, calling in segments, empirical variant scoring – and marks each call PASS or with the filters it failed (in FILTER). Both BAM files must be aligned to the reference given here, with the same chromosomes.</p>'
     },
+    /* ---------- Genotypes (GWAS): PLINK 2. The Tool Shed's plink tool (iuc) runs PLINK 1.9, whose options and files
+       differ: this tool is the workbench's own, with an ID of its own (as Kalign's). ---------- */
+    {
+      id: 'plink2', toolId: 'plink2_workbench', name: 'PLINK 2', desc: 'quality control, LD, kinship, association and scores of genotypes', version: '2.0.0-b.1-dev', section: 'Genotypes (GWAS)', needs: 'plink2',
+      requirements: [['plink2', '2.0.0-b.1-dev']],
+      cite: ['plink2_2015', 'plink2_site'],
+      inputs: [
+        { name: 'input', short: 'VCF', label: 'Genotypes (VCF)', ext: ['vcf', 'vcf_bgzip'], nice: (d) => (d.ext === 'vcf_bgzip' ? 'input.vcf.gz' : 'input.vcf') },
+        { name: 'pheno', short: 'phenotypes', label: 'Phenotype file (--pheno; optional – for association): a column of sample IDs (#IID), then one column per phenotype', ext: ['tabular', 'txt'], nice: 'phenotypes.tsv', pick: /pheno/i, optional: true },
+        { name: 'covar', short: 'covariates', label: 'Covariate file (--covar; optional – for association): a column of sample IDs, then one per covariate', ext: ['tabular', 'txt'], nice: 'covariates.tsv', pick: /covar/i, optional: true },
+        { name: 'keep', short: 'samples', label: 'Samples to keep (--keep; optional): a list of sample IDs', ext: ['txt', 'tabular'], nice: 'keep.txt', pick: /keep|samples/i, optional: true },
+        { name: 'score', short: 'weights', label: 'Weights for scores (--score; for “Scores”): a variant ID, an allele and a weight on each line', ext: ['tabular', 'txt'], nice: 'weights.tsv', pick: /score|weight/i, optional: true }
+      ],
+      params: [
+        { name: 'func', short: 'analysis', label: 'What to do', type: 'select', default: 'stats', options: [['stats', 'Basic statistics: allele frequencies, missing genotypes, Hardy-Weinberg, heterozygosity'], ['filter', 'Filter, and write the variants that pass as VCF (--export vcf)'], ['ld', 'LD pruning (--indep-pairwise)'], ['king', 'Kinship of each pair of samples (--make-king-table)'], ['glm', 'Association: linear or logistic regression (--glm)'], ['score', 'Scores: a weighted sum of alleles for each sample (--score)']] },
+        { name: 'maf', short: '--maf', label: 'Filter: minimum minor allele frequency (--maf; optional, e.g. 0.01)', type: 'text', default: '' },
+        { name: 'geno', short: '--geno', label: 'Filter: maximum share of missing genotypes of a variant (--geno; optional, e.g. 0.02)', type: 'text', default: '' },
+        { name: 'mind', short: '--mind', label: 'Filter: maximum share of missing genotypes of a sample (--mind; optional, e.g. 0.02)', type: 'text', default: '' },
+        { name: 'hwe', short: '--hwe', label: 'Filter: Hardy-Weinberg exact test p-value threshold (--hwe; optional, e.g. 1e-6)', type: 'text', default: '' },
+        { name: 'freq', short: '--freq', label: 'Basic statistics: allele frequencies (--freq)', type: 'bool', default: true },
+        { name: 'missing', short: '--missing', label: 'Basic statistics: missing genotypes of each sample and variant (--missing)', type: 'bool', default: true },
+        { name: 'hardy', short: '--hardy', label: 'Basic statistics: Hardy-Weinberg exact test (--hardy)', type: 'bool', default: true },
+        { name: 'het', short: '--het', label: 'Basic statistics: heterozygosity and inbreeding coefficient of each sample (--het)', type: 'bool', default: false },
+        { name: 'window', short: 'window', label: 'LD pruning: window, in variants', type: 'int', default: 50 },
+        { name: 'step', short: 'step', label: 'LD pruning: step, in variants', type: 'int', default: 5 },
+        { name: 'r2', short: 'r²', label: 'LD pruning: r² threshold', type: 'float', default: 0.2 },
+        { name: 'pheno_name', short: '--pheno-name', label: 'Association: the phenotype to test – a column of the phenotype file (--pheno-name)', type: 'text', default: '' },
+        { name: 'firth', short: 'regression', label: 'Association: for a case/control phenotype', type: 'select', default: 'firth-fallback', options: [['firth-fallback', 'logistic regression; Firth regression where it fails (default)'], ['firth', 'Firth regression for every variant (firth)'], ['no-firth', 'logistic regression only (no-firth)']] },
+        { name: 'hide_covar', short: 'hide-covar', label: 'Association: leave out the lines of the covariates (hide-covar)', type: 'bool', default: true },
+        { name: 'allow_no_covars', short: 'allow-no-covars', label: 'Association: allow a test without covariates (allow-no-covars)', type: 'bool', default: false, help: 'PLINK refuses a test without covariates unless asked: it is usually a mistake (ancestry, sex, age …).' },
+        { name: 'score_cols', short: 'columns', label: 'Scores: the columns of the variant ID, the allele and the weight', type: 'text', default: '1 2 3' },
+        { name: 'header', short: 'header-read', label: 'Scores: the weights file has a header line (header-read)', type: 'bool', default: true },
+        { name: 'sums', short: 'cols=+scoresums', label: 'Scores: also write the sums (cols=+scoresums)', type: 'bool', default: true }
+      ],
+      outputs: [
+        { name: 'log', short: 'log', ext: 'txt', file: 'output.log', label: (ins) => L('PLINK 2', ins, 'log') },
+        { name: 'afreq', short: 'frequencies', ext: 'tabular', file: 'output.afreq', when: (i, p) => p.func === 'stats' && !!p.freq, label: (ins) => L('PLINK 2', ins, 'allele frequencies') },
+        { name: 'smiss', short: 'missing (samples)', ext: 'tabular', file: 'output.smiss', when: (i, p) => p.func === 'stats' && !!p.missing, label: (ins) => L('PLINK 2', ins, 'missing genotypes of each sample') },
+        { name: 'vmiss', short: 'missing (variants)', ext: 'tabular', file: 'output.vmiss', when: (i, p) => p.func === 'stats' && !!p.missing, label: (ins) => L('PLINK 2', ins, 'missing genotypes of each variant') },
+        { name: 'hardy', short: 'Hardy-Weinberg', ext: 'tabular', file: 'output.hardy', when: (i, p) => p.func === 'stats' && !!p.hardy, label: (ins) => L('PLINK 2', ins, 'Hardy-Weinberg') },
+        { name: 'het', short: 'heterozygosity', ext: 'tabular', file: 'output.het', when: (i, p) => p.func === 'stats' && !!p.het, label: (ins) => L('PLINK 2', ins, 'heterozygosity') },
+        { name: 'vcf', short: 'VCF', ext: 'vcf', file: 'output.vcf', when: (i, p) => p.func === 'filter', label: (ins) => L('PLINK 2', ins, 'filtered variants') },
+        { name: 'prune_in', short: 'kept', ext: 'txt', file: 'output.prune.in', when: (i, p) => p.func === 'ld', label: (ins) => L('PLINK 2', ins, 'LD pruning: variants kept') },
+        { name: 'prune_out', short: 'left out', ext: 'txt', file: 'output.prune.out', when: (i, p) => p.func === 'ld', label: (ins) => L('PLINK 2', ins, 'LD pruning: variants left out') },
+        { name: 'kin0', short: 'kinship', ext: 'tabular', file: 'output.kin0', when: (i, p) => p.func === 'king', label: (ins) => L('PLINK 2', ins, 'kinship (KING)') },
+        { name: 'glm', short: 'association', ext: 'tabular', file: 'glm.tsv', when: (i, p) => p.func === 'glm', label: (ins, p) => L('PLINK 2', ins, 'association' + (p && /^[A-Za-z0-9_.-]+$/.test(String(p.pheno_name || '').trim()) ? ' with ' + String(p.pheno_name).trim() : '')) },
+        { name: 'sscore', short: 'scores', ext: 'tabular', file: 'output.sscore', when: (i, p) => p.func === 'score', label: (ins) => L('PLINK 2', ins, 'scores') }
+      ],
+      command: (i, p) => {
+        const num = (v) => { const t = String(v == null ? '' : v).trim(); return /^(\d+\.?\d*|\.\d+)([eE][-+]?\d+)?$/.test(t) ? t : ''; };
+        const f = ['stats', 'filter', 'ld', 'king', 'glm', 'score'].includes(p.func) ? p.func : 'stats';
+        const a = ['plink2 --vcf ' + i.input];
+        if (i.pheno) a.push('--pheno ' + i.pheno);
+        if (i.covar) a.push('--covar ' + i.covar);
+        if (i.keep) a.push('--keep ' + i.keep);
+        for (const k of ['maf', 'geno', 'mind', 'hwe']) if (num(p[k])) a.push(`--${k} ${num(p[k])}`);
+        let then = '';
+        if (f === 'stats') {
+          const which = ['freq', 'missing', 'hardy', 'het'].filter((k) => p[k]);
+          if (!which.length) return refuse('PLINK 2: choose at least one of the basic statistics.');
+          a.push(which.map((k) => '--' + k).join(' '));
+        } else if (f === 'filter') a.push('--export vcf');
+        else if (f === 'ld') a.push(`--indep-pairwise ${Math.max(2, int(p.window, 50))} ${Math.max(1, int(p.step, 5))} ${num(p.r2) || 0.2}`);
+        else if (f === 'king') a.push('--make-king-table');
+        else if (f === 'glm') {
+          const name = String(p.pheno_name || '').trim();
+          if (!i.pheno) return refuse('PLINK 2: an association test needs a phenotype file.');
+          if (!/^[A-Za-z0-9_.-]+$/.test(name)) return refuse('PLINK 2: name the phenotype to test – the name of a column of the phenotype file (letters, digits, _ . -).');
+          const mods = [];
+          if (i.covar && p.hide_covar) mods.push('hide-covar');
+          if (p.firth === 'firth' || p.firth === 'no-firth') mods.push(p.firth);
+          if (!i.covar && p.allow_no_covars) mods.push('allow-no-covars');
+          a.push('--pheno-name ' + name, '--glm' + (mods.length ? ' ' + mods.join(' ') : ''));
+          // (PLINK names the file after the phenotype and the test: output.NAME.glm.linear, .glm.logistic.hybrid …)
+          then = ` && cp output.${name}.glm.* glm.tsv`;
+        } else if (f === 'score') {
+          if (!i.score) return refuse('PLINK 2: scores need a file of weights.');
+          const cols = String(p.score_cols || '').trim().split(/\s+/).filter((c) => /^\d+$/.test(c));
+          a.push(`--score ${i.score} ${(cols.length >= 1 && cols.length <= 3 ? cols : ['1', '2', '3']).join(' ')}${p.header ? ' header-read' : ''}${p.sums ? ' cols=+scoresums' : ''}`);
+        }
+        a.push('--out output --threads 1 --memory 640 require');
+        return a.join(' ') + then;
+      },
+      help: '<p>Runs PLINK 2 on the genotypes of a VCF file: first the filters – minor allele frequency, missing genotypes of variants and of samples, Hardy-Weinberg, the samples to keep – then one analysis: basic statistics, the variants that pass as a VCF, LD pruning, the kinship of each pair of samples (KING), an association test of each variant with a phenotype (linear regression for a quantitative one, logistic for cases and controls, with the covariates in the model), or scores (a weighted sum of the alleles of each sample, as for a polygenic score). The <b>log</b> says what PLINK did – how many variants and samples each filter removed. The Galaxy Tool Shed has no PLINK 2 tool (its <i>plink</i> tool runs PLINK 1.9, with other options and files), so this tool is the workbench’s own: a workflow with it does not open on a Galaxy server. PLINK 2 needs the page to be cross-origin isolated (see Limits in the help); this build of it has no principal components (<code>--pca</code>).</p>'
+    },
     {
       id: 'kraken2', toolId: `${TS}/iuc/kraken2/kraken2/2.17.1+galaxy0`, name: 'Kraken2', desc: 'assign taxonomic labels to sequencing reads', version: '2.17.1+galaxy0', section: 'Metagenomics', needs: 'kraken2',
       requirements: [['kraken2', '2.17.2']],
+      cite: ['kraken2014', 'kraken2_2019'],
       inputs: [
         { name: 'input_sequences', short: 'reads', label: 'Input sequences (single-end reads – or, for paired reads, the forward reads)', ext: ['fastqsanger', 'fasta'], nice: (d) => 'input_1.' + DOWNLOAD_EXT[d.ext], pick: /_1\b|R1|forward/i },
         { name: 'input_reverse', short: 'reverse reads', label: 'Reverse reads, for paired reads (leave empty for single-end reads)', ext: ['fastqsanger', 'fasta'], nice: (d) => 'input_2.' + DOWNLOAD_EXT[d.ext], pick: /_2\b|R2|reverse/i, optional: true }
@@ -674,6 +882,7 @@
     {
       id: 'est_abundance', toolId: `${TS}/iuc/bracken/est_abundance/3.1+galaxy0`, name: 'Bracken', desc: 'to re-estimate abundance at a taxonomic level from kraken output', version: '3.1+galaxy0', section: 'Metagenomics', needs: 'est_abundance.py',
       requirements: [['bracken', '3.1']],
+      cite: ['bracken2017'],
       inputs: [
         { name: 'input', short: 'report', label: 'Kraken report file', ext: ['tabular'], nice: 'kraken_report.tsv' }
       ],
@@ -699,6 +908,7 @@
     {
       id: 'prodigal', toolId: `${TS}/iuc/prodigal/prodigal/2.6.3+galaxy0`, name: 'Prodigal Gene Predictor', desc: 'A tool for gene prediction in microbial genomes', version: '2.6.3+galaxy0', section: 'Annotation', needs: 'prodigal',
       requirements: [['prodigal', '2.6.3']],
+      cite: ['prodigal2010'],
       inputs: [{ name: 'input_fa', short: 'genome', label: 'Specify input file (-i)', ext: ['fasta'], nice: 'input.fasta' }],
       params: [
         { name: 'out_format', short: 'format', label: 'Specify output format (-f)', type: 'select', default: 'gbk', options: [['gbk', 'GBK (default)'], ['gff', 'GFF'], ['sco', 'SCO']], help: 'GBK: features in the style of GenBank; GFF: GFF3, for genome browsers; SCO: the start, end and strand of each gene. (Galaxy’s tool also lists SQN, which Prodigal 2.6.3 does not have: it stops with “Invalid output format specified.”)' },
@@ -723,6 +933,7 @@
     {
       id: 'hmmer_hmmbuild', toolId: `${TS}/iuc/hmmer_hmmbuild/hmmer_hmmbuild/3.4+galaxy0`, name: 'hmmbuild', desc: 'Build a profile HMM from an input multiple alignment', version: '3.4+galaxy0', section: 'Annotation', needs: 'hmmbuild',
       requirements: [['hmmer', '3.4']],
+      cite: ['hmmer_web2011', 'hmmer3_2011'],
       inputs: [{ name: 'msafile', short: 'alignment', label: 'Multiple Sequence Alignment (Stockholm, or aligned FASTA)', ext: ['stockholm', 'fasta'], nice: (d) => 'msafile.' + DOWNLOAD_EXT[d.ext] }],
       params: [
         { name: 'hmmname', short: '-n', label: 'Name for the HMM (-n; optional)', type: 'text', default: '', help: 'Without one, the profile takes the name of the alignment (its #=GF ID line, in Stockholm), or else that of its file in the job – here “msafile”.' },
@@ -751,6 +962,7 @@
     {
       id: 'hmmer_hmmsearch', toolId: `${TS}/iuc/hmmer_hmmsearch/hmmer_hmmsearch/3.4+galaxy0`, name: 'hmmsearch', desc: 'search profile(s) against a sequence database', version: '3.4+galaxy0', section: 'Annotation', needs: 'hmmsearch',
       requirements: [['hmmer', '3.4']],
+      cite: ['hmmer_web2011', 'hmmer3_2011'],
       inputs: [
         { name: 'hmmfile', short: 'HMM', label: 'HMM model', ext: ['hmm3'], nice: 'hmmfile.hmm' },
         { name: 'seqdb', short: 'sequences', label: 'Sequence database to search against', ext: ['fasta'], nice: 'seqdb.fasta' }
@@ -763,6 +975,7 @@
     {
       id: 'hmmer_hmmscan', toolId: `${TS}/iuc/hmmer_hmmscan/hmmer_hmmscan/3.4+galaxy0`, name: 'hmmscan', desc: 'search protein sequence(s) against a protein profile database', version: '3.4+galaxy0', section: 'Annotation', needs: 'hmmscan',
       requirements: [['hmmer', '3.4']],
+      cite: ['hmmer_web2011', 'hmmer3_2011'],
       inputs: [
         { name: 'hmmfile', short: 'HMM database', label: 'HMM model (with “Use a HMM database from history”)', ext: ['hmm3'], nice: 'localref.hmm', optional: true },
         { name: 'seqfile', short: 'sequences', label: 'Sequence file', ext: ['fasta'], nice: 'seqfile.fasta' }
@@ -785,6 +998,7 @@
     {
       id: 'hmmer_phmmer', toolId: `${TS}/iuc/hmmer_phmmer/hmmer_phmmer/3.4+galaxy0`, name: 'phmmer', desc: 'search a protein sequence against a protein database (BLASTP-like)', version: '3.4+galaxy0', section: 'Annotation', needs: 'phmmer',
       requirements: [['hmmer', '3.4']],
+      cite: ['hmmer_web2011', 'hmmer3_2011'],
       inputs: [
         { name: 'seqfile', short: 'query', label: 'Protein sequence to search with', ext: ['fasta'], nice: 'seqfile.fasta' },
         { name: 'seqdb', short: 'database', label: 'Sequence Database', ext: ['fasta'], nice: 'seqdb.fasta' }
@@ -797,6 +1011,7 @@
     {
       id: 'hmmer_nhmmer', toolId: `${TS}/iuc/hmmer_nhmmer/hmmer_nhmmer/3.4+galaxy0`, name: 'nhmmer', desc: 'search a DNA model or alignment against a DNA database (BLASTN-like)', version: '3.4+galaxy0', section: 'Annotation', needs: 'nhmmer',
       requirements: [['hmmer', '3.4']],
+      cite: ['hmmer_web2011', 'hmmer3_2011'],
       inputs: [
         { name: 'hmmfile', short: 'HMM', label: 'HMM model', ext: ['hmm3'], nice: 'hmmfile.hmm' },
         { name: 'seqfile', short: 'target', label: 'Target sequence file', ext: ['fasta'], nice: 'seqfile.fasta' }
@@ -817,6 +1032,7 @@
     {
       id: 'hmmer_hmmalign', toolId: `${TS}/iuc/hmmer_hmmalign/hmmer_hmmalign/3.4+galaxy0`, name: 'hmmalign', desc: 'align sequences to a profile HMM', version: '3.4+galaxy0', section: 'Annotation', needs: 'hmmalign',
       requirements: [['hmmer', '3.4']],
+      cite: ['hmmer_web2011', 'hmmer3_2011'],
       inputs: [
         { name: 'seq', short: 'sequences', label: 'Sequence to align against model', ext: ['fasta'], nice: 'seq.fasta' },
         { name: 'hmmfile', short: 'HMM', label: 'HMM model', ext: ['hmm3'], nice: 'hmmfile.hmm' }
@@ -832,6 +1048,7 @@
     {
       id: 'bcftools_filter', toolId: `${TS}/iuc/bcftools_filter/bcftools_filter/1.10`, name: 'bcftools filter', desc: 'Apply fixed-threshold filters', version: '1.10', section: 'Variant calling', needs: 'bcftools',
       requirements: [['bcftools', '1.10']],
+      cite: ['samtools2009', 'samtools_bcftools2021'],
       inputs: [{ name: 'input_file', short: 'VCF', label: 'VCF/BCF Data', ext: ['vcf_bgzip', 'vcf', 'bcf'], nice: (d) => 'input.' + DOWNLOAD_EXT[d.ext] }],
       params: [
         { name: 'include', short: 'include', label: 'Include (expression)', type: 'text', default: 'QUAL>=20 && INFO/DP>=5', help: 'Keep only the sites for which the expression is true, e.g. QUAL>=20 && INFO/DP>=5' },
@@ -844,6 +1061,7 @@
     {
       id: 'bcftools_view_h', toolId: `${TS}/iuc/bcftools_view/bcftools_view/1.10`, name: 'bcftools view', desc: 'VCF/BCF conversion, view, subset and filter VCF/BCF files', version: '1.10', section: 'Variant calling', needs: 'bcftools',
       requirements: [['bcftools', '1.10']],
+      cite: ['samtools2009', 'samtools_bcftools2021'],
       inputs: [{ name: 'input_file', short: 'VCF', label: 'VCF/BCF Data', ext: ['vcf_bgzip', 'vcf', 'bcf'], nice: (d) => 'input.' + DOWNLOAD_EXT[d.ext] }],
       params: [{ name: 'header', short: 'header', label: 'Header', type: 'select', default: 'H', options: [['H', 'suppress the header (-H): records only'], ['h', 'header only (-h)'], ['', 'header and records']] }],
       outputs: [{ name: 'output_file', short: 'text', ext: 'tabular', file: 'output.tsv', label: (ins) => L('bcftools view', ins) }],
@@ -853,6 +1071,7 @@
     {
       id: 'bcftools_query', toolId: `${TS}/iuc/bcftools_query/bcftools_query/1.10`, name: 'bcftools query', desc: 'Extracts fields from VCF/BCF file and prints them in user-defined format', version: '1.10', section: 'Variant calling', needs: 'bcftools',
       requirements: [['bcftools', '1.10']],
+      cite: ['samtools2009', 'samtools_bcftools2021'],
       inputs: [{ name: 'input_file', short: 'VCF', label: 'VCF/BCF Data', ext: ['vcf_bgzip', 'vcf', 'bcf'], nice: (d) => 'input.' + DOWNLOAD_EXT[d.ext] }],
       params: [
         { name: 'format', short: 'format', label: 'Format (-f)', type: 'text', default: '%CHROM\\t%POS\\t%REF\\t%ALT\\t%QUAL\\t%INFO/DP[\\t%GT]\\n', help: 'Fields: %CHROM %POS %ID %REF %ALT %QUAL %FILTER %INFO/TAG; per sample in [ ]: %GT %DP %SAMPLE. \\t is a tab, \\n the end of a line.' },
@@ -865,6 +1084,7 @@
     {
       id: 'bcftools_stats', toolId: `${TS}/iuc/bcftools_stats/bcftools_stats/1.10`, name: 'bcftools stats', desc: 'Parses VCF or BCF and produces stats which can be plotted using plot-vcfstats', version: '1.10', section: 'Variant calling', needs: 'bcftools',
       requirements: [['bcftools', '1.10']],
+      cite: ['samtools2009', 'samtools_bcftools2021'],
       inputs: [{ name: 'input_file', short: 'VCF', label: 'VCF/BCF Data', ext: ['vcf_bgzip', 'vcf', 'bcf'], nice: (d) => 'input.' + DOWNLOAD_EXT[d.ext] }],
       params: [],
       outputs: [{ name: 'output_file', short: 'stats', ext: 'txt', file: 'output.txt', label: (ins) => L('bcftools stats', ins) }],
@@ -875,6 +1095,7 @@
     {
       id: 'bedtools_genomecoveragebed', toolId: `${TS}/iuc/bedtools/bedtools_genomecoveragebed/2.31.0`, name: 'bedtools Genome Coverage', desc: 'compute the coverage over an entire genome', version: '2.31.0', section: 'Intervals (bedtools)', needs: 'bedtools',
       requirements: [['bedtools', '2.31.0']],
+      cite: ['bedtools2010'],
       inputs: [{ name: 'input', short: 'BAM', label: 'Input BAM file', ext: ['bam'], nice: 'input.bam' }],
       params: [{ name: 'report', short: 'report', label: 'Output type', type: 'select', default: '-bg', options: [['-bg', 'BedGraph coverage file (-bg)'], ['-bga', 'BedGraph, regions with no coverage too (-bga)'], ['', 'Histogram of coverage']] }],
       outputs: [{ name: 'output', short: 'coverage', ext: (p) => (p.report ? 'bedgraph' : 'tabular'), file: 'output', label: (ins) => L('Genome Coverage', ins) }],
@@ -884,6 +1105,7 @@
     {
       id: 'bedtools_intersectbed', toolId: `${TS}/iuc/bedtools/bedtools_intersectbed/2.31.0`, name: 'bedtools Intersect intervals', desc: 'find overlapping intervals in various ways', version: '2.31.0', section: 'Intervals (bedtools)', needs: 'bedtools',
       requirements: [['bedtools', '2.31.0']],
+      cite: ['bedtools2010'],
       inputs: [
         { name: 'inputA', short: 'A', label: 'File A (its features are reported)', ext: FEATURES, nice: (d) => 'a.' + DOWNLOAD_EXT[d.ext] },
         { name: 'inputB', short: 'B', label: 'File B (compared with A)', ext: FEATURES, nice: (d) => 'b.' + DOWNLOAD_EXT[d.ext] }
@@ -900,6 +1122,7 @@
     {
       id: 'seqtk_seq', toolId: `${TS}/iuc/seqtk/seqtk_seq/1.4+galaxy0`, name: 'seqtk_seq', desc: 'common transformation of FASTA/Q (FASTQ to FASTA)', version: '1.4+galaxy0', section: 'FASTA/FASTQ', needs: 'seqtk',
       requirements: [['seqtk', '1.4']],
+      cite: ['seqtk'],
       inputs: [{ name: 'input', short: 'reads', label: 'Input FASTQ file', ext: ['fastqsanger'], nice: 'input.fastq' }],
       params: [{ name: 'q', short: 'mask below', label: 'Mask bases with quality lower than this as N (-q; 0: none)', type: 'int', default: 0 }],
       outputs: [{ name: 'default', short: 'FASTA', ext: 'fasta', file: 'output.fasta', label: (ins) => L('seqtk_seq', ins, 'FASTA') }],
@@ -909,6 +1132,7 @@
     {
       id: 'seqtk_sample', toolId: `${TS}/iuc/seqtk/seqtk_sample/1.4+galaxy0`, name: 'seqtk_sample', desc: 'random subsample of fasta or fastq sequences', version: '1.4+galaxy0', section: 'FASTA/FASTQ', needs: 'seqtk',
       requirements: [['seqtk', '1.4']],
+      cite: ['seqtk'],
       inputs: [{ name: 'input', short: 'sequences', label: 'Input FASTA/Q file', ext: ['fastqsanger', 'fasta'], nice: (d) => 'input.' + DOWNLOAD_EXT[d.ext] }],
       params: [
         { name: 'n', short: 'number', label: 'Number of sequences (or a fraction, e.g. 0.1)', type: 'text', default: '1000' },
@@ -922,6 +1146,7 @@
     {
       id: 'kalign', toolId: 'kalign_workbench', name: 'Kalign', desc: 'multiple sequence alignments', version: '3.3.1', section: 'Alignments and trees', needs: 'kalign',
       requirements: [['kalign', '3.3.1']],
+      cite: ['kalign3_2020'],
       inputs: [{ name: 'input', short: 'sequences', label: 'Sequences to align (FASTA)', ext: ['fasta'], nice: 'input.fasta' }],
       params: [],
       outputs: [{ name: 'output', short: 'alignment', ext: 'fasta', file: 'output.fasta', label: (ins) => L('Kalign', ins, 'alignment') }],
@@ -931,6 +1156,7 @@
     {
       id: 'muscle', toolId: 'muscle_workbench', name: 'MUSCLE', desc: 'multiple aligner tool', version: '3.8.1551', section: 'Alignments and trees', needs: 'muscle',
       requirements: [['muscle', '3.8.1551']],
+      cite: ['muscle2004'],
       inputs: [{ name: 'input', short: 'sequences', label: 'Sequences to align (FASTA)', ext: ['fasta'], nice: 'input.fasta' }],
       params: [{ name: 'maxiters', short: 'iterations', label: 'Maximum number of iterations (-maxiters; 2 is faster for many sequences)', type: 'int', default: 16 }],
       outputs: [{ name: 'output', short: 'alignment', ext: 'fasta', file: 'output.fasta', label: (ins) => L('MUSCLE', ins, 'alignment') }],
@@ -940,6 +1166,7 @@
     {
       id: 'fasttree', toolId: `${TS}/iuc/fasttree/fasttree/2.1.11+galaxy0`, name: 'FastTree', desc: 'build large maximum-likelihood phylogenies', version: '2.1.11+galaxy0', section: 'Alignments and trees', needs: 'fasttree',
       requirements: [['fasttree', '2.1.11']],
+      cite: ['fasttree2_2010'],
       inputs: [{ name: 'input', short: 'alignment', label: 'Aligned sequences (FASTA)', ext: ['fasta'], nice: 'alignment.fasta' }],
       params: [{ name: 'model', short: 'model', label: 'Sequence type and model', type: 'select', default: 'prot', options: [['prot', 'Protein, JTT+CAT (default)'], ['wag', 'Protein, WAG+CAT (-wag)'], ['lg', 'Protein, LG+CAT (-lg)'], ['nt', 'Nucleotide, Jukes-Cantor+CAT (-nt)'], ['gtr', 'Nucleotide, GTR+CAT (-nt -gtr)']] }],
       outputs: [{ name: 'output', short: 'tree', ext: 'newick', file: 'output.nwk', label: (ins) => L('FastTree', ins, 'tree') }],
@@ -1672,6 +1899,8 @@
       });
       C.appendChild(form);
       if (t.help) C.appendChild(h('div.gx-help', h('h4', 'What it does'), h('div', { html: t.help })));
+      const refs = (t.cite || []).map((k) => (window.WB_CITATIONS || {})[k]).filter(Boolean);
+      if (refs.length) C.appendChild(h('div.gx-cite', h('h4', 'References'), h('ul', ...refs.map((r) => h('li', { html: r })))));
       bus.emit('gx:toolform', { tool: id });
     }
 
@@ -1808,6 +2037,17 @@
           d.peek = lines(t.split('\n').filter((l) => l && !l.startsWith('@')).map((l) => l.split('\t').slice(0, 6).join('\t')).join('\n'));
         } else if (d.ext === 'bcf') {
           d.info = 'Variants or genotype likelihoods (binary BCF)';
+        } else if (d.ext === 'bus') {
+          // (the records as bustools text writes them: barcode, UMI, equivalence class, count)
+          const n = +(await text(`bustools text -p '${d.path}' | wc -l`)).trim();
+          d.info = `${MG.fmt(n)} BUS record${n === 1 ? '' : 's'} (binary)`;
+          d.peek = (await text(`bustools text -p '${d.path}' | head -n 3`)).trim();
+        } else if (d.ext === 'mtx') {
+          const t = await read();
+          const size = t.split('\n').find((l) => l.trim() && !l.startsWith('%'));
+          const [rows, cols, n] = (size || '').trim().split(/\s+/).map(Number);
+          d.info = size && Number.isFinite(n) ? `a sparse matrix of ${MG.fmt(rows)} rows × ${MG.fmt(cols)} columns, ${MG.fmt(n)} entries that are not zero` : 'a matrix (Matrix Market)';
+          d.peek = lines(t, 5);
         } else if (d.ext === 'vcf_bgzip' || d.ext === 'vcf') {
           const n = (await text(`bcftools view -H '${d.path}' | wc -l`)).trim();
           d.info = `${n} variant sites`;
@@ -1873,8 +2113,8 @@
       if (GENOMIC.includes(d.ext)) btn('genome', 'Show in the Genome browser', () => this.toGenomeBrowser(hid));
       if (d.ext === 'pdb') btn('cube', 'Open in the 3D viewer', () => this.toViewer(hid));
       C.appendChild(acts);
-      if (d.ext === 'bam' || d.ext === 'bcf') {
-        C.appendChild(h('p', `This is a binary ${d.ext.toUpperCase()} file, so Galaxy cannot show it as text. Its first records:`));
+      if (d.ext === 'bam' || d.ext === 'bcf' || d.ext === 'bus') {
+        C.appendChild(h('p', `This is a binary ${d.ext.toUpperCase()} file, so Galaxy cannot show it as text. Its first records${d.ext === 'bus' ? ' (as bustools text writes them: barcode, UMI, equivalence class, count)' : ''}:`));
         C.appendChild(h('pre.gx-pre', d.peek || '(binary)'));
         return;
       }
@@ -2062,7 +2302,7 @@
             h('td', h('b', w.name), h('div.muted.small', w.annotation || '')),
             h('td', String(w.steps.length)),
             h('td.small', w.updated ? new Date(w.updated).toLocaleString('en-GB') : ''),
-            h('td.nowrap', b('pencil', 'Edit', () => this.showEditor(i)), ' ', b('play', 'Run', () => this.showRunForm(i), '.primary'), ' ', b('download', '.ga', () => this.exportGa(i), '', 'Download as a Galaxy workflow file (.ga) – it imports into usegalaxy.org (steps with Kalign or MUSCLE, which have no Tool Shed counterpart, are missing there)'), ' ', b('save', 'to my files', () => this.saveGa(i), '', 'Save the .ga file in ~/galaxy/workflows'), ' ', b('trash', '', () => this.deleteWorkflow(i), '', 'Delete this workflow'))));
+            h('td.nowrap', b('pencil', 'Edit', () => this.showEditor(i)), ' ', b('play', 'Run', () => this.showRunForm(i), '.primary'), ' ', b('download', '.ga', () => this.exportGa(i), '', 'Download as a Galaxy workflow file (.ga) – it imports into usegalaxy.org (steps with Kalign, MUSCLE, bustools or PLINK 2 – tools of the workbench, with no Tool Shed counterpart – are missing there)'), ' ', b('save', 'to my files', () => this.saveGa(i), '', 'Save the .ga file in ~/galaxy/workflows'), ' ', b('trash', '', () => this.deleteWorkflow(i), '', 'Delete this workflow'))));
         });
         C.appendChild(t);
       } else C.appendChild(h('p', h('i', 'You have no workflows yet.')));

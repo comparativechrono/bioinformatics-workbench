@@ -26,6 +26,19 @@
     return a.length === 1 && a[0] === '' ? [] : a;
   };
   const stripAnsi = (s) => String(s).replace(/\x1b\[[0-9;?]*[A-Za-z]/g, '');
+  /** \r and \b in what a program printed, as a terminal (and Jupyter) shows them – PLINK 2 counts 0% … 99% over itself:
+      \r goes back to the start of the line, \b one character back, and what follows is written over what was there */
+  const inPlace = (s) => {
+    if (!/[\r\b]/.test(s)) return s;
+    let done = '', line = [], at = 0;
+    for (const ch of s) {
+      if (ch === '\r') at = 0;
+      else if (ch === '\b') at = Math.max(0, at - 1);
+      else if (ch === '\n') { done += line.join('') + '\n'; line = []; at = 0; }
+      else line[at++] = ch;
+    }
+    return done + line.join('');
+  };
   const BASH = /^\s*%%(bash|sh|script\s+(ba)?sh)\b[^\n]*\n?/;
 
   /* HTML from cells (tables, rich output) and Markdown are cleaned before they are shown:
@@ -553,13 +566,19 @@
       if (o.type === 'stream') o = Object.assign({}, o, { text: stripAnsi(o.text) });
       const prev = c.outputs[c.outputs.length - 1];
       if (o.type === 'stream' && prev && prev.type === 'stream' && prev.name === o.name) {
-        prev.text += o.text;
+        // (a \r or \b goes on from the line that the earlier output ended with)
+        const edit = /[\r\b]/.test(o.text);
+        prev.text = edit ? inPlace(prev.text + o.text) : prev.text + o.text;
         const last = c.outEl.lastElementChild;
         if (last && last.classList.contains('nb-stream') && last.dataset.name === o.name) {
-          last.appendChild(document.createTextNode(o.text));
+          if (edit) last.textContent = prev.text;
+          else last.appendChild(document.createTextNode(o.text));
           return;
         }
-      } else c.outputs.push(o);
+      } else {
+        if (o.type === 'stream') o.text = inPlace(o.text);
+        c.outputs.push(o);
+      }
       this._render(c, o);
     }
     _render(c, o) {

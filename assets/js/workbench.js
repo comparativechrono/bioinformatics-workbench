@@ -309,7 +309,8 @@
     crumbs.innerHTML = '';
     const home = h('a', { href: '#h-home' }, 'Help');
     crumbs.appendChild(home);
-    if (page.dataset.group && id !== 'h-home') {
+    // (the index page of a group – Recipes, Reference – is the group: no link to itself)
+    if (page.dataset.group && id !== 'h-home' && !(id === page.dataset.groupPage && page.dataset.title === page.dataset.group)) {
       const g = page.dataset.groupPage;
       crumbs.append(h('span.sep', '›'), g ? h('a', { href: '#' + g }, page.dataset.group) : h('span', page.dataset.group));
     }
