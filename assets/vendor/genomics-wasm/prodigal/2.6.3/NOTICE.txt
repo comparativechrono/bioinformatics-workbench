@@ -1,0 +1,25 @@
+Prodigal 2.6.3 – prodigal, with its 50 built-in models for metagenomes
+Licence: GNU GPL 3 or later (LICENSE in this folder: the GPL of Prodigal's source). Copyright (C) 2007-2016 University
+of Tennessee / UT-Battelle; code author Doug Hyatt. The loader is Emscripten's runtime (MIT and NCSA:
+LICENSE.emscripten). THIRD_PARTY_LICENSES.txt is genomics-wasm's summary of them.
+Upstream source: https://github.com/hyattpd/Prodigal (tag v2.6.3, commit 004218fbeb2cf54fe12d88ec2eede6a27d70ebf7). The
+source code, as GitHub's archive of the tag (SHA-256 89094ad4bff5a8a8732d899f31cec350f5a4c27bcbdd12663f87c9d1f0ec599f):
+../../../licenses/sources/prodigal-2.6.3.tar.gz; the changes made to it:
+../../../licenses/genomics-wasm-build/tools/prodigal/browser.patch.
+
+Compiled to WebAssembly by the genomics-wasm project (https://github.com/comparativechrono/genomics-wasm, commit
+46c9418): Emscripten 3.1.64, one thread, no SIMD. prodigal.mjs and prodigal.wasm are used here as that project built
+them. The page runs the program in a worker of its own (assets/js/threads-worker.mjs); assets/js/tools-wasm.js gives it
+its files. When the input comes from a pipe, Prodigal itself copies it to a temporary file before it reads it, and says
+so; here the terminal hands the program the input as a file, and writes the same message. Everything needed to build it
+again is described in ../../../licenses/genomics-wasm-build/.
+
+Changes to the source (browser.patch): fourteen calls of sprintf that write into the buffer they also read – undefined
+in C, and done differently by the C library of WebAssembly and by glibc – append to the text instead; the text is the
+same. A part that checks the layout of training files at compile time is added; it adds no code. Gene prediction,
+training, scoring, the genetic codes and the models are unchanged.
+
+Checked against Prodigal 2.6.3 built natively from the same source (genomics-wasm's comparison: 15 of 15 cases – both
+modes, training files written by one build and read by the other, input from a pipe, errors), and in the workbench,
+against the native program, with the example data – in the terminal (GFF, GenBank and SCO; proteins, gene sequences,
+starts and training files; the messages, also from a pipe) and in Galaxy: the same, byte for byte.

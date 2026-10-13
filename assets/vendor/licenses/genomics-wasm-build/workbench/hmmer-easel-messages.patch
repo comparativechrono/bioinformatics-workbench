@@ -1,0 +1,17 @@
+--- a/easel/easel.c
++++ b/easel/easel.c
+@@ -40,6 +40,14 @@
+ #include "easel.h"
+ #include <syslog.h>
+ 
++#ifdef __EMSCRIPTEN__
++/* Easel takes a process whose parent is process 1 for a daemon, and sends its error messages to syslog. Emscripten's
++ * getppid() always returns 1: compiled to WebAssembly every program would be taken for a daemon, and its messages
++ * lost. No program is a daemon in a browser. (A change of the workbench, not of genomics-wasm's port.)
++ */
++#define getppid() 2
++#endif
++
+ /*****************************************************************
+  * 1. Exception and fatal error handling.
+  *****************************************************************/

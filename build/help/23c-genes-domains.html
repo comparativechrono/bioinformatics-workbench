@@ -1,0 +1,59 @@
+<!-- id: h-genes | title: Genes and protein domains: Prodigal and HMMER | group: Terminal and programs | summary: Find the genes of a bacterial genome, then search proteins and DNA with profile HMMs | keys: gene prediction gene finding annotation prokaryote bacteria archaea orf open reading frame cds start codon rbs shine-dalgarno prodigal metagenome hmmer hmm profile hidden markov model domain family pfam dfam hmmbuild hmmsearch hmmscan hmmpress hmmfetch hmmalign hmmconvert hmmemit hmmstat phmmer jackhmmer nhmmer nhmmscan e-value tblout domtblout stockholm globin kinase fibronectin fn3 transposon made1 -->
+<h1><!--ICON:dna-->Genes and protein domains: Prodigal and HMMER</h1>
+<p class="lede">A new bacterial genome is a long string of letters. <b>Prodigal</b> finds the genes in it that code for proteins. <b>HMMER</b> then compares proteins – or DNA – with <i>profile HMMs</i>: models of a whole family, built from an alignment of its members, which find relatives that a search with a single sequence can miss.</p>
+<p>The examples work in a folder of your own: <button class="do" type="button" data-term-run="mkdir -p ~/genes && cd ~/genes">mkdir -p ~/genes &amp;&amp; cd ~/genes</button></p>
+
+<h2>Prodigal: the genes of a bacterium</h2>
+<p><code>/data/examples/bacteria/</code> has the first 60,000 bases of the chromosomes of <i>Escherichia coli</i> K-12 and <i>Salmonella enterica</i> Typhimurium, from NCBI RefSeq.</p>
+<pre class="code" data-run="term"><code>prodigal -i /data/examples/bacteria/ecoli.fna -o ecoli.gff -f gff -a ecoli.faa -d ecoli.ffn
+head -5 ecoli.gff
+grep -c '>' ecoli.faa</code></pre>
+<p>Prodigal first learns the genome – how rich in G and C its coding regions are, which start codons and ribosome binding sites it uses – and then finds its genes. It warns that it would like 100,000 bases or more to learn from; 60,000 are enough to see how it works. It finds 56 genes. A line of <code>ecoli.gff</code> is one gene: the sequence, the program, the type (<code>CDS</code>, coding sequence), start and end, a score, the strand, and in the last column what Prodigal knows about it – <code>partial</code> (<code>10</code>: it runs off the left end of the sequence), the start codon, the ribosome binding site (<code>rbs_motif</code>) and its confidence. The second gene, from 337 to 2,799 on the + strand, is <i>thrA</i>, just where the annotation of the genome has it. The first runs off the start of the window, so Prodigal cannot know where it begins.</p>
+<p><code>ecoli.faa</code> holds the proteins and <code>ecoli.ffn</code> the genes' DNA, one record per gene, named after the sequence and the gene's number:</p>
+<pre class="code" data-run="term"><code>head -2 ecoli.faa
+prodigal -i /data/examples/bacteria/salmonella.fna -o salmonella.gff -f gff -a salmonella.faa -q
+prodigal -p meta -i /data/examples/bacteria/combined.fna -o meta.gff -f gff -q
+grep -c CDS ecoli.gff salmonella.gff meta.gff</code></pre>
+<p><code>-q</code> keeps Prodigal quiet but for warnings. <code>-p meta</code> does not learn: it uses 50 models that come with Prodigal, for genomes of different GC content – right for a metagenome, where the contigs come from many organisms, and for sequences too short to learn from. <code>combined.fna</code> holds both windows. Other options: <code>-c</code> (no genes running off the ends), <code>-g 4</code> (another genetic code: 11 is that of bacteria and archaea), <code>-s FILE</code> (every possible start, with its scores), <code>-t FILE</code> (save what it learnt, and use it again).</p>
+
+<h2>HMMER: a profile from an alignment</h2>
+<p><code>/data/examples/hmmer/</code> holds the tutorial files of HMMER 3.4, under their own names, so the tutorial of the HMMER User's Guide can be followed here as it is written. First a profile of the globins, built from an alignment of four of them, and a search of 45 globins with it:</p>
+<pre class="code" data-run="term"><code>hmmbuild globins4.hmm /data/examples/hmmer/globins4.sto
+hmmsearch globins4.hmm /data/examples/hmmer/globins45.fa &gt; globins.out
+head -24 globins.out</code></pre>
+<p>The profile has 149 match states (<code>M=149</code>): for each column of the alignment, how likely each amino acid is there, and how likely a gap. <code>hmmsearch</code> ranks the sequences by <b>E-value</b> – the number of hits this good that a search of a database of this size would give by chance – and its score in bits. All 45 globins are found, with E-values of 1e-36 or smaller, although the profile was built from only four. The output then shows each sequence's domains and their alignments to the profile. For tables, one line per sequence and one per domain:</p>
+<pre class="code" data-run="term"><code>hmmsearch --tblout globins.tbl --domtblout globins.domtbl --noali globins4.hmm /data/examples/hmmer/globins45.fa &gt; /dev/null
+grep -v '^#' globins.tbl | head -3</code></pre>
+
+<h2>Which domains does a protein have? hmmscan</h2>
+<p>The other way round: one protein against a collection of profiles, as Pfam's are used. The tutorial joins three profiles – globins, fibronectin type III (fn3) and protein kinase – into a small collection, which <code>hmmpress</code> prepares for <code>hmmscan</code>, and scans the Sevenless receptor of <i>Drosophila</i> (<code>7LESS_DROME</code>, a UniProt record, which HMMER reads as it is):</p>
+<pre class="code" data-run="term"><code>cat /data/examples/hmmer/globins4.hmm /data/examples/hmmer/fn3.hmm /data/examples/hmmer/Pkinase.hmm &gt; minifam.hmm
+hmmpress minifam.hmm
+hmmscan --domtblout 7less.domtbl minifam.hmm /data/examples/hmmer/7LESS_DROME &gt; 7less.out
+grep -v '^#' 7less.domtbl | awk '{print $1, $20, $21, $13}'</code></pre>
+<p>Nine fibronectin type III domains and one kinase domain, with where each lies on the protein (columns 20 and 21: from, to) and its E-value (<code>i-Evalue</code>, column 13); a globin, none. Two of the fn3 domains are weak, with E-values of 0.5 and 0.19: a domain like that is a candidate to look at, not a finding. The <b>InterPro</b> card of the Databases tab shows what InterPro, with the whole of Pfam, finds in the same protein (UniProt P13368).</p>
+
+<h2>One sequence as the query: phmmer and jackhmmer</h2>
+<pre class="code" data-run="term"><code>phmmer --tblout hbb.tbl /data/examples/hmmer/HBB_HUMAN /data/examples/hmmer/globins45.fa &gt; hbb.out
+grep -v '^#' hbb.tbl | head -3
+jackhmmer -N 3 /data/examples/hmmer/HBB_HUMAN /data/examples/hmmer/globins45.fa | grep '^@@'</code></pre>
+<p><code>phmmer</code> searches with one protein, as BLASTP does, with HMMER's scores and E-values. <code>jackhmmer</code> searches again and again: it builds a profile from what it found and searches with that, until nothing new comes in – here after two rounds, as all 45 globins are in the first.</p>
+
+<h2>DNA: nhmmer</h2>
+<pre class="code" data-run="term"><code>nhmmer --tblout made1.tbl /data/examples/hmmer/MADE1.hmm /data/examples/hmmer/dna_target.fa &gt; made1.out
+grep -v '^#' made1.tbl | cut -c1-140</code></pre>
+<p>MADE1 is a short DNA transposon of the human genome, from Dfam. <code>nhmmer</code> searches both strands: two copies in this piece of chromosome 1, near 174,500 and 302,400, are each found on both strands, as MADE1 reads almost the same backwards on the other strand (its ends are inverted repeats); the fifth hit, with an E-value above 1, is noise.</p>
+
+<h2>From genes to proteins to relatives</h2>
+<p>The proteins that Prodigal predicted can be searched like any others. E. coli's ThrA, the second gene, against Salmonella's proteins:</p>
+<pre class="code" data-run="term"><code>awk '/^&gt;/{p=($1==">NC_000913.3_1_60000_2")} p' ecoli.faa &gt; thrA.faa
+phmmer --tblout thrA.tbl thrA.faa salmonella.faa &gt; /dev/null
+grep -v '^#' thrA.tbl | cut -c1-100
+hmmscan --tblout ecoli_domains.tbl minifam.hmm ecoli.faa &gt; /dev/null
+grep -v '^#' ecoli_domains.tbl | wc -l</code></pre>
+<p>One hit, the first gene of the Salmonella window – its ThrA – with an E-value of 0, too small for the computer to write. None of E. coli's 56 proteins has a globin, fibronectin or kinase domain of these three profiles: the table has no lines but its comments. To annotate a genome, proteins are scanned against all of Pfam's families – more than 20,000 – which is too big for the browser: use the InterPro card, or a computer.</p>
+<p>More: <code>hmmalign globins4.hmm globins45.fa</code> aligns sequences to a profile; <code>hmmfetch</code> takes one profile out of a collection, <code>hmmstat</code> lists them, <code>hmmemit</code> writes sequences a profile would produce, <code>hmmconvert</code> converts the format; <code>NAME -h</code> lists a program's options. Here HMMER runs on one thread – <code>--cpu</code> is left out, with a note – and cannot read files compressed with gzip (<code>.gz</code>): unpack them first.</p>
+
+<h2>In Galaxy</h2>
+<p>Galaxy (the Galaxy tab) has <b>Prodigal Gene Predictor</b> and <b>hmmbuild</b>, <b>hmmsearch</b>, <b>hmmscan</b>, <b>phmmer</b>, <b>nhmmer</b> and <b>hmmalign</b> in its <i>Annotation</i> section, which run the same programs.</p>
+<p>Prodigal and HMMER are compiled to WebAssembly from their released sources by the genomics-wasm project, and give the same genes, scores and alignments as the same programs built for Linux (see <a href="#h-programs">Programs and versions</a>).</p>

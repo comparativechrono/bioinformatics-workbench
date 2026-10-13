@@ -1,0 +1,21 @@
+Notices for the files in this folder
+====================================
+
+These are the tutorial files of HMMER 3.4 (the folder tutorial/ of hmmer-3.4.tar.gz, http://hmmer.org/), unchanged and
+under their own names, so that the tutorial of the HMMER User's Guide can be followed here as it is written. HMMER is
+copyright (C) Sean R. Eddy, President and Fellows of Harvard College, Howard Hughes Medical Institute and others, and
+distributed under the BSD 3-clause licence (LICENSE, HMMER's own).
+
+  globins4.sto, globins4.hmm      four globins aligned (from the structural alignment of Bashford and colleagues, as the
+                                  User's Guide says), and the profile HMM built from them
+  globins45.fa, HBB_HUMAN         45 globins, and human beta-haemoglobin, to search
+  fn3.sto, fn3.hmm                Pfam's fibronectin type III domain: seed alignment PF00041.20, profile PF00041.13
+  Pkinase.sto, Pkinase.hmm        Pfam's protein kinase domain: seed alignment PF00069.24, profile PF00069.17
+  7LESS_DROME                     the UniProtKB/Swiss-Prot record of the Drosophila Sevenless receptor (P13368; UniProt,
+                                  CC BY 4.0): fibronectin type III domains and a kinase domain. HMMER reads the record
+                                  as it is.
+  MADE1.sto, MADE1.hmm            the human DNA transposon MADE1, Dfam DF0000629.2
+  dna_target.fa                   330 kb of human chromosome 1, with copies of MADE1 (for nhmmer)
+
+Pfam and Dfam data are free to use (CC0); cite Pfam (Mistry et al., Nucleic Acids Res 2021) and Dfam (Storer et al.,
+Mobile DNA 2021) when you use them in your work. Where every file came from, and its SHA-256: provenance.json.

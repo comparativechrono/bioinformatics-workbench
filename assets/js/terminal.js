@@ -365,7 +365,8 @@
         this.cancelled = true;
         const program = MG.wasm.running;
         const lost = MG.wasm.kill(this.fs);
-        // (featureCounts, Salmon, Cutadapt, LoFreq, SomaticSniper, Strelka2, Kraken2 and Bracken run in a worker of their own: only that one is stopped)
+        // (featureCounts, Salmon, Cutadapt, LoFreq, SomaticSniper, Strelka2, Kraken2, Bracken, Prodigal, HMMER and bustools run in a worker
+        // of their own: only that one is stopped)
         this.note(MG.wasm.lastKill === 'threads' ? `${program} was stopped by force.` : `${program} was stopped by force, and the programs were started again.`);
         // files that programs had written lived in the stopped programs' memory: the copies kept in the browser come back.
         // (Not here for a command of the AI agent: there the files come back as they were before the command, when what

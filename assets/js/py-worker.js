@@ -294,6 +294,33 @@ warnings.filterwarnings('ignore', category=ResourceWarning)
 warnings.filterwarnings('ignore', message='.*non-interactive.*')
 warnings.filterwarnings('ignore', message='.*FigureCanvasAgg.*')
 
+# ---------------------------------------------------------------- modules that would start threads
+# Python in a web page cannot start threads. SciPy's reader and writer of Matrix Market files (scipy.io.mmread and
+# mmwrite – and what calls them, as scanpy.read_mtx) start them unless told to work alone ("thread constructor
+# failed"): tell them so, as SciPy loads the module.
+import importlib.abc, importlib.machinery
+class _OneThread(importlib.abc.MetaPathFinder):
+    SETTINGS = {'scipy.io._fast_matrix_market': ('PARALLELISM', 1)}
+    def find_spec(self, name, path=None, target=None):
+        if name not in self.SETTINGS:
+            return None
+        spec = importlib.machinery.PathFinder.find_spec(name, path)
+        if spec is None or spec.loader is None:
+            return spec
+        spec.loader = _OneThreadLoader(spec.loader, *self.SETTINGS[name])
+        return spec
+class _OneThreadLoader(importlib.abc.Loader):
+    def __init__(self, inner, attr, value):
+        self.inner, self.attr, self.value = inner, attr, value
+    def __getattr__(self, k):
+        return getattr(self.inner, k)
+    def create_module(self, spec):
+        return self.inner.create_module(spec)
+    def exec_module(self, module):
+        self.inner.exec_module(module)
+        setattr(module, self.attr, self.value)
+sys.meta_path.insert(0, _OneThread())
+
 # ---------------------------------------------------------------- plots (matplotlib, when a cell uses it)
 _MPL = [False]
 def _mpl_setup():

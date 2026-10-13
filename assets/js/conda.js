@@ -4,7 +4,7 @@
    The programs here are real (WebAssembly builds of minimap2, samtools,
    bcftools, htslib, BWA, BWA-MEM2, HISAT2, FreeBayes, StringTie, kallisto,
    mosdepth, featureCounts (Subread), Salmon, Cutadapt, LoFreq, SomaticSniper,
-   Strelka2, Kraken2, Bracken, Graphviz, and Python 3.13 with pandas and
+   Strelka2, Kraken2, Bracken, Prodigal, HMMER, bustools, Graphviz, and Python 3.13 with pandas and
    matplotlib from Pyodide),
    but only one version of each exists in the browser.
    Environments decide which of them a command can use, exactly as on a
@@ -52,6 +52,11 @@
     // (bioconda's kraken2 also asks for perl, blast, rsync and wget – for its download scripts, which are not here)
     kraken2: { v: '2.17.2', build: 'pl5321h3be2455_0', ch: 'bioconda', prog: ['kraken2', 'kraken2-build', 'kraken2-inspect'], deps: ['python', 'libzlib'] },
     bracken: { v: '3.1', build: 'h9948957_0', ch: 'bioconda', prog: ['bracken', 'bracken-build', 'est_abundance.py', 'generate_kmer_distribution.py', 'kmer2read_distr'], deps: ['kraken2', 'python'] },
+    // (bioconda's newest builds. Its hmmer also asks for GSL, a BLAS and Open MPI – for its MPI programs, which are not here – and
+    // has HMMER's other programs and the Easel miniapps; bustools asks for HDF5 too, which this build does not use)
+    prodigal: { v: '2.6.3', build: 'h577a1d6_11', ch: 'bioconda', prog: ['prodigal'], deps: ['libzlib'] },
+    hmmer: { v: '3.4', build: 'h7d74f8d_5', ch: 'bioconda', prog: ['hmmbuild', 'hmmsearch', 'hmmscan', 'hmmpress', 'hmmfetch', 'hmmalign', 'hmmconvert', 'hmmemit', 'hmmstat', 'phmmer', 'jackhmmer', 'nhmmer', 'nhmmscan'] },
+    bustools: { v: '0.45.1', build: 'h6f0a7f7_0', ch: 'bioconda', prog: ['bustools'], deps: ['libzlib'] },
     tabix: { v: '1.17', build: 'h81da01d_2', ch: 'bioconda', prog: ['tabix', 'bgzip'], alias: 'htslib' },
     graphviz: { v: '16.1.0', build: 'wasm_viz3.31', ch: 'conda-forge', prog: ['dot'] },
     python: { v: '3.13.2', build: 'pyodide_0.29', ch: 'conda-forge', prog: ['python', 'python3'], py: true, deps: ['pip'], needs313: { libzlib: ['1.3.1', '2'] } },

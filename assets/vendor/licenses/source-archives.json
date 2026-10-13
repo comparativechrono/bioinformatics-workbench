@@ -187,5 +187,23 @@
   "bytes": 27264,
   "upstream": "https://github.com/pyodide/hiwire/tree/6a1e67280a15d929ebeceee54a6358c9c8d5f697",
   "origin": "git archive --format=tar --prefix=hiwire-6a1e67280a15d929ebeceee54a6358c9c8d5f697/ 6a1e6728 | gzip -n, from https://github.com/pyodide/hiwire.git – byte for byte GitHub's archive of the commit, as pinned in genomics-wasm's tools/cutadapt/sources.lock.json, 2026-10-11"
+ },
+ {
+  "package": "prodigal-2.6.3",
+  "licence": "GPL-3.0-or-later",
+  "file": "sources/prodigal-2.6.3.tar.gz",
+  "sha256": "89094ad4bff5a8a8732d899f31cec350f5a4c27bcbdd12663f87c9d1f0ec599f",
+  "bytes": 610934,
+  "upstream": "https://github.com/hyattpd/Prodigal/tree/v2.6.3",
+  "origin": "git archive --format=tar --prefix=Prodigal-2.6.3/ v2.6.3 | gzip -n, from https://github.com/hyattpd/Prodigal.git – byte for byte GitHub's archive of the tag (https://codeload.github.com/hyattpd/Prodigal/tar.gz/refs/tags/v2.6.3), as pinned in genomics-wasm's tools/prodigal/sources.lock.json, 2026-10-13"
+ },
+ {
+  "package": "bustools-0.45.1",
+  "licence": "BSD-2-Clause (bustools); MPL-2.0 (Eigen 3.3.7, in dependencies/eigen-3.3.7/: the reason its source is here), Apache-2.0 (CRoaring), MIT and others – see ../genomics-wasm/bustools/0.45.1/",
+  "file": "sources/bustools-0.45.1.tar.gz",
+  "sha256": "b014317ea4501c3314ac358eb074dbbe3a10ed6daec53587f17a897e670e40df",
+  "bytes": 2766093,
+  "upstream": "https://github.com/BUStools/bustools/tree/d4d7a283dbe9d34d2106e9ba31e2566413be6a70",
+  "origin": "git archive --format=tar --prefix=bustools-d4d7a283dbe9d34d2106e9ba31e2566413be6a70/ d4d7a283 | gzip -n, from https://github.com/BUStools/bustools.git – byte for byte GitHub's archive of the commit (https://codeload.github.com/BUStools/bustools/tar.gz/d4d7a283dbe9d34d2106e9ba31e2566413be6a70), as pinned in genomics-wasm's tools/bustools/sources.lock.json, 2026-10-13"
  }
 ]

@@ -1,9 +1,9 @@
-<!-- id: h-programs | title: Programs and versions | group: Reference | summary: Every program, language and library, with its version | keys: programs versions list fastp seqtk wgsim minimap2 bowtie2 bwa bwa-mem2 hisat2 freebayes stringtie kallisto salmon featurecounts subread mosdepth cutadapt dnaio xopen lofreq somaticsniper bam-somaticsniper strelka strelka2 configurestrelkasomaticworkflow kraken2 kraken2-build kraken2-inspect bracken bracken-build samtools bcftools htslib bedtools gffread kalign muscle fasttree seq-align lastz jq coreutils grep sed awk python pyodide numpy pandas matplotlib biopython scipy r webr snakemake graphviz conda igv ngl deseq2 edger locfit -->
+<!-- id: h-programs | title: Programs and versions | group: Reference | summary: Every program, language and library, with its version | keys: programs versions list fastp seqtk wgsim minimap2 bowtie2 bwa bwa-mem2 hisat2 freebayes stringtie kallisto salmon featurecounts subread mosdepth cutadapt dnaio xopen lofreq somaticsniper bam-somaticsniper strelka strelka2 configurestrelkasomaticworkflow kraken2 kraken2-build kraken2-inspect bracken bracken-build bustools prodigal hmmer hmmbuild hmmsearch hmmscan hmmpress phmmer jackhmmer nhmmer nhmmscan hmmalign hmmfetch hmmstat hmmemit hmmconvert samtools bcftools htslib bedtools gffread kalign muscle fasttree seq-align lastz jq coreutils grep sed awk python pyodide numpy pandas matplotlib biopython scipy r webr snakemake graphviz conda igv ngl deseq2 edger locfit -->
 <h1><!--ICON:list-->Programs and versions</h1>
 <p class="lede">Results depend on versions: cite the ones you used. <code>help</code> in the terminal prints this list too; <code>NAME --version</code> one program's.</p>
 
 <h2>The terminal's bioinformatics programs</h2>
-<p>The real programs, compiled to WebAssembly (most by the Biowasm project; BWA, BWA-MEM2, HISAT2, FreeBayes, featureCounts, StringTie, kallisto, Salmon, mosdepth, Cutadapt, LoFreq, SomaticSniper, Strelka2, Kraken2 and Bracken by the genomics-wasm project). Galaxy runs the same ones.</p>
+<p>The real programs, compiled to WebAssembly (most by the Biowasm project; BWA, BWA-MEM2, HISAT2, FreeBayes, featureCounts, StringTie, kallisto, Salmon, mosdepth, Cutadapt, LoFreq, SomaticSniper, Strelka2, Kraken2, Bracken, bustools, Prodigal and HMMER by the genomics-wasm project). Galaxy runs the same ones.</p>
 <table>
 <tr><th>Program</th><th>Version</th><th>For</th></tr>
 <tr><td>fastp</td><td>0.20.1</td><td>read quality control and trimming</td></tr>
@@ -19,6 +19,7 @@
 <tr><td>StringTie</td><td>3.0.3</td><td>assembling transcripts from RNA-seq alignments, and their abundance</td></tr>
 <tr><td>kallisto</td><td>0.52.0</td><td>transcript abundances by pseudoalignment</td></tr>
 <tr><td>Salmon</td><td>2.8.0</td><td>transcript abundances by selective alignment (several threads)</td></tr>
+<tr><td>bustools</td><td>0.45.1</td><td>single-cell RNA-seq: sorting, correcting and counting the BUS records of <code>kallisto bus</code> into a matrix of cells and genes</td></tr>
 <tr><td>SAMtools</td><td>1.17</td><td>SAM/BAM files: sort, index, view, statistics, depth, faidx</td></tr>
 <tr><td>mosdepth</td><td>0.3.14</td><td>read depth per base, window or region</td></tr>
 <tr><td>BCFtools</td><td>1.10</td><td>variant calling and VCF/BCF files</td></tr>
@@ -28,6 +29,8 @@
 <tr><td>Strelka2 (<code>configureStrelkaSomaticWorkflow.py</code>, then <code>runWorkflow.py</code>)</td><td>2.9.10</td><td>somatic SNVs and indels of a tumour and its normal</td></tr>
 <tr><td>Kraken2 (<code>kraken2</code>, <code>kraken2-build</code>, <code>kraken2-inspect</code>)</td><td>2.17.2</td><td>assigning reads to taxa (metagenomics); building and inspecting databases. <code>kraken2 --version</code> says 2.17.1, as the release does</td></tr>
 <tr><td>Bracken (<code>bracken</code>, <code>bracken-build</code>)</td><td>3.1</td><td>the abundance of species (or genera …) from a Kraken2 report. Its Python programs run in the Python of Cutadapt; <code>bracken -v</code> says 3.0.1, as the release does</td></tr>
+<tr><td>Prodigal</td><td>2.6.3</td><td>finding the genes that code for proteins in genomes of bacteria and archaea, and in metagenomes</td></tr>
+<tr><td>HMMER (<code>hmmbuild</code>, <code>hmmsearch</code>, <code>hmmscan</code>, <code>hmmpress</code>, <code>phmmer</code>, <code>jackhmmer</code>, <code>nhmmer</code>, <code>nhmmscan</code>, <code>hmmalign</code>, <code>hmmfetch</code>, <code>hmmstat</code>, <code>hmmemit</code>, <code>hmmconvert</code>)</td><td>3.4</td><td>profile hidden Markov models: protein domains and families (as Pfam's), searches of proteins and DNA (one thread here)</td></tr>
 <tr><td>HTSlib (<code>bgzip</code>, <code>tabix</code>)</td><td>1.17</td><td>compressing and indexing</td></tr>
 <tr><td>bedtools</td><td>2.31.0</td><td>genomic intervals</td></tr>
 <tr><td>gffread</td><td>0.12.7</td><td>GFF/GTF files; transcript and protein sequences</td></tr>

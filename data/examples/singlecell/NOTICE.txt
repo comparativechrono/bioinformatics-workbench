@@ -1,0 +1,26 @@
+Notices for the files in this folder
+====================================
+
+Single-cell RNA-seq of mouse cells, prepared with 10x Chromium v2 (SRA run SRR8599150; public data). The reads were
+pseudoaligned by kallisto bus, which wrote BUS records: for each molecule seen, the cell's barcode, the UMI, the
+equivalence class (the transcripts that the read fits) and how often it was seen.
+
+  input.bus, matrix.ec,           a small BUS file of 34 records and the files of the kallisto reference it belongs to
+  transcripts.txt                 (2,412 equivalence classes, 865 transcripts) – unchanged test files of kb_python
+  R1.fastq, R2.fastq              2,500 read pairs of the experiment, unchanged test files of kb_python: R1 holds the
+                                  16-base cell barcode and the 10-base UMI, R2 the cDNA
+  transcripts-to-genes.txt        the gene of each of the 865 transcripts (rows of the BUStools getting_started release's
+                                  gene map, unchanged)
+  whitelist.txt                   the barcodes of the 10x v2 list (737,280) that are at most one letter from a barcode in
+                                  input.bus – all that bustools correct can choose from here; not the whole list
+  large/                          10,235 records of 358 barcodes, already corrected and sorted: the first records of the
+                                  BUStools getting_started release's output.correct.sort.bus.gz (with their equivalence
+                                  classes and transcripts numbered anew, and 102 records left out whose transcripts the
+                                  gene map does not have); whitelist.txt there lists the barcodes that occur
+
+kb_python (https://github.com/pachterlab/kb_python, commit 188d9c7): BSD 2-Clause licence, LICENSE.kb_python. The BUStools
+getting_started release: https://github.com/BUStools/getting_started/releases/tag/getting_started. The files were
+prepared by the genomics-wasm project (https://github.com/comparativechrono/genomics-wasm, commit 46c9418:
+datasets/bustools), which records every step; they are for learning how the programs work – too few cells, and the
+larger set is a part chosen by barcode order, not a sample, so nothing biological should be concluded from them. Where
+every file came from, and its SHA-256: provenance.json.

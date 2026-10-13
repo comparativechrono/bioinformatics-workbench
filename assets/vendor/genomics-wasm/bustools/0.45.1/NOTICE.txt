@@ -1,0 +1,36 @@
+bustools 0.45.1 – one program for all its commands (sort, correct, count, text, inspect, capture, whitelist or
+allowlist, umicorrect, compress, decompress and the others)
+Licence: BSD 2-Clause (LICENSE in this folder; copyright BUStools). bustools contains CRoaring 0.2.65 (Apache 2.0:
+LICENSE.CRoaring), Eigen 3.3.7 (MPL 2.0, with parts under BSD: LICENSE.eigen, LICENSE.eigen.BSD, LICENSE.eigen.README;
+built with EIGEN_MPL2_ONLY, so no part under the LGPL is in it), kseq (MIT: LICENSE.kseq), CppNumericalSolvers (MIT:
+LICENSE.CppNumericalSolvers) and LBFGSpp (MIT: LICENSE.LBFGSpp), and is linked with zlib 1.3.1 (LICENSE.zlib). The
+loader is Emscripten's runtime (MIT and NCSA: LICENSE.emscripten). THIRD_PARTY_LICENSES.txt is genomics-wasm's summary;
+the "sources/" it mentions is that project's folder.
+Upstream source: https://github.com/BUStools/bustools (commit d4d7a283dbe9d34d2106e9ba31e2566413be6a70, which is version
+0.45.1). The source code, as GitHub's archive of that commit (SHA-256
+b014317ea4501c3314ac358eb074dbbe3a10ed6daec53587f17a897e670e40df; it holds Eigen's source, which the Mozilla Public
+License asks to be offered with the program): ../../../licenses/sources/bustools-0.45.1.tar.gz. zlib 1.3.1:
+../../../licenses/sources/zlib-1.3.1.tar.gz (the same files as the archive of its tag v1.3.1 that was compiled, which
+adds only .github/ and .gitignore). The changes made to bustools:
+../../../licenses/genomics-wasm-build/tools/bustools/browser.patch.
+
+Compiled to WebAssembly by the genomics-wasm project (https://github.com/comparativechrono/genomics-wasm, commit
+46c9418): Emscripten 3.1.64, one thread, no SIMD. bustools.mjs and bustools.wasm are used here as that project built
+them. The page runs each command in a worker of its own (assets/js/threads-worker.mjs); assets/js/tools-wasm.js gives it
+its files. Everything needed to build it again is described in ../../../licenses/genomics-wasm-build/.
+
+Changes to the source (browser.patch): sort uses 64 MB of memory unless told otherwise, and at most 1 GB (upstream's
+default, 4 GB, is more than a 32-bit program can address) – the terminal turns a larger -m into -m 64M, with a note;
+sort takes one thread – the terminal turns -t N into -t 1, with a note; predict runs its per-gene work in order instead
+of in threads; two bit shifts are made safe for a 32-bit program (one of them in the BUSZ format, which stays that of
+the native program); and the mean number of reads per UMI of a cell with no reads, 0/0, is written as Linux's bustools
+writes it (-nan), whatever sign the WebAssembly engine gives that NaN. Sorting, correction, counting, UMI correction and
+compression are unchanged.
+
+Checked against bustools 0.45.1 built natively from the same source (genomics-wasm's comparison: 56 of 56 cases – every
+command, files written by one build and read by the other, errors), and in the workbench, against the native program,
+with the example data (single-cell RNA-seq of mouse cells, SRA run SRR8599150): the same BUS files, text, corrected and
+sorted records, matrices, barcode and gene lists, compressed files and messages (but for the times that sort prints),
+byte for byte – and for one file: the .ec.txt that count writes without --genecounts lists the same equivalence classes,
+and those that the matrix uses have the same numbers, but the others can be numbered in another order (bustools keeps
+them in an unordered_map, whose order depends on the C++ library: libc++ here, libstdc++ on Linux).

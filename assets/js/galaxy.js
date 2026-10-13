@@ -38,6 +38,9 @@
     ['bedgraph', 'bedgraph – values along the genome', 'bedgraph'],
     ['gff3', 'gff3 – genome annotation', 'gff3'],
     ['gtf', 'gtf – genome annotation', 'gtf'],
+    ['genbank', 'genbank – annotated sequences (GenBank)', 'genbank'],
+    ['hmm3', 'hmm3 – profile HMMs (HMMER 3)', 'hmm3'],
+    ['stockholm', 'stockholm – a multiple alignment (Stockholm)', 'stockholm'],
     ['tabular', 'tabular – a table with tab-separated columns', 'tsv'],
     ['csv', 'csv – a table with comma-separated columns', 'csv'],
     ['txt', 'txt – plain text', 'txt'],
@@ -47,13 +50,14 @@
     ['pdb', 'pdb – a 3D structure', 'pdb']
   ];
   const DOWNLOAD_EXT = Object.fromEntries(FORMATS.map((f) => [f[0], f[2]]));
-  const TEXT = ['tabular', 'txt', 'csv', 'bed', 'bedgraph', 'vcf', 'gff3', 'gtf', 'sam', 'fasta', 'fastqsanger', 'json'];
+  const TEXT = ['tabular', 'txt', 'csv', 'bed', 'bedgraph', 'vcf', 'gff3', 'gtf', 'sam', 'fasta', 'fastqsanger', 'json', 'genbank', 'hmm3', 'stockholm'];
   const FEATURES = ['bed', 'bedgraph', 'vcf', 'vcf_bgzip', 'gff3', 'gtf'];
   const GENOMIC = ['bam', 'vcf', 'vcf_bgzip', 'bed', 'bedgraph', 'gff3', 'gtf'];
   const SNIFF = [
     [/\.(fastq|fq)$/, 'fastqsanger'], [/\.(fa|fasta|fna|faa|fas|afa|mfa)$/, 'fasta'], [/\.sam$/, 'sam'], [/\.bam$/, 'bam'],
     [/\.vcf\.gz$/, 'vcf_bgzip'], [/\.vcf$/, 'vcf'], [/\.bcf$/, 'bcf'], [/\.bed$/, 'bed'], [/\.(bedgraph|bg)$/, 'bedgraph'],
-    [/\.(gff3|gff)$/, 'gff3'], [/\.gtf$/, 'gtf'], [/\.(tsv|tab|tabular)$/, 'tabular'], [/\.csv$/, 'csv'], [/\.json$/, 'json'],
+    [/\.(gff3|gff)$/, 'gff3'], [/\.gtf$/, 'gtf'], [/\.(gb|gbk|gbff|genbank)$/, 'genbank'], [/\.(hmm|hmm3)$/, 'hmm3'], [/\.(sto|stk|stockholm)$/, 'stockholm'],
+    [/\.(tsv|tab|tabular)$/, 'tabular'], [/\.csv$/, 'csv'], [/\.json$/, 'json'],
     [/\.html?$/, 'html'], [/\.(nwk|newick|tree|treefile)$/, 'newick'], [/\.(pdb|ent)$/, 'pdb'], [/\.(txt|log|md)$/, 'txt']
   ];
   /** a datatype from the name of a file – or, when the name says nothing, from its first bytes */
@@ -65,13 +69,16 @@
     if (/^@[^\n]*\n[^\n]*\n\+/.test(t)) return 'fastqsanger';
     if (/^##fileformat=VCF/.test(t)) return 'vcf';
     if (/^##gff-version 3/.test(t)) return 'gff3';
+    if (/^HMMER3\//.test(t)) return 'hmm3';
+    if (/^# STOCKHOLM 1\.0/.test(t)) return 'stockholm';
+    if (/^LOCUS {7}/.test(t)) return 'genbank';
     if (/^(HEADER|ATOM  |HETATM|REMARK)/.test(t)) return 'pdb';
     if (/^\s*[{[]/.test(t)) return 'json';
     if (/^[^\n]*\t/.test(t)) return 'tabular';
     return 'txt';
   }
   // files that are uncompressed on upload (Galaxy's tools here read them uncompressed)
-  const GUNZIP = /\.(fastq|fq|fasta|fa|fna|faa|sam|bed|gff3?|gtf|tsv|tab|txt|csv|vcf_text)\.gz$/i;
+  const GUNZIP = /\.(fastq|fq|fasta|fa|fna|faa|sam|bed|gff3?|gtf|tsv|tab|txt|csv|vcf_text|hmm|hmm3|sto|stk|gb|gbk|gbff)\.gz$/i;
 
   /* ------------------------------------------------------------------ the tools
      inputs:  {name, short, label, ext:[…], nice: 'file name' | (dataset) => name, pick?: /regex/, optional?}
@@ -81,6 +88,86 @@
      needs:   a program of the terminal – the tool is offered only if the program is there */
   const TS = 'toolshed.g2.bx.psu.edu/repos';
   const L = (tool, ins, what) => `${tool} on ${dataList(ins)}${what ? ': ' + what : ''}`;
+
+  /* HMMER: the options IUC's hmmer3 tools share (their macros.xml), and their part of the command line, in the
+     wrappers' order. --cpu is left out: here HMMER runs on one thread. */
+  const hmmNum = (v) => (/^[-+]?(\d+\.?\d*|\.\d+)([eE][-+]?\d+)?$/.test(String(v == null ? '' : v).trim()) ? String(v).trim() : '');
+  const hmmFormats = (list) => list.map(([name, label, on]) => ({ name, short: '--' + name, label: `Output Formats: ${label} (--${name})`, type: 'bool', default: on }));
+  const HMM_OUT_OPTS = [
+    { name: 'acc', short: '--acc', label: 'Prefer accessions over names in output (--acc)', type: 'bool', default: false },
+    { name: 'noali', short: '--noali', label: "Don't output alignments, so output is smaller (--noali)", type: 'bool', default: false },
+    { name: 'notextw', short: '--notextw', label: 'Unlimited ASCII text output line width (--notextw)', type: 'bool', default: false }
+  ];
+  const hmmThresholds = (dom, cut) => [
+    { name: 'repopt_sel', short: 'threshold', label: 'Threshold option', type: 'select', default: 'evalue', options: [['evalue', 'E-value (reporting threshold)'], ['score', 'Score (reporting threshold)']].concat(cut ? [['--cut_ga', "Use profile's GA gathering cutoffs (model specific threshold)"], ['--cut_nc', "Use profile's NC gathering cutoffs (model specific threshold)"], ['--cut_tc', "Use profile's TC gathering cutoffs (model specific threshold)"]] : []), help: cut ? 'Gathering cutoffs are part of a profile – those of Pfam (fn3, Pkinase) and Dfam have them; a profile built from an alignment without them has none.' : '' },
+    { name: 'E', short: '-E', label: 'E-value threshold (-E; threshold option “E-value”)', type: 'float', default: 10, help: 'Report sequences <= this E-Value threshold in output. Default: 10.0' },
+    { name: 'incE', short: '--incE', label: 'consider sequences <= this E-Value threshold as significant (--incE; optional)', type: 'text', default: '' }
+  ].concat(dom ? [
+    { name: 'domE', short: '--domE', label: 'Domains E-value threshold (--domE; threshold option “E-value”)', type: 'float', default: 10, help: 'Report domains <= this E-Value threshold in output. Default: 10.0' },
+    { name: 'incdomE', short: '--incdomE', label: 'consider domains <= this E-Value threshold as significant (--incdomE; optional)', type: 'text', default: '' }
+  ] : [], [
+    { name: 'T', short: '-T', label: 'Score Threshold (-T; threshold option “Score”)', type: 'text', default: '', help: 'Report sequences >= this score threshold in output.' }
+  ], dom ? [
+    { name: 'domT', short: '--domT', label: 'Domains Score Threshold (--domT; threshold option “Score”)', type: 'text', default: '', help: 'Report domains >= this score threshold in output.' }
+  ] : []);
+  const HMM_ACCEL = [
+    { name: 'max', short: '--max', label: 'Turn all heuristic filters off (less speed, more power) (--max)', type: 'bool', default: false, help: 'With --max the three thresholds below and --nobias are left out: HMMER takes none of them with --max (Galaxy’s tool passes them all, and its job stops).' },
+    { name: 'F1', short: '--F1', label: 'Stage 1 (MSV) threshold: promote hits w/ P <= F1 (--F1)', type: 'float', default: 0.02 },
+    { name: 'F2', short: '--F2', label: 'Stage 2 (Vit) threshold: promote hits w/ P <= F2 (--F2)', type: 'float', default: 0.001 },
+    { name: 'F3', short: '--F3', label: 'Stage 3 (Fwd) threshold: promote hits w/ P <= F3 (--F3)', type: 'float', default: 0.00001 },
+    { name: 'nobias', short: '--nobias', label: 'Turn off composition bias filter (--nobias)', type: 'bool', default: false }
+  ];
+  const hmmAdvanced = (domZ) => [
+    { name: 'nonull2', short: '--nonull2', label: 'Turn off biased composition score corrections (--nonull2)', type: 'bool', default: false },
+    { name: 'Z', short: '-Z', label: '# of comparisons done for E-value calculation (-Z; optional)', type: 'text', default: '' }
+  ].concat(domZ ? [{ name: 'domZ', short: '--domZ', label: '# of significant sequences, for domain E-value calculation (--domZ; optional)', type: 'text', default: '' }] : []);
+  const HMM_SEED = { name: 'seed', short: '--seed', label: 'RNG seed, 0 generates a random seed (--seed)', type: 'int', default: 42 };
+  const HMM_ALPHABET = (dna) => ({ name: 'input_format_select', short: 'alphabet', label: 'Format of sequence and model', type: 'select', default: dna ? '--dna' : '--amino', options: (dna ? [] : [['--amino', 'Protein']]).concat([['--dna', 'DNA'], ['--rna', 'RNA']]) });
+  /** the output tables chosen, as files of the job */
+  const hmmTables = (p, list) => list.filter((f) => p[f]).map((f) => ` --${f} ${f}.txt`).join('');
+  /** null when the options are fine, else why not */
+  const hmmCheck = (p, dom) => (p.repopt_sel === 'score' && (!hmmNum(p.T) || (dom && !hmmNum(p.domT))) ? `The threshold option “Score” needs a score threshold (-T)${dom ? ' and a domain score threshold (--domT)' : ''}.` : null);
+  /** @OFORMAT_WITH_OPTS@ (without the tables) @THRESHOLDS@ @THRESHOLDS_DOM@ @ACCEL_HEUR@ … @ADV_OPTS@ @SEED@ */
+  const hmmOpts = (p, o) => {
+    const a = [];
+    ['acc', 'noali', 'notextw'].forEach((f) => p[f] && a.push('--' + f));
+    if (o.hssi && p.hssi_select === 'singlemx') a.push(`--popen ${+p.popen >= 0 && +p.popen < 0.5 ? +p.popen : 0.02} --pextend ${+p.pextend >= 0 && +p.pextend < 1 ? +p.pextend : 0.4}`);
+    const inc = (opt, v) => (hmmNum(v) ? ` ${opt} ${hmmNum(v)}` : '');
+    if (p.repopt_sel === 'score') {
+      a.push(`-T ${hmmNum(p.T)}`);
+      if (o.dom) a.push(`--domT ${hmmNum(p.domT)}`);
+    } else if (/^--cut_(ga|nc|tc)$/.test(p.repopt_sel) && o.cut) a.push(p.repopt_sel);
+    else a.push(`-E ${hmmNum(p.E) || 10}${inc('--incE', p.incE)}` + (o.dom ? ` --domE ${hmmNum(p.domE) || 10}${inc('--incdomE', p.incdomE)}` : ''));
+    a.push(p.max ? '--max' : `--F1 ${hmmNum(p.F1) || 0.02} --F2 ${hmmNum(p.F2) || 0.001} --F3 ${hmmNum(p.F3) || 0.00001}${p.nobias ? ' --nobias' : ''}`);
+    if (o.alphabet) a.push(['--dna', '--rna'].includes(p.input_format_select) ? p.input_format_select : '--dna');
+    if (p.nonull2) a.push('--nonull2');
+    if (hmmNum(p.Z)) a.push(`-Z ${hmmNum(p.Z)}`);
+    if (o.domZ && hmmNum(p.domZ)) a.push(`--domZ ${hmmNum(p.domZ)}`);
+    if (o.lengths) {
+      if (hmmNum(p.w_beta)) a.push(`--w_beta ${hmmNum(p.w_beta)}`);
+      if (/^\d+$/.test(String(p.w_length).trim())) a.push(`--w_length ${String(p.w_length).trim()}`);
+    }
+    a.push(`--seed ${Math.max(0, int(p.seed, 42))}`);
+    return ' ' + a.join(' ');
+  };
+  /** a job that stops with a message (Galaxy's form would not let it start) */
+  const refuse = (msg) => `echo ${shq(msg)} >&2 && false`;
+  const HMM_HSSI = [
+    { name: 'hssi_select', short: 'single sequences', label: 'Options for handling single sequence inputs', type: 'select', default: 'false', options: [['false', 'Disable'], ['singlemx', 'Use substitution score matrix for single-sequence inputs']], help: 'With a substitution score matrix: the gap open and extend probabilities below.' },
+    { name: 'popen', short: '--popen', label: 'Gap open probability (--popen)', type: 'float', default: 0.02 },
+    { name: 'pextend', short: '--pextend', label: 'Gap extend probability (--pextend)', type: 'float', default: 0.4 }
+  ];
+  const HMM_TABLES_DOM = [['tblout', 'Table of per-sequence hits', true], ['domtblout', 'Table of per-domain hits', true], ['pfamtblout', 'Table of hits and domains in Pfam format', true]];
+  /** the outputs of hmmsearch, hmmscan and phmmer (IUC: output_dom_pfam) */
+  const hmmOutputsDom = (tool) => [
+    { name: 'output', short: 'output', ext: 'txt', file: 'output.txt', label: (ins) => L(tool, ins) },
+    { name: 'tblout', short: 'per-sequence hits', ext: 'txt', file: 'tblout.txt', when: (i, p) => !!p.tblout, label: (ins) => L(tool, ins, 'per-sequence hits from HMM matches') },
+    { name: 'domtblout', short: 'per-domain hits', ext: 'txt', file: 'domtblout.txt', when: (i, p) => !!p.domtblout, label: (ins) => L(tool, ins, 'per-domain hits from HMM matches') },
+    { name: 'pfamtblout', short: 'Pfam-style hits', ext: 'txt', file: 'pfamtblout.txt', when: (i, p) => !!p.pfamtblout, label: (ins) => L(tool, ins, 'per-sequence/per-domain hits from HMM matches') }
+  ];
+  const MINIFAM = ['globins4', 'fn3', 'Pkinase'].map((n) => `/data/examples/hmmer/${n}.hmm`);
+  const dsName = (ins, name) => ((ins.find((x) => x.name === name) || {}).ds || {}).name || name;
+
   const TOOLS = [
     /* ---------- Quality control ---------- */
     {
@@ -607,6 +694,140 @@
         return `est_abundance.py -i ${i.input} -k /data/examples/metagenomics/db/database151mers.kmer_distrib -l ${level} -t ${int(p.threshold, 10)} -o report.tsv --out-report bracken.report${p.logfile_output ? ' | tee log.txt' : ''}`;
       },
       help: '<p>Kraken2 assigns many reads only to a genus or a family, where species share their DNA. Bracken moves those reads down to the level chosen – species, by default – in proportion to how likely each species is to give reads that end there (the k-mer distribution of the database), and estimates how many reads each species has. The <b>Report</b> has a line per taxon: Kraken2\'s reads, the reads added, the new estimate and its share of all the reads estimated at that level.</p>'
+    },
+    /* ---------- Annotation: genes, and profile HMMs ---------- */
+    {
+      id: 'prodigal', toolId: `${TS}/iuc/prodigal/prodigal/2.6.3+galaxy0`, name: 'Prodigal Gene Predictor', desc: 'A tool for gene prediction in microbial genomes', version: '2.6.3+galaxy0', section: 'Annotation', needs: 'prodigal',
+      requirements: [['prodigal', '2.6.3']],
+      inputs: [{ name: 'input_fa', short: 'genome', label: 'Specify input file (-i)', ext: ['fasta'], nice: 'input.fasta' }],
+      params: [
+        { name: 'out_format', short: 'format', label: 'Specify output format (-f)', type: 'select', default: 'gbk', options: [['gbk', 'GBK (default)'], ['gff', 'GFF'], ['sco', 'SCO']], help: 'GBK: features in the style of GenBank; GFF: GFF3, for genome browsers; SCO: the start, end and strand of each gene. (Galaxy’s tool also lists SQN, which Prodigal 2.6.3 does not have: it stops with “Invalid output format specified.”)' },
+        { name: 'procedure', short: 'mode', label: 'Specify mode (-p)', type: 'select', default: 'single', options: [['single', 'Single : Single genome, any number of sequences (default)'], ['meta', 'Meta : Anonymous sequences, analyze using preset training files, ideal for metagenomic data or single short sequences']] },
+        { name: 'trans_table', short: 'genetic code', label: 'Specify a translation table to use (-g)', type: 'select', default: '11', options: [['11', '11 : Standard Bacteria/Archaea (default)'], ['4', '4 : Mycoplasma/Spiroplasma']] },
+        { name: 'closed', short: '-c', label: 'Closed ends (-c)', type: 'bool', default: false, help: 'Closed ends. Do not allow partial genes at edges of sequence' },
+        { name: 'force_nonsd', short: '-n', label: 'Force Prodigal to scan for motifs (-n)', type: 'bool', default: false, help: 'Do not use the Shine-Dalgarno RBS finder and instead force Prodigal to scan for motifs' },
+        { name: 'masked_seq', short: '-m', label: 'Treat runs of N as masked sequence (-m)', type: 'bool', default: false, help: "Treat runs of N as masked sequence; don't build genes across them" }
+      ],
+      outputs: [
+        { name: 'output', short: 'coordinates', ext: (p) => (p.out_format === 'gff' ? 'gff3' : 'genbank'), file: 'output', label: (ins) => L('Prodigal Gene Predictor', ins, 'coordinates') },
+        { name: 'output_faa', short: 'proteins', ext: 'fasta', file: 'output.faa', label: (ins) => L('Prodigal Gene Predictor', ins, 'protein translations file') },
+        { name: 'output_fnn', short: 'genes', ext: 'fasta', file: 'output.fnn', label: (ins) => L('Prodigal Gene Predictor', ins, 'nucleotide sequences file') },
+        { name: 'output_start', short: 'starts', ext: 'tabular', file: 'output.start', label: (ins) => L('Prodigal Gene Predictor', ins, 'complete starts file') }
+      ],
+      command: (i, p) => {
+        const f = ['gbk', 'gff', 'sco'].includes(p.out_format) ? p.out_format : 'gbk';
+        return `prodigal -i ${i.input_fa} -o output -f ${f} -p ${p.procedure === 'meta' ? 'meta' : 'single'} -g ${p.trans_table === '4' ? 4 : 11} -a output.faa -d output.fnn -s output.start${p.closed ? ' -c' : ''}${p.force_nonsd ? ' -n' : ''}${p.masked_seq ? ' -m' : ''}`;
+      },
+      help: '<p>Finds the genes that code for proteins in the genome of a bacterium or an archaeon. In mode <b>Single</b> Prodigal first learns the genome – its GC content, codon usage, start codons and ribosome binding sites – from the sequence itself, so it needs no training data: give it the whole genome, contigs and all (100,000 bases or more), not one gene. Mode <b>Meta</b> uses models that come with Prodigal: for a metagenome, or a sequence too short to learn from. The <b>coordinates</b> list the genes (GenBank-style by default, or GFF); the <b>protein translations</b> and <b>nucleotide sequences</b> have one record per gene; the <b>complete starts</b> file has every possible start of every gene, with its scores.</p>'
+    },
+    {
+      id: 'hmmer_hmmbuild', toolId: `${TS}/iuc/hmmer_hmmbuild/hmmer_hmmbuild/3.4+galaxy0`, name: 'hmmbuild', desc: 'Build a profile HMM from an input multiple alignment', version: '3.4+galaxy0', section: 'Annotation', needs: 'hmmbuild',
+      requirements: [['hmmer', '3.4']],
+      inputs: [{ name: 'msafile', short: 'alignment', label: 'Multiple Sequence Alignment (Stockholm, or aligned FASTA)', ext: ['stockholm', 'fasta'], nice: (d) => 'msafile.' + DOWNLOAD_EXT[d.ext] }],
+      params: [
+        { name: 'hmmname', short: '-n', label: 'Name for the HMM (-n; optional)', type: 'text', default: '', help: 'Without one, the profile takes the name of the alignment (its #=GF ID line, in Stockholm), or else that of its file in the job – here “msafile”.' },
+        HMM_ALPHABET(false),
+        { name: 'model_construction_strategy_select', short: 'construction', label: 'Model Construction Strategy', type: 'select', default: 'fast', options: [['fast', 'Assign columns with >= symfrac residues as consensus (--fast)'], ['hand', 'Manual construction (requires reference annotation) (--hand)']] },
+        { name: 'symfrac', short: '--symfrac', label: 'Sets sym fraction controlling --fast construction (--symfrac)', type: 'float', default: 0.5 },
+        { name: 'fragthresh', short: '--fragthresh', label: 'Fraction of alignment length, under which sequences are excluded (--fragthresh)', type: 'float', default: 0.5, help: 'HMMER infers fragments if the sequence length L is less than or equal to a fraction x times the alignment length in columns' },
+        { name: 'arsws_select', short: 'weighting', label: 'Alternative relative sequence weighting strategies', type: 'select', default: '--wpb', options: [['--wpb', 'Henikoff position-based weights (--wpb)'], ['--wgsc', 'Gerstein/Sonnhammer/Chothia tree weights (--wgsc)'], ['--wblosum', 'Henikoff simple filter weights (--wblosum)'], ['--wnone', "don't do any relative weighting; set all to 1 (--wnone)"], ['--wgiven', 'use weights as given in MSA file (--wgiven)']] },
+        { name: 'wid', short: '--wid', label: 'Set identity cutoff (--wid; with --wblosum)', type: 'float', default: 0.62 },
+        { name: 'aeews_select', short: 'effective number', label: 'Alternative effective sequence weighting strategies', type: 'select', default: '', options: [['', 'Disabled'], ['enone', 'No effective seq # weighting: just use nseq (--enone)']], help: 'Disabled: HMMER’s default, --eent (entropy weighting).' },
+        { name: 'aps_select', short: 'prior', label: 'Alternative Prior Strategies', type: 'select', default: '', options: [['', 'Unspecified'], ['--pnone', "Don't use any prior; parameters are frequencies (--pnone)"], ['--plaplace', 'Use a Laplace +1 prior (--plaplace)']] },
+        HMM_SEED
+      ],
+      outputs: [{ name: 'hmmout', short: 'HMM', ext: 'hmm3', file: 'output.hmm', label: (ins) => `HMM profile from ${dsName(ins, 'msafile')}` }],
+      command: (i, p) => {
+        const name = String(p.hmmname || '').trim();
+        const sym = hmmNum(p.symfrac) || 0.5, frag = hmmNum(p.fragthresh) || 0.5;
+        const w = ['--wpb', '--wgsc', '--wblosum', '--wnone', '--wgiven'].includes(p.arsws_select) ? p.arsws_select : '--wpb';
+        return `hmmbuild${name ? ' -n ' + shq(name) : ''} ${['--dna', '--rna'].includes(p.input_format_select) ? p.input_format_select : '--amino'}`
+          + (p.model_construction_strategy_select === 'hand' ? ' --hand' : ` --fast --symfrac ${sym}`) + ` --fragthresh ${frag}`
+          + ` ${w}${w === '--wblosum' ? ' --wid ' + (hmmNum(p.wid) || 0.62) : ''}${p.aeews_select === 'enone' ? ' --enone' : ''}${['--pnone', '--plaplace'].includes(p.aps_select) ? ' ' + p.aps_select : ''}`
+          + ` --seed ${Math.max(0, int(p.seed, 42))} output.hmm ${i.msafile}`;
+      },
+      help: '<p>Builds a profile HMM from a multiple alignment: for each column, how likely each residue is there, and how likely an insertion or a deletion. hmmsearch, hmmscan, nhmmer and hmmalign search and align with it. The alignment must be aligned (Stockholm, or FASTA with gaps); for DNA or RNA choose the format of sequence and model. With <b>--hand</b> the columns marked in the alignment’s reference line (#=GC RF) become the profile’s.</p>'
+    },
+    {
+      id: 'hmmer_hmmsearch', toolId: `${TS}/iuc/hmmer_hmmsearch/hmmer_hmmsearch/3.4+galaxy0`, name: 'hmmsearch', desc: 'search profile(s) against a sequence database', version: '3.4+galaxy0', section: 'Annotation', needs: 'hmmsearch',
+      requirements: [['hmmer', '3.4']],
+      inputs: [
+        { name: 'hmmfile', short: 'HMM', label: 'HMM model', ext: ['hmm3'], nice: 'hmmfile.hmm' },
+        { name: 'seqdb', short: 'sequences', label: 'Sequence database to search against', ext: ['fasta'], nice: 'seqdb.fasta' }
+      ],
+      params: [].concat(hmmFormats(HMM_TABLES_DOM), HMM_OUT_OPTS, hmmThresholds(true, true), HMM_ACCEL, hmmAdvanced(true), [HMM_SEED]),
+      outputs: hmmOutputsDom('HMMSEARCH'),
+      command: (i, p) => hmmCheck(p, true) ? refuse('hmmsearch: ' + hmmCheck(p, true)) : `hmmsearch${hmmTables(p, ['tblout', 'domtblout', 'pfamtblout'])}${hmmOpts(p, { dom: true, cut: true, domZ: true })} ${i.hmmfile} ${i.seqdb} > output.txt`,
+      help: '<p>Searches a database of sequences with one or more profile HMMs (from hmmbuild, or Pfam’s), and ranks the sequences that match by <b>E-value</b> – the number of hits this good expected by chance in a database of this size. The output has the hits, their domains and the alignments to the profile; the tables have one line per sequence (per-sequence hits) or per domain (per-domain hits), ready for Select, Cut or Python. Their columns are separated by spaces, not tabs.</p>'
+    },
+    {
+      id: 'hmmer_hmmscan', toolId: `${TS}/iuc/hmmer_hmmscan/hmmer_hmmscan/3.4+galaxy0`, name: 'hmmscan', desc: 'search protein sequence(s) against a protein profile database', version: '3.4+galaxy0', section: 'Annotation', needs: 'hmmscan',
+      requirements: [['hmmer', '3.4']],
+      inputs: [
+        { name: 'hmmfile', short: 'HMM database', label: 'HMM model (with “Use a HMM database from history”)', ext: ['hmm3'], nice: 'localref.hmm', optional: true },
+        { name: 'seqfile', short: 'sequences', label: 'Sequence file', ext: ['fasta'], nice: 'seqfile.fasta' }
+      ],
+      params: [].concat([
+        { name: 'input_hmm_source', short: 'database from', label: 'Use a built-in HMM model database or own from your history', type: 'select', default: 'indexed', options: [['indexed', 'Use a built-in HMM model database'], ['history', 'Use a HMM database from history']] },
+        { name: 'index', short: 'database', label: 'Select a HMM model database (built-in)', type: 'select', default: 'minifam', options: [['minifam', 'Minifam: globins4, fn3 and Pkinase (the HMMER tutorial)']], help: 'On a Galaxy server the administrators install the databases (Pfam-A …). Here there are the three profiles of the HMMER tutorial, in /data/examples/hmmer.' }
+      ], hmmFormats(HMM_TABLES_DOM), HMM_OUT_OPTS, hmmThresholds(true, true), HMM_ACCEL, hmmAdvanced(true), [HMM_SEED]),
+      outputs: hmmOutputsDom('HMMSCAN'),
+      command: (i, p) => {
+        if (hmmCheck(p, true)) return refuse('hmmscan: ' + hmmCheck(p, true));
+        const own = p.input_hmm_source === 'history';
+        if (own && !i.hmmfile) return refuse('hmmscan: choose the HMM model from the history (an hmm3 dataset), or a built-in database.');
+        const db = own ? 'localref.hmm' : 'minifam.hmm';
+        return (own ? 'hmmpress localref.hmm' : `cat ${MINIFAM.join(' ')} > minifam.hmm && hmmpress minifam.hmm`)
+          + ` && hmmscan${hmmTables(p, ['tblout', 'domtblout', 'pfamtblout'])}${hmmOpts(p, { dom: true, cut: true, domZ: true })} ${db} ${i.seqfile} > output.txt`;
+      },
+      help: '<p>The other way round from hmmsearch: each sequence is searched against a collection of profiles, such as Pfam’s, to see which domains it has. The built-in database here is the small one of the HMMER tutorial: three Pfam families – globins, fibronectin type III (fn3) and protein kinase. A collection of your own (an hmm3 dataset with one profile or more; Concatenate datasets joins them) is first prepared with hmmpress, as Galaxy does.</p>'
+    },
+    {
+      id: 'hmmer_phmmer', toolId: `${TS}/iuc/hmmer_phmmer/hmmer_phmmer/3.4+galaxy0`, name: 'phmmer', desc: 'search a protein sequence against a protein database (BLASTP-like)', version: '3.4+galaxy0', section: 'Annotation', needs: 'phmmer',
+      requirements: [['hmmer', '3.4']],
+      inputs: [
+        { name: 'seqfile', short: 'query', label: 'Protein sequence to search with', ext: ['fasta'], nice: 'seqfile.fasta' },
+        { name: 'seqdb', short: 'database', label: 'Sequence Database', ext: ['fasta'], nice: 'seqdb.fasta' }
+      ],
+      params: [].concat(hmmFormats(HMM_TABLES_DOM), HMM_OUT_OPTS, HMM_HSSI, hmmThresholds(true, false), HMM_ACCEL, hmmAdvanced(true), [HMM_SEED]),
+      outputs: hmmOutputsDom('PHMMER'),
+      command: (i, p) => hmmCheck(p, true) ? refuse('phmmer: ' + hmmCheck(p, true)) : `phmmer${hmmTables(p, ['tblout', 'domtblout', 'pfamtblout'])}${hmmOpts(p, { dom: true, hssi: true, domZ: true })} ${i.seqfile} ${i.seqdb} > output.txt`,
+      help: '<p>Searches a protein database with a protein, as BLASTP does, but with HMMER’s scores and E-values. Each sequence of the first dataset is a query of its own.</p>'
+    },
+    {
+      id: 'hmmer_nhmmer', toolId: `${TS}/iuc/hmmer_nhmmer/hmmer_nhmmer/3.4+galaxy0`, name: 'nhmmer', desc: 'search a DNA model or alignment against a DNA database (BLASTN-like)', version: '3.4+galaxy0', section: 'Annotation', needs: 'nhmmer',
+      requirements: [['hmmer', '3.4']],
+      inputs: [
+        { name: 'hmmfile', short: 'HMM', label: 'HMM model', ext: ['hmm3'], nice: 'hmmfile.hmm' },
+        { name: 'seqfile', short: 'target', label: 'Target sequence file', ext: ['fasta'], nice: 'seqfile.fasta' }
+      ],
+      params: [].concat(hmmFormats([['tblout', 'Table of per-sequence hits', true], ['dfamtblout', 'Table of hits in Dfam format', true], ['aliscoresout', 'Scores for each position in each alignment to file', false]]), HMM_OUT_OPTS, HMM_HSSI, hmmThresholds(false, true), HMM_ACCEL, [HMM_ALPHABET(true)], hmmAdvanced(false), [
+        { name: 'w_beta', short: '--w_beta', label: 'Tail mass at which window length is determined (--w_beta; optional)', type: 'text', default: '' },
+        { name: 'w_length', short: '--w_length', label: 'Window Length (--w_length; optional)', type: 'text', default: '' }
+      ], [HMM_SEED]),
+      outputs: [
+        { name: 'output', short: 'output', ext: 'txt', file: 'output.txt', label: (ins) => L('NHMMER', ins) },
+        { name: 'tblout', short: 'hits', ext: 'txt', file: 'tblout.txt', when: (i, p) => !!p.tblout, label: (ins) => L('NHMMER', ins, 'per-sequence hits from HMM matches') },
+        { name: 'dfamtblout', short: 'Dfam-style hits', ext: 'txt', file: 'dfamtblout.txt', when: (i, p) => !!p.dfamtblout, label: (ins) => L('NHMMER', ins, 'per-sequence/per-domain hits from HMM matches') },
+        { name: 'aliscoresout', short: 'scores', ext: 'txt', file: 'aliscoresout.txt', when: (i, p) => !!p.aliscoresout, label: (ins) => L('NHMMER', ins, 'scores for positional matches') }
+      ],
+      command: (i, p) => hmmCheck(p, false) ? refuse('nhmmer: ' + hmmCheck(p, false)) : `nhmmer${hmmTables(p, ['tblout', 'dfamtblout', 'aliscoresout'])}${hmmOpts(p, { cut: true, hssi: true, alphabet: true, lengths: true })} ${i.hmmfile} ${i.seqfile} > output.txt`,
+      help: '<p>Searches DNA with a DNA profile HMM – such as those of Dfam, for repeats and transposons – on both strands. The hits are ranked by E-value; the tables give where each hit is and on which strand (a hit on the minus strand runs from the higher coordinate to the lower). Galaxy’s tool sets the filters of hmmsearch (--F2 0.001, --F3 1e-05), which are a little stricter than those nhmmer has by default.</p>'
+    },
+    {
+      id: 'hmmer_hmmalign', toolId: `${TS}/iuc/hmmer_hmmalign/hmmer_hmmalign/3.4+galaxy0`, name: 'hmmalign', desc: 'align sequences to a profile HMM', version: '3.4+galaxy0', section: 'Annotation', needs: 'hmmalign',
+      requirements: [['hmmer', '3.4']],
+      inputs: [
+        { name: 'seq', short: 'sequences', label: 'Sequence to align against model', ext: ['fasta'], nice: 'seq.fasta' },
+        { name: 'hmmfile', short: 'HMM', label: 'HMM model', ext: ['hmm3'], nice: 'hmmfile.hmm' }
+      ],
+      params: [
+        { name: 'trim', short: '--trim', label: 'trim terminal tails of nonaligned residues from alignment (--trim)', type: 'bool', default: false },
+        HMM_ALPHABET(false)
+      ],
+      outputs: [{ name: 'output', short: 'alignment', ext: 'stockholm', file: 'output.sto', label: (ins) => `Alignment of ${dsName(ins, 'seq')} to ${dsName(ins, 'hmmfile')}` }],
+      command: (i, p) => `hmmalign${p.trim ? ' --trim' : ''} ${['--dna', '--rna'].includes(p.input_format_select) ? p.input_format_select : '--amino'} --outformat stockholm ${i.hmmfile} ${i.seq} > output.sto`,
+      help: '<p>Aligns sequences to a profile HMM, one by one, which makes a multiple alignment of them all (Stockholm format). Each sequence should hold one copy of the domain: residues that do not fit the profile are pushed to the ends – or removed, with --trim. The HMM should have one profile; if it has more, the first is used.</p>'
     },
     {
       id: 'bcftools_filter', toolId: `${TS}/iuc/bcftools_filter/bcftools_filter/1.10`, name: 'bcftools filter', desc: 'Apply fixed-threshold filters', version: '1.10', section: 'Variant calling', needs: 'bcftools',
@@ -1605,6 +1826,23 @@
           const t = await read();
           d.info = `${(t.match(/^ATOM  /gm) || []).length} atoms`;
           d.peek = lines(t, 2);
+        } else if (d.ext === 'hmm3') {
+          const t = await read();
+          const names = (t.match(/^NAME  +\S+/gm) || []).map((l) => l.split(/\s+/)[1]);
+          const lengths = (t.match(/^LENG  +\d+/gm) || []).map((l) => l.split(/\s+/)[1]);
+          d.info = `${names.length} profile HMM${names.length === 1 ? '' : 's'}` + (names.length ? ': ' + names.slice(0, 4).map((n, k) => `${n} (${lengths[k] || '?'} match states)`).join(', ') + (names.length > 4 ? ', …' : '') : '');
+          d.peek = lines(t.split('\n').filter((l) => /^(HMMER3|NAME|ACC|DESC|LENG|ALPH|NSEQ) /.test(l)).slice(0, 6).join('\n'), 6);
+        } else if (d.ext === 'stockholm') {
+          const t = await read();
+          const seqs = new Set(t.split('\n').filter((l) => l && !l.startsWith('#') && !l.startsWith('//')).map((l) => l.split(/\s+/)[0]));
+          d.info = `an alignment of ${MG.fmt(seqs.size)} sequence${seqs.size === 1 ? '' : 's'}`;
+          d.peek = lines(t.split('\n').filter((l) => l && !l.startsWith('#') && !l.startsWith('//')).join('\n'), 3, 80);
+        } else if (d.ext === 'genbank') {
+          const t = await read();
+          const cds = (t.match(/^ {5}CDS {13}/gm) || []).length;
+          const records = (t.match(/^\/\/\s*$/gm) || []).length;
+          d.info = `${MG.fmt(records)} record${records === 1 ? '' : 's'}, ${MG.fmt(cds)} CDS`;
+          d.peek = lines(t, 4);
         } else {
           const t = await read();
           const L2 = t.split('\n').filter(Boolean);
