@@ -1,0 +1,34 @@
+{
+ "description": "ATAC-seq fragments of baker's yeast (Saccharomyces cerevisiae, sacCer3 positions): those on chromosome I of the file of MACS's own tests of HMMRATAC – SRA run SRR1822137 (GEO GSM1621323, 'S. cerevisiae lin0a'; study SRP055676 / GSE66386: Schep et al. 2015, Genome Research 25: 1757–1770, doi:10.1101/gr.192294.115), as MACS's three-column BEDPE: chromosome, start and end of each fragment.",
+ "source": {
+  "repository": "https://github.com/macs3-project/MACS",
+  "tag": "v3.0.5",
+  "commit": "c5443190e3edfeb301cc94acf450e2b2c026a223",
+  "folder": "test/",
+  "licence": "BSD-3-Clause (the repository; its test data has no licence of its own) – LICENSE.MACS3",
+  "retrieved": "2026-10-13"
+ },
+ "files": {
+  "yeast_SRR1822137_chrI.bedpe.gz": {
+   "from": {
+    "member": "test/yeast_500k_SRR1822137.bedpe.gz",
+    "url": "https://raw.githubusercontent.com/macs3-project/MACS/c5443190e3edfeb301cc94acf450e2b2c026a223/test/yeast_500k_SRR1822137.bedpe.gz",
+    "bytes": 1829813,
+    "sha256": "e501d404c31da397affc92427be25d6a2b29d0d993fc4e7b61f8976c9bfe6eb9",
+    "gitBlob": "b89890914ce71e412bb156eaaa9c1c0438de6b20",
+    "fragments": 467908
+   },
+   "change": "the 5,771 lines whose first field is chrI, in their order, compressed again with gzip (Python's gzip, level 9, no name, time 0) – as genomics-wasm's scripts/fetch-macs3-test-data.py makes datasets/macs3/macs3/atac-chrI.bedpe.gz, which is byte for byte this file",
+   "bytes": 27664,
+   "sha256": "bebb98814787e7e149b0d9963ad98fdb4b3dbf4a6f0801bbf4540a766c9fb163"
+  },
+  "LICENSE.MACS3": {
+   "member": "LICENSE",
+   "url": "https://raw.githubusercontent.com/macs3-project/MACS/c5443190e3edfeb301cc94acf450e2b2c026a223/LICENSE",
+   "bytes": 1526,
+   "sha256": "6b642122b1286229372eaef08c353b76f3bfa687e6c2057339229c1293a96ddc",
+   "gitBlob": "42dbbcb5ad79f1f638965d29775adfa1bfc59e36",
+   "change": "none"
+  }
+ }
+}

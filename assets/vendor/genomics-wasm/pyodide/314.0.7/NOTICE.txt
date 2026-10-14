@@ -1,14 +1,27 @@
 Pyodide 314.0.7 – CPython 3.14.2 compiled to WebAssembly with Emscripten 5.0.3 – unchanged: the Python of Cutadapt
-(../../cutadapt/5.2/) and of Bracken's Python programs (../../bracken/3.1/)
-The files of the release pyodide-core-314.0.7 (https://github.com/pyodide/pyodide/releases/tag/314.0.7) that the two
-need: pyodide.mjs, pyodide.asm.mjs, pyodide.asm.wasm, python_stdlib.zip and pyodide-lock.json. No other package of
-Pyodide's is loaded. One copy serves both: assets/js/python-worker.mjs is given this folder, and checks that the
-versions of Pyodide and Python are those that the tool's manifest names.
+(../../cutadapt/5.2/), of Bracken's Python programs (../../bracken/3.1/) and of MACS3 (../../macs3/3.0.5/)
+The files of the release pyodide-core-314.0.7 (https://github.com/pyodide/pyodide/releases/tag/314.0.7) that they need:
+pyodide.mjs, pyodide.asm.mjs, pyodide.asm.wasm, python_stdlib.zip and pyodide-lock.json. One copy serves all three:
+assets/js/python-worker.mjs is given this folder, and checks that the versions of Pyodide and Python are those that the
+tool's manifest names.
+
+Next to them, the thirteen packages of Pyodide's own distribution of the same release that MACS3 needs, unchanged – the
+wheels that Pyodide's catalogue (pyodide-lock.json) names, with the SHA-256 it gives: NumPy 2.4.6, SciPy 1.18.0,
+pandas 3.0.2, scikit-learn 1.8.0, h5py 3.13.0, joblib 1.5.3, threadpoolctl 3.6.0, python-dateutil 2.9.0.post0,
+pytz 2026.1.post1, tzdata 2025.3, six 1.17.0, packaging 26.1 and pkgconfig 1.6.0 (Pyodide built them from their sources
+with its recipes, pyodide-recipes 314-20260911). MACS3's manifest lists them; the worker checks each against it and
+against the catalogue before Python loads any of them, and loads no other package. Cutadapt and Bracken do not use them.
 
 Licences: Pyodide and hiwire are under the Mozilla Public License 2.0; CPython under the PSF licence; Emscripten's
 runtime under MIT and NCSA; the libraries in it – libffi, xz, zstd, SQLite, bzip2 and zlib – under their own
 (permissive) licences. runtime-notices/ holds their notices, unchanged, as genomics-wasm ships them with Bracken
-(runtime-notices/README.md says what each is; runtime-notices/manifest.json gives their SHA-256); Cutadapt comes with
-the same notices (../../cutadapt/5.2/runtime-notices/). The source code of Pyodide and hiwire is in
-../../../licenses/sources/ (pyodide-314.0.7.tar.gz, hiwire-6a1e67280a15d929ebeceee54a6358c9c8d5f697.tar.gz).
-Upstream source: https://github.com/pyodide/pyodide (tag 314.0.7).
+(runtime-notices/README.md says what each is; runtime-notices/manifest.json gives their SHA-256); Cutadapt and MACS3
+come with the same notices (../../cutadapt/5.2/runtime-notices/, ../../macs3/3.0.5/runtime-notices/). The thirteen
+packages are under BSD, MIT and Apache 2.0 licences, and some hold compiled libraries – OpenBLAS with LAPACK and libf2c
+(SciPy), Boost, HDF5 (h5py) and zlib: their licence files and notices are in ../../macs3/3.0.5/scientific-notices/ (a
+folder for each package, and one for its wheel; ../../macs3/3.0.5/THIRD_PARTY_LICENSES.txt lists them). Pyodide's
+recipes are under the Mozilla Public License 2.0. The source code of Pyodide, hiwire and the recipes is in
+../../../licenses/sources/ (pyodide-314.0.7.tar.gz, hiwire-6a1e67280a15d929ebeceee54a6358c9c8d5f697.tar.gz,
+pyodide-recipes-314-20260911.tar.gz).
+Upstream source: https://github.com/pyodide/pyodide (tag 314.0.7) and https://github.com/pyodide/pyodide-recipes (tag
+314-20260911).

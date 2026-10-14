@@ -1,12 +1,12 @@
 /* Real, pinned programs compiled to WebAssembly (Biowasm builds; Bowtie 2, diff and cmp built for
  * this practical; BWA, BWA-MEM2, HISAT2, FreeBayes, StringTie, kallisto, mosdepth, featureCounts, Salmon, Cutadapt,
- * LoFreq, SomaticSniper, Strelka2, Kraken2, Bracken, Prodigal, HMMER, bustools and PLINK 2 from the genomics-wasm
+ * MACS3, LoFreq, SomaticSniper, Strelka2, Kraken2, Bracken, Prodigal, HMMER, bustools and PLINK 2 from the genomics-wasm
  * ports). One shared filesystem backs the terminal and the AI agent. Pipes use byte-preserving temporary files (run one
  * after another, not as concurrent processes). Aioli's local execIO patch binds real file descriptors and reports each
- * exit status. featureCounts, Salmon, PLINK 2, Cutadapt, LoFreq, SomaticSniper, Strelka2's, Kraken2's and Bracken's
+ * exit status. featureCounts, Salmon, PLINK 2, Cutadapt, MACS3, LoFreq, SomaticSniper, Strelka2's, Kraken2's and Bracken's
  * programs, Prodigal, HMMER and bustools run as genomics-wasm built them: each command in a worker of its own
  * (threads-worker.mjs; python-worker.mjs for the Python
- * programs – Cutadapt, Bracken's), with the files it needs, and what it writes comes back into the shared file system
+ * programs – Cutadapt, MACS3, Bracken's), with the files it needs, and what it writes comes back into the shared file system
  * (see execWorker). lofreq somatic and Strelka's runWorkflow.py are workflows of several such commands (somatic.js), and
  * so are Kraken2's and Bracken's commands, wrapper scripts upstream (metagenomics.js).
  */
@@ -70,6 +70,12 @@
     // (metagenomics.js); Bracken's Python programs in the Python that comes with them, as Cutadapt's
     kraken2:{name:'kraken2',module:'kraken2/2.17.2/classify.mjs',outputs:()=>[],flow:()=>MG.metagenomics&&MG.metagenomics.kraken2},
     bracken:{name:'bracken',module:'bracken/3.1/manifest.json',worker:'assets/js/python-worker.mjs',pyodide:'pyodide/314.0.7/',outputs:()=>[],flow:()=>MG.metagenomics&&MG.metagenomics.bracken},
+    // MACS3 (the peaks of ChIP-seq, ATAC-seq …): a Python program too, in the same Python – with NumPy, SciPy,
+    // scikit-learn, pandas, h5py and AnnData (Pyodide's own packages, next to the shared Python) and the two wheels
+    // compiled for it (hmmlearn, MACS3). Its options that name what it writes: --outdir, -o (one file; three for
+    // bdgdiff, several for bdgcmp), --o-prefix, -n (the prefix of callpeak's and hmmratac's files) and --rfile
+    // (prewarm: after a command, the next one's worker gets its Python ready in the background – see W.prewarm)
+    macs3:{name:'macs3',module:'macs3/3.0.5/manifest.json',worker:'assets/js/python-worker.mjs',pyodide:'pyodide/314.0.7/',prewarm:true,outputs:()=>['--outdir','-o','--ofile','--o-prefix','-n','--name','--rfile']},
     // Prodigal (the genes of bacteria and archaea) and bustools (single-cell BUS files): one thread each, in any page.
     // Prodigal reads a genome from its standard input twice (it learns the genome's model first): see prodigalFlow
     prodigal:{name:'prodigal',module:'prodigal/2.6.3/prodigal.mjs',outputs:()=>PRODIGAL_OUTS,flow:()=>prodigalFlow},
@@ -198,11 +204,13 @@
   // files of hmmpress, and the SSI index of hmmfetch --index – of the pressed file, .h3m.ssi, when it is pressed) – handed
   // over with it
   const INDEX_SUFFIXES=['.bai','.csi','.crai','.fai','.gzi','.tbi','.h3m','.h3i','.h3f','.h3p','.ssi','.h3m.ssi'];
+  // how long a worker made ready in advance (W.prewarm) waits for its command before it is stopped
+  const SPARE_MS=15*60*1000;
   const W = {
     ready:false, loading:null, cli:null, pipeN:0, mountN:0,
     synced:new Map(), placed:new Map(), managed:new Set(), dirs:new Set(), gone:[], denied:[], refused:[],
     gen:0, kept:new Map(), keepN:0,
-    versions:{fastp:'0.20.1',minimap2:'2.22',bowtie2:'2.4.2',bwa:'0.7.19','bwa-mem2':'2.2.1',hisat2:'2.2.2',freebayes:'1.3.6',stringtie:'3.0.3',kallisto:'0.52.0',mosdepth:'0.3.14',featurecounts:'2.1.1',salmon:'2.8.0',cutadapt:'5.2',lofreq:'2.1.5',somaticsniper:'1.0.5.0',strelka2:'2.9.10',kraken2:'2.17.2',bracken:'3.1',prodigal:'2.6.3',hmmer:'3.4',bustools:'0.45.1',plink2:'2.0.0-b.1-dev',samtools:'1.17',bcftools:'1.10',htslib:'1.17',seqtk:'1.4',bedtools:'2.31.0',jq:'1.7',gawk:'5.1.0',grep:'3.7',sed:'4.8',coreutils:'8.32',diffutils:'3.10',kalign:'3.3.1',muscle:'3.8.1551',fasttree:'2.1.11','seq-align':'2017.10.18',wgsim:'0.3.1-r13',gffread:'0.12.7',lastz:'1.04.52'},
+    versions:{fastp:'0.20.1',minimap2:'2.22',bowtie2:'2.4.2',bwa:'0.7.19','bwa-mem2':'2.2.1',hisat2:'2.2.2',freebayes:'1.3.6',stringtie:'3.0.3',kallisto:'0.52.0',mosdepth:'0.3.14',featurecounts:'2.1.1',salmon:'2.8.0',cutadapt:'5.2',macs3:'3.0.5',lofreq:'2.1.5',somaticsniper:'1.0.5.0',strelka2:'2.9.10',kraken2:'2.17.2',bracken:'3.1',prodigal:'2.6.3',hmmer:'3.4',bustools:'0.45.1',plink2:'2.0.0-b.1-dev',samtools:'1.17',bcftools:'1.10',htslib:'1.17',seqtk:'1.4',bedtools:'2.31.0',jq:'1.7',gawk:'5.1.0',grep:'3.7',sed:'4.8',coreutils:'8.32',diffutils:'3.10',kalign:'3.3.1',muscle:'3.8.1551',fasttree:'2.1.11','seq-align':'2017.10.18',wgsim:'0.3.1-r13',gffread:'0.12.7',lastz:'1.04.52'},
     apath(abs) { return ROOT+abs; },
     ensure(status) {
       if(this.ready)return Promise.resolve(this.cli);
@@ -706,18 +714,47 @@
     async spawn(T,{args,thisProgram,cwd,dirs,files,links,stdin,roots}){
       // (stopped between two commands of a workflow: the next one does not start)
       if(this.ownRun&&this.ownRun.stopped)throw Object.assign(new Error('Killed'),{userMessage:`${this.running||'program'}: Killed`,code:137});
-      const base=new URL(String(MG.config.threadsBase||'assets/vendor/genomics-wasm').replace(/\/?$/,'/'),location.href);
-      const worker=new Worker(new URL(T.worker||'assets/js/threads-worker.mjs',location.href),{type:'module',name:thisProgram||T.name});
+      const {moduleUrl,pyodideUrl}=this.workerUrls(T);
+      // (a worker made ready after the last command of this program – see prewarm – or a new one)
+      const worker=this.takeSpare(T)||new Worker(new URL(T.worker||'assets/js/threads-worker.mjs',location.href),{type:'module',name:thisProgram||T.name});
       this.threadedWorker=worker;
       try{
         return await new Promise((resolve,reject)=>{
           this._threadedStop=reject;
-          worker.onmessage=e=>{const m=e.data||{};if(m.type==='result')resolve(m.result);else reject(new Error((m.error&&m.error.message)||'the program gave no answer'));};
+          worker.onmessage=e=>{const m=e.data||{};if(m.type==='ready'||m.type==='prepare-error')return;if(m.type==='result')resolve(m.result);else reject(new Error((m.error&&m.error.message)||'the program gave no answer'));};
           worker.onerror=e=>{if(e.preventDefault)e.preventDefault();reject(new Error(e.message||'the program could not be started'));};
           // (the files are copied, not moved: a workflow hands the same bytes to its next command)
-          worker.postMessage({moduleUrl:new URL(T.module,base).href,pyodideUrl:T.pyodide?new URL(T.pyodide,base).href:undefined,args,thisProgram:thisProgram||T.name,cwd,dirs,files,links,stdin,roots});
+          worker.postMessage({moduleUrl,pyodideUrl,args,thisProgram:thisProgram||T.name,cwd,dirs,files,links,stdin,roots});
         });
-      }finally{this._threadedStop=null;if(this.threadedWorker===worker)this.threadedWorker=null;try{worker.terminate();}catch(e){}}
+      }finally{this._threadedStop=null;if(this.threadedWorker===worker)this.threadedWorker=null;try{worker.terminate();}catch(e){}if(T.prewarm)this.prewarm(T);}
+    },
+    workerUrls(T){
+      const base=new URL(String(MG.config.threadsBase||'assets/vendor/genomics-wasm').replace(/\/?$/,'/'),location.href);
+      return {moduleUrl:new URL(T.module,base).href,pyodideUrl:T.pyodide?new URL(T.pyodide,base).href:undefined};
+    },
+    /* MACS3's Python takes many seconds to start with all its packages (NumPy, SciPy, scikit-learn, pandas …). After a
+       command of it, a new worker starts its Python in the background (python-worker.mjs: the message 'prepare'), so
+       that the next command finds it ready. Every command still has a worker and a Python of its own, as genomics-wasm
+       runs MACS3. A worker that is not used within SPARE_MS is stopped: it holds a few hundred MB of memory. */
+    spares:new Map(),
+    prewarm(T){
+      if(this.spares.has(T.module))return;
+      let worker;
+      try{worker=new Worker(new URL(T.worker||'assets/js/threads-worker.mjs',location.href),{type:'module',name:T.name});}catch(e){return;}
+      const spare={worker,timer:null};
+      const drop=()=>{if(this.spares.get(T.module)===spare)this.spares.delete(T.module);clearTimeout(spare.timer);try{worker.terminate();}catch(e){}};
+      spare.timer=setTimeout(drop,SPARE_MS);
+      // (a worker that could not get ready is not used: the next command starts afresh)
+      worker.onmessage=e=>{if(e.data&&e.data.type==='prepare-error')drop();};
+      worker.onerror=e=>{if(e.preventDefault)e.preventDefault();drop();};
+      this.spares.set(T.module,spare);
+      worker.postMessage(Object.assign({type:'prepare'},this.workerUrls(T)));
+    },
+    takeSpare(T){
+      const spare=T.prewarm&&this.spares.get(T.module);
+      if(!spare)return null;
+      this.spares.delete(T.module);clearTimeout(spare.timer);
+      return spare.worker;
     },
     async execWorker(program,args,{stdin,stdout,stderr,merge,fs,before,name,io,flowOpts,devUsed,piped}){
       const T=OWN_WORKER[program],cli=this.cli,home=fs.home,cwd=this.apath(fs.isDir(fs.cwd)?fs.cwd:fs.home);
@@ -1119,6 +1156,7 @@
     nhmmer:['nhmmer','3.4',"HMMER: searches DNA sequences with a DNA profile HMM (or a sequence, or an alignment) – on both strands","nhmmer /data/examples/hmmer/MADE1.hmm /data/examples/hmmer/dna_target.fa\nnhmmer --tblout made1.tbl /data/examples/hmmer/MADE1.hmm /data/examples/hmmer/dna_target.fa\n\nOne thread here: --cpu is left out, with a note. Files compressed with gzip (.gz) cannot be read here – HMMER would\nstart gzip for them: unpack them first (gunzip -k FILE.gz). -h lists every option; the HMMER User's Guide explains them."],
     nhmmscan:['nhmmscan','3.4',"HMMER: searches DNA sequences against a database of DNA profile HMMs","cp /data/examples/hmmer/MADE1.hmm . && hmmpress MADE1.hmm\nnhmmscan MADE1.hmm /data/examples/hmmer/dna_target.fa\n\nOne thread here: --cpu is left out, with a note. Files compressed with gzip (.gz) cannot be read here – HMMER would\nstart gzip for them: unpack them first (gunzip -k FILE.gz). -h lists every option; the HMMER User's Guide explains them."],
     bustools:['bustools','0.45.1',"bustools: single-cell RNA-seq – sorts, corrects and counts the BUS records of kallisto bus (cells × genes)","bustools sort -o sorted.bus /data/examples/singlecell/input.bus\nbustools correct -w /data/examples/singlecell/whitelist.txt -o corrected.bus sorted.bus\nbustools sort -o corrected.sorted.bus corrected.bus\nmkdir -p counts\nbustools count --genecounts -g /data/examples/singlecell/transcripts-to-genes.txt -e /data/examples/singlecell/matrix.ec \\\n    -t /data/examples/singlecell/transcripts.txt -o counts/cells_x_genes corrected.sorted.bus\nbustools inspect corrected.sorted.bus        bustools text -p corrected.sorted.bus | head\n\nA BUS file has a record for each molecule seen: the cell's barcode, the UMI, the equivalence class (the transcripts the\nread fits) and how often it was seen – kallisto bus writes it from single-cell reads. sort; correct (cell barcodes, against\nthe technology's list); count (cells × genes, in Matrix Market format, with .barcodes.txt and .genes.txt); inspect, text,\ncapture, allowlist, umicorrect, compress … – bustools COMMAND without arguments lists its options.\nOne thread here: sort -t N becomes -t 1, with a note; sort keeps 64 MB in memory by default, 1 GB at most (-m 4G becomes\n-m 64M)."],
+    macs3:['macs3','3.0.5',"MACS3: finds peaks – where reads pile up more than chance and the control would put them – in ChIP-seq, ATAC-seq, CUT&RUN …","macs3 callpeak -t /data/examples/chipseq/CTCF_SE_ChIP_chr22_50k.bed.gz -c /data/examples/chipseq/CTCF_SE_CTRL_chr22_50k.bed.gz \\\n    -f BED -g 52000000 -n ctcf -B --outdir ctcf\nhead -3 ctcf/ctcf_peaks.narrowPeak     (the peaks: chromosome, start, end, name, score, strand, fold enrichment, -log10 p, -log10 q, summit)\nmacs3 bdgcmp -t ctcf/ctcf_treat_pileup.bdg -c ctcf/ctcf_control_lambda.bdg -m FE -o ctcf/ctcf_FE.bdg   (fold enrichment along the genome)\nigv --genome hg19 ctcf/ctcf_peaks.narrowPeak ctcf/ctcf_FE.bdg\nmacs3 callpeak -t chip.bam -c input.bam -f BAMPE -g hs -n sample      (paired reads: the fragments themselves, no model)\nmacs3 callpeak -t chip.bam -c input.bam -g hs --broad -n mark          (broad regions: histone marks)\nmacs3 hmmratac -i /data/examples/atacseq/yeast_SRR1822137_chrI.bedpe.gz -f BEDPE --randomSeed 12345 -n atac --outdir atac   (ATAC-seq)\n\n-t: the ChIP (treatment); -c: the control (input); -f: BED, BAM, BAMPE, BEDPE, FRAG … (AUTO, the default, does not find the\npaired formats); -g: the effective genome size – hs (human), mm (mouse), ce (worm), dm (fly) or a number; -n: the name of the\nfiles; --outdir: their folder; -B: the pile-ups as bedGraph files too; -q 0.05: the q-value of a peak (-p: a p-value instead);\n--nomodel --extsize 200: no model, every read extended to 200 bases. callpeak writes NAME_peaks.narrowPeak, NAME_peaks.xls\n(a tab-separated table), NAME_summits.bed and NAME_model.r (an R script: Rscript NAME_model.r draws NAME_model.pdf).\n\nThe commands: callpeak, hmmratac, bdgcmp, bdgpeakcall, bdgbroadcall, bdgopt, cmbreps, bdgdiff, filterdup, predictd, pileup,\nrandsample, refinepeak, callvar. macs3 COMMAND -h lists the options of a command.\nMACS3 is a Python program: each command starts the Python that comes with it, with NumPy, SciPy, scikit-learn and pandas,\nwhich takes a few seconds (the first time about 45 MB are loaded). It runs as one process (callvar -m N works through its N\nparts one after another) and keeps the reads in memory: a chromosome or a small genome, not a whole human experiment."],
     plink2:['plink2','2.0.0-b.1-dev',"PLINK 2: the genotypes of many people – quality control, allele frequencies, LD, kinship, association (GWAS) and scores","plink2 --vcf /data/examples/plink2/1kg-phase3-chr21.vcf.gz --make-pgen --out chr21   (PLINK's own files: chr21.pgen, .pvar, .psam)\nplink2 --pfile chr21 --freq --out chr21                    (allele frequencies: chr21.afreq)\nplink2 --pfile chr21 --missing --hardy --het --out qc      (missing calls, Hardy-Weinberg, heterozygosity)\nplink2 --pfile chr21 --maf 0.05 --indep-pairwise 50 5 0.2 --out ld      (LD pruning: ld.prune.in, ld.prune.out)\nplink2 --pfile chr21 --keep /data/examples/plink2/keep48.samples.txt --make-king-table --out king   (kinship)\nplink2 --vcf /data/examples/plink2/synthetic_glm.vcf --pheno /data/examples/plink2/synthetic_phenotypes.tsv \\\n    --pheno-name BINARY --covar /data/examples/plink2/synthetic_covariates.tsv --glm hide-covar --out assoc   (association)\nplink2 --help --glm                                         (what an option does)\n\nEach command writes NAME.log and the files of what it was asked for, named by --out NAME (plink2.* without --out).\n--pfile NAME reads NAME.pgen, NAME.pvar and NAME.psam; --bfile NAME the PLINK 1 files NAME.bed, NAME.bim and NAME.fam.\nPLINK 2 computes here on one thread, in 640 MiB of working memory: the terminal adds  --threads 1 --memory 640 require\nunless you give them (--threads 2 at most; --memory 640 to 1024). It needs a cross-origin isolated page, as featureCounts.\nNot in this build of PLINK 2, which has no LAPACK: --pca and --pheno-svd. Not here: --script and --rerun."],
     freebayes:['freebayes','1.3.6','FreeBayes: haplotype-based variant caller – SNPs, indels and MNPs from aligned reads (BAM)','freebayes -f /data/examples/reads/reference.fa mapped.bam > freebayes.vcf\nfreebayes -f /data/examples/reads/reference.fa -r human_CYP2C19:11000-12500 mapped.bam    (one region: needs mapped.bam.bai – samtools index mapped.bam)\nfreebayes -f /data/examples/reads/reference.fa --min-alternate-count 3 --min-mapping-quality 20 mapped.bam > strict.vcf\n\nThe reads must be sorted by position (samtools sort); the reference needs its .fai index (samtools faidx).']
   };

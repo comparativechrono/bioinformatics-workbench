@@ -1,10 +1,14 @@
-/* One command of a Python program of the genomics-wasm project, in a worker of its own: Cutadapt (cutadapt) and
-   Bracken's two Python programs (est_abundance.py, generate_kmer_distribution.py). The worker starts the Python that
-   genomics-wasm bundles with them – Pyodide 314.0.7, CPython 3.14.2, unchanged; one copy for both, in
-   assets/vendor/genomics-wasm/pyodide/314.0.7/ – and then:
+/* One command of a Python program of the genomics-wasm project, in a worker of its own: Cutadapt (cutadapt),
+   Bracken's two Python programs (est_abundance.py, generate_kmer_distribution.py) and MACS3 (macs3). The worker starts
+   the Python that genomics-wasm bundles with them – Pyodide 314.0.7, CPython 3.14.2, unchanged; one copy for all
+   three, in assets/vendor/genomics-wasm/pyodide/314.0.7/ – and then:
    - Cutadapt: installs Cutadapt 5.2 and its two dependencies, dnaio and xopen, from their wheels (their compiled parts
      are WebAssembly), checked against the SHA-256 of the bundle's manifest, and runs Cutadapt's own command line;
-   - Bracken: checks the program against the SHA-256 of the manifest and runs it as a script, with its arguments.
+   - Bracken: checks the program against the SHA-256 of the manifest and runs it as a script, with its arguments;
+   - MACS3: installs the scientific packages it needs – NumPy, SciPy, scikit-learn, pandas, h5py, AnnData … as Pyodide
+     released them (their wheels are next to the shared Python, which Pyodide's catalogue, pyodide-lock.json, names)
+     – and hmmlearn and MACS3 3.0.5, compiled for it, from the bundle; every wheel and the program are checked against
+     the SHA-256 of the manifest first. Then MACS3's own command line (bin/macs3 of its release) runs as a script.
    Nothing is downloaded from elsewhere: the files are in assets/vendor/genomics-wasm/.
 
    The page sends what threads-worker.mjs gets: the bundle's manifest (moduleUrl) and the folder of the shared Python
@@ -14,27 +18,43 @@
    (and the order in which they were written), and every file the command made or changed – a file that was handed
    over keeps the time 0, so a file with another time, or another size, is one it wrote.
 
-   Adapted from runtime/cutadapt-execute.mjs and runtime/bracken-execute.mjs of genomics-wasm
+   A worker can also be made ready before its command is known (MACS3, whose Python takes many seconds to load all its
+   packages): the message {type: 'prepare', moduleUrl, pyodideUrl} starts the Python and installs the packages, and is
+   answered with {type: 'ready'}; the command, when it comes, runs in that Python. Each worker still runs one command
+   only – the page makes a new one, ready in its turn, for the next.
+
+   Adapted from runtime/cutadapt-execute.mjs, runtime/bracken-execute.mjs and runtime/macs3-execute.mjs of genomics-wasm
    (https://github.com/comparativechrono/genomics-wasm, MIT licence): the same manifest checks, checksums,
    installation order and version checks. */
+const failure = (error) => ({ name: (error && error.name) || 'Error', message: (error && error.message) || String(error) });
+let prepared = null; // {key, promise} – the Python made ready for the command to come
 self.addEventListener('message', async (event) => {
+  const message = event.data || {};
+  if (message.type === 'prepare') {
+    prepared = { key: `${message.moduleUrl}|${message.pyodideUrl || ''}`, promise: setup(message) };
+    // (a failure here is not the command's: when the command comes, it starts afresh)
+    prepared.promise.then(() => self.postMessage({ type: 'ready' }), (error) => self.postMessage({ type: 'prepare-error', error: failure(error) }));
+    return;
+  }
   try {
-    const result = await run(event.data);
+    const result = await run(message);
     const transfer = new Set([result.stdout.buffer, result.stderr.buffer, ...result.files.map((f) => f.data.buffer)]);
     self.postMessage({ type: 'result', result }, [...transfer]);
   } catch (error) {
-    self.postMessage({ type: 'error', error: { name: (error && error.name) || 'Error', message: (error && error.message) || String(error) } });
+    self.postMessage({ type: 'error', error: failure(error) });
   }
-}, { once: true });
+});
 
 const dirname = (p) => p.slice(0, p.lastIndexOf('/')) || '/';
 
-async function run({ moduleUrl, pyodideUrl, args, thisProgram, cwd, dirs, files, links, stdin, roots }) {
+/* the Python, ready for a command of the bundle: Pyodide started; Cutadapt's and MACS3's packages installed */
+async function setup({ moduleUrl, pyodideUrl }) {
   const manifestUrl = new URL(moduleUrl);
   const manifest = JSON.parse(new TextDecoder().decode(await readAsset(manifestUrl)));
   const tool = manifest.tool;
   if (manifest.schema !== 1 || !manifest.pyodide?.path || !manifest.pyodide.version || !manifest.pyodide.python
-      || !((tool === 'cutadapt' && Array.isArray(manifest.packages)) || (tool === 'bracken' && manifest.scripts))) {
+      || !((tool === 'cutadapt' && Array.isArray(manifest.packages)) || (tool === 'bracken' && manifest.scripts)
+        || (tool === 'macs3' && Array.isArray(manifest.packages) && manifest.entrypoint))) {
     throw new Error('Unsupported Python bundle manifest');
   }
   const base = new URL('./', manifestUrl);
@@ -49,8 +69,21 @@ async function run({ moduleUrl, pyodideUrl, args, thisProgram, cwd, dirs, files,
     packages: [],
   });
   if (pyodide.version !== manifest.pyodide.version) throw new Error('Pyodide version differs from the bundle manifest');
+  const installed = tool === 'cutadapt' ? await installCutadapt(pyodide, manifest, base) : tool === 'macs3' ? await installMACS3(pyodide, manifest, base, pyBase) : null;
+  return { pyodide, manifest, base, tool, installed };
+}
+
+async function run({ moduleUrl, pyodideUrl, args, thisProgram, cwd, dirs, files, links, stdin, roots }) {
+  const key = `${moduleUrl}|${pyodideUrl || ''}`;
+  let ready = null;
+  if (prepared && prepared.key === key) {
+    try { ready = await prepared.promise; } catch (e) { ready = null; }
+  }
+  prepared = null;
+  const { pyodide, manifest, base, tool, installed } = ready || (await setup({ moduleUrl, pyodideUrl }));
   let entry;
-  if (tool === 'cutadapt') entry = { ...(await installCutadapt(pyodide, manifest, base)), args, argv0: thisProgram || 'cutadapt' };
+  if (tool === 'cutadapt') entry = { ...installed, args, argv0: thisProgram || 'cutadapt' };
+  else if (tool === 'macs3') entry = { ...installed, args, argv0: 'macs3' };
   else entry = { ...(await placeScript(pyodide, manifest, base, args[0])), args: args.slice(1) };
 
   const { FS } = pyodide;
@@ -198,6 +231,111 @@ def _run_script():
 _run_script()
 ` };
 }
+
+/* MACS3: its packages, checked and installed in the manifest's order, then its own command line (as genomics-wasm's
+   runtime/macs3-execute.mjs does it). The manifest names Pyodide's own packages as "pyodide/FILE" – the folder of the
+   Python it came with; here they are in the folder of the one Python the tools share, next to its catalogue. */
+async function installMACS3(pyodide, manifest, base, pyBase) {
+  const names = new Set();
+  for (const pkg of manifest.packages) {
+    if (typeof pkg.name !== 'string' || !/^[a-zA-Z0-9][a-zA-Z0-9._-]*$/.test(pkg.name) || typeof pkg.version !== 'string' || !pkg.version
+        || !['wheel', 'pyodide'].includes(pkg.source) || !/^[a-f0-9]{64}$/.test(pkg.sha256 || '')
+        || !(pkg.distribution === undefined || pkg.distribution === null || (typeof pkg.distribution === 'string' && pkg.distribution))) {
+      throw new Error('Invalid MACS3 package declaration');
+    }
+    const name = packageName(pkg.name);
+    if (names.has(name)) throw new Error(`Duplicate MACS3 dependency: ${name}`);
+    names.add(name);
+  }
+  for (const name of ['numpy', 'scipy', 'scikit-learn', 'hmmlearn', 'pandas', 'anndata', 'macs3']) {
+    if (!names.has(name)) throw new Error(`Missing MACS3 dependency: ${name}`);
+  }
+  const main = manifest.packages.find((pkg) => packageName(pkg.name) === 'macs3');
+  if (main.version !== manifest.version || main.distribution === null) throw new Error('MACS3 package version differs from the bundle manifest');
+  if (!manifest.entrypoint || !/^[a-f0-9]{64}$/.test(manifest.entrypoint.sha256 || '')) throw new Error('Bundle assets require SHA-256 checksums');
+  // Pyodide's packages: in its catalogue with the same version, file and SHA-256 – and all they depend on in the bundle
+  const pyPath = localPath(manifest.pyodide.path, true);
+  const lock = JSON.parse(new TextDecoder().decode(await readAsset(new URL('pyodide-lock.json', pyBase))));
+  const stock = manifest.packages.filter((pkg) => pkg.source === 'pyodide');
+  const declared = new Set(stock.map((pkg) => packageName(pkg.name)));
+  for (const pkg of stock) {
+    const entry = lock.packages && lock.packages[pkg.name];
+    if (!entry || entry.version !== pkg.version || entry.sha256 !== pkg.sha256 || localPath(pkg.filename) !== pyPath + localPath(entry.file_name)) {
+      throw new Error(`Pyodide catalogue differs from the bundle manifest for ${pkg.name}`);
+    }
+    for (const dependency of entry.depends || []) {
+      if (!declared.has(packageName(dependency))) throw new Error(`Missing bundled Pyodide dependency: ${dependency}`);
+    }
+  }
+  const fileOf = (pkg) => (pkg.source === 'pyodide' ? new URL(localPath(pkg.filename).slice(pyPath.length), pyBase) : new URL(localPath(pkg.filename), base));
+  // every package is checked before Python can load any of them
+  for (const pkg of manifest.packages) {
+    if ((await sha256(await readAsset(fileOf(pkg)))) !== pkg.sha256) throw new Error(`Checksum mismatch for ${pkg.filename}`);
+  }
+  const entrypoint = await readAsset(new URL(localPath(manifest.entrypoint.filename), base));
+  if ((await sha256(entrypoint)) !== manifest.entrypoint.sha256) throw new Error(`Checksum mismatch for ${manifest.entrypoint.filename}`);
+  // (WebKit can leave the asynchronous instantiation of a side module pending for ever: while the packages are
+  // installed, their WebAssembly is compiled synchronously – in this worker – and the browser's own function is put
+  // back before MACS3 runs, as genomics-wasm does)
+  const instantiate = WebAssembly.instantiate;
+  WebAssembly.instantiate = async function (source, imports, options) {
+    if (source instanceof WebAssembly.Module) return new WebAssembly.Instance(source, imports);
+    const module = new WebAssembly.Module(source, options);
+    return { module, instance: new WebAssembly.Instance(module, imports) };
+  };
+  try {
+    for (const pkg of manifest.packages) {
+      const errors = [];
+      await pyodide.loadPackage(pkg.source === 'pyodide' ? pkg.name : fileOf(pkg).href, { messageCallback: () => {}, errorCallback: (m) => errors.push(String(m)) });
+      // (loadPackage can report a failed installation and still resolve its promise)
+      const loaded = Object.keys(pyodide.loadedPackages).some((name) => packageName(name) === packageName(pkg.name));
+      if (errors.length || !loaded) throw new Error(`Could not install ${pkg.name}: ${errors.join('; ') || 'package was not loaded'}`);
+    }
+  } finally {
+    WebAssembly.instantiate = instantiate;
+  }
+  const distributions = manifest.packages.filter((pkg) => pkg.distribution !== null).map((pkg) => [pkg.distribution || pkg.name, pkg.version]);
+  const expected = pyodide.toPy(distributions);
+  try {
+    pyodide.globals.set('_wb_expected', expected);
+    const installed = JSON.parse(pyodide.runPython(`
+import importlib.metadata, json, sys
+json.dumps({"python": ".".join(map(str, sys.version_info[:3])),
+            "packages": {name: importlib.metadata.version(name) for name, _ in _wb_expected}})
+`));
+    if (installed.python !== manifest.pyodide.python || distributions.some(([name, version]) => installed.packages[name] !== version)) {
+      throw new Error('Installed Python or package versions differ from the MACS3 bundle manifest');
+    }
+  } finally { expected.destroy(); }
+  pyodide.FS.mkdirTree('/opt/macs3');
+  pyodide.FS.writeFile('/opt/macs3/macs3', entrypoint);
+  return { code: `
+import logging, runpy, sys, traceback
+def _run_macs3():
+    sys.argv = [_wb_name, *_wb_args]
+    try:
+        runpy.run_path("/opt/macs3/macs3", run_name="__main__")
+        return 0
+    except SystemExit as error:
+        if error.code is None:
+            return 0
+        if isinstance(error.code, int):
+            return error.code
+        print(error.code, file=sys.stderr)
+        return 1
+    except Exception:
+        traceback.print_exc(file=sys.stderr)
+        return 1
+    finally:
+        # (MACS3 writes its messages through logging)
+        logging.shutdown()
+        sys.stdout.flush()
+        sys.stderr.flush()
+_run_macs3()
+` };
+}
+
+function packageName(name) { return String(name).toLowerCase().replace(/[-_.]+/g, '-'); }
 
 function localPath(path, directory = false) {
   if (typeof path !== 'string') throw new Error('Bundle asset paths must be strings');

@@ -5,8 +5,9 @@
    that the example reads come from, with its genes) – or a genome hosted
    by the IGV team (human hg38/hg19, mouse, zebrafish, fly, worm, yeast) –
    or any FASTA file of yours (with its .fai index).
-   Tracks: BAM (+ .bai), VCF (+ .tbi), BED, GFF/GTF, bedGraph, wig and
-   bigWig files from your files or your computer.
+   Tracks: BAM (+ .bai), VCF (+ .tbi), BED, GFF/GTF, bedGraph (also .bdg),
+   the peaks of MACS3 (narrowPeak, broadPeak, gappedPeak), wig and bigWig
+   files from your files or your computer.
    ===================================================================== */
 (function () {
   'use strict';
@@ -18,7 +19,12 @@
     ['hg38', 'Human GRCh38 (hg38)'], ['hg19', 'Human GRCh37 (hg19)'], ['mm39', 'Mouse GRCm39 (mm39)'], ['mm10', 'Mouse GRCm38 (mm10)'],
     ['danRer11', 'Zebrafish (danRer11)'], ['dm6', 'Fruit fly (dm6)'], ['ce11', 'C. elegans (ce11)'], ['sacCer3', 'Yeast (sacCer3)']
   ];
-  const TRACK = /\.(bam|cram|vcf|vcf\.gz|bcf|bed|bed\.gz|gff3?|gff3?\.gz|gtf|gtf\.gz|bedgraph|bedgraph\.gz|wig|bw|bigwig|bb|bigbed|seg)$/i;
+  // (the terminal's  igv --genome hg19 …  names them so)
+  MG.igvHosted = HOSTED.map(([id, name]) => ({ id, name }));
+  const TRACK = /\.(bam|cram|vcf|vcf\.gz|bcf|bed|bed\.gz|gff3?|gff3?\.gz|gtf|gtf\.gz|bedgraph|bedgraph\.gz|bdg|bdg\.gz|narrowpeak|broadpeak|gappedpeak|wig|bw|bigwig|bb|bigbed|seg)$/i;
+  // the peaks of MACS3 (and of ENCODE): narrowPeak, broadPeak, gappedPeak – BED files with columns of their own
+  const PEAKS = /\.(narrowpeak|broadpeak|gappedpeak)(\.gz)?$/i;
+  const peakFormat = (name) => PEAKS.exec(name)[1].toLowerCase();
   const abs = (u) => new URL(u, location.href).href;
   const LOAD_MS = 60000; // the longest a genome may take to load
 
@@ -53,7 +59,7 @@
         b.addEventListener('click', fn);
         return b;
       };
-      const pick = h('input', { type: 'file', multiple: true, hidden: true, accept: '.bam,.bai,.cram,.crai,.vcf,.gz,.tbi,.csi,.bed,.gff,.gff3,.gtf,.bedgraph,.wig,.bw,.bigwig,.bb,.fa,.fasta,.fna,.fai' });
+      const pick = h('input', { type: 'file', multiple: true, hidden: true, accept: '.bam,.bai,.cram,.crai,.vcf,.gz,.tbi,.csi,.bed,.gff,.gff3,.gtf,.bedgraph,.bdg,.narrowPeak,.broadPeak,.gappedPeak,.wig,.bw,.bigwig,.bb,.fa,.fasta,.fna,.fai' });
       pick.addEventListener('change', () => {
         this.loadLocalFiles(Array.from(pick.files));
         pick.value = '';
@@ -348,7 +354,9 @@
             await this.addTrack(cfg);
           } else if (/\.(bw|bigwig)$/i.test(name)) await this.addTrack({ type: 'wig', format: 'bigwig', name, url: await this._urlOf(fs, p) });
           else if (/\.(bb|bigbed)$/i.test(name)) await this.addTrack({ type: 'annotation', format: 'bigbed', name, url: await this._urlOf(fs, p) });
-          else if (/\.(bedgraph|wig)(\.gz)?$/i.test(name)) await this.addTrack({ type: 'wig', format: /wig/i.test(name) && !/bedgraph/i.test(name) ? 'wig' : 'bedgraph', name, url: await this._urlOf(fs, p) });
+          // (.bdg: MACS3's name for its bedGraph files)
+          else if (/\.(bedgraph|bdg|wig)(\.gz)?$/i.test(name)) await this.addTrack({ type: 'wig', format: /\.wig(\.gz)?$/i.test(name) ? 'wig' : 'bedgraph', name, url: await this._urlOf(fs, p) });
+          else if (PEAKS.test(name)) await this.addTrack({ type: 'annotation', format: peakFormat(name), name, url: await this._urlOf(fs, p), displayMode: 'EXPANDED', indexed: false });
           else if (/\.seg$/i.test(name)) await this.addTrack({ type: 'seg', format: 'seg', name, url: await this._urlOf(fs, p) });
           else {
             const fmt = /\.gtf(\.gz)?$/i.test(name) ? 'gtf' : /\.gff3?(\.gz)?$/i.test(name) ? 'gff3' : 'bed';
@@ -398,8 +406,8 @@
           else cfg.indexed = false;
           await this.addTrack(cfg);
           n++;
-        } else if (/\.(bed|gff3?|gtf|bedgraph|wig|bw|bigwig|bb)(\.gz)?$/i.test(f.name)) {
-          const fmt = /\.gtf/i.test(f.name) ? 'gtf' : /\.gff/i.test(f.name) ? 'gff3' : /\.(bw|bigwig)$/i.test(f.name) ? 'bigwig' : /\.bb$/i.test(f.name) ? 'bigbed' : /bedgraph/i.test(f.name) ? 'bedgraph' : /\.wig/i.test(f.name) ? 'wig' : 'bed';
+        } else if (/\.(bed|gff3?|gtf|bedgraph|bdg|narrowpeak|broadpeak|gappedpeak|wig|bw|bigwig|bb)(\.gz)?$/i.test(f.name)) {
+          const fmt = /\.gtf/i.test(f.name) ? 'gtf' : /\.gff/i.test(f.name) ? 'gff3' : /\.(bw|bigwig)$/i.test(f.name) ? 'bigwig' : /\.bb$/i.test(f.name) ? 'bigbed' : /\.(bedgraph|bdg)(\.gz)?$/i.test(f.name) ? 'bedgraph' : PEAKS.test(f.name) ? peakFormat(f.name) : /\.wig/i.test(f.name) ? 'wig' : 'bed';
           await this.addTrack({ type: /wig|bedgraph/.test(fmt) ? 'wig' : 'annotation', format: fmt, name: f.name, url: f, indexed: false });
           n++;
         } else if (/\.(fa|fasta|fna)$/i.test(f.name)) {

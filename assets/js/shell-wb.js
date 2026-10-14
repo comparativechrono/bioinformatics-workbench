@@ -721,6 +721,7 @@
       [/^(blastn|blastp|blastx|tblastn|makeblastdb|diamond|interproscan\.sh)$/, 'is not installed in this terminal. BLAST searches run at EBI from the Databases tab (BLAST card). Here, phmmer and jackhmmer (HMMER) search proteins with a protein, hmmsearch and hmmscan with profile HMMs; for pairwise alignments there are needleman_wunsch and smith_waterman.'],
       [/^(prokka|bakta|pgap|glimmer3|long-orfs|gmhmmp|gmsn\.pl|getorf|orfipy|transeq|augustus)$/, 'is not installed in this terminal. For the genes of bacteria and archaea there is prodigal:  prodigal -i genome.fna -o genes.gff -f gff -a proteins.faa  – and HMMER (hmmscan, hmmsearch) finds the domains of the proteins.'],
       [/^(esl-[A-Za-z0-9_-]+|hmmpgmd|hmmpgmd_shard|hmmsim|hmmlogo|hmmc2|alimask|makehmmerdb|hmmerfm-exactmatch|pfam_scan\.pl)$/, 'is not installed in this terminal: of HMMER there are hmmbuild, hmmsearch, hmmscan, hmmpress, hmmfetch, hmmalign, hmmconvert, hmmemit, hmmstat, phmmer, jackhmmer, nhmmer and nhmmscan – not its Easel miniapps (esl-…) or its servers.'],
+      [/^(macs2|macs|macs14|HMMRATAC|homer|findPeaks|makeTagDirectory|Genrich|genrich|epic2|sicer|SICER2|seacr|SEACR_1\.3\.sh|idr|bamCoverage|bamCompare|computeMatrix|plotHeatmap|plotProfile|bedGraphToBigWig|ChIPseeker)$/, 'is not installed in this terminal. For peaks – ChIP-seq, ATAC-seq, CUT&RUN – there is MACS3:  macs3 callpeak -t chip.bam -c input.bam -g hs -n NAME  (man macs3); macs3 hmmratac calls the open chromatin of ATAC-seq, macs3 bdgcmp compares two bedGraph tracks (fold enrichment), macs3 pileup or bedtools genomecov -bg make coverage tracks, and igv shows peaks and tracks in the Genome browser.'],
       [/^(kb|cellranger|alevin-fry|velocyto|umi_tools|dropseq|scanpy|seurat)$/, 'is not installed in this terminal. For single-cell RNA-seq there is bustools: it sorts, corrects and counts the BUS records that kallisto bus writes (man bustools). The matrix it writes opens in Python with scipy.io.mmread.'],
       [/^(plink|plink1|plink1\.9|plink19|gcta|gcta64|regenie|bolt|saige|admixture|smartpca|king|beagle|shapeit|shapeit4|shapeit5|impute2|impute5|bgenix|qctool)$/, 'is not installed in this terminal. For the genotypes of many people – quality control, allele frequencies, LD, kinship, association (GWAS), scores – there is PLINK 2:  plink2 --vcf FILE.vcf.gz --freq --out NAME  (man plink2). Many options of PLINK 1.9 are the same in PLINK 2 (--bfile, --maf, --geno, --hwe, --make-bed); --assoc, --linear and --logistic are --glm there, and --recode is --export.'],
       [/^(cytoscape|Cytoscape|cytoscape\.sh|gephi|graphviz-gui)$/, 'is a desktop program and is not installed in this terminal. The Networks tab draws and analyses networks here – SIF, GraphML, GML, XGMML and Cytoscape JSON files, STRING and IntAct networks:  network FILE  (man network); dot draws graphs written in the DOT language.'],
@@ -760,7 +761,7 @@
     unzip: 'unzip – unpack a .zip archive.\n\n  unzip data.zip                 into the folder you are in\n  unzip data.zip -d data         into a folder\n  unzip -l data.zip              list what is in it\n  unzip -o data.zip              overwrite without asking (the default here)',
     zip: 'zip – make a .zip archive.\n\n  zip -r results.zip results/\n  zip notes.zip a.txt b.txt\n\n(To save a folder on your computer as a .zip in one step:  download FOLDER)',
     tar: 'tar – .tar and .tar.gz archives.\n\n  tar -xzf data.tar.gz            unpack (x) a gzipped (z) archive file (f)\n  tar -tzf data.tar.gz            list (t) what is in it\n  tar -xf data.tar -C folder      unpack into a folder\n  tar -czf results.tar.gz results/   make (c) one',
-    igv: 'igv – show files in the Genome browser tab.\n\n  igv mapped.bam                    (needs mapped.bam.bai: samtools index mapped.bam)\n  igv calls.vcf.gz regions.bed\n  igv --genome reference.fa mapped.bam      use a FASTA file of yours as the genome (it needs reference.fa.fai: samtools faidx)\n  igv --locus chr17:7,661,779-7,687,538',
+    igv: 'igv – show files in the Genome browser tab.\n\n  igv mapped.bam                    (needs mapped.bam.bai: samtools index mapped.bam)\n  igv calls.vcf.gz regions.bed\n  igv --genome reference.fa mapped.bam      use a FASTA file of yours as the genome (it needs reference.fa.fai: samtools faidx)\n  igv --genome hg19 peaks.narrowPeak        a genome hosted by the IGV team, with its genes (it needs the internet):\n                                            hg38, hg19, mm39, mm10, danRer11, dm6, ce11, sacCer3\n  igv --locus chr17:7,661,779-7,687,538',
     network: 'network – open networks in the Networks tab.\n\n  network graph.graphml                  a network file: SIF, GraphML, XGMML, GML, Cytoscape JSON (.cyjs), CX2 – or a table of edges (.csv, .tsv: the Networks tab asks which columns)\n  network --table deseq2_results.csv     add a table of values to the nodes of the network that is open (it asks which columns match)\n  network --string TP53 MDM2 CDKN1A      the STRING network of these genes or proteins (string-db.org)\n          [--species 10090] [--score 700] [--add 10]      species (NCBI taxon: 9606 human), minimum confidence (0–1000), interactors to add\n  network --example airway               an example: airway (genes changed by dexamethasone, on STRING) or karate\n\nFrom a Python notebook:  !network ~/networks/graph.graphml  (networkx writes it: nx.write_graphml(G, "graph.graphml"))',
     'export-session': 'export-session – save the commands of this terminal session, with their output.\n\n  export-session session.ipynb    a Jupyter notebook: one %%bash cell per command (it opens in the Notebook tab, and in Jupyter)\n  export-session session.sh       a shell script of the commands\n  export-session --clear          forget the commands so far\n\nThe "Save session" button above the terminal does the same.',
     'needleman_wunsch': 'needleman_wunsch – global pairwise alignment (seq-align).\n\n  needleman_wunsch ACGTTGCA ACGTGCA\n  needleman_wunsch --file seqs.fasta            (aligns the sequences of the file in pairs)\n  needleman_wunsch --match 1 --mismatch -1 --gapopen -2 --gapextend -1 SEQ1 SEQ2\n\nIts options:  needleman_wunsch --help',
@@ -1315,12 +1316,17 @@
       else if (/^[\w.]+:[\d,]+(-[\d,]+)?$/.test(a[i]) && !ctx.fs.exists(a[i])) locus = a[i];
       else files.push(a[i]);
     }
-    for (const f of files.concat(genome ? [genome] : [])) if (!ctx.fs.exists(f)) throw userErr(`igv: ${f}: No such file or directory`);
+    // (--genome hg19: a genome that the IGV team hosts – hg38, hg19, mm39, mm10, danRer11, dm6, ce11, sacCer3 – unless a
+    // file of that name is here)
+    const hosted = genome && !ctx.fs.exists(genome) ? (MG.igvHosted || []).find((g) => g.id.toLowerCase() === String(genome).toLowerCase()) : null;
+    for (const f of files.concat(genome && !hosted ? [genome] : [])) if (!ctx.fs.exists(f)) throw userErr(`igv: ${f}: No such file or directory${f === genome ? ` (a hosted genome: ${(MG.igvHosted || []).map((g) => g.id).join(', ')})` : ''}`);
     await MG.app.showWorkbench('igv');
     for (let t = 0; t < 300 && !MG.app.igv; t++) await new Promise((r) => setTimeout(r, 50));
     const I = MG.app.igv;
     if (!I) throw userErr('igv: the genome browser could not start');
-    if (genome) await I.loadGenomeFromFiles(ctx.fs, ctx.fs.resolve(genome));
+    if (hosted) {
+      if (!(await I.setGenome(hosted.id))) throw userErr(`igv: the genome ${hosted.id} could not be loaded – the hosted genomes need the internet`);
+    } else if (genome) await I.loadGenomeFromFiles(ctx.fs, ctx.fs.resolve(genome));
     if (files.length) await I.loadPaths(ctx.fs, files.map((f) => ctx.fs.resolve(f)));
     if (locus) await I.goto(locus);
     ctx.io.note('Shown in the Genome browser tab.');
@@ -1513,6 +1519,9 @@
         opt('kallisto', `kallisto ${v.kallisto || ''}`, 'transcript abundances by pseudoalignment:  kallisto index, kallisto quant'),
         opt('salmon', `salmon ${v.salmon || ''}`, 'transcript abundances by selective alignment:  salmon index, salmon quant  (several threads)'),
         opt('bustools', `bustools ${v.bustools || ''}`, 'single-cell RNA-seq: sort, correct and count the BUS records of kallisto bus:  bustools count …'),
+        '',
+        'ChIP-seq and ATAC-seq: peaks',
+        opt('macs3', `macs3 ${v.macs3 || ''}`, 'peaks over a control:  macs3 callpeak -t chip.bam -c input.bam -g hs -n NAME   (macs3 hmmratac: ATAC-seq)'),
         '',
         'Genes and proteins: gene finding, profile HMMs',
         opt('prodigal', `prodigal ${v.prodigal || ''}`, 'genes of bacteria and archaea:  prodigal -i genome.fna -o genes.gff -f gff -a proteins.faa'),

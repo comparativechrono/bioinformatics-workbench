@@ -1,0 +1,81 @@
+<!-- id: h-peaks | title: Peaks: ChIP-seq and ATAC-seq (MACS3) | group: Terminal and programs | summary: Where the reads pile up: the peaks of ChIP-seq against its control, the open chromatin of ATAC-seq | keys: macs macs2 macs3 peak peaks peak calling peak caller callpeak chip-seq chipseq chip chromatin immunoprecipitation atac-seq atacseq atac hmmratac open chromatin accessible regions nucleosome ctcf transcription factor binding site histone mark narrowpeak broadpeak gappedpeak bedgraph bdg summit summits fold enrichment fe q-value p-value poisson lambda local lambda control input effective genome size gsize fragment length model shift extsize bdgcmp bdgpeakcall bdgbroadcall bdgopt cmbreps bdgdiff pileup predictd filterdup randsample refinepeak callvar cut&run cutandrun dnase-seq bedpe bampe encode -->
+<h1><!--ICON:genome-->Peaks: ChIP-seq and ATAC-seq (MACS3)</h1>
+<p class="lede">In ChIP-seq, the DNA that a protein holds – a transcription factor, a modified histone – is pulled out of the cell with an antibody against the protein and sequenced, so its reads pile up where the protein sits on the genome. <b>MACS3</b> finds those piles, the <b>peaks</b>: places with more reads than chance – and the control experiment – would put there. Its command <code>hmmratac</code> does the same for ATAC-seq, whose reads mark the open chromatin.</p>
+<p>The examples work in a folder of your own: <button class="do" type="button" data-term-run="mkdir -p ~/peaks && cd ~/peaks">mkdir -p ~/peaks &amp;&amp; cd ~/peaks</button></p>
+
+<h2>The reads</h2>
+<p><code>/data/examples/chipseq/</code> holds MACS's own test data: the reads of a ChIP-seq of <b>CTCF</b> – a protein that binds one DNA motif at tens of thousands of places in the genome and folds the chromatin into loops – and of its control, the same chromatin sequenced without the antibody (the "input"). There are about 50,000 of each, all on human chromosome 22, at their positions on hg19 (GRCh37).</p>
+<pre class="code" data-run="term"><code>zcat /data/examples/chipseq/CTCF_SE_ChIP_chr22_50k.bed.gz | head -3
+zcat /data/examples/chipseq/CTCF_SE_ChIP_chr22_50k.bed.gz | wc -l
+zcat /data/examples/chipseq/CTCF_SE_CTRL_chr22_50k.bed.gz | wc -l</code></pre>
+<p>Each line is a read where it mapped: chromosome, start and end (BED counts from 0) and its strand. The reads are 101 bases long, but the DNA fragments they were read from are longer: a read is one end of its fragment, on the strand it was read from. MACS3 reads BAM files as well (<code>-f BAM</code>) – sorted or not, it needs no index – and the pairs of a paired-end run (<code>-f BAMPE</code>, <code>-f BEDPE</code>; see below).</p>
+
+<h2>Calling the peaks</h2>
+<pre class="code" data-run="term"><code>macs3 callpeak -t /data/examples/chipseq/CTCF_SE_ChIP_chr22_50k.bed.gz -c /data/examples/chipseq/CTCF_SE_CTRL_chr22_50k.bed.gz \
+    -f BED -g 52000000 -n ctcf -B --outdir ctcf</code></pre>
+<p><code>-t</code> is the ChIP (the "treatment"), <code>-c</code> the control, <code>-f</code> the format of both. <code>-g</code> is the <b>effective genome size</b>, the part of the genome that reads can map to: <code>hs</code> for human, <code>mm</code> for mouse, <code>ce</code> and <code>dm</code> for worm and fly, or a number – here the reads come from chromosome 22 alone, about 51 million bases, and MACS's own tests give 52,000,000. <code>-n</code> names the files, <code>--outdir</code> is their folder, and <code>-B</code> writes the pile-ups as bedGraph files as well. MACS3 is a Python program: each command starts the Python that comes with it, with NumPy, SciPy and the rest, which takes a few seconds – the first time a little longer, as about 45 MB are loaded.</p>
+<p>Its messages say what it does, step by step (<code>[RSS unavailable]</code>: in the browser it cannot measure the memory it uses).</p>
+<ul>
+  <li><b>#1</b> it reads the tags – the reads – and keeps at most one at the same position on the same strand (<code>--keep-dup 1</code>): more are taken for copies made by PCR. 49,622 ChIP reads become 48,047.</li>
+  <li><b>#2</b> it builds its <b>model</b>: around a binding site, the reads of the + strand pile up on its left and those of the − strand on its right, half a fragment away on each side. From 469 pairs of such piles MACS works out the fragment length <i>d</i>: 228 bases. Each read is then extended to <i>d</i> bases, in its direction, and the fragments are piled up.</li>
+  <li><b>#3</b> it calls the peaks: at each position the ChIP's pile-up is compared with the number of fragments expected there, the <b>local λ</b> – the most of the control's pile-up over <i>d</i>, 1,000 and 10,000 bases around, and of the genome's average, scaled to the same number of reads – with a Poisson test. Its p-values become q-values (Benjamini–Hochberg), and the regions with q below 0.05 (<code>-q 0.05</code>) are the peaks. The control is what makes the test fair: regions that every sample has more reads in – open chromatin, repeats, copies of the genome – have more control reads too.</li>
+</ul>
+
+<h2>The peaks</h2>
+<pre class="code" data-run="term"><code>ls ctcf
+head -3 ctcf/ctcf_peaks.narrowPeak
+wc -l ctcf/ctcf_peaks.narrowPeak
+sort -k9,9gr ctcf/ctcf_peaks.narrowPeak | head -3</code></pre>
+<p>730 peaks. A line of <code>ctcf_peaks.narrowPeak</code> (ENCODE's narrowPeak format: BED with four more columns) is a peak: chromosome, start, end, name; a score (−10·log<sub>10</sub>q, as a whole number of at most 1000); the strand (none: <code>.</code>); the <b>fold enrichment</b> at the summit – the pile-up over the local λ –, −log<sub>10</sub>p and −log<sub>10</sub>q; and where the <b>summit</b>, the highest point of the pile-up, lies, counted from the start. The strongest peak (the last command sorts by the q-value) has 58 times as many fragments at its summit as expected, and a q-value of 10<sup>−188</sup>. The other files: <code>ctcf_peaks.xls</code>, the same peaks as a table for a spreadsheet, with the command and the settings at the top (a text file, despite its name; open it in the Files tab); <code>ctcf_summits.bed</code>, the summit of each peak; <code>ctcf_treat_pileup.bdg</code> and <code>ctcf_control_lambda.bdg</code> (with <code>-B</code>), the pile-up of the ChIP and the local λ along the chromosome; and <code>ctcf_model.r</code>, an R script that draws the model.</p>
+<p>These are MACS's own results: its test of the same command keeps the peaks it expects in <code>run_callpeak_narrow0_peaks.narrowPeak</code>. Apart from the names, which come from <code>-n</code>, the two files are the same, byte for byte:</p>
+<pre class="code" data-run="term"><code>diff &lt;(cut -f 1-3,5- ctcf/ctcf_peaks.narrowPeak) &lt;(cut -f 1-3,5- /data/examples/chipseq/run_callpeak_narrow0_peaks.narrowPeak) &amp;&amp; echo the same</code></pre>
+
+<h2>On the genome</h2>
+<p>The fold enrichment along the chromosome is the ChIP's pile-up divided by the local λ: <code>macs3 bdgcmp</code> works it out from the two bedGraph files. Then the peaks and the enrichment go to the Genome browser, on hg19 with its genes (a genome hosted by the IGV team: it needs the internet).</p>
+<pre class="code" data-run="term"><code>macs3 bdgcmp -t ctcf/ctcf_treat_pileup.bdg -c ctcf/ctcf_control_lambda.bdg -m FE -o ctcf/ctcf_FE.bdg
+igv --genome hg19 ctcf/ctcf_peaks.narrowPeak ctcf/ctcf_FE.bdg --locus chr22:39,700,000-39,800,000</code></pre>
+<p>Nine peaks in these 100,000 bases. <code>-m</code> chooses what <code>bdgcmp</code> computes: <code>FE</code>, <code>logFE</code>, <code>logLR</code>, <code>ppois</code> (−log<sub>10</sub> of the Poisson p-value at each position), <code>qpois</code>, <code>subtract</code> …; <code>macs3 bdgpeakcall</code> calls peaks from such a track with a cutoff of your own.</p>
+<p>The model is drawn by R: the script writes <code>ctcf_model.pdf</code> in the folder it runs in.</p>
+<pre class="code" data-run="term"><code>cd ctcf &amp;&amp; Rscript ctcf_model.r &amp;&amp; cd ..
+open ctcf/ctcf_model.pdf</code></pre>
+<p>Its first page shows the two piles of tags, the + strand (red) left and the − strand (blue) right of the binding sites; its second the correlation of the two strands for each shift between them, highest at 228.</p>
+
+<h2>The peaks in Python</h2>
+<pre class="code" data-run="py"><code>import os
+import pandas as pd
+import matplotlib.pyplot as plt
+
+cols = ["chrom", "start", "end", "name", "score", "strand", "fold_enrichment", "log10_p", "log10_q", "summit"]
+peaks = pd.read_csv(os.path.expanduser("~/peaks/ctcf/ctcf_peaks.narrowPeak"), sep="\t", names=cols)
+peaks["length"] = peaks["end"] - peaks["start"]
+print(len(peaks), "peaks; their length:", peaks["length"].min(), "to", peaks["length"].max(), "– median", peaks["length"].median())
+print(peaks.nlargest(3, "log10_q")[["chrom", "start", "end", "fold_enrichment", "log10_q"]])
+plt.scatter(peaks["fold_enrichment"], peaks["log10_q"], s=8)
+plt.xscale("log")
+plt.xlabel("fold enrichment at the summit"); plt.ylabel("−log10 q")
+plt.show()</code></pre>
+<p>No peak is shorter than <i>d</i>, 228 bases (<code>--min-length</code>, which is <i>d</i> unless given). The stronger the enrichment, the smaller the q-value – but not in step: the q-value depends on the numbers of reads too, and a few fragments over a very low λ make a large fold enrichment with a modest q.</p>
+
+<h2>Paired-end reads</h2>
+<p>With pairs MACS3 needs no model: each pair shows the whole fragment, from one read to its mate. The same experiment, read from both ends:</p>
+<pre class="code" data-run="term"><code>zcat /data/examples/chipseq/CTCF_PE_ChIP_chr22_50k.bedpe.gz | head -2
+macs3 callpeak -t /data/examples/chipseq/CTCF_PE_ChIP_chr22_50k.bedpe.gz -c /data/examples/chipseq/CTCF_PE_CTRL_chr22_50k.bedpe.gz \
+    -f BEDPE -g 52000000 -n ctcf_pe --outdir ctcf_pe
+wc -l ctcf_pe/ctcf_pe_peaks.narrowPeak
+bedtools intersect -u -a ctcf/ctcf_peaks.narrowPeak -b ctcf_pe/ctcf_pe_peaks.narrowPeak | wc -l</code></pre>
+<p>MACS's BEDPE is a fragment per line: chromosome, start and end (not the BEDPE of bedtools). The fragments are 253.5 bases long on average – the model's 228 was close. 715 peaks, and 693 of the 730 above overlap one of them. From a BAM file of paired reads, <code>-f BAMPE</code> does the same.</p>
+
+<h2>ATAC-seq: open chromatin, with hmmratac</h2>
+<p>In ATAC-seq the enzyme Tn5 cuts the DNA where it is not wrapped around nucleosomes and adds the adapters of the sequencer there; the fragments between two cuts are read from both ends. A fragment shorter than about 150 bases comes from open DNA; longer ones span one, two or three nucleosomes. <code>/data/examples/atacseq/</code> has the 5,771 fragments that fall on chromosome I of baker's yeast (230,218 bases), of MACS's own test of HMMRATAC – a yeast ATAC-seq (SRA run SRR1822137).</p>
+<pre class="code" data-run="term"><code>zcat /data/examples/atacseq/yeast_SRR1822137_chrI.bedpe.gz | awk '{ n[$3 - $2 &lt; 150 ? "shorter than 150" : "150 or longer"]++ } END { for (k in n) print k, n[k] }'
+macs3 hmmratac -i /data/examples/atacseq/yeast_SRR1822137_chrI.bedpe.gz -f BEDPE --randomSeed 12345 -n atac --outdir atac
+head -3 atac/atac_accessible_regions.narrowPeak
+wc -l atac/atac_accessible_regions.narrowPeak</code></pre>
+<p>HMMRATAC learns the lengths of four kinds of fragment – free of nucleosomes, and spanning one, two or three – from the data (its messages: means of 50, 174, 357 and 549 bases); it splits the signal into those four, trains a hidden Markov model with three states – open, nucleosome, background – on regions with strong signal, and decodes the chromosome with it. The <b>accessible regions</b> are the open stretches and their flanking nucleosomes: 56 here (<code>atac_accessible_regions.narrowPeak</code>, with the summit). <code>atac_model.json</code> is the model, which <code>--model</code> uses again on other data. It picks fragments at random to learn their lengths: <code>--randomSeed</code> makes a run repeatable. With so few fragments the model depends on that draw – try another seed – while a real experiment has millions. The positions are those of the yeast genome sacCer3:</p>
+<pre class="code" data-run="term"><code>igv --genome sacCer3 atac/atac_accessible_regions.narrowPeak --locus chrI:120,000-150,000</code></pre>
+
+<h2>More</h2>
+<p><code>macs3</code> has fourteen commands; <code>macs3 COMMAND -h</code> lists the options of each. Besides <code>callpeak</code>, <code>hmmratac</code> and <code>bdgcmp</code>: <code>callpeak --broad</code> joins nearby peaks into broad regions, for histone marks such as H3K27me3 (<code>NAME_peaks.broadPeak</code> and <code>.gappedPeak</code>); <code>bdgpeakcall</code> and <code>bdgbroadcall</code> call peaks from a bedGraph track; <code>bdgdiff</code> finds the differences between two conditions; <code>cmbreps</code> combines replicates; <code>bdgopt</code> changes a track; <code>filterdup</code> removes duplicate reads; <code>predictd</code> works out only the fragment length; <code>pileup</code> piles up the reads; <code>randsample</code> takes a sample of them; <code>refinepeak</code> refines the summits; <code>callvar</code> calls variants in the peaks – from reads of a ChIP and its control. In the Galaxy tab, the tool <b>MACS3 callpeak</b> (section <i>Peak calling</i>) runs <code>macs3 callpeak</code> on BAM or BED datasets.</p>
+<p>MACS3 3.0.5 is compiled to WebAssembly from its released source – its C and Cython parts, with those of hmmlearn – by the genomics-wasm project, and gives the same peaks, tracks and tables as MACS3 on Linux, byte for byte – its models the same but for the last decimals (see <a href="#h-programs">Programs and versions</a>). It runs as one process: <code>callvar -m N</code> works through its N parts one after another, with the same result. It keeps all the reads in memory: a chromosome, or the genome of yeast, is fine; the tens of millions of reads of a whole human genome need more memory than a browser tab has (see <a href="#h-limits">Limits</a>).</p>
+
+<!--CITE: macs3 hmmratac igvjs-->

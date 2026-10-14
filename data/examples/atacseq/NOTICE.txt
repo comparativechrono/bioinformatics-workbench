@@ -1,0 +1,19 @@
+Notices for the files in this folder
+====================================
+
+  yeast_SRR1822137_chrI.bedpe.gz   5,771 ATAC-seq fragments of baker's yeast (Saccharomyces cerevisiae), all those on
+                                   chromosome I (positions of sacCer3) – a fragment per line: chromosome, start and end
+                                   (MACS's BEDPE, not the BEDPE of bedtools)
+
+They come from a test file of MACS (https://github.com/macs3-project/MACS, test/yeast_500k_SRR1822137.bedpe.gz at tag
+v3.0.5, commit c5443190e3edfeb301cc94acf450e2b2c026a223), which holds 467,908 fragments of the whole genome; only the lines
+of chromosome I were kept, in their order (and compressed again with gzip) – the same file as genomics-wasm's
+datasets/macs3/macs3/atac-chrI.bedpe.gz. MACS is copyright (c) 2025 the macs3 project team and distributed under the BSD
+3-clause licence (LICENSE.MACS3, MACS's own); its test data has no licence of its own.
+
+The reads are public: SRA run SRR1822137 (GEO sample GSM1621323, "S. cerevisiae lin0a"), of the study that described
+NucleoATAC – Schep AN, Buenrostro JD, Denny SK, Schwartz K, Sherlock G, Greenleaf WJ (2015) Structured nucleosome
+fingerprints enable high-resolution mapping of chromatin architecture within regulatory regions. Genome Research 25:
+1757–1770 (doi:10.1101/gr.192294.115; GEO GSE66386). To cite HMMRATAC (macs3 hmmratac): Tarbell ED, Liu T (2019)
+HMMRATAC: a Hidden Markov ModeleR for ATAC-seq. Nucleic Acids Research 47: e91. Where the file came from, how it was made
+and its SHA-256: provenance.json.

@@ -41,6 +41,7 @@ done</code></pre>
 <tr><td>mapping</td><td>minimap2, bowtie2, bwa, bwa-mem2, hisat2 (RNA-seq), samtools, mosdepth</td><td><a href="#h-mapping">Mapping reads</a></td></tr>
 <tr><td>RNA-seq counts</td><td>featureCounts, stringtie, kallisto, salmon</td><td><a href="#h-rnaseq-quant">RNA-seq: counts and abundances</a></td></tr>
 <tr><td>single-cell RNA-seq</td><td>bustools</td><td><a href="#h-singlecell">Single-cell RNA-seq</a></td></tr>
+<tr><td>ChIP-seq and ATAC-seq: peaks</td><td>macs3</td><td><a href="#h-peaks">Peaks</a></td></tr>
 <tr><td>variants</td><td>bcftools, freebayes, bgzip, tabix</td><td><a href="#h-variants">Variant calling</a></td></tr>
 <tr><td>somatic variants (tumour and normal)</td><td>bam-somaticsniper, lofreq, configureStrelkaSomaticWorkflow.py</td><td><a href="#h-somatic">Somatic variants</a></td></tr>
 <tr><td>metagenomics: who is in a sample</td><td>kraken2, kraken2-build, kraken2-inspect, bracken, bracken-build</td><td><a href="#h-metagenomics">Metagenomics</a></td></tr>
@@ -57,7 +58,7 @@ done</code></pre>
 <dl>
 <dt><code>open FILE</code></dt><dd>shows a file in its tab: a notebook in Notebook, a structure in the 3D viewer, a network (SIF, GraphML, XGMML, GML, Cytoscape JSON, CX2) in Networks, the rest in Files (tables, pictures, HTML reports, trees).</dd>
 <dt><code>nano FILE</code></dt><dd>edits a file in the Files tab.</dd>
-<dt><code>igv FILE…</code></dt><dd>shows BAM, VCF, BED or GFF files in the Genome browser.</dd>
+<dt><code>igv FILE…</code></dt><dd>shows BAM, VCF, BED, GFF, bedGraph or narrowPeak files in the Genome browser (<code>--genome hg19</code>: on a genome hosted by the IGV team).</dd>
 <dt><code>network FILE…</code></dt><dd>opens networks in the Networks tab – network files, or tables of edges (it asks which columns are the two ends); <code>network --table VALUES.csv</code> adds a table of values to the nodes of the open network, <code>network --string TP53 MDM2 …</code> opens the STRING network of some genes, <code>network --example karate</code> an example. <code>man network</code> has the options.</dd>
 <dt><code>download FILE|FOLDER</code></dt><dd>saves a copy on your computer (a folder as a <code>.zip</code>).</dd>
 <dt><code>export-session FILE.ipynb</code></dt><dd>writes the commands of this session, with their output, as a notebook (or <code>FILE.sh</code>: a script).</dd>

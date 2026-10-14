@@ -31,8 +31,9 @@ window.MG_CONFIG = {
   /* The WebAssembly bioinformatics programs of the terminal and of Galaxy. */
   biowasmBase: 'assets/vendor/biowasm',
   // the programs of the genomics-wasm project that run in a worker of their own: featureCounts, Salmon and PLINK 2 (on
-  // several threads), Cutadapt, LoFreq, SomaticSniper, Strelka2, Kraken2, Bracken, Prodigal, HMMER and bustools (see tools-wasm.js:
-  // OWN_WORKER, somatic.js and metagenomics.js); and pyodide/314.0.7/, the Python that Cutadapt and Bracken run in
+  // several threads), Cutadapt, MACS3, LoFreq, SomaticSniper, Strelka2, Kraken2, Bracken, Prodigal, HMMER and bustools (see
+  // tools-wasm.js: OWN_WORKER, somatic.js and metagenomics.js); and pyodide/314.0.7/, the Python that Cutadapt, MACS3 and
+  // Bracken run in (with the packages that MACS3 needs)
   threadsBase: 'assets/vendor/genomics-wasm/',
 
   /* AI assistant. Each user enters their own API key in the assistant's settings; it is kept

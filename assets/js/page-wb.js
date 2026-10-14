@@ -174,7 +174,7 @@
   const STRUCTURE = /\.(pdb|ent|cif|mmcif|bcif|mol2|sdf|pqr|gro|mmtf)(\.gz)?$/i;
   const NETWORK = /\.(sif|graphml|xgmml|gml|cyjs|cx2)$/i;
   MG.app.isNetwork = (p) => NETWORK.test(p);
-  const GENOMIC = /\.(bam|cram|vcf|vcf\.gz|bcf|bed|bed\.gz|gff3?|gtf|bedgraph|bw|bigwig|wig|seg)$/i;
+  const GENOMIC = /\.(bam|cram|vcf|vcf\.gz|bcf|bed|bed\.gz|gff3?|gtf|bedgraph|bdg|narrowpeak|broadpeak|gappedpeak|bw|bigwig|wig|seg)$/i;
   MG.app.isStructure = (p) => STRUCTURE.test(p);
   MG.app.isGenomic = (p) => GENOMIC.test(p);
 

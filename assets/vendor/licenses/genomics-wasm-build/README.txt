@@ -1,6 +1,6 @@
 BWA, BWA-MEM2, HISAT2, FreeBayes, featureCounts, StringTie, kallisto, Salmon, mosdepth, Cutadapt, LoFreq,
-SomaticSniper, Strelka2, Kraken2, Bracken, Prodigal, HMMER, bustools, PLINK 2 and the R package locfit – from the
-genomics-wasm project
+SomaticSniper, Strelka2, Kraken2, Bracken, Prodigal, HMMER, bustools, PLINK 2, MACS3 and the R package locfit – from
+the genomics-wasm project
 ======================================================================================================================
 The WebAssembly builds of BWA 0.7.19, HISAT2 2.2.2 and FreeBayes 1.3.6 in ../../biowasm/, and of the
 R package locfit 1.5-9.12 in ../../r-packages/, come from the genomics-wasm project:
@@ -339,3 +339,59 @@ PLINK 2 (added on 13 October 2026)
   --script and --rerun are refused (the terminal must see those options; in this development version --script also
   stops the native program, with a buffer overflow): plink2 $(cat FILE) does the same. Not in this build, which has no
   LAPACK: --pca and --pheno-svd – PLINK says so and stops.
+
+MACS3 (added on 13 October 2026)
+  MACS3 3.0.5, with hmmlearn 0.3.3, in ../../genomics-wasm/macs3/3.0.5/ – and the thirteen packages of Pyodide 314.0.7's
+  own distribution that it needs (NumPy, SciPy, pandas, scikit-learn, h5py …), next to the shared Python in
+  ../../genomics-wasm/pyodide/314.0.7/ – and the example data in data/examples/chipseq/ and atacseq/, come from the same
+  project at commit c977980 (13 October 2026; its MACS3 port is commit 1b306c5). Their parts of the repository, in its
+  layout:
+  scripts/           build-macs3.py (HDF5 and h5py for Linux, MACS3 unchanged and with the port's changes for the
+                     comparison, Emscripten 5.0.3, Pyodide's cross-build environment, the two WebAssembly wheels, and
+                     dist/macs3/), fetch-macs3-test-data.py (how the test data was taken from MACS's repository, and
+                     checked)
+  tools/macs3/       README.md, browser.patch, integer-width.patch, hmmlearn-wasm.patch (the changes, and why),
+                     sources.lock.json (every source archive, compiler download, Pyodide package and Python build
+                     dependency, with its SHA-256), build-requirements.lock, native-entry.py (how the native programs are
+                     started for the comparison), check-wheel-dependencies.py, extract-scientific-notices.py, the
+                     licences; its notices – cython-notices/, runtime-notices/, scientific-notices/ – are in
+                     ../../genomics-wasm/macs3/3.0.5/, the same files
+  runtime/           macs3.mjs, macs3-worker.mjs, macs3-execute.mjs and MACS3.md: how genomics-wasm runs it. The workbench
+                     does not use these modules: assets/js/python-worker.mjs was adapted from macs3-execute.mjs (the same
+                     checks of the manifest, of every package and of Pyodide's catalogue, the same order of installation,
+                     the same synchronous compilation while the packages are installed – which WebKit needs –, and the
+                     same version checks); its terminal gives each command its files (assets/js/tools-wasm.js)
+  datasets/macs3/    README.md, manifest.json, provenance/ (DATA_REUSE.md: the test data of MACS and how it may be used;
+                     fixture-sources.json: how each file was made; sources.lock.json: the files of MACS's repository,
+                     with their SHA-256 and git blobs)
+  Source code included here (in ../sources/): pyodide-recipes 314-20260911 (Mozilla Public License 2.0), the recipes
+  with which Pyodide built its packages. Pyodide and hiwire were there already. MACS3, hmmlearn and the other packages
+  are under permissive licences (BSD, MIT, Apache 2.0) and their sources are where the lock file points.
+  What was done for this site:
+    workbench/build-macs3-for-workbench.sh   the build, step by step: the archives fetched first (two that GitHub makes,
+                                            of HDF5 1.12.1 and pyodide-recipes, made again with recreate-github-archive.sh
+                                            – byte for byte), then the repository's script without network access, with
+                                            the build machine's folders mapped out of the programs' strings
+    workbench/build-macs3-offline-bzip2.py  runs build-macs3.py unchanged, accepting the one archive that cannot be made
+                                            again byte for byte (as for Cutadapt and Bracken)
+
+  How it was made and checked (13 October 2026)
+  1. MACS3 from the unchanged source and with the port's changes, for CPython 3.14.2 on Linux (with HDF5 1.12.1 and
+     h5py 3.13.0 compiled for it), and the WebAssembly wheels of MACS3 and hmmlearn, with build-macs3.py all.
+  2. The project's comparison in Node.js 22 passed: validate-macs3.mjs --engine node, 39 of 39 cases – all fourteen
+     commands with MACS's own test data – against both native programs: 99 of the 103 result files the same byte for
+     byte (peaks, summits, bedGraph tracks, tables, states, variant calls), the other four – models: the R scripts of
+     callpeak's and predictd's model, the HMMs that hmmratac trains – the same but for their last decimals (1.3e-12,
+     relative, at most; the comparison allows such differences).
+  3. In the workbench's terminal and in its Galaxy, with the example data, the results were compared with the unchanged
+     native program: every command of the help page Peaks (callpeak on single-end reads and on fragments, bdgcmp,
+     hmmratac), bdgopt, and the Galaxy tool MACS3 callpeak (narrow, and broad without a model) – the same peaks,
+     summits, bedGraph tracks, tables and accessible regions, byte for byte (the tables but for the paths of the data,
+     which MACS3 writes as they were typed), and the same models but for their last decimals; also in a page opened with
+     plain http:// from another computer, where the packages' SHA-256 is computed in JavaScript.
+
+  In the terminal of the workbench
+  macs3 runs this program. Each command starts the Python of Cutadapt in a worker of its own, installs the packages and
+  runs MACS3's command line – a few seconds; the first time about 45 MB are loaded. callvar -m N runs its N parts one
+  after another (the port's change), with the same result. The memory that MACS3 uses is not measured: its messages say
+  [RSS unavailable].
