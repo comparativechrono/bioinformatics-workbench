@@ -755,8 +755,8 @@
       );
       const bar2 = h(
         'div.nb-bar.nb-bar2',
-        btn('plus', 'Code', 'Add a code cell below the selected one (B)', () => this.view && this.view.addCell({ type: 'code' }, { after: this.view.current, focus: true })),
-        btn('plus', 'Text', 'Add a text (Markdown) cell below the selected one', () => this.view && this.view.addCell({ type: 'markdown' }, { after: this.view.current, focus: true, edit: true })),
+        btn('plus', 'Code', 'Add a code cell below the selected one (B)', () => this.view && this.view.addCell({ type: 'code' }, { after: this.view.current, focus: true }), '.nb-add'),
+        btn('plus', 'Text', 'Add a text (Markdown) cell below the selected one', () => this.view && this.view.addCell({ type: 'markdown' }, { after: this.view.current, focus: true, edit: true }), '.nb-add'),
         h('span.nb-sep'),
         this.runBtn,
         btn('fastforward', 'Run all', 'Run every cell from the top', () => this.view && this.view.runAll()),

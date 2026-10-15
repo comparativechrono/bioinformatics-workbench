@@ -217,12 +217,11 @@ label.check { display: inline-flex; align-items: center; gap: 8px; cursor: point
   #fullBtn span, #projectBtn span, #userBtn span { display: none; }
   .wb-tab { padding: 7px 10px 8px; font-size: 0.84rem; }
   .nb-name { width: 18ch; }
-  .nb-bar2 .tbtn span { display: none; }
+  .nb-bar2 .tbtn:not(.nb-add) span { display: none; }   /* (+ Code and + Text keep their names: without them, both would be just a +) */
   .nb-ktext { max-width: 14ch; }
 }
 @media (max-width: 560px) {
   .brand-title { font-size: 0.92rem; }
-  .wb-tab .ic { display: none; }
   .help-body { padding: 4px 14px 80px; }
   .nb-cells { padding: 8px 6px 120px; }
   .nb-gutter { width: 36px; }
@@ -241,6 +240,33 @@ label.check { display: inline-flex; align-items: center; gap: 8px; cursor: point
 @container bench (max-width: 1020px) {
   .wb-tab:not(.on) .lbl { display: none; }
   .wb-tab { padding: 7px 10px 8px; }
+}
+/* narrower still (a phone held upright): smaller tabs, so that all of them fit across the screen. The open tab keeps
+   its name, shortened with … when there isn't room for all of it, and on the narrowest screens it shows only its icon. */
+@container bench (max-width: 560px) {
+  .wb-tabs { gap: 0; padding: 6px 4px 0; }
+  .wb-tab { padding: 7px 5px 8px; gap: 5px; }
+  .wb-tab .ic { flex: none; }
+  .wb-tab.on { padding: 7px 8px 8px; flex: 0 1 auto; min-width: 0; }
+  .wb-tab.on .lbl { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+}
+@container bench (max-width: 430px) {
+  .wb-tab { padding: 7px 4px 8px; }
+}
+@container bench (max-width: 359px) {
+  .wb-tab, .wb-tab.on { flex: 1 1 0; min-width: 0; padding: 7px 0 8px; justify-content: center; }
+  .wb-tab.on .lbl { display: none; }
+}
+/* the notebook's second toolbar on a phone: its buttons closer together, so that it stays on one row with the names
+   of + Code and + Text */
+@container bench (max-width: 560px) {
+  .nb-bar2 { padding: 5px 6px; gap: 3px; }
+  .nb-bar2 .tbtn { padding: 3px 5px; }
+}
+@container bench (max-width: 359px) {
+  .nb-bar2 { padding: 5px 4px; }
+  .nb-bar2 .tbtn { padding: 3px 4px; gap: 3px; }
+  .nb-bar2 .nb-sep { display: none; }
 }
 
 /* ---------------- Files ---------------- */
