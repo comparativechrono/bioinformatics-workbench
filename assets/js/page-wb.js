@@ -18,8 +18,8 @@
   MG.app.HOME = HOME;
   /* The home folder was /home/student until October 2026. What the browser kept with that name moves to /home/user:
      the files (project.restore), and the paths in what the page remembers – the files that were open, the folders
-     that were unfolded, the terminal's history, Galaxy's history, the conda environments. (A path written with the
-     old name still leads home: see vfs.js.) */
+     that were unfolded, the terminal's history, Galaxy's history. (A path written with the old name still leads home:
+     see vfs.js.) */
   const OLD_HOME = '/home/student';
   function moveOldHome() {
     try {
@@ -52,6 +52,9 @@
     }
     for (const [p, e] of fs.entries) if (e.kind === 'dir' && (p === '/data' || p.startsWith('/data/'))) e.protected = true;
     moveOldHome();
+    // (the conda environments that the terminal modelled until October 2026 are forgotten)
+    store.remove('condaEnvs');
+    store.remove('condaStack');
     await MG.project.restore(fs, [HOME, '/galaxy'], [[OLD_HOME, HOME]]);
     fs.cwd = HOME;
     // the first visit: a folder of notebooks to start from (a file that is there already is left alone)

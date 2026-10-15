@@ -1087,7 +1087,7 @@
       return this.dispatch(base, Object.assign(ctx, { name: base, argv, args: argv.slice(1) }));
     }
     /** Where a program of the terminal is: /usr/bin/NAME – unless the page says otherwise
-        (MG.shellHooks.programPath: a path, or null for "nowhere"; the conda environments of this practical). */
+        (MG.shellHooks.programPath: a path, or null for "nowhere" – the workbench itself sets no such hook). */
     programPath(name) {
       const hook = MG.shellHooks && MG.shellHooks.programPath;
       const p = hook ? hook(name, this) : undefined;

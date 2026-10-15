@@ -6,8 +6,6 @@
                             installs packages for this visit (micropip)
      Rscript, R             R (webR) – the notebook's R
      snakemake              Snakemake (the browser edition), see smk.py
-     conda, mamba           a model of conda environments (every program
-                            is always there: nothing is gated by them)
      dot                    Graphviz, compiled to WebAssembly
      curl, wget             downloads from web services that allow it
      unzip, zip, tar        archives
@@ -81,7 +79,7 @@
     }
     if (a[0] === '-m' && (a[1] === 'pip' || a[1] === 'venv')) {
       if (a[1] === 'pip') return B.pip(Object.assign({}, ctx, { args: a.slice(2) }));
-      ctx.err('The venv module cannot make environments in this browser: there is one Python here. Install packages with  pip install NAME.\n');
+      ctx.err('python -m venv: a virtual environment is not needed here, and cannot be made in the browser. Install the packages a script needs with  pip install NAME  – they last until the page is reloaded.\n');
       return 1;
     }
     if (!MG.py) throw userErr('python: Python is not available on this page');
@@ -174,410 +172,9 @@
     if (ei >= 0) return B.Rscript(Object.assign({}, ctx, { args: a.slice(ei) }));
     const fi = a.findIndex((x) => /^--file=/.test(x) || x === '-f');
     if (fi >= 0) return B.Rscript(Object.assign({}, ctx, { args: [a[fi] === '-f' ? a[fi + 1] : a[fi].slice(7)] }));
-    ctx.err('R\'s interactive console is not available in this terminal. Use an R notebook (Notebook tab → Notebooks → New R notebook), or run R code with  Rscript script.R  or  Rscript -e \'summary(cars)\'.\n');
+    ctx.err('R\'s interactive console is not available in this terminal. Use an R notebook (Notebook tab → Notebooks → New R notebook) or RStudio\'s Console (type  rstudio  to open it), or run R code with  Rscript script.R  or  Rscript -e \'summary(cars)\'.\n');
     return 1;
   };
-
-  /* ------------------------------------------------------------------ conda / mamba */
-  const C = () => MG.conda;
-  function envTable() {
-    const names = Object.keys(C().envs).sort((a, b) => (a === 'base' ? -1 : b === 'base' ? 1 : a.localeCompare(b)));
-    const w = Math.max(24, ...names.map((n) => n.length + 2));
-    return '# conda environments:\n#\n' + names.map((n) => `${n.padEnd(w)} ${n === C().active ? '*' : ' '}  ${C().prefix(n)}`).join('\n') + '\n\n';
-  }
-  function listTable(name) {
-    const pk = C().packages(name);
-    const rows = pk.map((p) => {
-      const c = C().CATALOGUE[p];
-      const vb = C().version(name, p);
-      return `${p.padEnd(25)} ${vb.v.padEnd(15)} ${vb.build.padStart(15)}    ${c.ch}`;
-    });
-    return `# packages in environment at ${C().prefix(name)}:\n#\n# Name                    Version                   Build  Channel\n` + rows.join('\n') + '\n';
-  }
-  function exportYaml(name, fromHistory) {
-    const env = C().envs[name];
-    const deps = fromHistory ? env.specs.filter((s) => s !== 'conda') : C().packages(name).map((p) => {
-      const vb = C().version(name, p);
-      return `${p}=${vb.v}=${vb.build}`;
-    });
-    return `name: ${name}\nchannels:\n${env.channels.map((c) => '  - ' + c).join('\n')}\ndependencies:\n${deps.map((d) => '  - ' + d).join('\n')}\nprefix: ${C().prefix(name)}\n`;
-  }
-  function planText(name, specs, channels, pkgs, pins) {
-    const lines = [];
-    lines.push('Channels:');
-    (channels.length ? channels : ['conda-forge', 'bioconda']).forEach((c) => lines.push(' - ' + c));
-    lines.push('Platform: linux-64 (in your web browser)');
-    lines.push('Collecting package metadata (repodata.json): done');
-    lines.push('Solving environment: done');
-    lines.push('');
-    lines.push('## Package Plan ##');
-    lines.push('');
-    lines.push(`  environment location: ${C().prefix(name)}`);
-    lines.push('');
-    lines.push('  added / updated specs:');
-    specs.forEach((s) => lines.push('    - ' + s));
-    lines.push('');
-    lines.push('');
-    lines.push('The following NEW packages will be INSTALLED:');
-    lines.push('');
-    const all = new Set();
-    const add = (p) => {
-      const c = C().CATALOGUE[p];
-      if (!c || all.has(p)) return;
-      all.add(p);
-      (c.deps || []).forEach(add);
-    };
-    pkgs.forEach(add);
-    Array.from(all).sort().forEach((p) => {
-      const c = C().CATALOGUE[p];
-      const v = (pins && pins[p]) || c.v;
-      const build = v === c.v ? c.build : (c.alt || {})[v] || c.build;
-      lines.push(`  ${p.padEnd(18)} ${c.ch}/linux-64::${p}-${v}-${build}`);
-    });
-    lines.push('');
-    return lines.join('\n') + '\n';
-  }
-  /* conda's message when two packages need different versions of the same library */
-  function conflictText(all, channels) {
-    const conflicts = all.filter((c) => c.lib === all[0].lib); // conda reports one problem at a time
-    const lines = ['Channels:'].concat((channels && channels.length ? channels : ['conda-forge', 'bioconda']).map((c) => ' - ' + c));
-    lines.push('Platform: linux-64', 'Collecting package metadata (repodata.json): done', 'Solving environment: failed', '');
-    lines.push('LibMambaUnsatisfiableError: Encountered problems while solving:');
-    const tools = conflicts.filter((c) => c.pkg !== c.lib);
-    const pin = conflicts.find((c) => c.pkg === c.lib);
-    const loser = tools[tools.length - 1];
-    lines.push(`  - package ${loser.text}, but none of the providers can be installed`, '', 'Could not solve for environment specs', 'The following packages are incompatible');
-    const rows = [];
-    if (pin) rows.push([pin.spec, 'is requested and can be installed;']);
-    tools.forEach((c, i) => {
-      const last = i === tools.length - 1;
-      rows.push([c.spec, last ? 'is not installable because it requires' : 'is installable and it requires', `${c.lib} >=${c.range[0]},<${c.range[1]}.0a0 *, ${last ? 'which conflicts with any installable versions previously reported.' : 'which can be installed;'}`]);
-    });
-    rows.forEach((r, i) => {
-      const end = i === rows.length - 1;
-      lines.push(`${end ? '└─' : '├─'} ${r[0]} ${r[1]}`);
-      if (r[2]) lines.push(`${end ? '   ' : '│  '}└─ ${r[2]}`);
-    });
-    return lines.join('\n') + '\n\n';
-  }
-  function notFound(problems) {
-    return `\nPackagesNotFoundError: The following packages are not available from current channels:\n\n${problems.join('\n')}\n\nCurrent channels:\n\n  - https://conda.anaconda.org/conda-forge\n  - https://conda.anaconda.org/bioconda\n\n`;
-  }
-  async function condaCmd(ctx) {
-    const args = ctx.args.slice();
-    const sub = args.shift();
-    const cmdName = ctx.name || 'conda';
-    const opt = (names) => {
-      for (const n of names) {
-        const i = args.indexOf(n);
-        if (i >= 0) {
-          const v = args[i + 1];
-          args.splice(i, 2);
-          return v;
-        }
-        const j = args.findIndex((a) => a.startsWith(n + '='));
-        if (j >= 0) {
-          const v = args[j].split('=').slice(1).join('=');
-          args.splice(j, 1);
-          return v;
-        }
-      }
-      return null;
-    };
-    const flag = (names) => {
-      let hit = false;
-      names.forEach((n) => {
-        const i = args.indexOf(n);
-        if (i >= 0) {
-          args.splice(i, 1);
-          hit = true;
-        }
-      });
-      return hit;
-    };
-    if (!sub || sub === '-h' || sub === '--help') {
-      ctx.out(`usage: ${cmdName} [-h] [-v] [--version] COMMAND ...\n\ncommands:\n  activate     Activate a conda environment.\n  deactivate   Deactivate the current active conda environment.\n  create       Create a new conda environment from a list of specified packages.\n  env          See \`conda env --help\` (create -f, export, list, remove).\n  info         Display information about current conda install.\n  install      Install a list of packages into a specified conda environment.\n  list         List installed packages in a conda environment.\n  remove       Remove a list of packages from a specified conda environment.\n  search       Search for packages and display associated information.\n`);
-      return 0;
-    }
-    if (sub === '--version' || sub === '-V') {
-      ctx.out(`${cmdName === 'mamba' ? 'mamba 2.3.2\nconda' : 'conda'} ${C().VERSION}\n`);
-      return 0;
-    }
-    if (sub === 'activate') {
-      const name = args.filter((a) => !a.startsWith('-'))[0] || 'base';
-      const n = C().envs[name] ? name : Object.keys(C().envs).find((k) => C().prefix(k) === name);
-      if (!n) {
-        ctx.err(`\nEnvironmentNameNotFound: Could not find conda environment: ${name}\nYou can list all discoverable environments with \`conda info --envs\`.\n\n`);
-        return 1;
-      }
-      if (C().active !== n) C().stack.push(n);
-      if (C().stack.length > 6) C().stack.splice(1, C().stack.length - 6);
-      C().save();
-      MG.bus.emit('conda:activate', { name: n });
-      return 0;
-    }
-    if (sub === 'deactivate') {
-      if (C().stack.length > 1) C().stack.pop();
-      C().save();
-      MG.bus.emit('conda:deactivate', { name: C().active });
-      return 0;
-    }
-    if (sub === 'info') {
-      if (flag(['--envs', '-e'])) {
-        ctx.out(envTable());
-        return 0;
-      }
-      ctx.out(`\n     active environment : ${C().active}\n    active env location : ${C().prefix(C().active)}\n       user config file : ${HOME()}/.condarc\n          conda version : ${C().VERSION}\n       python version : ${pyVersion()}\n       base environment : ${C().ROOT}  (writable)\n           channel URLs : https://conda.anaconda.org/conda-forge/linux-64\n                          https://conda.anaconda.org/bioconda/linux-64\n               platform : linux-64 (WebAssembly in your browser)\n\n`);
-      return 0;
-    }
-    if (sub === 'list') {
-      const name = opt(['-n', '--name']) || C().active;
-      if (!C().envs[name]) {
-        ctx.err(`\nEnvironmentLocationNotFound: Not a conda environment: ${C().prefix(name)}\n\n`);
-        return 1;
-      }
-      if (flag(['--export', '-e'])) {
-        ctx.out(`# This file may be used to create an environment using:\n# $ conda create --name <env> --file <this file>\n# platform: linux-64\n` + C().packages(name).map((p) => {
-          const vb = C().version(name, p);
-          return `${p}=${vb.v}=${vb.build}`;
-        }).join('\n') + '\n');
-        return 0;
-      }
-      const pat = args.filter((a) => !a.startsWith('-'))[0];
-      let text = listTable(name);
-      if (pat) text = text.split('\n').filter((l) => l.startsWith('#') || l.includes(pat)).join('\n') + '\n';
-      ctx.out(text);
-      return 0;
-    }
-    if (sub === 'search') {
-      const q = args.filter((a) => !a.startsWith('-'))[0] || '';
-      const name = q.split(/[=<>]/)[0];
-      const hits = Object.keys(C().CATALOGUE).filter((k) => !C().CATALOGUE[k].dep && k.includes(name));
-      if (!hits.length) {
-        ctx.err(notFound([`  - ${q}`]));
-        return 1;
-      }
-      ctx.out('Loading channels: done\n# Name                       Version           Build  Channel\n' + hits.map((k) => `${k.padEnd(28)} ${C().CATALOGUE[k].v.padEnd(17)} ${C().CATALOGUE[k].build.padEnd(6)} ${C().CATALOGUE[k].ch}`).join('\n') + '\n');
-      ctx.io.note('A real conda search lists every published version; this browser has exactly one version of each program.');
-      return 0;
-    }
-    if (sub === 'env') {
-      const sub2 = args.shift();
-      if (sub2 === 'list') {
-        ctx.out(envTable());
-        return 0;
-      }
-      if (sub2 === 'export') {
-        const name = opt(['-n', '--name']) || C().active;
-        const hist = flag(['--from-history']);
-        const file = opt(['-f', '--file']);
-        if (!C().envs[name]) {
-          ctx.err(`\nEnvironmentLocationNotFound: Not a conda environment: ${C().prefix(name)}\n\n`);
-          return 1;
-        }
-        const y = exportYaml(name, hist);
-        if (file) ctx.fs.writeText(file, y);
-        else ctx.out(y);
-        MG.bus.emit('conda:export', { name, fromHistory: hist });
-        return 0;
-      }
-      if (sub2 === 'remove') {
-        const name = opt(['-n', '--name']);
-        flag(['-y', '--yes']);
-        return removeEnv(ctx, name);
-      }
-      if (sub2 === 'create') {
-        const file = opt(['-f', '--file']) || 'environment.yml';
-        let name = opt(['-n', '--name']);
-        flag(['-y', '--yes']);
-        let text;
-        try {
-          text = await ctx.fs.readText(file);
-        } catch (e) {
-          ctx.err(`\nEnvironmentFileNotFound: '${ctx.fs.resolve(file)}' file not found\n\n`);
-          return 1;
-        }
-        const y = parseEnvYaml(text);
-        if (!y) {
-          ctx.err(`\nEnvironmentFileNotFound or invalid YAML: ${file} needs  name:,  channels:  and  dependencies:\n\n`);
-          return 1;
-        }
-        name = name || y.name;
-        if (!name) {
-          ctx.err('\nCondaValueError: the environment file has no name: – give one with  -n NAME\n\n');
-          return 1;
-        }
-        return createEnv(ctx, name, y.deps, y.channels, true);
-      }
-      ctx.err(`usage: conda env [-h] {create,export,list,remove} ...\n`);
-      return 2;
-    }
-    if (sub === 'create') {
-      const name = opt(['-n', '--name']);
-      const channels = [];
-      let ch;
-      while ((ch = opt(['-c', '--channel']))) channels.push(ch);
-      const file = opt(['--file']);
-      flag(['-y', '--yes', '--quiet', '-q']);
-      if (!name) {
-        ctx.err('\nCondaValueError: one of the arguments -n/--name -p/--prefix is required\n\n');
-        return 2;
-      }
-      let specs = args.filter((a) => !a.startsWith('-'));
-      if (file) specs = specs.concat(linesOf(await ctx.fs.readText(file)).filter((l) => l.trim() && !l.startsWith('#')));
-      return createEnv(ctx, name, specs, channels, false);
-    }
-    if (sub === 'install') {
-      const name = opt(['-n', '--name']) || C().active;
-      const channels = [];
-      let ch;
-      while ((ch = opt(['-c', '--channel']))) channels.push(ch);
-      flag(['-y', '--yes', '--quiet', '-q']);
-      const specs = args.filter((a) => !a.startsWith('-'));
-      if (!C().envs[name]) {
-        ctx.err(`\nEnvironmentLocationNotFound: Not a conda environment: ${C().prefix(name)}\n\n`);
-        return 1;
-      }
-      const env0 = C().envs[name];
-      const r = C().solve(env0.specs.filter((x) => x !== 'conda').concat(specs));
-      if (r.problems.length) {
-        ctx.err(notFound(r.problems));
-        ctx.io.note('On a real computer conda would download these from the internet. This browser has exactly one version of each program: see  conda search NAME');
-        return 1;
-      }
-      if (r.conflicts.length && name !== 'pipelines') {
-        ctx.err(conflictText(r.conflicts, channels));
-        ctx.io.note(conflictNote(r.conflicts));
-        return 1;
-      }
-      ctx.out(planText(name, specs, channels, r.pkgs, r.pins) + '\nProceed ([y]/n)? y\n\nDownloading and Extracting Packages: done\nPreparing transaction: done\nVerifying transaction: done\nExecuting transaction: done\n');
-      const env = C().envs[name];
-      env.specs = Array.from(new Set(env.specs.concat(specs)));
-      env.pkgs = Array.from(new Set(env.pkgs.concat(r.pkgs)));
-      env.pins = Object.assign({}, env.pins || {}, r.pins);
-      C().save();
-      r.notes.forEach((n) => ctx.io.note(n));
-      return 0;
-    }
-    if (sub === 'remove' || sub === 'uninstall') {
-      const name = opt(['-n', '--name']) || C().active;
-      flag(['-y', '--yes']);
-      if (flag(['--all'])) return removeEnv(ctx, name);
-      const env = C().envs[name];
-      if (!env) {
-        ctx.err(`\nEnvironmentLocationNotFound: Not a conda environment: ${C().prefix(name)}\n\n`);
-        return 1;
-      }
-      const names = args.filter((a) => !a.startsWith('-'));
-      env.pkgs = env.pkgs.filter((p) => !names.includes(p));
-      env.specs = env.specs.filter((s) => !names.includes(s.split(/[=<>]/)[0]));
-      C().save();
-      ctx.out(`\n## Package Plan ##\n\n  environment location: ${C().prefix(name)}\n\n  removed specs:\n${names.map((n) => '    - ' + n).join('\n')}\n\nPreparing transaction: done\nVerifying transaction: done\nExecuting transaction: done\n`);
-      return 0;
-    }
-    if (sub === 'config' || sub === 'init' || sub === 'update' || sub === 'clean') {
-      ctx.io.note(`conda ${sub} is not needed in the browser.`);
-      return 0;
-    }
-    ctx.err(`${cmdName}: error: argument COMMAND: invalid choice: '${sub}'\n`);
-    return 2;
-  }
-  function conflictNote(all) {
-    const lib = all[0].lib;
-    const conflicts = all.filter((c) => c.lib === lib);
-    const pin = conflicts.find((c) => c.pkg === c.lib);
-    const tools = conflicts.filter((c) => c.pkg !== c.lib);
-    const C = MG.conda.CATALOGUE;
-    const cmp = (a, b) => (MG.conda.versionOk(a, '>', b) ? 1 : MG.conda.versionOk(a, '==', b) ? 0 : -1);
-    const libName = lib === 'libzlib' ? 'zlib' : lib;
-    const nice = (p) => (p === 'python' ? 'Python ' + C[p].v.split('.').slice(0, 2).join('.') : `${p} ${C[p].v}`);
-    const join = (xs) => (xs.length < 2 ? xs.join('') : xs.slice(0, -1).join(', ') + ' and ' + xs[xs.length - 1]);
-    // which bound decides: the lowest upper bound, or the highest lower bound
-    const minHi = tools.map((c) => c.range[1]).reduce((a, b) => (cmp(a, b) <= 0 ? a : b));
-    const older = tools.filter((c) => !pin && c.range[1] === minHi && tools.some((o) => cmp(o.range[0], minHi) >= 0));
-    const newer = tools.filter((c) => !older.includes(c));
-    const parts = [];
-    if (older.length) parts.push(`${join(older.map((c) => nice(c.pkg)))} ${older.length > 1 ? 'need' : 'needs'} ${libName} older than ${minHi}${lib === 'libzlib' ? ' (these builds were made with zlib 1.2)' : ''}`);
-    newer.forEach((c) => parts.push(`${nice(c.pkg)} needs ${libName} ${c.range[0]} or newer`));
-    const why = parts.join(older.length ? ', but ' : '; ');
-    return `An environment holds ONE version of each library. ${why}${pin ? `, but you asked for exactly ${libName} ${pin.v}` : ''}. Put them in separate environments (in a Snakefile: a different conda: file for each rule).`;
-  }
-  function createEnv(ctx, name, specs, channels, fromFile) {
-    if (!/^[\w.\-]+$/.test(name)) {
-      ctx.err(`\nCondaValueError: Invalid environment name: '${name}'\n\n`);
-      return 1;
-    }
-    if (C().envs[name]) {
-      ctx.err(`\nCondaValueError: prefix already exists: ${C().prefix(name)}\n\n`);
-      ctx.io.note(`Remove it first with  conda env remove -n ${name}  – or choose another name.`);
-      return 1;
-    }
-    const r = C().solve(specs);
-    if (r.problems.length) {
-      ctx.err('Channels:\n' + (channels.length ? channels : ['conda-forge', 'bioconda']).map((c) => ' - ' + c).join('\n') + '\nPlatform: linux-64\nCollecting package metadata (repodata.json): done\nSolving environment: failed\n' + notFound(r.problems));
-      ctx.io.note('On a real computer conda downloads the versions you ask for. This browser has exactly one version of each program (see  conda search samtools) – so pin the versions that are here.');
-      MG.bus.emit('conda:create', { name, ok: false });
-      return 1;
-    }
-    if (r.conflicts.length) {
-      ctx.err(conflictText(r.conflicts, channels));
-      ctx.io.note(conflictNote(r.conflicts));
-      MG.bus.emit('conda:create', { name, ok: false, conflict: true });
-      return 1;
-    }
-    ctx.out(planText(name, specs, channels, r.pkgs, r.pins) + (fromFile ? '' : '\nProceed ([y]/n)? y\n') + '\nDownloading and Extracting Packages: done\nPreparing transaction: done\nVerifying transaction: done\nExecuting transaction: done\n#\n# To activate this environment, use\n#\n#     $ conda activate ' + name + '\n#\n# To deactivate an active environment, use\n#\n#     $ conda deactivate\n\n');
-    C().create(name, specs, channels);
-    r.notes.forEach((n) => ctx.io.note(n));
-    MG.bus.emit('conda:create', { name, ok: true, specs });
-    return 0;
-  }
-  function removeEnv(ctx, name) {
-    if (!name) {
-      ctx.err('\nCondaValueError: no environment specified – use  -n NAME\n\n');
-      return 2;
-    }
-    if (name === 'base' || name === 'pipelines') {
-      ctx.err(`\nCondaEnvironmentError: cannot remove the environment '${name}' here.\n\n`);
-      return 1;
-    }
-    if (!C().envs[name]) {
-      ctx.err(`\nEnvironmentLocationNotFound: Not a conda environment: ${C().prefix(name)}\n\n`);
-      return 1;
-    }
-    if (C().stack.includes(name)) {
-      ctx.err(`\nCondaEnvironmentError: cannot remove current environment. Deactivate and run conda remove again\n\n`);
-      return 1;
-    }
-    delete C().envs[name];
-    C().save();
-    ctx.out(`\nRemove all packages in environment ${C().prefix(name)}:\n\nPreparing transaction: done\nVerifying transaction: done\nExecuting transaction: done\n`);
-    return 0;
-  }
-  /* a small reader for environment.yml files: name, channels, dependencies (and pip:) */
-  function parseEnvYaml(text) {
-    const out = { name: null, channels: [], deps: [] };
-    let section = null;
-    let ok = false;
-    for (const raw of linesOf(text)) {
-      const line = raw.replace(/\s+#.*$/, '');
-      if (!line.trim() || line.trim().startsWith('#')) continue;
-      const top = /^([A-Za-z_]+):\s*(.*)$/.exec(line);
-      if (top) {
-        section = top[1];
-        if (section === 'name') out.name = top[2].trim();
-        ok = true;
-        continue;
-      }
-      const item = /^\s*-\s*(.+)$/.exec(line);
-      if (item && section === 'channels') out.channels.push(item[1].trim());
-      else if (item && section === 'dependencies' && !/^pip\s*:/.test(item[1])) out.deps.push(item[1].trim());
-    }
-    return ok ? out : null;
-  }
-  MG.parseEnvYaml = parseEnvYaml;
-  B.conda = condaCmd;
-  B.mamba = condaCmd;
-  B.micromamba = condaCmd;
 
   /* ------------------------------------------------------------------ snakemake */
   B.snakemake = async (ctx) => {
@@ -675,20 +272,7 @@
   };
 
   /* ------------------------------------------------------------------ the shell's hooks */
-  // (Snakemake jobs pass the programs of a rule's conda environment as opts.tools; here every program is always
-  // there, so they are only remembered.)
   const Shell = MG.Shell;
-  const exec0 = Shell.prototype.exec;
-  Shell.prototype.exec = async function (text, io, opts = {}) {
-    if (!opts.tools) return exec0.call(this, text, io, opts);
-    const before = this._jobTools;
-    this._jobTools = opts.tools;
-    try {
-      return await exec0.call(this, text, io, opts);
-    } finally {
-      this._jobTools = before;
-    }
-  };
   const dispatch0 = Shell.prototype.dispatch;
   Shell.prototype.dispatch = function (name, ctx) {
     // a command of the AI agent runs only the programs the agent was told it has (assistant.js sets _agentOnly)
@@ -700,12 +284,6 @@
     }
     return dispatch0.call(this, name, ctx);
   };
-  MG.shellHooks = MG.shellHooks || {};
-  MG.shellHooks.promptPrefix = () => (MG.conda && MG.conda.active && MG.conda.active !== 'base' && MG.conda.stack && MG.conda.stack.length > 1 ? `<span class="penv">(${MG.esc(MG.conda.active)})</span> ` : '');
-  MG.bus.on('conda:changed', () => {
-    const t = MG.app && MG.app.term;
-    if (t) t._renderPrompt();
-  });
 
   /* ------------------------------------------------------------------ programs that are not here */
   if (MG.shellUtil.ABSENT)
@@ -714,6 +292,8 @@
       MG.shellUtil.ABSENT.length,
       [/^(bowtie|STAR|bbmap|ngmlr|novoalign|subread-align|subjunc|rsem-calculate-expression|htseq-count)$/, 'is not installed in this terminal. For mapping reads there are bwa, bwa-mem2, bowtie2 and minimap2 – and hisat2 for RNA-seq reads; for counting featureCounts, for abundances stringtie, kallisto and salmon.'],
       [/^(featurecounts|featureCount|FeatureCounts)$/, 'is not a command here: the program is called featureCounts (with a capital C).'],
+      [/^(conda|mamba|micromamba|conda-env|conda-build)$/, 'is not needed here, so it is not part of the workbench: every program in this terminal is installed already (type  help  to see them and their versions). On your own computer or a cluster, conda installs programs into environments – the help page “Keep and share your work” has the commands that set up the programs of the workbench there. Python packages install here with  pip install NAME, R packages with  install.packages("NAME").'],
+      [/^(virtualenv|pipenv|poetry|pyenv|uv)$/, 'is not needed here, so it is not part of the workbench: Python packages install with  pip install NAME, and last until the page is reloaded.'],
       [/^(fastqc|multiqc|trimmomatic|trim_galore|bbduk\.sh|seqkit|NanoPlot|prinseq)$/, 'is not installed in this terminal. For quality control and trimming there are fastp (fastp -i R1.fastq -I R2.fastq … -h report.html) and cutadapt (adapters, primers, quality: cutadapt -a ADAPTER -o out.fastq reads.fastq); seqtk does many small jobs on FASTQ files.'],
       [/^(strelka|strelka2|configureStrelkaWorkflow\.pl|runWorkflow\.py)$/, 'is not a command here: Strelka2 starts with  configureStrelkaSomaticWorkflow.py --normalBam N.bam --tumorBam T.bam --referenceFasta REF.fa --runDir DIR, which writes DIR/runWorkflow.py; then run  DIR/runWorkflow.py -m local -j 1  (see man configureStrelkaSomaticWorkflow.py).'],
       [/^(kraken|krakenuniq|centrifuge|kaiju|metaphlan|metaphlan4|mpa_config|humann|humann3|motus|mash|sourmash|kma|gtdbtk|ktImportTaxonomy|ktImportText|kreport2krona\.py|kreport2mpa\.py|extract_kraken_reads\.py|combine_kreports\.py|combine_bracken_outputs\.py)$/, 'is not installed in this terminal. For classifying the reads of a sample by taxon there are kraken2 (kraken2 --db DB --report sample.report READS) and bracken (species abundances from that report) – see the help page Metagenomics.'],
@@ -729,7 +309,7 @@
       [/^(clustalo|clustalw|mafft|t_coffee|prank)$/, 'is not installed in this terminal. For multiple alignments there are kalign and muscle:  kalign -i seqs.fasta -o aligned.fasta'],
       [/^(raxml|raxml-ng|iqtree|iqtree2|phyml|mrbayes)$/, 'is not installed in this terminal. For trees there is FastTree:  fasttree aligned.fasta > tree.nwk  (open tree.nwk in the Files tab to see it).'],
       [/^(ipython|ipython3)$/, 'is not a command here, but Spyder, in the IDE tab, has an IPython console: type  spyder  to open it. Python scripts run here with  python script.py.'],
-      [/^(perl|ruby|java|julia|node|jupyter|conda-build)$/, 'is not installed in this terminal. There are Python (python script.py; the Notebook tab), R (Rscript script.R; R notebooks) and the shell with awk, sed, grep, sort, cut …'],
+      [/^(perl|ruby|java|julia|node|jupyter)$/, 'is not installed in this terminal. There are Python (python script.py; the Notebook tab), R (Rscript script.R; R notebooks) and the shell with awk, sed, grep, sort, cut …'],
       [/^(apt|apt-get|yum|dnf|brew|docker|singularity|apptainer|nextflow|git|make|module|cmake|gcc|cc|g\+\+)$/, 'is not available in this terminal: programs cannot be installed or compiled in a web page. Python packages: pip install NAME; R packages: install.packages("NAME") in R.'],
       [/^(ssh|scp|rsync|ping|ftp|sftp|nc|telnet)$/, 'is not available: a web page cannot open network connections of its own. Downloads from web services that allow it: curl or wget (see  man curl).'],
       [/^(top|htop|ps|kill|free|lscpu|df|mount|su|chown|screen|tmux|nohup|watch|crontab|pkill|pgrep|uptime|stty|getconf|lsblk|dmesg|who|w|last|service|systemctl|chgrp|mknod)$/, 'is not available in this terminal: it is a web page, not a whole computer.'],
@@ -752,7 +332,6 @@
   /* ------------------------------------------------------------------ man pages of the workbench's own commands */
   const OWN_MAN = {
     snakemake: 'snakemake – Snakemake 9 (the browser edition): runs the rules of a Snakefile.\n\n  snakemake -n                       what would run, and why (a dry run)\n  snakemake --cores 1                run the pipeline\n  snakemake --dag | dot -Tsvg > dag.svg\n  snakemake --summary                what made each output, and when\n\nAll its options:  snakemake --help',
-    conda: 'conda – a model of conda environments (with the real versions of the programs here).\nIn the workbench every program is always available; environments only record what a pipeline needs.\n\n  conda env list     conda list     conda env export     conda create -n NAME PACKAGE=VERSION …\n\nAll its commands:  conda --help',
     python: 'python – Python (Pyodide) in your browser: the same Python as the Python notebooks.\n\n  python script.py [ARGUMENTS]\n  python -c "print(1 + 1)"\n  python -m MODULE\n  python --version\n\nPackages: pandas, NumPy, matplotlib, SciPy, Biopython, scikit-learn … load when imported; others:  pip install NAME\nFor interactive Python use the Notebook tab.',
     pip: 'pip – installs Python packages for this visit of the page (micropip): pure-Python packages from PyPI, and those Pyodide has built.\n\n  pip install NAME …\n  pip list\n  pip show NAME',
     Rscript: 'Rscript – R (webR) in your browser: the same R as the R notebooks.\n\n  Rscript script.R [ARGUMENTS]          (commandArgs(trailingOnly = TRUE) gives the arguments)\n  Rscript -e \'summary(cars)\'\n  Rscript -e \'install.packages("ggplot2")\'\n\nPlots go to Rplots.pdf, or to a file you open with png("plot.png") / pdf("plot.pdf") … dev.off().',
@@ -774,7 +353,7 @@
   const man0 = B.man;
   B.man = (ctx) => {
     const name = ctx.args.filter((a) => !a.startsWith('-'))[0];
-    const key = { mamba: 'conda', micromamba: 'conda', python3: 'python', pip3: 'pip' }[name] || name;
+    const key = { python3: 'python', pip3: 'pip' }[name] || name;
     if (OWN_MAN[key]) return ctx.out(OWN_MAN[key] + '\n');
     return man0(ctx);
   };

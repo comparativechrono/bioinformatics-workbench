@@ -1,4 +1,4 @@
-<!-- id: h-scripts | title: Scripts and pipelines | group: Terminal and programs | summary: bash scripts, Python and R scripts, Snakemake, Graphviz | keys: script bash sh loop for while variables function pipeline snakemake snakefile workflow rule dot graphviz python script rscript reproducible -->
+<!-- id: h-scripts | title: Scripts and pipelines | group: Terminal and programs | summary: bash scripts, Python and R scripts, Snakemake, Graphviz | keys: script bash sh loop for while variables function pipeline snakemake snakefile workflow rule dot graphviz python script rscript reproducible conda use-conda environment -->
 <h1><!--ICON:code-->Scripts and pipelines</h1>
 <p class="lede">Commands that work once belong in a script – so that they run again tomorrow, on new data, and show exactly what was done.</p>
 <p>The examples work in a folder of your own: <button class="do" type="button" data-term-run="mkdir -p ~/scripts &amp;&amp; cd ~/scripts">mkdir -p ~/scripts &amp;&amp; cd ~/scripts</button></p>
@@ -68,6 +68,7 @@ snakemake -n
 snakemake --cores 1
 cat results/flagstat.txt</code></pre>
 <p>Run <code>snakemake --cores 1</code> again: nothing to do, because every result is newer than its inputs. Snakemake keeps a record of how each file was made: <code>snakemake --summary</code>.</p>
+<p>Pipelines written for a computer or a cluster often give each rule a conda environment (<code>conda: "envs/mapping.yaml"</code>) and are run with <code>snakemake --use-conda</code>. They run here as they are. Every program is installed already, so no environments are made: <code>--use-conda</code> only checks that each environment file is there and can be read.</p>
 
 <h2>Graphviz</h2>
 <p><code>dot</code> draws graphs written in the DOT language – workflows, networks, decision trees:</p>

@@ -13,7 +13,6 @@
 .term-out .tl.cg { color: var(--smk-g); }
 .term-out .tl.cr { color: var(--smk-r); }
 .term-out .tl.hint { color: #b9e6ff; font-family: var(--font); font-size: 12.5px; background: rgba(79, 157, 222, 0.12); border-left: 3px solid #4f9dde; padding: 3px 8px; margin: 3px 0; border-radius: 0 6px 6px 0; }
-.term-prompt .penv, .tl.cmdline .penv { color: #d2a8ff; }
 .term-out a.flink { color: inherit; text-decoration: underline dotted; cursor: pointer; }
 .term-out a.flink:hover { color: #fff; }
 
