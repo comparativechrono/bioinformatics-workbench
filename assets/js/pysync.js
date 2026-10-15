@@ -63,8 +63,9 @@
       dirs.sort((a, b) => a.length - b.length);
       return { changes: { files, dirs, removed }, transfer };
     },
-    async push() {
-      const K = MG.kernels.peek('python');
+    /** the files that changed → Python (kernel: the notebook's Python unless another is given – the IDE tab's) */
+    async push(kernel) {
+      const K = kernel || MG.kernels.peek('python');
       if (!K || K.state !== 'ready') return;
       const { changes, transfer } = await this.collect();
       if (changes.files.length || changes.dirs.length || changes.removed.length) K.worker.postMessage({ type: 'push', changes }, transfer);

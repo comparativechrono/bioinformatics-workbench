@@ -1,4 +1,4 @@
-<!-- id: h-troubleshoot | title: When something goes wrong | group: Reference | summary: Common problems and what to do | keys: troubleshoot macs3 macs paired peaks model build peaks genome browser networks string hairball kraken2 bracken kmer_distrib unclassified prodigal hmmer hmmscan hmmpress auxfiles pressed format problem 20000 characters problem error help isolated isolation cross-origin featurecounts salmon threads not working slow stuck crash files gone lost storage full quota not found no such file network failed to fetch cors 429 genome browser empty galaxy red ai key locked terminal out of memory reload index bai fai chromosome names variant caller strelka lofreq plink plink2 pca lapack memory glm covariates allow-no-covars -->
+<!-- id: h-troubleshoot | title: When something goes wrong | group: Reference | summary: Common problems and what to do | keys: troubleshoot ide rstudio spyder macs3 macs paired peaks model build peaks genome browser networks string hairball kraken2 bracken kmer_distrib unclassified prodigal hmmer hmmscan hmmpress auxfiles pressed format problem 20000 characters problem error help isolated isolation cross-origin featurecounts salmon threads not working slow stuck crash files gone lost storage full quota not found no such file network failed to fetch cors 429 genome browser empty galaxy red ai key locked terminal out of memory reload index bai fai chromosome names variant caller strelka lofreq plink plink2 pca lapack memory glm covariates allow-no-covars -->
 <h1><!--ICON:help-->When something goes wrong</h1>
 <p class="lede">The usual problems, and what to do about them. Error messages in the notebook and the terminal often carry a hint of their own – and <b>Ask the AI assistant about this error</b> explains them (<a href="#h-ai">AI assistant</a>).</p>
 
@@ -88,6 +88,14 @@
   <dd>The two columns must hold the same kind of names – gene names with gene names, Ensembl IDs with Ensembl IDs. A network from STRING keeps the names you sent in its column <code>query</code>, and STRING's own names in <code>name</code>: choose the one that matches your table.</dd>
   <dt>Networks: the network is a hairball</dt>
   <dd>Raise STRING's confidence (0.7), keep fewer genes (a smaller p-value), hide the nodes without edges (<i>Select → Nodes without edges</i>), or look at the clusters one at a time (<i>Analyse → Clusters</i>, then <i>new network</i> on a cluster).</dd>
+  <dt>RStudio or Spyder takes a long time to open, or says it could not be opened</dt>
+  <dd>The first time, the IDE downloads R or Python, which can take a minute or so on a slow connection. If it fails, check your internet connection and press <b>Try again</b>, or reload the page; your files are kept.</dd>
+  <dt>My variable is missing in RStudio or Spyder (or in the notebook)</dt>
+  <dd>Each IDE has an R or a Python of its own, separate from the notebooks’, so a variable only exists where you created it. Run the code that creates it in the IDE as well (<a href="#h-ide/separate">The IDE tab</a>).</dd>
+  <dt>Spyder: input() or the debugger doesn’t work</dt>
+  <dd>Both need the page to be cross-origin isolated, and the console says so when it starts if it isn’t. Reload the page, or open it in an ordinary (not private) window (<a href="#h-spyder/isolation">Spyder</a>).</dd>
+  <dt>RStudio: "there is no package called …"</dt>
+  <dd>In RStudio, as on your own computer, a package has to be installed once before <code>library()</code> can load it: run <code>install.packages("NAME")</code>, or use <b>Tools ▸ Install Packages…</b> (<a href="#h-rstudio">RStudio</a>).</dd>
   <dt>The AI assistant says "Not connected", the key is not accepted, or it is busy</dt>
   <dd>Check the service and key in <!--ICON:gear--> AI settings and press <b>Test</b>. Free keys allow only a few requests per minute: wait a minute.</dd>
 </dl>

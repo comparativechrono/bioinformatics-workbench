@@ -1203,6 +1203,8 @@ async function init(m) {
   } catch (e) {
     /* older Pyodide */
   }
+  // (a worker that builds on this one – py-ide-worker.js, the Python of the IDE tab – finishes setting up here)
+  if (typeof self.wbAfterInit === 'function') await self.wbAfterInit(m, versions);
   post({ type: 'ready', versions });
   if (m.background && m.background.length) {
     pyodide.loadPackage(m.background, { messageCallback: () => {}, errorCallback: () => {} }).then(() => post({ type: 'background', done: true })).catch(() => {});
@@ -1340,6 +1342,7 @@ async function handle(m) {
     else if (m.type === 'run') await run(m);
     else if (m.type === 'python' || m.type === 'smk' || m.type === 'pip') await termRun(m);
     else if (m.type === 'vars') await vars(m);
+    else if (typeof self.wbHandle === 'function') await self.wbHandle(m);
   } catch (e) {
     post({ type: 'fatal', id: m.id, stage: m.type, message: String((e && e.message) || e) });
   }

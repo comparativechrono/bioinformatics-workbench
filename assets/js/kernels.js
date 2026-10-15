@@ -85,6 +85,9 @@
       this.lang = 'python';
       this.label = 'Python';
       this.opts = opts;
+      // (the Python of the IDE tab – pyide.js – is a PyKernel as well, with a file sync of its own and its own name in
+      // the kernel:state and kernel:status events, so that the notebook does not take its news for its own)
+      this.evLang = opts.evLang || 'python';
       this.seq = 0;
       this.pending = new Map();
       this.state = 'off';
@@ -96,10 +99,14 @@
       if (this.state === 'off' || this.state === 'failed') this.start();
       return this.readyPromise;
     }
+    /** the copy of the home folder that this Python keeps in step with the page's (pysync.js) */
+    get files() {
+      return this.opts.sync || MG.pysync;
+    }
     start() {
       this.state = 'loading';
       this._status('Starting Python…');
-      bus.emit('kernel:state', { lang: 'python', state: 'loading' });
+      bus.emit('kernel:state', { lang: this.evLang, state: 'loading' });
       this.worker = new Worker(this.opts.workerUrl);
       let resolveReady, rejectReady;
       this.readyPromise = new Promise((res, rej) => {
@@ -108,7 +115,7 @@
       });
       this.readyPromise.catch(() => {});
       this._rejectReady = rejectReady;
-      MG.pysync.reset();
+      this.files.reset();
       this.worker.onmessage = (ev) => {
         const m = ev.data;
         if (m.type === 'status') {
@@ -120,14 +127,14 @@
           this.versions = m.versions;
           this._status(null);
           resolveReady(m.versions);
-          bus.emit('kernel:state', { lang: 'python', state: 'ready', versions: m.versions });
+          bus.emit('kernel:state', { lang: this.evLang, state: 'ready', versions: m.versions });
         } else if (m.type === 'background') {
-          bus.emit('kernel:state', { lang: 'python', state: 'packages' });
+          bus.emit('kernel:state', { lang: this.evLang, state: 'packages' });
         } else if (m.type === 'output') {
           const p = this.pending.get(m.id);
           if (p && p.onOutput) p.onOutput(JSON.parse(m.payload));
         } else if (m.type === 'done' || m.type === 'vars' || m.type === 'scanned') {
-          if (m.changes) MG.pysync.apply(m.changes);
+          if (m.changes) this.files.apply(m.changes);
           if (m.type === 'done' && m.where) this.where = m.where;
           const p = this.pending.get(m.id);
           if (p) {
@@ -136,6 +143,8 @@
           }
         } else if (m.type === 'nb-shell') {
           this._nbShell(m);
+        } else if (m.type === 'fs-changes' && this.opts.sync) {
+          this.files.apply(m.changes);
         } else if (['term-out', 'term-done', 'smk-shell', 'fs-changes', 'pushed'].includes(m.type)) {
           MG.py.onExtra(m, this);
         } else if (m.type === 'fatal') {
@@ -143,7 +152,7 @@
             this.state = 'failed';
             this._status('Python could not start: ' + m.message, true);
             rejectReady(new Error(m.message));
-            bus.emit('kernel:state', { lang: 'python', state: 'failed', message: m.message });
+            bus.emit('kernel:state', { lang: this.evLang, state: 'failed', message: m.message });
           } else {
             const p = this.pending.get(m.id);
             if (p) {
@@ -151,6 +160,9 @@
               p.reject(new Error(m.message));
             }
           }
+        } else if (this.onMessage) {
+          // (the other messages of a worker that does more than the notebook's: see pyide.js)
+          this.onMessage(m);
         }
       };
       this.worker.onerror = (e) => {
@@ -159,22 +171,28 @@
         rejectReady(new Error(e.message || 'worker error'));
         for (const p of this.pending.values()) p.reject(new Error('Python stopped unexpectedly'));
         this.pending.clear();
-        bus.emit('kernel:state', { lang: 'python', state: 'failed', message: e.message || '' });
+        bus.emit('kernel:state', { lang: this.evLang, state: 'failed', message: e.message || '' });
       };
-      this.worker.postMessage({
-        type: 'init',
-        indexURL: this.opts.indexURL,
-        preload: this.opts.preload,
-        background: this.opts.background,
-        files: this.opts.files,
-        modules: this.opts.modules || [],
-        home: HOME(),
-        user: MG.user.login()
-      });
+      this.worker.postMessage(
+        Object.assign(
+          {
+            type: 'init',
+            indexURL: this.opts.indexURL,
+            preload: this.opts.preload,
+            background: this.opts.background,
+            files: this.opts.files,
+            modules: this.opts.modules || [],
+            home: HOME(),
+            user: MG.user.login()
+          },
+          // (what a worker that does more than the notebook's needs to know as well)
+          typeof this.opts.init === 'function' ? this.opts.init() : this.opts.init || {}
+        )
+      );
     }
     _status(text, bad) {
       this.statusText = text;
-      bus.emit('kernel:status', { lang: 'python', text, bad: !!bad });
+      bus.emit('kernel:status', { lang: this.evLang, text, bad: !!bad });
     }
     ready() {
       return this.ensure();
@@ -189,7 +207,7 @@
     /** run a cell. handlers: {onOutput(o), onStatus(text)}; cwd: the notebook's folder → {ok, secs} */
     async run(code, handlers, cwd) {
       await this.ensure();
-      await MG.pysync.push();
+      await this.files.push(this);
       return this._send({ type: 'run', code, cwd: cwd || HOME(), user: MG.user.login() }, handlers);
     }
     async vars() {
@@ -203,9 +221,9 @@
     }
     async _nbShell(m) {
       const p = this.pending.get(m.id);
-      MG.pysync.apply(m.changes);
+      this.files.apply(m.changes);
       const r = await runShell(m.cmd, { cwd: m.cwd, capture: m.capture, onOutput: p && p.onOutput });
-      const { changes, transfer } = await MG.pysync.collect();
+      const { changes, transfer } = await this.files.collect();
       this.worker.postMessage({ type: 'smk-shell-result', sid: m.sid, code: r.code, out: r.out, changes }, transfer);
     }
     restart() {
@@ -219,7 +237,7 @@
       this.pending.clear();
       if (this._rejectReady) this._rejectReady(new Error('Python was restarted'));
       this.start();
-      bus.emit('kernel:state', { lang: 'python', state: 'restarted' });
+      bus.emit('kernel:state', { lang: this.evLang, state: 'restarted' });
     }
     describe() {
       const v = this.versions || {};

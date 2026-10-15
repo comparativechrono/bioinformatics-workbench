@@ -1,0 +1,81 @@
+<!-- id: h-rstudio | title: RStudio | group: IDEs: RStudio and Spyder | summary: R scripts, R Markdown and Quarto reports, Shiny apps, and RStudio’s panes | keys: rstudio r script scripts source console environment history files plots packages help viewer knit render r markdown rmd quarto qmd r notebook chunk chunks shiny app install.packages library import dataset view working directory getwd setwd ctrl+enter source with echo restart r posit -->
+<h1><!--ICON:rlang-->RStudio</h1>
+<p class="lede">RStudio is the IDE that most people use for R. The one in the IDE tab is an imitation, made for teaching, that works in the same way: you write scripts and reports in an editor, run them in the Console, and see your objects, plots and help pages in the panes around them.</p>
+<div class="tryrow"><button class="do" type="button" data-ide="rstudio">Open RStudio</button></div>
+
+<h2>The four panes</h2>
+<table>
+<tr><th>Pane</th><th>What it is for</th></tr>
+<tr><td>Source (top left)</td><td>the scripts and documents you are editing, each in a tab of its own, and data frames opened with <code>View()</code></td></tr>
+<tr><td>Console (bottom left)</td><td>R itself: type a command and press <kbd>Enter</kbd>. Next to it, <b>Terminal</b> is a shell with the same programs as the workbench’s Terminal tab, and <b>Background Jobs</b> shows what R prints while it knits a report.</td></tr>
+<tr><td>Environment (top right)</td><td>the objects in R’s memory, and <b>Import Dataset</b> for reading in a data file; the <b>History</b> tab lists the commands you have run</td></tr>
+<tr><td>Files, Plots, Packages, Help and Viewer (bottom right)</td><td>your files, the plots you have drawn, the installed packages, R’s help pages, and web pages such as knitted reports and Shiny apps</td></tr>
+</table>
+<p>You can drag the borders between the panes to change their sizes. The menus at the top have the same commands as in RStudio, and <b>Help ▸ Keyboard Shortcuts Help</b> lists the keys.</p>
+
+<h2>Scripts</h2>
+<p>A script is a text file of R commands, saved with the extension <code>.R</code>. To start one, choose <b>File ▸ New File ▸ R Script</b>, or click <b>New script in RStudio</b> under this example, which reads the workbench’s table of yeast genes and draws a plot:</p>
+<pre class="code" data-run="rstudio"><code>genes <- read.csv("/data/examples/tables/yeast_genes.csv")
+str(genes)
+
+# how many genes in each part of the cell are essential (1) or not (0)?
+table(genes$location, genes$essential)
+
+boxplot(protein_length ~ essential, data = genes, log = "y",
+        names = c("not essential", "essential"),
+        ylab = "Protein length (amino acids)")</code></pre>
+<p>Put the cursor on the first line and press <kbd>Ctrl</kbd>+<kbd>Enter</kbd> (<kbd>⌘</kbd>+<kbd>Enter</kbd> on a Mac). The line is run in the Console, and the cursor moves on to the next line, so you can keep pressing the same keys to work through the script. A command that spans several lines, such as the <code>boxplot()</code> above, is run as a whole, and if you select some lines first, just those lines are run. <b>Source</b> (<kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>S</kbd>) runs the whole script.</p>
+<p>Save your script with <kbd>Ctrl</kbd>+<kbd>S</kbd>; the first time, RStudio asks for a name. Because the script holds every step of your analysis, you can clear R’s memory at any time with <b>Session ▸ Restart R</b>, and get all your objects and plots back by running the script again.</p>
+
+<h2>Packages</h2>
+<p>RStudio works like R on your own computer: a package has to be installed once, with <code>install.packages()</code>, before <code>library()</code> can load it. (The notebooks are different: they install a package by themselves the first time that <code>library()</code> asks for it.) The packages come ready-built for webR, the version of R that runs in a browser. Most CRAN packages are there, including ggplot2 and dplyr, and so are many Bioconductor packages, such as DESeq2, edgeR and Biostrings.</p>
+<pre class="code" data-run="rstudio"><code>install.packages("ggplot2")
+library(ggplot2)
+
+genes <- read.csv("/data/examples/tables/yeast_genes.csv")
+ggplot(genes, aes(gc_content, codon_bias)) +
+  geom_point(alpha = 0.3) +
+  labs(x = "GC content (%)", y = "Codon bias")</code></pre>
+<p>Installing a package takes a little while, because the package and the other packages it needs have to be downloaded. You only have to do it once: the workbench remembers what you have installed, and fetches it again whenever <code>library()</code> needs it, on later visits too. The <b>Packages</b> pane lists what is installed, and <b>Tools ▸ Install Packages…</b> does the same as <code>install.packages()</code>.</p>
+
+<h2>Looking at your data</h2>
+<p>The Environment pane lists your objects. Click the arrow next to a data frame to see its columns, or click the table icon at the end of its row (or type <code>View(genes)</code>) to open it as a table in the Source pane, where you can sort and filter it. <b>Import Dataset</b>, at the top of the pane, reads a CSV or Excel file through a dialog, and shows you the code that it runs, which you can copy into your script. Plots appear in the Plots pane, where the arrows take you back to earlier plots and <b>Export</b> saves one as a picture. To read R’s documentation, type <code>?mean</code> or <code>help(mean)</code>, or search in the Help pane.</p>
+
+<h2>Reports: R Markdown and Quarto</h2>
+<p>An R Markdown document (<code>.Rmd</code>) contains your text, written in Markdown, and your R code in <em>chunks</em>. You can run a single chunk with the green ▶ at its top right, and its output appears underneath it. <b>Knit</b> (<kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>K</kbd>) runs the whole document from the beginning, in a new R session, and turns it into a web page with your text, code and results. The page opens in the Viewer and is saved next to the document as an <code>.html</code> file. Quarto documents (<code>.qmd</code>) are written in much the same way, and have a <b>Render</b> button instead of Knit.</p>
+<pre class="code" data-run="rmd"><code>---
+title: "Essential genes in yeast"
+output: html_document
+---
+
+Are the proteins of essential genes longer than the others?
+
+```{r}
+genes <- read.csv("/data/examples/tables/yeast_genes.csv")
+tapply(genes$protein_length, genes$essential, median)
+```
+
+The median lengths are given for non-essential (0) and essential (1) genes.</code></pre>
+<p>Because knitting starts with an empty R session, the document has to create or read in everything it uses. An object that you made in the Console, but not in the document, won’t be there, and knitting stops with an error such as <code>object 'genes' not found</code>. That is what makes a knitted report trustworthy: it shows that the code, exactly as written, produces the results. An <b>R Notebook</b> (<b>File ▸ New File ▸ R Notebook</b>) is different. Its <b>Preview</b> saves a web page of the document as it is on screen, with the outputs of the chunks you have run, without running anything again.</p>
+
+<h2>Shiny apps</h2>
+<p>A Shiny app is an interactive web page written in R, in which sliders, menus and buttons change what R calculates and draws. <b>File ▸ New File ▸ Shiny Web App…</b> creates a small example app in a folder of its own, and <b>Run App</b> starts it in the Viewer pane. The first time, RStudio offers to install the shiny package, which takes a minute or two. While an app is running, the Console is busy, just as it would be on your computer, so press <b>Stop</b> (or <kbd>Esc</kbd>) when you have finished with it.</p>
+<p>Shiny apps rely on the page’s <em>service worker</em>, a small helper that the browser runs for the workbench. If your browser doesn’t allow service workers, as some private windows don’t, RStudio tells you that the app can’t be shown.</p>
+
+<h2>Where R looks for files</h2>
+<p>RStudio’s R starts in your home folder, <code>~</code>, so <code>read.csv("data/counts.csv")</code> reads the file <code>~/data/counts.csv</code>. <code>getwd()</code> shows which folder R is in, and <b>Session ▸ Set Working Directory</b> changes it, for example to the folder of the script you are editing. When you knit a document, its code runs in the document’s own folder. The example data are in <code>/data/examples</code>, and you can read them from anywhere by giving their full paths.</p>
+
+<h2>Keys</h2>
+<table class="keys">
+<tr><td><kbd>Ctrl</kbd>+<kbd>Enter</kbd></td><td>run the current line or the selected lines</td></tr>
+<tr><td><kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>S</kbd></td><td>source the whole script</td></tr>
+<tr><td><kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>Enter</kbd></td><td>run the current chunk (in a script: source it, showing each command)</td></tr>
+<tr><td><kbd>Ctrl</kbd>+<kbd>Alt</kbd>+<kbd>I</kbd></td><td>insert a new chunk</td></tr>
+<tr><td><kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>K</kbd></td><td>knit, render or preview the document</td></tr>
+<tr><td><kbd>Alt</kbd>+<kbd>-</kbd></td><td>type <code>&lt;-</code></td></tr>
+<tr><td><kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>M</kbd></td><td>type the pipe, <code>|&gt;</code></td></tr>
+<tr><td><kbd>Tab</kbd></td><td>complete a name</td></tr>
+<tr><td><kbd>Esc</kbd> in the Console</td><td>stop the command that is running</td></tr>
+<tr><td><kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>F10</kbd></td><td>restart R</td></tr>
+</table>
+<p>A few of RStudio’s usual shortcuts, such as <kbd>Ctrl</kbd>+<kbd>W</kbd> and <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>N</kbd>, belong to the browser, so they don’t work here. The menus have the same commands.</p>

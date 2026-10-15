@@ -1,9 +1,12 @@
 #!/usr/bin/env python3
 """Serve this folder on http://localhost:PORT with HTTP range requests
 (needed to read the BAM and reference files in pieces, as GitHub Pages does),
-and with the headers that make the page cross-origin isolated (featureCounts
-and Salmon run on several threads, which a browser allows only then; on GitHub
-Pages the service worker isolation-sw.js adds them).
+and with the headers that make the page cross-origin isolated. A browser only
+lets featureCounts and Salmon run on several threads when the page is isolated,
+and the R and Python of the IDE tab can only wait for what is typed (input(),
+readline(), the debugger) and be interrupted then. On GitHub Pages the service
+worker isolation-sw.js adds the headers; it also serves the Shiny apps that
+RStudio runs, and it is registered here too.
 usage:  python3 serve.py [PORT]"""
 import os, re, sys, http.server, socketserver
 

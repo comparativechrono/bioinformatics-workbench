@@ -51,6 +51,8 @@ local-patches/                 unbuffer-stdout.py – the one-byte change made t
                                  ../biowasm/grep/3.7/)
                                fix-day-of-year.py – the day of the year in the loaders of date and gawk
                                  (see ../biowasm/RUNTIME-PATCHES.txt, section 2)
+shinylive-MIT.txt              the MIT licence of Shinylive (Posit): Shiny apps in RStudio (the IDE tab) reach their
+                                 R in the way that Shinylive's do (assets/js/shiny.js, shiny-socket.js, isolation-sw.js)
 SHA256SUMS                     checksums of everything in this folder
 
 Next to each program in ../biowasm/NAME/VERSION/ and ../genomics-wasm/NAME/VERSION/ are its licence, a NOTICE.txt

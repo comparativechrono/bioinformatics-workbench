@@ -6,14 +6,14 @@
 <ul>
   <li>Each program runs on <b>one processor core</b>; options for threads (<code>-t</code>, <code>-p</code>, <code>-@</code>, <code>-j</code>, <code>--threads</code>, <code>--cpu</code>) are ignored, with a note. Three programs are different: <b>featureCounts</b> counts on up to four threads (<code>-T 1</code> to <code>-T 4</code>), <b>Salmon</b> runs its own helper threads, and <b>PLINK 2</b> reads its files on threads of their own and computes on one or two (<code>--threads 2</code> at most) – see <a href="#h-limits/threads">programs on several threads</a>. Programs run more slowly than on a server, and the speed depends on your computer: keep the data small.</li>
   <li>A program, Python and R each have <b>a few gigabytes of memory</b> at most (WebAssembly is 32-bit: 4 GB is the ceiling, and browsers often allow less). Mapping reads to a whole human genome does not fit; regions, a few genes, bacterial and viral genomes do.</li>
-  <li>Python has no threads, no <code>multiprocessing</code> and no <code>subprocess</code>; <code>input()</code> does not work in a notebook. R cannot run <code>system()</code>: use a <code>%%bash</code> cell.</li>
+  <li>Python has no threads, no <code>multiprocessing</code> and no <code>subprocess</code>; <code>input()</code> does not work in a notebook, though it does in Spyder (in the IDE tab). R cannot run <code>system()</code>: use a <code>%%bash</code> cell.</li>
 </ul>
 
 <h2 id="threads">Programs on several threads</h2>
 <p>featureCounts, Salmon and PLINK 2 start threads that share the program's memory. A browser allows that only in a page that is <b>cross-origin isolated</b>: the page and its workers come with two headers, <code>Cross-Origin-Opener-Policy</code> and <code>Cross-Origin-Embedder-Policy</code>, which also keep pictures of other sites out unless those sites allow them. Static hosting (GitHub Pages) cannot send the headers, so the workbench adds them itself with a small service worker (<code>isolation-sw.js</code>; it stores nothing): the first time you open the workbench, the page loads once more, at once. <code>serve.py</code> sends the headers itself.</p>
 <ul>
   <li>If featureCounts, Salmon or PLINK 2 say that the page is not isolated, reload the page. It cannot be isolated when it was not opened over <b>https</b> (or from <code>localhost</code>), or when the browser does not allow service workers there – some private windows do not.</li>
-  <li>The other programs, Python and R do not need isolation, and work either way.</li>
+  <li>The other programs, Python and R do not need isolation, and work either way. In the IDE tab, Spyder’s debugger and <code>input()</code>, and stopping code while it runs, need it too (see <a href="#h-spyder/isolation">Spyder</a>).</li>
   <li>To turn isolation off – if a picture of another site does not show, say – open the workbench with <code>?isolation=off</code> at the end of its address; open it without that to turn it on again.</li>
 </ul>
 
@@ -40,13 +40,13 @@
 <h2>Installing</h2>
 <ul>
   <li>No <code>sudo</code>, <code>apt</code> or background jobs (<code>&amp;</code>). Programs cannot be added to the terminal – <code>conda install</code> there only models environments.</li>
-  <li>Python packages install with <code>%pip install</code> (pure-Python packages, and those Pyodide has built); R packages with <code>install.packages()</code> (those built for webR). Both last until the page is reloaded.</li>
+  <li>Python packages install with <code>%pip install</code> (pure-Python packages, and those Pyodide has built); R packages with <code>install.packages()</code> (those built for webR). Both last until the page is reloaded – except in RStudio, which remembers the R packages you installed there and fetches them again when <code>library()</code> needs them.</li>
   <li>Some packages have no build for the browser yet – mostly those that need system libraries; the error says so. (DESeq2 and edgeR work: locfit, which they need, comes with the workbench.)</li>
 </ul>
 
 <h2>The internet</h2>
 <ul>
-  <li>Python is downloaded when a Python notebook is open, R when an R notebook is open – and the page opens the last notebook you had open when it starts (a Python one on the first visit) –, packages when they are imported or installed: tens of megabytes, of which the browser keeps a copy for later visits.</li>
+  <li>Python is downloaded when a Python notebook is open, R when an R notebook is open – and the page opens the last notebook you had open when it starts (a Python one on the first visit) –, and again for Spyder or RStudio when you first open one of them in the IDE tab; packages when they are imported or installed: tens of megabytes, of which the browser keeps a copy for later visits.</li>
   <li>A web page can only ask web services that allow requests from web pages (<b>CORS</b>). The big bioinformatics services do – Ensembl, UniProt, NCBI, EBI, the PDB, AlphaFold DB and the others of the Databases tab; KEGG and most web pages do not. This holds for notebooks, <code>curl</code> and <code>wget</code> alike.</li>
   <li>R in the browser can only make GET requests; use Python for POST requests.</li>
   <li>The Databases tab, the AI assistant, the hosted genomes of the genome browser, downloads from the PDB, and the Networks tab's STRING, IntAct, NDEx and enrichment need the internet all the time.</li>
@@ -56,6 +56,7 @@
 <ul>
   <li><b>Galaxy</b> offers a selection of tools, runs one job at a time, and has no user accounts or shared histories.</li>
   <li><b>Snakemake</b> is a browser edition of its commonly used core: rules, wildcards, <code>expand</code>, <code>-n</code>, <code>--dag</code>, <code>--summary</code>; no cluster execution.</li>
+  <li><b>The IDE tab</b>: RStudio and Spyder are imitations, made for teaching, of the programs of the same names. Each has an R or a Python of its own, separate from the notebooks’. Reports are knitted to HTML only (pandoc and LaTeX, which PDF and Word need, do not run in a browser); Shiny apps need the page’s service worker; there are no projects, no Git and no plug-ins (<a href="#h-ide">The IDE tab</a>).</li>
   <li><b>The 3D viewer</b> needs WebGL (3D graphics in the browser): if it does not start, turn on hardware acceleration in the browser's settings.</li>
   <li><b>The Networks tab</b> draws networks of a few thousand nodes smoothly; larger ones (up to 60,000 nodes and 300,000 edges) open, but are slow to draw and to lay out. Statistics and hub rankings follow every shortest path: seconds for a few thousand nodes, about half a minute for 10,000. Cytoscape's apps (plugins) are not here; the most used of them – NetworkAnalyzer, cytoHubba, MCODE, MCL, enrichment – have their equivalents in the tab (<a href="#h-network-analysis">Network analysis</a>).</li>
   <li>The workbench is made for a laptop or desktop screen; on a phone or tablet it works, cramped.</li>

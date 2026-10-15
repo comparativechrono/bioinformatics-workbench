@@ -287,6 +287,8 @@
         const k = kindOf(p);
         if (k !== 'text' && k !== 'binary' && k !== 'notebook') items.push(['code', 'Open as text', () => this._openText(p)]);
         if (/\.ipynb$/i.test(p)) items.push(['notebook', 'Open in the Notebook tab', () => MG.app.openFile(p)]);
+        const ide = MG.app.ideFor ? MG.app.ideFor(p) : null;
+        if (ide) items.push([ide === 'rstudio' ? 'rlang' : 'python', ide === 'rstudio' ? 'Open in RStudio' : 'Open in Spyder', () => this.toIDE(p)]);
         if (STRUCTURE.test(p)) items.push(['cube', 'Show in the 3D viewer', () => MG.app.viewStructure(p)]);
         if (GENOMIC.test(p)) items.push(['genome', 'Show in the Genome browser', () => MG.app.igvLoad([p])]);
         if (/\.(fa|fasta|fna)$/i.test(p)) items.push(['genome', 'Use as the genome in the Genome browser', () => MG.app.igvGenome && MG.app.igvGenome(p)]);
@@ -460,7 +462,16 @@
       if (NETWORK.test(path)) add('network', 'Networks', 'Open this network in the Networks tab', () => MG.app.netOpen([path]).catch((e) => toast(esc(e.message), 'error', 8000)));
       else if (/\.(csv|tsv|tab)$/i.test(path)) add('network', 'Networks', 'Open this table in the Networks tab: as a table of edges, or as values for the nodes of the network that is open', () => MG.app.netOpen([path]).catch((e) => toast(esc(e.message), 'error', 8000)));
       if (/\.ipynb$/i.test(path)) add('notebook', 'Open as a notebook', 'Open in the Notebook tab', () => MG.app.openFile(path));
+      const ide = MG.app.ideFor ? MG.app.ideFor(path) : null;
+      if (ide === 'rstudio') add('rlang', 'Open in RStudio', 'Open this file in RStudio, in the IDE tab (saves it first)', () => this.toIDE(path));
+      else if (ide === 'spyder') add('python', 'Open in Spyder', 'Open this file in Spyder, in the IDE tab (saves it first)', () => this.toIDE(path));
       if (/\.(fa|fasta|faa|fna|afa)$/i.test(path)) add('align', 'Align', 'Align these sequences with kalign (in the Terminal)', () => this.alignFasta(path));
+    }
+    /** open a file in RStudio or Spyder (whichever is for its language) – saved first, if it has changes here that are
+        not saved yet, so that the IDE opens what you see */
+    toIDE(path) {
+      if (this.current === path && this.isDirty(path)) this.save();
+      return MG.app.openInIDE(path);
     }
     _runBtnFor(path) {
       const n = path.split('/').pop();

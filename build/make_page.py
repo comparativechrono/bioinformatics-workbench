@@ -39,6 +39,7 @@ GROUPS = [
     ('3D viewer', 'cube'),
     ('Genome browser', 'genome'),
     ('Networks', 'network'),
+    ('IDEs: RStudio and Spyder', 'ide'),
     ('AI assistant', 'sparkle'),
     ('Recipes', 'flask'),
     ('Reference', 'info'),
