@@ -1,5 +1,5 @@
 /* =====================================================================
-   Genomics practicals – shared helpers (namespace, events, storage, fetch)
+   Genomics practicals – shared helpers (namespace, events, storage, fetch, dialogs)
    Plain browser JavaScript: no build step needed.
    ===================================================================== */
 (function () {
@@ -368,6 +368,63 @@
     setTimeout(() => document.addEventListener('pointerdown', off, true), 0);
     const first = m.querySelector('button');
     if (first) first.focus();
+  };
+
+  /* a question with a text answer (a modal dialog) → a promise of the text, or '' */
+  MG.promptText = function (title, hint, def, okLabel) {
+    return new Promise((resolve) => {
+      const input = h('input.prompt-input', { type: 'text', value: def || '', 'aria-label': title, spellcheck: 'false' });
+      const ok = h('button.btn.primary', { type: 'submit', text: okLabel || 'OK' });
+      const cancel = h('button.btn', { type: 'button', text: 'Cancel' });
+      const form = h('form.prompt-form', h('p', hint || ''), input, h('div.prompt-actions', cancel, ok));
+      let done = false;
+      const m = MG.modal(title, '', {
+        onClose: () => {
+          if (!done) {
+            done = true;
+            resolve('');
+          }
+        }
+      });
+      m.box.querySelector('.modal-b').appendChild(form);
+      const finish = (v) => {
+        if (done) return;
+        done = true;
+        m.close();
+        resolve(v);
+      };
+      form.addEventListener('submit', (e) => {
+        e.preventDefault();
+        finish(input.value.trim());
+      });
+      cancel.addEventListener('click', () => finish(''));
+      setTimeout(() => {
+        input.focus();
+        input.select();
+      }, 30);
+    });
+  };
+  /* a yes-or-no question → a promise of true (the first button) or false */
+  MG.confirmBox = function (title, html, okLabel, opts = {}) {
+    return new Promise((resolve) => {
+      let done = false;
+      const m = MG.modal(title, `${html}<div class="prompt-actions"><button class="btn" data-x="no" type="button">${esc(opts.cancel || 'Cancel')}</button><button class="btn ${opts.danger ? 'danger' : 'primary'}" data-x="yes" type="button">${esc(okLabel || 'OK')}</button></div>`, {
+        onClose: () => {
+          if (!done) {
+            done = true;
+            resolve(false);
+          }
+        }
+      });
+      const fin = (v) => {
+        if (done) return;
+        done = true;
+        m.close();
+        resolve(v);
+      };
+      m.box.querySelector('[data-x="no"]').addEventListener('click', () => fin(false));
+      m.box.querySelector('[data-x="yes"]').addEventListener('click', () => fin(true));
+    });
   };
 
   Object.assign(MG, {

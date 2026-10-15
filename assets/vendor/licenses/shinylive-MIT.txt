@@ -1,0 +1,47 @@
+Shinylive – licence notice
+==========================
+This site runs Shiny apps in the same way as Shinylive (Posit; https://github.com/posit-dev/shinylive),
+which runs Shiny apps in a web page using R in webR. The site's files listed below were written for
+the workbench, based on Shinylive's code. They are not copies of it, but they follow its design
+closely, and some parts are close to Shinylive's own code. In particular, they use the same
+messages between the page, the service worker and the app's frame, with the same names
+(configureProxyPath, makeRequest, openChannel and serviceworkerStart), the same kind of stand-in
+for the app's WebSocket, and the same calls into Shiny that R uses to answer the app's requests:
+
+  isolation-sw.js (the Shiny part)   based on src/shinylive-sw.ts
+  assets/js/shiny-socket.js          based on src/shinylive-inject-socket.ts and src/messageportwebsocket.ts
+  assets/js/shiny.js                 based on src/messageporthttp.ts, src/messageportwebsocket.ts,
+                                     src/messageportwebsocket-channel.ts and src/hooks/useWebR.tsx
+  assets/js/rsession.js              its R functions wb$shiny_run, wb$shiny_reader, wb$shiny_http,
+                                     wb$shiny_ws_open, wb$shiny_ws_msg, wb$shiny_ws_close and
+                                     wb$shiny_tick, based on the R code in src/hooks/useWebR.tsx,
+                                     src/messageporthttp.ts and src/messageportwebsocket-channel.ts
+
+(These files were compared with commit 80eb17c461d6bfd60f61d16bef92ad9c83d87434 of Shinylive's
+main branch on 15 October 2026.)
+
+Shinylive's licence applies to the parts of these files that are derived from Shinylive. Its
+notice, taken from the LICENSE file in its repository, is reproduced below. (RStudio, PBC is now
+called Posit Software, PBC.)
+
+MIT License
+
+Copyright (c) 2022 RStudio, PBC
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.

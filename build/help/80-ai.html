@@ -26,15 +26,17 @@
   <li><b>the open notebook's code</b> – its code cells, not their output, not your data;</li>
   <li><b>your file names</b> – names and sizes, not what is in the files;</li>
   <li><b>your last commands</b> – when you come from the Terminal, your last three commands and the end of what they printed;</li>
-  <li><b>the open network</b> – when you come from the Networks tab: the network's name, size and columns, its best-connected nodes, the names of the selected ones and the latest results (not the values in its tables).</li>
+  <li><b>the open network</b> – when you come from the Networks tab: the network's name, size and columns, its best-connected nodes, the names of the selected ones and the latest results (not the values in its tables);</li>
+  <li><b>your code in the IDE</b> – when you come from the IDE tab: the script open in RStudio or Spyder (or the lines you have selected in it), the end of its console, and the names and types of its variables (not their values). A question from the IDE tab sends this instead of the open notebook’s code.</li>
 </ul>
-<p>It also knows which programs the terminal has, and the versions of Python and R. From the other tabs: <b>Ask AI</b> on a notebook cell, or <b>Ask the AI to explain this error</b> under a cell that failed – this sends the cell's code with its error message (up to 2,500 characters), or with the beginning of its output (up to 1,200 characters); <b>✦ Ask the AI assistant about this error</b> after a command that failed in the terminal – the command, its folder and the end of what it printed (up to 3,000 characters). The open notebook's code and your file names go with them if they are ticked under the box.</p>
+<p>It also knows which programs the terminal has, and the versions of Python and R. From the other tabs: <b>Ask AI</b> on a notebook cell, or <b>Ask the AI to explain this error</b> under a cell that failed – this sends the cell's code with its error message (up to 2,500 characters), or with the beginning of its output (up to 1,200 characters); <b>✦ Ask the AI assistant about this error</b> after a command that failed in the terminal – the command, its folder and the end of what it printed (up to 3,000 characters) – and under an error in RStudio or Spyder, which sends the code that failed (for a script that was run as a whole, the script), the error message and the IDE’s working directory, with your code in the IDE if that is ticked. The open notebook's code and your file names go with them if they are ticked under the box.</p>
 <p><b>Without a key</b>, common errors still get a short explanation from the page itself, and <b>Copy a prompt for another AI tool</b> copies your question, with its context, to paste into an AI tool you are allowed to use.</p>
 
 <h2>Code in the answers</h2>
 <p>Each block of code in an answer has buttons:</p>
 <ul>
-  <li>Python or R: <b>Add to notebook</b>, or <b>Add and run</b> – into the notebook that is open.</li>
+  <li>Python or R: <b>Add to notebook</b>, or <b>Add and run</b> – into the notebook that is open. Once you have opened Spyder or RStudio in the IDE tab, <b>Put into Spyder</b> or <b>Put into RStudio</b> puts the code into the script that is open there, at the cursor; when you came to the assistant from that IDE, this is the first button.</li>
+  <li>A whole R Markdown or Quarto document: <b>Open in RStudio</b>, as a new document that you can knit.</li>
   <li>Shell commands: <b>Run in the terminal</b> (commands with <code>rm</code>, <code>rmdir</code>, <code>mv</code>, <code>shred</code>, <code>truncate</code> or <code>find -delete</code>, and <code>&gt;</code> into a path that starts with <code>~/</code> or <code>/home</code>, ask first – other commands can overwrite files too, such as <code>&gt; results.txt</code>: read them before you run them), <b>Type in the terminal</b> (a single command, put at the prompt without running it: check it, then press <kbd>Enter</kbd>), or <b>Add to notebook</b> as a <code>%%bash</code> cell.</li>
   <li>A file with a name – a Snakefile, a script – <b>Save as</b> that name; <b>Copy</b> for any block.</li>
 </ul>

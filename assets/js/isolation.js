@@ -1,8 +1,10 @@
-/* Cross-origin isolation – what lets featureCounts, Salmon and PLINK 2 work on several threads (see isolation-sw.js).
-   Where the server sends the headers itself (serve.py), the page is isolated from the start. Elsewhere (GitHub Pages)
-   the service worker isolation-sw.js adds them: the first time the workbench is opened, the worker is installed and the
-   page is loaded once more, at once – before anything has been done in it. It is not loaded again and again: if the
-   page is still not isolated after that, it stays as it is (and featureCounts, Salmon and PLINK 2 say why they cannot run).
+/* Cross-origin isolation – what lets featureCounts, Salmon and PLINK 2 work on several threads, and lets the R and
+   Python of the IDE tab wait for typed input and be interrupted (see isolation-sw.js). Where the server sends the
+   headers itself (serve.py), the page is isolated from the start. Elsewhere (GitHub Pages) the service worker
+   isolation-sw.js adds them: the first time the workbench is opened, the worker is installed and the page is loaded
+   once more, straight away, before anything has been done in it. It is not reloaded again and again: if the page is
+   still not isolated after that, it stays as it is (and the programs that need isolation say why they cannot run).
+   The service worker also serves the Shiny apps that RStudio runs, whether the page is isolated or not.
 
    window.WB_ISOLATION = { isolated, reason } – reason, when the page is not isolated: 'insecure' (not https, nor
    localhost), 'no-service-worker' (the browser has none here: a private window in some browsers), 'off' (opened with
@@ -26,7 +28,7 @@
     sw.getRegistrations().then((rs) => rs.filter(mine).forEach((r) => r.unregister())).catch(() => {});
     return;
   }
-  // (also where the server isolates the page: the worker lets pictures of other sites through – see isolation-sw.js)
+  // (also where the server isolates the page: the worker lets pictures of other sites through, and serves Shiny apps)
   const registered = sw.register('isolation-sw.js');
   if (state.isolated) { registered.catch(() => {}); return; }
   state.reason = 'not-yet';

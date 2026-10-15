@@ -102,7 +102,35 @@
     keyboard: '<rect x="2" y="6" width="20" height="12" rx="2"/><path d="M6 10h.01M10 10h.01M14 10h.01M18 10h.01M7 14h10"/>',
     book2: '<path d="M4 4h6a3 3 0 0 1 3 3v13a2 2 0 0 0-2-2H4z"/><path d="M20 4h-6a3 3 0 0 0-3 3v13a2 2 0 0 1 2-2h7z"/>',
     rlang: '<ellipse cx="11" cy="10" rx="9" ry="6"/><path d="M9 21V8h5a2.5 2.5 0 0 1 0 5H9M13 13l4 8"/>',
-    python: '<path d="M12 3c-4 0-4 1.5-4 3v2h4v1H6c-2 0-3 1.5-3 4s1 4 3 4h2v-3a2 2 0 0 1 2-2h4a2 2 0 0 0 2-2V6c0-1.5-1-3-4-3z"/><path d="M12 21c4 0 4-1.5 4-3v-2h-4v-1h6c2 0 3-1.5 3-4s-1-4-3-4h-2v3a2 2 0 0 1-2 2h-4a2 2 0 0 0-2 2v4c0 1.5 1 3 4 3z"/><path d="M10 5.5h.01M14 18.5h.01"/>'
+    python: '<path d="M12 3c-4 0-4 1.5-4 3v2h4v1H6c-2 0-3 1.5-3 4s1 4 3 4h2v-3a2 2 0 0 1 2-2h4a2 2 0 0 0 2-2V6c0-1.5-1-3-4-3z"/><path d="M12 21c4 0 4-1.5 4-3v-2h-4v-1h6c2 0 3-1.5 3-4s-1-4-3-4h-2v3a2 2 0 0 1-2 2h-4a2 2 0 0 0-2 2v4c0 1.5 1 3 4 3z"/><path d="M10 5.5h.01M14 18.5h.01"/>',
+    // (the IDE tab: RStudio and Spyder)
+    arrowL: '<path d="M19 12H5M11 6l-6 6 6 6"/>',
+    arrowR: '<path d="M5 12h14M13 6l6 6-6 6"/>',
+    broom: '<path d="M19 3l-7.5 7.5"/><path d="M10.5 9.5l4 4-1 1.5c-1.5 2-4.5 4.5-9.5 6 1-3 1.5-6.5 3.5-9z"/><path d="M7.5 16.5l2-2M10 19l2-2"/>',
+    chunk: '<rect x="3" y="5" width="18" height="14" rx="2"/><path d="M8 10l-2 2 2 2M16 10l2 2-2 2M13 9l-2 6"/>',
+    dotdot: '<path d="M12 19V5M5 12l7-7 7 7"/>',
+    env: '<ellipse cx="12" cy="6" rx="7" ry="3"/><path d="M5 6v6c0 1.7 3.1 3 7 3s7-1.3 7-3V6M5 12v6c0 1.7 3.1 3 7 3s7-1.3 7-3v-6"/>',
+    home: '<path d="M3 11l9-7 9 7"/><path d="M5 10v10h5v-6h4v6h5V10"/>',
+    jobs: '<rect x="3" y="4" width="18" height="16" rx="2"/><path d="M7 9h10M7 13h6M7 17h8"/>',
+    knit: '<circle cx="10" cy="13" r="7"/><path d="M4.5 10.5c3 1 6 1 11-1.5M3.6 14.5c4 1 8 0 12.6-3M6 18.5c3-1 6-3 9-6.5"/><path d="M14 6l7-4"/>',
+    newfile: '<path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6M12 12v6M9 15h6"/>',
+    openfolder: '<path d="M3 7a2 2 0 0 1 2-2h4l2 2h7a2 2 0 0 1 2 2v1H7.5L4 19H5"/><path d="M4 19l3.5-9H22l-3.5 9z"/>',
+    outline: '<path d="M4 6h16M8 10h12M8 14h12M4 18h16"/>',
+    panes: '<rect x="3" y="4" width="18" height="16" rx="2"/><path d="M12 4v16M3 12h18"/>',
+    pkg: '<path d="M12 3l8 4.5v9L12 21l-8-4.5v-9z"/><path d="M4 7.5l8 4.5 8-4.5M12 12v9"/>',
+    plots: '<rect x="3" y="4" width="18" height="16" rx="2"/><path d="M7 16l3-4 3 2 4-6"/>',
+    print: '<path d="M6 9V3h12v6"/><rect x="3" y="9" width="18" height="8" rx="2"/><path d="M6 14h12v7H6z"/>',
+    rconsole: '<rect x="3" y="4" width="18" height="16" rx="2"/><path d="M7 10l3 2-3 2M12 15h5"/>',
+    refresh: '<path d="M20 11a8 8 0 1 0-2.3 5.7"/><path d="M20 4v7h-7"/>',
+    runline: '<path d="M4 6h9M4 12h6M4 18h9"/><path d="M15 9l5 3-5 3z"/>',
+    saveall: '<path d="M7 3h10l3 3v11a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z"/><path d="M9 3v4h6V3M9 19v-5h6v5M3 7v13a2 2 0 0 0 2 2h11"/>',
+    sourcefile: '<path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6M9 13l3 2-3 2"/>',
+    stopsq: '<rect x="5" y="5" width="14" height="14" rx="2"/>',
+    viewer: '<rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 9h18M7 6.5h.01M10 6.5h.01"/><path d="M8 14h8M8 17h5"/>',
+    wand: '<path d="M15 4l1 2 2 1-2 1-1 2-1-2-2-1 2-1zM4 20l10-10"/>',
+    zoom: '<circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4M11 8v6M8 11h6"/>',
+    // (the IDE tab itself)
+    ide: '<rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 8h18M10 8v12"/><path d="M14.5 12.5l-1.6 1.75 1.6 1.75M17.5 12.5l1.6 1.75-1.6 1.75"/>',
   };
   window.MG = window.MG || {};
   window.MG.icon = function (name, cls) {

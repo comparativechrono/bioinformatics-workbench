@@ -1,0 +1,41 @@
+<!-- id: h-ide | title: The IDE tab | group: IDEs: RStudio and Spyder | index: yes | summary: RStudio for R and Spyder for Python, and when to use them rather than a notebook | keys: ide integrated development environment rstudio spyder posit script scripts editor console debugger variable explorer environment separate session r python open in rstudio open in spyder -->
+<h1><!--ICON:ide-->The IDE tab: RStudio and Spyder</h1>
+<p class="lede">Most of your work in the workbench will be done in notebooks, but some jobs are easier in an integrated development environment, or IDE. The IDE tab has two of them: <b>RStudio</b> for R and <b>Spyder</b> for Python. Both are imitations of the real programs, made for teaching, and they work in the same way as far as possible, so what you learn here carries over to RStudio and Spyder on your own computer.</p>
+<div class="tryrow"><button class="do" type="button" data-ide="rstudio">Open RStudio</button> <button class="do" type="button" data-ide="spyder">Open Spyder</button></div>
+
+<h2>A notebook or an IDE?</h2>
+<p>A notebook is the best place to explore your data. Each piece of code sits next to its results, and you can write notes in between, so the notebook becomes a record of what you did and what you found. An IDE is built for writing programs rather than records, and it is worth switching to one when:</p>
+<ul>
+  <li>your code has grown beyond a few cells, and you would rather keep it in a script that you can run again from the top whenever your data change;</li>
+  <li>you are writing a report in R Markdown or Quarto, or an interactive Shiny app (both in RStudio);</li>
+  <li>your code doesn’t do what you expected, and you want to go through it one line at a time and watch your variables change (Spyder’s debugger);</li>
+  <li>you want to see all of your variables at a glance, and look inside data frames and arrays as tables;</li>
+  <li>you will be using RStudio or Spyder on your own computer later, and want to get to know them first.</li>
+</ul>
+<p>The two ways of working go well together. You can try something out in a notebook and then copy the code that works into a script, or write functions in a script and load them into a notebook with <code>source("functions.R")</code> in R or <code>%run functions.py</code> in Python.</p>
+
+<h2 data-anchor="separate">Each IDE has its own R or Python</h2>
+<p>RStudio and Spyder each run their own copy of R or Python, separate from the one that the notebooks use, just as RStudio and Spyder start R and Python processes of their own on a computer. A variable that you create in a notebook therefore doesn’t exist in Spyder, and the other way round: if you need it in both places, run the code that creates it in both. What they do share are your files. A script in Spyder can read a table that a notebook wrote, and a notebook can open a plot that RStudio saved.</p>
+<p>The first time you open an IDE, your browser has to download R or Python, which can take a minute or so (R alone is about 30 MB). After that it keeps a copy, so the IDE opens much more quickly on your next visit. An IDE that you have opened keeps running while you use the other tabs, and you can have both open at once: the buttons at the top of the IDE tab switch between them.</p>
+
+<h2>Opening your files in an IDE</h2>
+<ul>
+  <li>In the <b>Files</b> tab, an R script or an R Markdown or Quarto document has an <b>Open in RStudio</b> button above it, and a Python script has <b>Open in Spyder</b>. You will find the same commands in the menu of a file (its ⋯ button, or a right-click).</li>
+  <li>In the <b>Terminal</b>, <code>rstudio analysis.R</code> and <code>spyder script.py</code> open files in the IDE, and <code>rstudio</code> or <code>spyder</code> on its own simply opens it.</li>
+  <li>Inside an IDE, use its own <b>File ▸ Open</b> (<kbd>Ctrl</kbd>+<kbd>O</kbd>) or its <b>Files</b> pane.</li>
+</ul>
+<p>As in the real programs, a file that you edit in an IDE is saved only when you save it (<kbd>Ctrl</kbd>+<kbd>S</kbd>). RStudio shows the name of a file with unsaved changes in red, and Spyder adds an asterisk to it. If you try to leave or reload the page while a file has unsaved changes, your browser asks whether you really want to.</p>
+
+<h2>The AI assistant and the IDEs</h2>
+<p>When code fails in RStudio or Spyder, a <b>✦ Ask the AI assistant about this error</b> button appears under the error. It sends the code and the error message to the assistant, together with the script you are working on, the end of the console, and the names and types of your variables (but not their values). If you go from the IDE tab to the assistant and ask a question of your own, the same information goes with it, unless you untick <b>your code in the IDE</b> under the message box. Code in the assistant’s answers can then go straight into the script that is open in RStudio or Spyder, with <b>Put into RStudio</b> or <b>Put into Spyder</b>. See <a href="#h-ai">The AI assistant</a> for how to connect a model.</p>
+
+<h2>What is different from the real programs</h2>
+<p>Everything in the IDE tab runs inside your web browser, and that brings a few limits that RStudio and Spyder on a computer don’t have:</p>
+<ul>
+  <li>R and Python can’t start other programs, so <code>system()</code> in R and <code>subprocess</code> in Python don’t work. Instead, a line that starts with <code>!</code> in Spyder’s console runs a command in the workbench’s terminal, and RStudio has a <b>Terminal</b> tab of its own next to the Console.</li>
+  <li>Spyder’s debugger and <code>input()</code>, and stopping code while it is running in either IDE, need the page to be <em>cross-origin isolated</em>. The workbench arranges this itself in most browsers (see <a href="#h-spyder/isolation">when the debugger is not available</a>).</li>
+  <li>Reports can be knitted to web pages (HTML), but not to PDF or Word, because the programs needed for those (pandoc and LaTeX) don’t run in a browser.</li>
+  <li>There are no projects, no version control (Git) and no plug-ins or add-ins.</li>
+</ul>
+<p>RStudio is made by Posit, and Spyder by the Spyder project. The IDEs in this tab are not made or endorsed by either of them.</p>
+<!--GROUP-->

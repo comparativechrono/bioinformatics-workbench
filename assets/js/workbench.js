@@ -23,11 +23,11 @@
      ------------------------------------------------------------------ */
   const TAB_HELP = {
     notebook: 'h-notebook', terminal: 'h-terminal', editor: 'h-files', galaxy: 'h-galaxy',
-    apis: 'h-databases', viewer: 'h-viewer', igv: 'h-genome', networks: 'h-networks', assistant: 'h-ai'
+    apis: 'h-databases', viewer: 'h-viewer', igv: 'h-genome', networks: 'h-networks', ide: 'h-ide', assistant: 'h-ai'
   };
   const TAB_NAME = {
     notebook: 'Notebook', terminal: 'Terminal', editor: 'Files', galaxy: 'Galaxy',
-    apis: 'Databases', viewer: '3D viewer', igv: 'Genome browser', networks: 'Networks', assistant: 'AI assistant'
+    apis: 'Databases', viewer: '3D viewer', igv: 'Genome browser', networks: 'Networks', ide: 'IDE', assistant: 'AI assistant'
   };
   MG.app.tabHelp = TAB_HELP;
   MG.app.tabName = TAB_NAME;
@@ -450,7 +450,7 @@
 
   /* code boxes in the help: Copy, and – for terminal, Python and R code – a button that uses it */
   function decorateCode(pre) {
-    const kind = pre.dataset.run || ''; // term | py | r
+    const kind = pre.dataset.run || ''; // term | py | r | rstudio | spyder | rmd
     const bar = h('div.code-bar');
     const code = () => pre.querySelector('code') ? pre.querySelector('code').textContent : pre.textContent;
     const copy = h('button.code-btn', { type: 'button', title: 'Copy to the clipboard', html: MG.icon('copy') + '<span>Copy</span>' });
@@ -467,6 +467,30 @@
       const ins = h('button.code-btn', { type: 'button', title: 'Add this code to the open notebook as a new cell', html: MG.icon('notebook') + '<span>Add to notebook</span>' });
       ins.addEventListener('click', () => toNotebook(code(), kind === 'r' ? 'r' : 'python', false));
       bar.appendChild(ins);
+    } else if (kind === 'rstudio' || kind === 'spyder' || kind === 'rmd') {
+      // (code for an IDE: a new script in its editor, or run in its console – the IDE is opened first if need be;
+      // an R Markdown document: a new document in RStudio)
+      const ide = kind === 'spyder' ? 'spyder' : 'rstudio';
+      const btn = (label, title, fn) => {
+        const b = h('button.code-btn', { type: 'button', title, html: MG.icon(ide === 'rstudio' ? 'rlang' : 'python') + `<span>${esc(label)}</span>` });
+        b.addEventListener('click', async () => {
+          try {
+            const app = MG.app.ideReady ? await MG.app.ideReady(ide) : null;
+            if (app) fn(app, code().replace(/\n+$/, ''));
+          } catch (e) {
+            toast(esc((e && e.message) || String(e)), 'error');
+          }
+        });
+        bar.appendChild(b);
+      };
+      if (kind === 'rmd') btn('New document in RStudio', 'Open this as a new R Markdown document in RStudio, in the IDE tab, ready to knit', (app, c) => app.newDoc('rmd', c + '\n'));
+      else if (ide === 'rstudio') {
+        btn('New script in RStudio', 'Open this code as a new R script in RStudio, in the IDE tab: run it a line at a time with Ctrl+Enter', (app, c) => app.newDoc('r', c + '\n'));
+        btn('Run in RStudio’s Console', 'Run this code in RStudio’s Console, in the IDE tab', (app, c) => app.consoleRun(c));
+      } else {
+        btn('New file in Spyder', 'Open this code as a new file in Spyder, in the IDE tab: run it with F5, or a line at a time with F9', (app, c) => app.newDoc(c + '\n'));
+        btn('Run in Spyder’s console', 'Run this code in Spyder’s IPython console, in the IDE tab', (app, c) => app.consoleRun(c));
+      }
     }
     bar.appendChild(copy);
     pre.parentNode.insertBefore(h('div.code-box', bar), pre);

@@ -182,7 +182,7 @@
       if (!V.structures.length) return toast('Load a structure first.', 'warn');
       if (!V.hasSelection()) return toast('Select the part you want to label first (e.g. click a residue or a chain name).', 'warn');
       const def = V.selectionInfo().text || '';
-      const text = await MG.promptText('Label text', 'This label will stay attached to the selection when you rotate.', def.length < 40 ? def : '');
+      const text = await MG.promptText('Label text', 'This label will stay attached to the selection when you rotate.', def.length < 40 ? def : '', 'Add');
       if (!text) return;
       this.add3D(text);
       this.ui.log(`label3d "${text}" sele`);
@@ -202,7 +202,7 @@
       bus.emit('viewer:label', { count: 1, kind: '3d' });
     }
     async promptText2D() {
-      const text = await MG.promptText('Fixed text', 'This text stays in place on the picture (good for titles). Drag it where you want it.', '');
+      const text = await MG.promptText('Fixed text', 'This text stays in place on the picture (good for titles). Drag it where you want it.', '', 'Add');
       if (!text) return;
       this.add2D(text);
       this.ui.log(`label2d "${text}"`);
@@ -882,41 +882,6 @@
       ctx.restore();
     }
   }
-
-  /* simple text prompt (non-blocking modal) */
-  MG.promptText = function (title, hint, def, okLabel) {
-    return new Promise((resolve) => {
-      const input = h('input.prompt-input', { type: 'text', value: def || '', 'aria-label': title });
-      const ok = h('button.btn.primary', { type: 'submit', text: okLabel || 'Add' });
-      const cancel = h('button.btn', { type: 'button', text: 'Cancel' });
-      const form = h('form.prompt-form', h('p', hint || ''), input, h('div.prompt-actions', cancel, ok));
-      let done = false;
-      const m = MG.modal(title, '', {
-        onClose: () => {
-          if (!done) {
-            done = true;
-            resolve('');
-          }
-        }
-      });
-      m.box.querySelector('.modal-b').appendChild(form);
-      const finish = (v) => {
-        if (done) return;
-        done = true;
-        m.close();
-        resolve(v);
-      };
-      form.addEventListener('submit', (e) => {
-        e.preventDefault();
-        finish(input.value.trim());
-      });
-      cancel.addEventListener('click', () => finish(''));
-      setTimeout(() => {
-        input.focus();
-        input.select();
-      }, 30);
-    });
-  };
 
   MG.Annotations = Annotations;
 })();

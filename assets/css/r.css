@@ -1,0 +1,106 @@
+/* =====================================================================
+   R in the IDE tab: the console that RStudio shows (rui.js), the windows
+   for plots, help and data, R's help pages and the data viewer
+   (dataview.js), which Spyder's Variable Explorer uses too. RStudio's
+   own look is in rstudio.css.
+   ===================================================================== */
+
+/* ---------------- a console (rui.js: ConsoleView) ---------------- */
+.rc { position: relative; display: flex; flex-direction: column; min-height: 0; height: 100%; }
+.rc-scroll { flex: 1; min-height: 0; overflow: auto; padding: 6px 8px 14px; cursor: text; }
+.rc-out { white-space: pre-wrap; word-break: break-word; }
+.rc-out, .rc-inputline { font-family: var(--rc-font, 'Courier New', Consolas, 'Liberation Mono', Menlo, monospace); font-size: var(--rc-size, 13.5px); line-height: 1.32; }
+.rc-inputline { display: flex; align-items: flex-start; }
+.rc-prompt { white-space: pre; flex: none; }
+.rc-input { flex: 1; min-width: 40px; border: 0; outline: 0; background: transparent; padding: 0; margin: 0; resize: none; overflow: hidden; font: inherit; line-height: inherit; height: 1.32em; }
+.rc-input.flash { background: rgba(255, 220, 90, 0.35); }
+.rc-note { font-family: var(--font); font-size: 12px; margin: 6px 0; padding: 3px 8px; border-radius: 6px; background: #eef3fb; color: #2c4a73; white-space: normal; }
+.rc-note .btn { margin-left: 8px; vertical-align: middle; }
+.rc-cut { font-family: var(--font); font-size: 11.5px; color: #7d8794; font-style: italic; margin-bottom: 4px; }
+.rc-pop { position: absolute; z-index: 30; min-width: 160px; max-width: 360px; max-height: 210px; overflow: auto; background: #fff; border: 1px solid #b9c2cf; border-radius: 4px; box-shadow: 0 6px 18px rgba(16, 24, 40, 0.2); font-family: var(--mono); font-size: 12.5px; padding: 2px 0; }
+.rc-popi { padding: 2px 10px; cursor: pointer; white-space: nowrap; }
+.rc-popi.on, .rc-popi:hover { background: #dbe8fb; }
+
+.help-choice { display: flex; flex-wrap: wrap; gap: 8px; }
+.pick-list { display: flex; flex-direction: column; gap: 3px; max-height: 50vh; overflow: auto; }
+.pick-item { text-align: left; border: 1px solid var(--line); background: var(--panel-2); border-radius: 6px; padding: 6px 10px; cursor: pointer; font-family: var(--mono); font-size: 13px; }
+.pick-item:hover { border-color: var(--accent); background: var(--accent-soft); }
+
+/* ---------------- windows (rui.js: FloatWin) ---------------- */
+.fwin { position: absolute; display: flex; flex-direction: column; background: #fff; border: 1px solid #6f7884; box-shadow: 0 8px 26px rgba(0, 0, 0, 0.28); min-width: 200px; min-height: 120px; }
+.fwin.on { border-color: #3b6db3; }
+.fwin-bar { flex: none; display: flex; align-items: center; gap: 4px; height: 26px; padding: 0 2px 0 8px; background: #e4e8ee; border-bottom: 1px solid #c3c9d1; cursor: move; user-select: none; touch-action: none; }
+.fwin.on .fwin-bar { background: #d4e2f4; }
+.fwin-t { flex: 1; min-width: 0; font-size: 12px; color: #1d2633; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.fwin-tools { display: inline-flex; gap: 1px; }
+.fwin-tool, .fwin-x { border: 0; background: none; width: 26px; height: 22px; display: grid; place-items: center; cursor: pointer; color: #3a4350; border-radius: 3px; padding: 0; }
+.fwin-tool:hover { background: rgba(255, 255, 255, 0.7); }
+.fwin-x:hover { background: #d9323b; color: #fff; }
+.fwin-tool .ic, .fwin-x .ic { width: 14px; height: 14px; }
+.fwin-body { flex: 1; min-height: 0; overflow: auto; position: relative; }
+.fwin-grip { position: absolute; right: 0; bottom: 0; width: 16px; height: 16px; cursor: nwse-resize; touch-action: none; background: linear-gradient(135deg, transparent 50%, #9aa3ad 50%, #9aa3ad 58%, transparent 58%, transparent 70%, #9aa3ad 70%, #9aa3ad 78%, transparent 78%); }
+.fwin-plot .fwin-body { overflow: hidden; background: #fff; display: grid; place-items: center; }
+.fwin-plot canvas.rplot { width: 100%; height: 100%; object-fit: contain; display: block; }
+.fwin-data .fwin-body { display: flex; flex-direction: column; overflow: hidden; }
+.fwin-help .fwin-body { padding: 4px 16px 20px; }
+.fwin-text .fwin-body { padding: 0; }
+
+/* ---------------- a plot ---------------- */
+canvas.rplot { background: #fff; }
+
+/* ---------------- R's help pages (Rd2HTML) ---------------- */
+.rhelp { font-family: Georgia, 'Times New Roman', serif; font-size: 15px; line-height: 1.45; color: #1d1d1d; max-width: 70ch; }
+.rhelp table:first-child { width: 100%; font-family: var(--font); font-size: 12px; color: #6a6a6a; border-bottom: 1px solid #ddd; margin-bottom: 6px; }
+.rhelp h2 { font-family: var(--font); font-size: 1.25rem; font-weight: 650; color: #23384f; margin: 0.5em 0 0.3em; }
+.rhelp h3 { font-family: var(--font); font-size: 1rem; font-weight: 650; color: #5a5a5a; margin: 1.1em 0 0.3em; }
+.rhelp pre { font-family: var(--mono); font-size: 12.5px; background: #f5f6f8; border: 1px solid #e5e7eb; border-radius: 4px; padding: 7px 9px; overflow-x: auto; white-space: pre; line-height: 1.4; }
+.rhelp code { font-family: var(--mono); font-size: 0.86em; background: none; padding: 0; }
+.rhelp table { border-collapse: collapse; }
+.rhelp table td { vertical-align: top; padding: 2px 10px 4px 0; }
+.rhelp table td:first-child code { white-space: nowrap; font-weight: 600; }
+.rhelp a { color: #1a5aa8; }
+.rhelp a.rhelp-dead { color: inherit; text-decoration: none; }
+.rhelp hr { border: 0; border-top: 1px solid #ddd; }
+.rhelp .help-footer, .rhelp > div[style] { font-size: 12px; color: #777; }
+pre.rtext { margin: 0; padding: 8px 12px; font-family: var(--mono); font-size: 12.5px; line-height: 1.4; white-space: pre; color: #1d1d1d; }
+
+/* ---------------- the data viewer (dataview.js) ---------------- */
+.dg { display: flex; flex-direction: column; min-height: 0; height: 100%; background: #fff; font-family: var(--font); }
+.dg-bar { flex: none; display: flex; align-items: center; gap: 8px; padding: 4px 8px; border-bottom: 1px solid #dfe3e8; background: #f7f8fa; font-size: 12px; flex-wrap: wrap; }
+.dg-btn { display: inline-flex; align-items: center; gap: 4px; border: 1px solid #cfd5dc; background: #fff; border-radius: 4px; padding: 2px 8px; font-size: 12px; cursor: pointer; color: #2b3540; }
+.dg-btn .ic { width: 13px; height: 13px; }
+.dg-btn.on { background: #dbe8fb; border-color: #8fb1e3; }
+.dg-info { color: #59636e; white-space: nowrap; }
+.dg-search { border: 1px solid #cfd5dc; border-radius: 4px; padding: 2px 8px; font-size: 12px; width: 150px; }
+.dg-scroll { flex: 1; min-height: 0; overflow: auto; position: relative; outline: none; }
+.dg-head { position: sticky; top: 0; z-index: 2; background: #f1f3f6; }
+.dg-hrow, .dg-frow { display: flex; border-bottom: 1px solid #d5dae0; }
+.dg-hcell { display: flex; align-items: baseline; gap: 5px; flex: none; border: 0; border-right: 1px solid #e1e5ea; background: none; padding: 4px 7px; font: inherit; font-size: 12.5px; font-weight: 650; text-align: left; cursor: pointer; color: #222b35; overflow: hidden; white-space: nowrap; }
+.dg-hcell:hover { background: #e5ebf3; }
+.dg-hname { overflow: hidden; text-overflow: ellipsis; }
+.dg-htype { font-weight: 400; font-size: 10.5px; color: #7a8591; font-family: var(--mono); }
+.dg-hsort { color: #3b6db3; font-size: 10px; }
+.dg-frow .dg-cell { padding: 2px 3px; }
+.dg-filter { border: 1px solid #cfd5dc; border-radius: 3px; font-size: 11.5px; padding: 1px 4px; }
+.dg-bodywrap { position: relative; }
+.dg-rows { position: absolute; top: 0; left: 0; }
+.dg-row { position: absolute; left: 0; display: flex; height: 24px; border-bottom: 1px solid #edf0f3; }
+.dg-row.odd { background: #fafbfc; }
+.dg-row:hover { background: #eef4fc; }
+.dg-cell { flex: none; padding: 3px 7px; font-size: 12.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; border-right: 1px solid #f0f2f5; color: #1f2933; }
+.dg-cell.num { text-align: right; font-variant-numeric: tabular-nums; }
+.dg-rn { color: #7a8591; text-align: right; background: #f7f8fa; font-size: 11.5px; position: sticky; left: 0; z-index: 1; }
+.dg-head .dg-rn { background: #f1f3f6; }
+.dg-na { color: #9aa3ad; font-style: italic; }
+.dg-note { flex: none; font-size: 11.5px; color: #7a5200; background: #fff6de; padding: 3px 8px; border-top: 1px solid #f0dca3; }
+
+/* R serves a Shiny app: the console waits (Esc stops the app) */
+.rc.held .rc-input::placeholder { color: #7d8590; font-style: italic; }
+.rc.held .rc-inputline { background: #f6f8fa; }
+.fwin-browser .fwin-body { padding: 0; }
+iframe.rbrowser { border: 0; width: 100%; height: 100%; display: block; background: #fff; }
+/* after an error: ask the AI assistant */
+.rc-askrow { margin: 2px 0 6px; font-family: var(--ui, system-ui, sans-serif); }
+.rc-ask { border: 1px solid #d9d2f3; background: #f7f5ff; color: #5b3fb5; border-radius: 6px; padding: 2px 9px; font-size: 12px; cursor: pointer; }
+.rc-ask:hover:not(:disabled) { background: #eee8ff; }
+.rc-ask:disabled { opacity: 0.6; cursor: default; }

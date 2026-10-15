@@ -1,0 +1,81 @@
+<!-- id: h-spyder | title: Spyder | group: IDEs: RStudio and Spyder | summary: Python scripts and cells, the IPython console, the Variable Explorer and the debugger | keys: spyder python ide editor ipython console variable explorer plots help files history debugger debug breakpoint breakpoints step cell cells # %% run file run cell f5 f9 runfile runcell debugfile pdb ipdb %debug input interrupt restart kernel numpy pandas matplotlib pip completion code analysis pyflakes jedi -->
+<h1><!--ICON:python-->Spyder</h1>
+<p class="lede">Spyder is an IDE for Python that was designed with scientists in mind. The one in the IDE tab is an imitation, made for teaching, that looks and works like Spyder 6: you write scripts in the Editor, run them in the IPython Console, and look at your variables, plots and documentation in the panes beside them.</p>
+<div class="tryrow"><button class="do" type="button" data-ide="spyder">Open Spyder</button></div>
+
+<h2>The panes</h2>
+<table>
+<tr><th>Pane</th><th>What it is for</th></tr>
+<tr><td>Editor (left)</td><td>your scripts, each in a tab of its own, with syntax colouring, completion and warnings about likely mistakes</td></tr>
+<tr><td>IPython Console (bottom right)</td><td>Python itself: type a command and press <kbd>Enter</kbd>. This is the real IPython, so its own commands, such as <code>%timeit</code> and <code>%pip</code>, work too. The <b>History</b> tab next to it lists the commands you have run.</td></tr>
+<tr><td>Variable Explorer (top right)</td><td>the variables in the console’s memory, with their type, size and value; double-click one to look inside it. The tabs next to it are <b>Help</b> (documentation), <b>Plots</b> (your figures), <b>Files</b> and the <b>Debugger</b>.</td></tr>
+</table>
+<p>The <b>View</b> menu brings any pane to the front, and <b>View ▸ Reset window layout</b> puts the panes back where they started. Spyder opens in its dark theme; you can switch to a light one in <b>Tools ▸ Preferences</b>, which also has settings for the Editor, for running files and for the console.</p>
+
+<h2>Running code</h2>
+<p>Try this script: <b>New file in Spyder</b>, under it, opens it in the Editor.</p>
+<pre class="code" data-run="spyder"><code>import pandas as pd
+import matplotlib.pyplot as plt
+
+# %% Read the table of yeast genes
+genes = pd.read_csv("/data/examples/tables/yeast_genes.csv")
+print(genes.shape)
+
+# %% The fraction of essential genes in each part of the cell
+by_place = genes.groupby("location")["essential"].mean().sort_values()
+print(by_place)
+
+# %% Plot it
+by_place.plot.barh(figsize=(6, 4))
+plt.xlabel("fraction of genes that are essential")
+plt.tight_layout()
+plt.show()</code></pre>
+<p>There are three ways of running a script, and you will soon find yourself using all of them:</p>
+<table class="keys">
+<tr><td><kbd>F5</kbd></td><td><b>Run file</b> saves the file and runs all of it, in the file’s own folder. Spyder types <code>%runfile</code> into the console, followed by the file’s name, so you can see what it is doing.</td></tr>
+<tr><td><kbd>Ctrl</kbd>+<kbd>Enter</kbd></td><td><b>Run cell</b> runs the cell that the cursor is in. A cell is a part of a script that begins with a line starting with <code># %%</code>, and the Editor shades the one you are in. <kbd>Shift</kbd>+<kbd>Enter</kbd> runs the cell and moves on to the next one.</td></tr>
+<tr><td><kbd>F9</kbd></td><td><b>Run selection</b> runs the lines you have selected, or the line that the cursor is on, as if you had typed them into the console.</td></tr>
+</table>
+<p>Whichever you choose, the code runs in the console’s Python, so the variables it creates are still there afterwards. You can look at them in the Variable Explorer, or carry on working with them in the console.</p>
+
+<h2>The IPython Console</h2>
+<p>The console is where your code runs. Type a command and press <kbd>Enter</kbd>. If the command isn’t finished yet, such as the first line of a <code>for</code> loop, you get a continuation prompt so that you can type the rest. <kbd>↑</kbd> and <kbd>↓</kbd> bring back earlier commands, and <kbd>Tab</kbd> completes names. A few of IPython’s own commands are worth knowing: <code>name?</code> shows the documentation of an object, <code>%timeit</code> times a line of code, <code>%pip install NAME</code> installs a package, and a line that begins with <code>!</code> runs a command in the workbench’s terminal, as in <code>!ls -l</code>.</p>
+<pre class="code" data-run="spyder"><code>import numpy as np
+x = np.random.default_rng(1).normal(size=10_000)
+print(x.mean(), x.std())
+%timeit np.sort(x)</code></pre>
+<p>NumPy, pandas and matplotlib are loaded while Spyder starts. The many other packages that come with Pyodide, such as SciPy, scikit-learn, statsmodels and Biopython (<code>import Bio</code>), are loaded the first time a script or a command imports them. Pure-Python packages from PyPI can be installed with <code>%pip install NAME</code>; they last until you reload the page.</p>
+<p><b>Consoles ▸ Restart kernel</b> (<kbd>Ctrl</kbd>+<kbd>.</kbd>) starts Python afresh, and <b>Remove all variables</b> clears the variables without restarting. <kbd>Ctrl</kbd>+<kbd>C</kbd> in the console stops the code that is running.</p>
+
+<h2>The Variable Explorer</h2>
+<p>The Variable Explorer lists the variables in the console’s Python, with their type, their size and a summary of their value, and colours the rows by type. Double-click a variable to open it: a data frame or an array as a table that you can sort and scroll through, a list or a dictionary with its contents, and a number or a piece of text in a box where you can change it. The right-click menu has more, such as plotting an array or drawing it as a histogram. Modules, functions and names that begin with an underscore are hidden; the filter button at the top of the pane changes what is shown.</p>
+
+<h2>Plots, help and completion</h2>
+<p>Figures that your code draws with matplotlib appear in the <b>Plots</b> pane, and in the console as well unless you turn that off in the pane’s menu. The arrows take you back to earlier figures, and the buttons at the top save a figure as a PNG file, copy it, zoom in or remove it.</p>
+<p>To read the documentation of a function, put the cursor on its name, in the Editor or the console, and press <kbd>Ctrl</kbd>+<kbd>I</kbd>: the <b>Help</b> pane shows it. You can also type a name into the <b>Object</b> box at the top of that pane. As you type, <kbd>Tab</kbd> or <kbd>Ctrl</kbd>+<kbd>Space</kbd> offers to complete a name, and <kbd>Ctrl</kbd>+<kbd>G</kbd> (or <kbd>Ctrl</kbd> and a click) takes you to where a function was defined.</p>
+<p>The Editor also checks your code as you write it, with <i>pyflakes</i>. A red dot in the margin marks an error, such as a bracket that is never closed, and a yellow triangle marks a warning, such as a name that is used but never defined, or a module that is imported but never used. Hover over the mark to read the message.</p>
+
+<h2 data-anchor="debugger">The debugger</h2>
+<p>When a script doesn’t do what you expect, the debugger lets you run it one line at a time and watch your variables as they change. Click just to the left of a line number, or press <kbd>F12</kbd>, to put a <em>breakpoint</em> on that line: a red dot appears. Then choose <b>Debug file</b> (<kbd>Ctrl</kbd>+<kbd>F5</kbd>). The script runs until it reaches the breakpoint, and stops there with the line it is about to run marked in the Editor. The Variable Explorer now shows the variables at that point, and the console’s prompt changes to <code>IPdb [1]:</code>, where you can type Python to look at anything you like.</p>
+<table class="keys">
+<tr><td><kbd>Ctrl</kbd>+<kbd>F10</kbd></td><td>Step: run the current line, and stop at the next one</td></tr>
+<tr><td><kbd>Ctrl</kbd>+<kbd>F11</kbd></td><td>Step into: go inside the function that the current line calls</td></tr>
+<tr><td><kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>F11</kbd></td><td>Step return: carry on until the current function returns</td></tr>
+<tr><td><kbd>Ctrl</kbd>+<kbd>F12</kbd></td><td>Continue: run on to the next breakpoint</td></tr>
+<tr><td><kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>F12</kbd></td><td>Stop debugging</td></tr>
+</table>
+<p>The same commands are on the toolbar, in blue, and in the <b>Debug</b> menu, and the <b>Debugger</b> pane shows how you got to the current line: which function called which. If a script has already stopped with an error, typing <code>%debug</code> in the console takes you to the line where it failed, with the variables as they were at that moment. To have that happen by itself whenever a script fails, tick <b>Directly enter debugging when errors appear</b> in <b>Tools ▸ Preferences</b>.</p>
+
+<h3 data-anchor="isolation">When the debugger is not available</h3>
+<p>The debugger, <code>input()</code> and stopping code with <kbd>Ctrl</kbd>+<kbd>C</kbd> all need Python to pause and wait for you while it is in the middle of running something. A web page can only do that when it is <em>cross-origin isolated</em>. The workbench arranges this itself in most browsers, but not in every situation (in some private windows, for example). If the page is not isolated, the console says so when it starts. Everything else still works, but <code>input()</code> stops with an error instead of waiting for an answer, the debugger can’t be started, and the only way to stop code that runs for too long is <b>Restart kernel</b>. Reloading the page, or opening it in an ordinary window, usually helps; <a href="#h-limits/threads">What is different in the browser</a> explains more.</p>
+
+<h2>Files and the working directory</h2>
+<p>The console starts in your home folder, <code>~</code>. The working directory is shown at the right-hand end of the toolbar, where you can also change it, and the <b>Files</b> pane shows what is in it. When you run a whole file with <kbd>F5</kbd>, the working directory changes to the file’s folder, so a script can read the files next to it by their names alone; <b>Run ▸ Configuration per file</b> changes that. In the Files pane, right-click a CSV file and choose <b>Import data</b> to read it into a pandas data frame.</p>
+
+<h2>What is different from Spyder on a computer</h2>
+<ul>
+  <li>The console’s Python runs inside your browser (Pyodide), and is separate from the Python of the notebooks.</li>
+  <li>Python can’t start threads or other processes, so <code>threading</code>, <code>multiprocessing</code> and <code>subprocess</code> don’t work; use <code>!command</code> for the programs of the terminal.</li>
+  <li>Figures are drawn in the Plots pane and the console only: there are no separate interactive windows, and desktop toolkits such as tkinter and Qt are not available.</li>
+  <li>There are no projects, no plug-ins and no version control.</li>
+</ul>

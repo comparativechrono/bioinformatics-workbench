@@ -13,6 +13,7 @@
      unzip, zip, tar        archives
      igv                    show files in the Genome browser tab
      network                open networks in the Networks tab
+     rstudio, spyder        open the IDE tab's RStudio or Spyder (with files)
      help, man              the programs of the workbench
    ===================================================================== */
 (function () {
@@ -727,7 +728,8 @@
       [/^(cytoscape|Cytoscape|cytoscape\.sh|gephi|graphviz-gui)$/, 'is a desktop program and is not installed in this terminal. The Networks tab draws and analyses networks here – SIF, GraphML, GML, XGMML and Cytoscape JSON files, STRING and IntAct networks:  network FILE  (man network); dot draws graphs written in the DOT language.'],
       [/^(clustalo|clustalw|mafft|t_coffee|prank)$/, 'is not installed in this terminal. For multiple alignments there are kalign and muscle:  kalign -i seqs.fasta -o aligned.fasta'],
       [/^(raxml|raxml-ng|iqtree|iqtree2|phyml|mrbayes)$/, 'is not installed in this terminal. For trees there is FastTree:  fasttree aligned.fasta > tree.nwk  (open tree.nwk in the Files tab to see it).'],
-      [/^(perl|ruby|java|julia|node|ipython|jupyter|conda-build)$/, 'is not installed in this terminal. There are Python (python script.py; the Notebook tab), R (Rscript script.R; R notebooks) and the shell with awk, sed, grep, sort, cut …'],
+      [/^(ipython|ipython3)$/, 'is not a command here, but Spyder, in the IDE tab, has an IPython console: type  spyder  to open it. Python scripts run here with  python script.py.'],
+      [/^(perl|ruby|java|julia|node|jupyter|conda-build)$/, 'is not installed in this terminal. There are Python (python script.py; the Notebook tab), R (Rscript script.R; R notebooks) and the shell with awk, sed, grep, sort, cut …'],
       [/^(apt|apt-get|yum|dnf|brew|docker|singularity|apptainer|nextflow|git|make|module|cmake|gcc|cc|g\+\+)$/, 'is not available in this terminal: programs cannot be installed or compiled in a web page. Python packages: pip install NAME; R packages: install.packages("NAME") in R.'],
       [/^(ssh|scp|rsync|ping|ftp|sftp|nc|telnet)$/, 'is not available: a web page cannot open network connections of its own. Downloads from web services that allow it: curl or wget (see  man curl).'],
       [/^(top|htop|ps|kill|free|lscpu|df|mount|su|chown|screen|tmux|nohup|watch|crontab|pkill|pgrep|uptime|stty|getconf|lsblk|dmesg|who|w|last|service|systemctl|chgrp|mknod)$/, 'is not available in this terminal: it is a web page, not a whole computer.'],
@@ -754,7 +756,9 @@
     python: 'python – Python (Pyodide) in your browser: the same Python as the Python notebooks.\n\n  python script.py [ARGUMENTS]\n  python -c "print(1 + 1)"\n  python -m MODULE\n  python --version\n\nPackages: pandas, NumPy, matplotlib, SciPy, Biopython, scikit-learn … load when imported; others:  pip install NAME\nFor interactive Python use the Notebook tab.',
     pip: 'pip – installs Python packages for this visit of the page (micropip): pure-Python packages from PyPI, and those Pyodide has built.\n\n  pip install NAME …\n  pip list\n  pip show NAME',
     Rscript: 'Rscript – R (webR) in your browser: the same R as the R notebooks.\n\n  Rscript script.R [ARGUMENTS]          (commandArgs(trailingOnly = TRUE) gives the arguments)\n  Rscript -e \'summary(cars)\'\n  Rscript -e \'install.packages("ggplot2")\'\n\nPlots go to Rplots.pdf, or to a file you open with png("plot.png") / pdf("plot.pdf") … dev.off().',
-    R: 'R – see  man Rscript. The interactive R console is not available in the terminal: use an R notebook.',
+    R: 'R – see  man Rscript. The interactive R console is not available in the terminal: use an R notebook, or RStudio’s Console in the IDE tab (type  rstudio  to open it).',
+    rstudio: 'rstudio – open RStudio in the IDE tab: an imitation of RStudio, made for teaching, with an R of its own.\n\n  rstudio                       open RStudio\n  rstudio analysis.R report.Rmd open these files in its Source pane\n\nRStudio’s R is not the notebooks’ R, nor the R of Rscript: an object made in one does not exist in the others. They all work on the same files.',
+    spyder: 'spyder – open Spyder in the IDE tab: an imitation of the Spyder IDE, made for teaching, with a Python of its own.\n\n  spyder                        open Spyder\n  spyder script.py              open a file in its Editor (F5 runs it, F9 runs a line)\n\nSpyder’s Python is not the notebooks’ Python, nor the Python of the python command: a variable made in one does not exist in the others. They all work on the same files.',
     dot: 'dot – Graphviz, compiled to WebAssembly: draws a graph described in the DOT language.\n\n  dot -Tsvg graph.dot -o graph.svg\n  dot -Tpng graph.dot -o graph.png\n  snakemake --dag | dot -Tsvg > dag.svg',
     curl: 'curl – download from the web (through the browser). Only web services that allow pages to read them (CORS) can be reached: EBI, UniProt, Ensembl, NCBI E-utilities, RCSB PDB, AlphaFold DB, GitHub raw files …\n\n  curl -s "https://rest.uniprot.org/uniprotkb/P69905.fasta"\n  curl -o hb.fasta "https://rest.uniprot.org/uniprotkb/P69905.fasta"\n  curl -O https://files.rcsb.org/download/1A3N.pdb\n  curl -H "Content-Type: application/json" "https://rest.ensembl.org/lookup/symbol/homo_sapiens/BRCA2"\n  curl -X POST -H "Content-Type: application/json" -d \'{"ids":["ENSG00000139618"]}\' https://rest.ensembl.org/lookup/id\n\nOptions: -o FILE, -O, -s, -S, -f, -L, -H HEADER, -X METHOD, -d DATA, --data-binary @FILE, -I, -w \'%{http_code}\', --compressed (ignored).',
     wget: 'wget – download from the web (through the browser); the same reach as curl.\n\n  wget https://files.rcsb.org/download/1A3N.pdb\n  wget -O hb.fasta "https://rest.uniprot.org/uniprotkb/P69905.fasta"\n  wget -q -O - "https://rest.ensembl.org/info/ping?content-type=application/json"\n\nOptions: -O FILE (- for the screen), -q, -P FOLDER, -nc.',
@@ -1379,6 +1383,30 @@
     return 0;
   };
 
+  /* ------------------------------------------------------------------ rstudio, spyder: files → the IDE tab */
+  const ideCommand = (ide, name) => async (ctx) => {
+    if (MG.shellUtil.forPerson && MG.shellUtil.forPerson(ctx)) return 1;
+    const files = [];
+    for (const x of ctx.args) {
+      if (x === '--help' || x === '-h') {
+        ctx.out(OWN_MAN[ide] + '\n');
+        return 0;
+      }
+      if (x.startsWith('-')) throw userErr(`${ide}: unknown option ${x} (see  man ${ide})`);
+      if (!ctx.fs.exists(x)) throw userErr(`${ide}: ${x}: No such file or directory`);
+      if (ctx.fs.isDir(x)) throw userErr(`${ide}: ${x}: Is a directory`);
+      files.push(ctx.fs.resolve(x));
+    }
+    if (!MG.app || !MG.app.ideReady) throw userErr(`${ide}: the IDE tab is not available on this page`);
+    const app = await MG.app.ideReady(ide);
+    if (!app) throw userErr(`${ide}: ${name} could not be opened (see the IDE tab)`);
+    for (const f of files) await app.openFile(f);
+    ctx.io.note(`${name} is open in the IDE tab.`);
+    return 0;
+  };
+  B.rstudio = ideCommand('rstudio', 'RStudio');
+  B.spyder = ideCommand('spyder', 'Spyder');
+
   /* ------------------------------------------------------------------ the session as a notebook or a script */
   const HOME = () => (MG.app && MG.app.HOME) || '/home/user';
   const tilde = (p) => (p === HOME() ? '~' : p.startsWith(HOME() + '/') ? '~' + p.slice(HOME().length) : p);
@@ -1559,6 +1587,7 @@
         '  open FILE   show a file in its tab (notebook, picture, table, structure, tree)    nano FILE   edit it in Files',
         '  igv FILE…   show BAM/VCF/BED files in the Genome browser     download FILE|FOLDER   save to your computer',
         '  network FILE…   open networks (SIF, GraphML, GML, Cytoscape JSON …) in the Networks tab;  network --string TP53 MDM2',
+        '  rstudio [FILE…]   open RStudio in the IDE tab (with R scripts, R Markdown)    spyder [FILE…]   open Spyder (with Python scripts)',
         '  export-session FILE.ipynb   this session\'s commands as a notebook (or FILE.sh as a script)',
         '',
         'The shell is bash: | && || ; > >> < 2> 2>&1, quotes, $VAR, $( ), $(( )), globs, if/for/while/case, functions,',

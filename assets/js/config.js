@@ -5,7 +5,7 @@
    ===================================================================== */
 window.MG_CONFIG = {
   courseTitle: 'Bioinformatics workbench',
-  courseSubtitle: 'Notebook · terminal · Galaxy · databases · 3D · genomes · AI – in your browser',
+  courseSubtitle: 'Notebook · terminal · Galaxy · databases · 3D · genomes · networks · IDEs · AI – in your browser',
 
   /* The prefix of what the page keeps in the browser (files, notebooks, settings). Change it only
      if two copies of the workbench on one web site must not share their saved work. */

@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Bioinformatics workbench</title>
-<meta name="description" content="A bioinformatics workbench in the browser: a Python and R notebook, a Linux terminal with real bioinformatics programs, Galaxy, database APIs, a 3D protein viewer, a genome browser, a network viewer and an AI assistant. Nothing to install.">
+<meta name="description" content="A bioinformatics workbench in the browser: a Python and R notebook, a Linux terminal with real bioinformatics programs, Galaxy, database APIs, a 3D protein viewer, a genome browser, a network viewer, RStudio and Spyder for writing code, and an AI assistant. Nothing to install.">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 128 128'%3E%3Crect x='4' y='4' width='120' height='120' rx='26' fill='%2320384E'/%3E%3Cpolyline points='23,40 43,88 64,40 85,88 105,40' fill='none' stroke='%2362D5BD' stroke-width='8' stroke-linecap='round' stroke-linejoin='round'/%3E%3Ccircle cx='23' cy='40' r='8' fill='%23F5FAFC'/%3E%3Ccircle cx='43' cy='88' r='8' fill='%2362D5BD'/%3E%3Ccircle cx='64' cy='40' r='8' fill='%23F5FAFC'/%3E%3Ccircle cx='85' cy='88' r='8' fill='%2362D5BD'/%3E%3Ccircle cx='105' cy='40' r='8' fill='%23F5FAFC'/%3E%3C/svg%3E">
 <script src="assets/js/isolation.js"></script>
 <link rel="stylesheet" href="assets/vendor/codemirror/codemirror.css">
@@ -14,6 +14,7 @@
 <link rel="stylesheet" href="assets/css/pipe.css">
 <link rel="stylesheet" href="assets/css/wb.css">
 <link rel="stylesheet" href="assets/css/net.css">
+<link rel="stylesheet" href="assets/css/ide.css">
 </head>
 <body data-page="workbench" data-title="Bioinformatics workbench">
 <div class="app">
@@ -24,7 +25,7 @@
       <svg class="brand-mark" viewBox="0 0 128 128" aria-hidden="true"><rect x="4" y="4" width="120" height="120" rx="26" fill="#20384E"/><polyline points="23,40 43,88 64,40 85,88 105,40" fill="none" stroke="#62D5BD" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/><circle cx="23" cy="40" r="8" fill="#F5FAFC"/><circle cx="43" cy="88" r="8" fill="#62D5BD"/><circle cx="64" cy="40" r="8" fill="#F5FAFC"/><circle cx="85" cy="88" r="8" fill="#62D5BD"/><circle cx="105" cy="40" r="8" fill="#F5FAFC"/></svg>
       <div>
         <div class="brand-title">Bioinformatics workbench</div>
-        <div class="brand-sub">Notebook · terminal · Galaxy · databases · 3D · genomes · networks · AI – in your browser</div>
+        <div class="brand-sub">Notebook · terminal · Galaxy · databases · 3D · genomes · networks · IDEs · AI – in your browser</div>
       </div>
     </a>
     <div class="spacer"></div>
@@ -45,7 +46,7 @@
       <div class="help-body" id="helpBody">
 <article class="help-page" id="h-home" data-title="Help" data-group="Start here" data-group-page="h-home" data-keys="help index topics contents" hidden>
 <h1><svg class="ic" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M4 4h6a3 3 0 0 1 3 3v13a2 2 0 0 0-2-2H4z"/><path d="M20 4h-6a3 3 0 0 0-3 3v13a2 2 0 0 1 2-2h7z"/></svg>The workbench</h1>
-<p class="lede">Notebooks in Python and R, a Linux terminal with real bioinformatics programs, Galaxy, database searches, a 3D protein viewer, a genome browser, a network viewer and an AI assistant – all in this browser tab. Pick a tab on the right; this pane explains each one.</p>
+<p class="lede">Notebooks in Python and R, a Linux terminal with real bioinformatics programs, Galaxy, database searches, a 3D protein viewer, a genome browser, a network viewer, RStudio and Spyder, and an AI assistant – all in this browser tab. Pick a tab on the right; this pane explains each one.</p>
 <div class="help-start">
   <button type="button" data-goto="h-start"><b><svg class="ic" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M7 4l13 8-13 8z"/></svg>A first session</b><span>ten minutes, every tab once</span></button>
   <button type="button" data-bench="notebook"><b><svg class="ic" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><rect x="5" y="3" width="14" height="18" rx="2"/><path d="M9 3v18M12 8h4M12 12h4"/></svg>Notebook</b><span>Python and R, Jupyter-style</span></button>
@@ -106,6 +107,10 @@
 <li><a href="#h-networks">The Networks tab<small>Draw, style and analyse networks of genes and proteins (Cytoscape.js)</small></a></li>
 <li><a href="#h-network-analysis">Network analysis<small>Statistics, hubs, clusters (MCODE, MCL, Louvain), paths and functional enrichment – what they compute, and how they were checked</small></a></li>
 </ul></section>
+<section><h2><svg class="ic" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 8h18M10 8v12"/><path d="M14.5 12.5l-1.6 1.75 1.6 1.75M17.5 12.5l1.6 1.75-1.6 1.75"/></svg>IDEs: RStudio and Spyder</h2><ul>
+<li><a href="#h-rstudio">RStudio<small>R scripts, R Markdown and Quarto reports, Shiny apps, and RStudio’s panes</small></a></li>
+<li><a href="#h-spyder">Spyder<small>Python scripts and cells, the IPython console, the Variable Explorer and the debugger</small></a></li>
+</ul></section>
 <section><h2><svg class="ic" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M12 3l2 5.5L19.5 10 14 12l-2 5.5L10 12l-5.5-2L10 8.5z"/><path d="M19 17l.8 2 2 .8-2 .8-.8 2-.8-2-2-.8 2-.8z"/></svg>AI assistant</h2><ul>
 <li><a href="#h-ai">The AI assistant<small>Connect a model, ask about code and errors, use the code it gives</small></a></li>
 <li><a href="#h-ai-agent">The AI agent<small>Give a task; it runs commands in the terminal and keeps a record</small></a></li>
@@ -159,6 +164,7 @@ cat lengths.tsv</code></pre>
   <li><b>3D viewer</b> – protein structures from the PDB or AlphaFold. <button class="do" type="button" data-cmd="load 1mbn; color rainbow">Show myoglobin</button></li>
   <li><b>Genome browser</b> – reads, variants and genes along the genome. <button class="do" type="button" data-igv="human_CYP2C19:11,560-11,680">Open it</button></li>
   <li><b>Networks</b> – networks of interacting proteins, coloured by your data, with their hubs and clusters. <button class="do" type="button" data-net="example:airway">Show an example</button></li>
+  <li><b>IDE</b> – RStudio for R and Spyder for Python, for when a script, a report or the debugger suits the job better than a notebook. <a href="#h-ide">The IDE tab</a></li>
   <li><b>AI assistant</b> – a chat and an agent, with a model of your choice. <a href="#h-ai">AI assistant</a></li>
 </ul>
 
@@ -189,6 +195,7 @@ cat lengths.tsv</code></pre>
 <tr><td><svg class="ic" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M12 2l9 5v10l-9 5-9-5V7z"/><path d="M3 7l9 5 9-5M12 12v10"/></svg> 3D viewer</td><td>protein structures – <a href="#h-viewer">The 3D viewer</a></td></tr>
 <tr><td><svg class="ic" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M4 6h16M4 12h16M4 18h16"/><path d="M8 4v4M14 10v4M11 16v4"/></svg> Genome browser</td><td>reads, variants, genes – <a href="#h-genome">The genome browser</a></td></tr>
 <tr><td><svg class="ic" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="6" cy="6" r="2.6"/><circle cx="18" cy="7.5" r="2.6"/><circle cx="9.5" cy="18" r="2.6"/><circle cx="19" cy="18.5" r="1.8"/><path d="M8.5 6.4l7 .8M7 8.4l1.7 7.1M16.4 9.6l-5.3 6.3M12 18.1l5.2.3"/></svg> Networks</td><td>interaction networks: style, analyse, export – <a href="#h-networks">The Networks tab</a></td></tr>
+<tr><td><svg class="ic" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 8h18M10 8v12"/><path d="M14.5 12.5l-1.6 1.75 1.6 1.75M17.5 12.5l1.6 1.75-1.6 1.75"/></svg> IDE</td><td>RStudio for R scripts and reports, Spyder for Python scripts and debugging – <a href="#h-ide">The IDE tab</a></td></tr>
 <tr><td><svg class="ic" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M12 3l2 5.5L19.5 10 14 12l-2 5.5L10 12l-5.5-2L10 8.5z"/><path d="M19 17l.8 2 2 .8-2 .8-.8 2-.8-2-2-.8 2-.8z"/></svg> AI assistant</td><td>chat and agent – <a href="#h-ai">The AI assistant</a></td></tr>
 </table>
 <p>When the right pane is narrow, the tabs show only their icons; hover over one to see its name. The arrow keys move between tabs when one has the keyboard focus.</p>
@@ -2485,6 +2492,215 @@ nx.write_graphml(G, "lesmis.graphml")
 <dd>Zachary WW (1977) An Information Flow Model for Conflict and Fission in Small Groups. <i>Journal of Anthropological Research</i> 33(4): 452–473. <a href="https://doi.org/10.1086/jar.33.4.3629752" target="_blank" rel="noopener">doi:10.1086/jar.33.4.3629752</a></dd>
 </dl>
 </article>
+<article class="help-page" id="h-ide" data-title="The IDE tab" data-group="IDEs: RStudio and Spyder" data-group-page="h-ide" data-keys="ide integrated development environment rstudio spyder posit script scripts editor console debugger variable explorer environment separate session r python open in rstudio open in spyder" hidden>
+<h1><svg class="ic" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 8h18M10 8v12"/><path d="M14.5 12.5l-1.6 1.75 1.6 1.75M17.5 12.5l1.6 1.75-1.6 1.75"/></svg>The IDE tab: RStudio and Spyder</h1>
+<p class="lede">Most of your work in the workbench will be done in notebooks, but some jobs are easier in an integrated development environment, or IDE. The IDE tab has two of them: <b>RStudio</b> for R and <b>Spyder</b> for Python. Both are imitations of the real programs, made for teaching, and they work in the same way as far as possible, so what you learn here carries over to RStudio and Spyder on your own computer.</p>
+<div class="tryrow"><button class="do" type="button" data-ide="rstudio">Open RStudio</button> <button class="do" type="button" data-ide="spyder">Open Spyder</button></div>
+
+<h2>A notebook or an IDE?</h2>
+<p>A notebook is the best place to explore your data. Each piece of code sits next to its results, and you can write notes in between, so the notebook becomes a record of what you did and what you found. An IDE is built for writing programs rather than records, and it is worth switching to one when:</p>
+<ul>
+  <li>your code has grown beyond a few cells, and you would rather keep it in a script that you can run again from the top whenever your data change;</li>
+  <li>you are writing a report in R Markdown or Quarto, or an interactive Shiny app (both in RStudio);</li>
+  <li>your code doesn’t do what you expected, and you want to go through it one line at a time and watch your variables change (Spyder’s debugger);</li>
+  <li>you want to see all of your variables at a glance, and look inside data frames and arrays as tables;</li>
+  <li>you will be using RStudio or Spyder on your own computer later, and want to get to know them first.</li>
+</ul>
+<p>The two ways of working go well together. You can try something out in a notebook and then copy the code that works into a script, or write functions in a script and load them into a notebook with <code>source("functions.R")</code> in R or <code>%run functions.py</code> in Python.</p>
+
+<h2 data-anchor="separate">Each IDE has its own R or Python</h2>
+<p>RStudio and Spyder each run their own copy of R or Python, separate from the one that the notebooks use, just as RStudio and Spyder start R and Python processes of their own on a computer. A variable that you create in a notebook therefore doesn’t exist in Spyder, and the other way round: if you need it in both places, run the code that creates it in both. What they do share are your files. A script in Spyder can read a table that a notebook wrote, and a notebook can open a plot that RStudio saved.</p>
+<p>The first time you open an IDE, your browser has to download R or Python, which can take a minute or so (R alone is about 30 MB). After that it keeps a copy, so the IDE opens much more quickly on your next visit. An IDE that you have opened keeps running while you use the other tabs, and you can have both open at once: the buttons at the top of the IDE tab switch between them.</p>
+
+<h2>Opening your files in an IDE</h2>
+<ul>
+  <li>In the <b>Files</b> tab, an R script or an R Markdown or Quarto document has an <b>Open in RStudio</b> button above it, and a Python script has <b>Open in Spyder</b>. You will find the same commands in the menu of a file (its ⋯ button, or a right-click).</li>
+  <li>In the <b>Terminal</b>, <code>rstudio analysis.R</code> and <code>spyder script.py</code> open files in the IDE, and <code>rstudio</code> or <code>spyder</code> on its own simply opens it.</li>
+  <li>Inside an IDE, use its own <b>File ▸ Open</b> (<kbd>Ctrl</kbd>+<kbd>O</kbd>) or its <b>Files</b> pane.</li>
+</ul>
+<p>As in the real programs, a file that you edit in an IDE is saved only when you save it (<kbd>Ctrl</kbd>+<kbd>S</kbd>). RStudio shows the name of a file with unsaved changes in red, and Spyder adds an asterisk to it. If you try to leave or reload the page while a file has unsaved changes, your browser asks whether you really want to.</p>
+
+<h2>The AI assistant and the IDEs</h2>
+<p>When code fails in RStudio or Spyder, a <b>✦ Ask the AI assistant about this error</b> button appears under the error. It sends the code and the error message to the assistant, together with the script you are working on, the end of the console, and the names and types of your variables (but not their values). If you go from the IDE tab to the assistant and ask a question of your own, the same information goes with it, unless you untick <b>your code in the IDE</b> under the message box. Code in the assistant’s answers can then go straight into the script that is open in RStudio or Spyder, with <b>Put into RStudio</b> or <b>Put into Spyder</b>. See <a href="#h-ai">The AI assistant</a> for how to connect a model.</p>
+
+<h2>What is different from the real programs</h2>
+<p>Everything in the IDE tab runs inside your web browser, and that brings a few limits that RStudio and Spyder on a computer don’t have:</p>
+<ul>
+  <li>R and Python can’t start other programs, so <code>system()</code> in R and <code>subprocess</code> in Python don’t work. Instead, a line that starts with <code>!</code> in Spyder’s console runs a command in the workbench’s terminal, and RStudio has a <b>Terminal</b> tab of its own next to the Console.</li>
+  <li>Spyder’s debugger and <code>input()</code>, and stopping code while it is running in either IDE, need the page to be <em>cross-origin isolated</em>. The workbench arranges this itself in most browsers (see <a href="#h-spyder/isolation">when the debugger is not available</a>).</li>
+  <li>Reports can be knitted to web pages (HTML), but not to PDF or Word, because the programs needed for those (pandoc and LaTeX) don’t run in a browser.</li>
+  <li>There are no projects, no version control (Git) and no plug-ins or add-ins.</li>
+</ul>
+<p>RStudio is made by Posit, and Spyder by the Spyder project. The IDEs in this tab are not made or endorsed by either of them.</p>
+<ul class="help-grouplist">
+<li><a href="#h-rstudio">RStudio<small>R scripts, R Markdown and Quarto reports, Shiny apps, and RStudio’s panes</small></a></li>
+<li><a href="#h-spyder">Spyder<small>Python scripts and cells, the IPython console, the Variable Explorer and the debugger</small></a></li>
+</ul>
+</article>
+<article class="help-page" id="h-rstudio" data-title="RStudio" data-group="IDEs: RStudio and Spyder" data-group-page="h-ide" data-keys="rstudio r script scripts source console environment history files plots packages help viewer knit render r markdown rmd quarto qmd r notebook chunk chunks shiny app install.packages library import dataset view working directory getwd setwd ctrl+enter source with echo restart r posit" hidden>
+<h1><svg class="ic" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><ellipse cx="11" cy="10" rx="9" ry="6"/><path d="M9 21V8h5a2.5 2.5 0 0 1 0 5H9M13 13l4 8"/></svg>RStudio</h1>
+<p class="lede">RStudio is the IDE that most people use for R. The one in the IDE tab is an imitation, made for teaching, that works in the same way: you write scripts and reports in an editor, run them in the Console, and see your objects, plots and help pages in the panes around them.</p>
+<div class="tryrow"><button class="do" type="button" data-ide="rstudio">Open RStudio</button></div>
+
+<h2>The four panes</h2>
+<table>
+<tr><th>Pane</th><th>What it is for</th></tr>
+<tr><td>Source (top left)</td><td>the scripts and documents you are editing, each in a tab of its own, and data frames opened with <code>View()</code></td></tr>
+<tr><td>Console (bottom left)</td><td>R itself: type a command and press <kbd>Enter</kbd>. Next to it, <b>Terminal</b> is a shell with the same programs as the workbench’s Terminal tab, and <b>Background Jobs</b> shows what R prints while it knits a report.</td></tr>
+<tr><td>Environment (top right)</td><td>the objects in R’s memory, and <b>Import Dataset</b> for reading in a data file; the <b>History</b> tab lists the commands you have run</td></tr>
+<tr><td>Files, Plots, Packages, Help and Viewer (bottom right)</td><td>your files, the plots you have drawn, the installed packages, R’s help pages, and web pages such as knitted reports and Shiny apps</td></tr>
+</table>
+<p>You can drag the borders between the panes to change their sizes. The menus at the top have the same commands as in RStudio, and <b>Help ▸ Keyboard Shortcuts Help</b> lists the keys.</p>
+
+<h2>Scripts</h2>
+<p>A script is a text file of R commands, saved with the extension <code>.R</code>. To start one, choose <b>File ▸ New File ▸ R Script</b>, or click <b>New script in RStudio</b> under this example, which reads the workbench’s table of yeast genes and draws a plot:</p>
+<pre class="code" data-run="rstudio"><code>genes <- read.csv("/data/examples/tables/yeast_genes.csv")
+str(genes)
+
+# how many genes in each part of the cell are essential (1) or not (0)?
+table(genes$location, genes$essential)
+
+boxplot(protein_length ~ essential, data = genes, log = "y",
+        names = c("not essential", "essential"),
+        ylab = "Protein length (amino acids)")</code></pre>
+<p>Put the cursor on the first line and press <kbd>Ctrl</kbd>+<kbd>Enter</kbd> (<kbd>⌘</kbd>+<kbd>Enter</kbd> on a Mac). The line is run in the Console, and the cursor moves on to the next line, so you can keep pressing the same keys to work through the script. A command that spans several lines, such as the <code>boxplot()</code> above, is run as a whole, and if you select some lines first, just those lines are run. <b>Source</b> (<kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>S</kbd>) runs the whole script.</p>
+<p>Save your script with <kbd>Ctrl</kbd>+<kbd>S</kbd>; the first time, RStudio asks for a name. Because the script holds every step of your analysis, you can clear R’s memory at any time with <b>Session ▸ Restart R</b>, and get all your objects and plots back by running the script again.</p>
+
+<h2>Packages</h2>
+<p>RStudio works like R on your own computer: a package has to be installed once, with <code>install.packages()</code>, before <code>library()</code> can load it. (The notebooks are different: they install a package by themselves the first time that <code>library()</code> asks for it.) The packages come ready-built for webR, the version of R that runs in a browser. Most CRAN packages are there, including ggplot2 and dplyr, and so are many Bioconductor packages, such as DESeq2, edgeR and Biostrings.</p>
+<pre class="code" data-run="rstudio"><code>install.packages("ggplot2")
+library(ggplot2)
+
+genes <- read.csv("/data/examples/tables/yeast_genes.csv")
+ggplot(genes, aes(gc_content, codon_bias)) +
+  geom_point(alpha = 0.3) +
+  labs(x = "GC content (%)", y = "Codon bias")</code></pre>
+<p>Installing a package takes a little while, because the package and the other packages it needs have to be downloaded. You only have to do it once: the workbench remembers what you have installed, and fetches it again whenever <code>library()</code> needs it, on later visits too. The <b>Packages</b> pane lists what is installed, and <b>Tools ▸ Install Packages…</b> does the same as <code>install.packages()</code>.</p>
+
+<h2>Looking at your data</h2>
+<p>The Environment pane lists your objects. Click the arrow next to a data frame to see its columns, or click the table icon at the end of its row (or type <code>View(genes)</code>) to open it as a table in the Source pane, where you can sort and filter it. <b>Import Dataset</b>, at the top of the pane, reads a CSV or Excel file through a dialog, and shows you the code that it runs, which you can copy into your script. Plots appear in the Plots pane, where the arrows take you back to earlier plots and <b>Export</b> saves one as a picture. To read R’s documentation, type <code>?mean</code> or <code>help(mean)</code>, or search in the Help pane.</p>
+
+<h2>Reports: R Markdown and Quarto</h2>
+<p>An R Markdown document (<code>.Rmd</code>) contains your text, written in Markdown, and your R code in <em>chunks</em>. You can run a single chunk with the green ▶ at its top right, and its output appears underneath it. <b>Knit</b> (<kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>K</kbd>) runs the whole document from the beginning, in a new R session, and turns it into a web page with your text, code and results. The page opens in the Viewer and is saved next to the document as an <code>.html</code> file. Quarto documents (<code>.qmd</code>) are written in much the same way, and have a <b>Render</b> button instead of Knit.</p>
+<pre class="code" data-run="rmd"><code>---
+title: "Essential genes in yeast"
+output: html_document
+---
+
+Are the proteins of essential genes longer than the others?
+
+```{r}
+genes <- read.csv("/data/examples/tables/yeast_genes.csv")
+tapply(genes$protein_length, genes$essential, median)
+```
+
+The median lengths are given for non-essential (0) and essential (1) genes.</code></pre>
+<p>Because knitting starts with an empty R session, the document has to create or read in everything it uses. An object that you made in the Console, but not in the document, won’t be there, and knitting stops with an error such as <code>object 'genes' not found</code>. That is what makes a knitted report trustworthy: it shows that the code, exactly as written, produces the results. An <b>R Notebook</b> (<b>File ▸ New File ▸ R Notebook</b>) is different. Its <b>Preview</b> saves a web page of the document as it is on screen, with the outputs of the chunks you have run, without running anything again.</p>
+
+<h2>Shiny apps</h2>
+<p>A Shiny app is an interactive web page written in R, in which sliders, menus and buttons change what R calculates and draws. <b>File ▸ New File ▸ Shiny Web App…</b> creates a small example app in a folder of its own, and <b>Run App</b> starts it in the Viewer pane. The first time, RStudio offers to install the shiny package, which takes a minute or two. While an app is running, the Console is busy, just as it would be on your computer, so press <b>Stop</b> (or <kbd>Esc</kbd>) when you have finished with it.</p>
+<p>Shiny apps rely on the page’s <em>service worker</em>, a small helper that the browser runs for the workbench. If your browser doesn’t allow service workers, as some private windows don’t, RStudio tells you that the app can’t be shown.</p>
+
+<h2>Where R looks for files</h2>
+<p>RStudio’s R starts in your home folder, <code>~</code>, so <code>read.csv("data/counts.csv")</code> reads the file <code>~/data/counts.csv</code>. <code>getwd()</code> shows which folder R is in, and <b>Session ▸ Set Working Directory</b> changes it, for example to the folder of the script you are editing. When you knit a document, its code runs in the document’s own folder. The example data are in <code>/data/examples</code>, and you can read them from anywhere by giving their full paths.</p>
+
+<h2>Keys</h2>
+<table class="keys">
+<tr><td><kbd>Ctrl</kbd>+<kbd>Enter</kbd></td><td>run the current line or the selected lines</td></tr>
+<tr><td><kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>S</kbd></td><td>source the whole script</td></tr>
+<tr><td><kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>Enter</kbd></td><td>run the current chunk (in a script: source it, showing each command)</td></tr>
+<tr><td><kbd>Ctrl</kbd>+<kbd>Alt</kbd>+<kbd>I</kbd></td><td>insert a new chunk</td></tr>
+<tr><td><kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>K</kbd></td><td>knit, render or preview the document</td></tr>
+<tr><td><kbd>Alt</kbd>+<kbd>-</kbd></td><td>type <code>&lt;-</code></td></tr>
+<tr><td><kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>M</kbd></td><td>type the pipe, <code>|&gt;</code></td></tr>
+<tr><td><kbd>Tab</kbd></td><td>complete a name</td></tr>
+<tr><td><kbd>Esc</kbd> in the Console</td><td>stop the command that is running</td></tr>
+<tr><td><kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>F10</kbd></td><td>restart R</td></tr>
+</table>
+<p>A few of RStudio’s usual shortcuts, such as <kbd>Ctrl</kbd>+<kbd>W</kbd> and <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>N</kbd>, belong to the browser, so they don’t work here. The menus have the same commands.</p>
+</article>
+<article class="help-page" id="h-spyder" data-title="Spyder" data-group="IDEs: RStudio and Spyder" data-group-page="h-ide" data-keys="spyder python ide editor ipython console variable explorer plots help files history debugger debug breakpoint breakpoints step cell cells # %% run file run cell f5 f9 runfile runcell debugfile pdb ipdb %debug input interrupt restart kernel numpy pandas matplotlib pip completion code analysis pyflakes jedi" hidden>
+<h1><svg class="ic" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M12 3c-4 0-4 1.5-4 3v2h4v1H6c-2 0-3 1.5-3 4s1 4 3 4h2v-3a2 2 0 0 1 2-2h4a2 2 0 0 0 2-2V6c0-1.5-1-3-4-3z"/><path d="M12 21c4 0 4-1.5 4-3v-2h-4v-1h6c2 0 3-1.5 3-4s-1-4-3-4h-2v3a2 2 0 0 1-2 2h-4a2 2 0 0 0-2 2v4c0 1.5 1 3 4 3z"/><path d="M10 5.5h.01M14 18.5h.01"/></svg>Spyder</h1>
+<p class="lede">Spyder is an IDE for Python that was designed with scientists in mind. The one in the IDE tab is an imitation, made for teaching, that looks and works like Spyder 6: you write scripts in the Editor, run them in the IPython Console, and look at your variables, plots and documentation in the panes beside them.</p>
+<div class="tryrow"><button class="do" type="button" data-ide="spyder">Open Spyder</button></div>
+
+<h2>The panes</h2>
+<table>
+<tr><th>Pane</th><th>What it is for</th></tr>
+<tr><td>Editor (left)</td><td>your scripts, each in a tab of its own, with syntax colouring, completion and warnings about likely mistakes</td></tr>
+<tr><td>IPython Console (bottom right)</td><td>Python itself: type a command and press <kbd>Enter</kbd>. This is the real IPython, so its own commands, such as <code>%timeit</code> and <code>%pip</code>, work too. The <b>History</b> tab next to it lists the commands you have run.</td></tr>
+<tr><td>Variable Explorer (top right)</td><td>the variables in the console’s memory, with their type, size and value; double-click one to look inside it. The tabs next to it are <b>Help</b> (documentation), <b>Plots</b> (your figures), <b>Files</b> and the <b>Debugger</b>.</td></tr>
+</table>
+<p>The <b>View</b> menu brings any pane to the front, and <b>View ▸ Reset window layout</b> puts the panes back where they started. Spyder opens in its dark theme; you can switch to a light one in <b>Tools ▸ Preferences</b>, which also has settings for the Editor, for running files and for the console.</p>
+
+<h2>Running code</h2>
+<p>Try this script: <b>New file in Spyder</b>, under it, opens it in the Editor.</p>
+<pre class="code" data-run="spyder"><code>import pandas as pd
+import matplotlib.pyplot as plt
+
+# %% Read the table of yeast genes
+genes = pd.read_csv("/data/examples/tables/yeast_genes.csv")
+print(genes.shape)
+
+# %% The fraction of essential genes in each part of the cell
+by_place = genes.groupby("location")["essential"].mean().sort_values()
+print(by_place)
+
+# %% Plot it
+by_place.plot.barh(figsize=(6, 4))
+plt.xlabel("fraction of genes that are essential")
+plt.tight_layout()
+plt.show()</code></pre>
+<p>There are three ways of running a script, and you will soon find yourself using all of them:</p>
+<table class="keys">
+<tr><td><kbd>F5</kbd></td><td><b>Run file</b> saves the file and runs all of it, in the file’s own folder. Spyder types <code>%runfile</code> into the console, followed by the file’s name, so you can see what it is doing.</td></tr>
+<tr><td><kbd>Ctrl</kbd>+<kbd>Enter</kbd></td><td><b>Run cell</b> runs the cell that the cursor is in. A cell is a part of a script that begins with a line starting with <code># %%</code>, and the Editor shades the one you are in. <kbd>Shift</kbd>+<kbd>Enter</kbd> runs the cell and moves on to the next one.</td></tr>
+<tr><td><kbd>F9</kbd></td><td><b>Run selection</b> runs the lines you have selected, or the line that the cursor is on, as if you had typed them into the console.</td></tr>
+</table>
+<p>Whichever you choose, the code runs in the console’s Python, so the variables it creates are still there afterwards. You can look at them in the Variable Explorer, or carry on working with them in the console.</p>
+
+<h2>The IPython Console</h2>
+<p>The console is where your code runs. Type a command and press <kbd>Enter</kbd>. If the command isn’t finished yet, such as the first line of a <code>for</code> loop, you get a continuation prompt so that you can type the rest. <kbd>↑</kbd> and <kbd>↓</kbd> bring back earlier commands, and <kbd>Tab</kbd> completes names. A few of IPython’s own commands are worth knowing: <code>name?</code> shows the documentation of an object, <code>%timeit</code> times a line of code, <code>%pip install NAME</code> installs a package, and a line that begins with <code>!</code> runs a command in the workbench’s terminal, as in <code>!ls -l</code>.</p>
+<pre class="code" data-run="spyder"><code>import numpy as np
+x = np.random.default_rng(1).normal(size=10_000)
+print(x.mean(), x.std())
+%timeit np.sort(x)</code></pre>
+<p>NumPy, pandas and matplotlib are loaded while Spyder starts. The many other packages that come with Pyodide, such as SciPy, scikit-learn, statsmodels and Biopython (<code>import Bio</code>), are loaded the first time a script or a command imports them. Pure-Python packages from PyPI can be installed with <code>%pip install NAME</code>; they last until you reload the page.</p>
+<p><b>Consoles ▸ Restart kernel</b> (<kbd>Ctrl</kbd>+<kbd>.</kbd>) starts Python afresh, and <b>Remove all variables</b> clears the variables without restarting. <kbd>Ctrl</kbd>+<kbd>C</kbd> in the console stops the code that is running.</p>
+
+<h2>The Variable Explorer</h2>
+<p>The Variable Explorer lists the variables in the console’s Python, with their type, their size and a summary of their value, and colours the rows by type. Double-click a variable to open it: a data frame or an array as a table that you can sort and scroll through, a list or a dictionary with its contents, and a number or a piece of text in a box where you can change it. The right-click menu has more, such as plotting an array or drawing it as a histogram. Modules, functions and names that begin with an underscore are hidden; the filter button at the top of the pane changes what is shown.</p>
+
+<h2>Plots, help and completion</h2>
+<p>Figures that your code draws with matplotlib appear in the <b>Plots</b> pane, and in the console as well unless you turn that off in the pane’s menu. The arrows take you back to earlier figures, and the buttons at the top save a figure as a PNG file, copy it, zoom in or remove it.</p>
+<p>To read the documentation of a function, put the cursor on its name, in the Editor or the console, and press <kbd>Ctrl</kbd>+<kbd>I</kbd>: the <b>Help</b> pane shows it. You can also type a name into the <b>Object</b> box at the top of that pane. As you type, <kbd>Tab</kbd> or <kbd>Ctrl</kbd>+<kbd>Space</kbd> offers to complete a name, and <kbd>Ctrl</kbd>+<kbd>G</kbd> (or <kbd>Ctrl</kbd> and a click) takes you to where a function was defined.</p>
+<p>The Editor also checks your code as you write it, with <i>pyflakes</i>. A red dot in the margin marks an error, such as a bracket that is never closed, and a yellow triangle marks a warning, such as a name that is used but never defined, or a module that is imported but never used. Hover over the mark to read the message.</p>
+
+<h2 data-anchor="debugger">The debugger</h2>
+<p>When a script doesn’t do what you expect, the debugger lets you run it one line at a time and watch your variables as they change. Click just to the left of a line number, or press <kbd>F12</kbd>, to put a <em>breakpoint</em> on that line: a red dot appears. Then choose <b>Debug file</b> (<kbd>Ctrl</kbd>+<kbd>F5</kbd>). The script runs until it reaches the breakpoint, and stops there with the line it is about to run marked in the Editor. The Variable Explorer now shows the variables at that point, and the console’s prompt changes to <code>IPdb [1]:</code>, where you can type Python to look at anything you like.</p>
+<table class="keys">
+<tr><td><kbd>Ctrl</kbd>+<kbd>F10</kbd></td><td>Step: run the current line, and stop at the next one</td></tr>
+<tr><td><kbd>Ctrl</kbd>+<kbd>F11</kbd></td><td>Step into: go inside the function that the current line calls</td></tr>
+<tr><td><kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>F11</kbd></td><td>Step return: carry on until the current function returns</td></tr>
+<tr><td><kbd>Ctrl</kbd>+<kbd>F12</kbd></td><td>Continue: run on to the next breakpoint</td></tr>
+<tr><td><kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>F12</kbd></td><td>Stop debugging</td></tr>
+</table>
+<p>The same commands are on the toolbar, in blue, and in the <b>Debug</b> menu, and the <b>Debugger</b> pane shows how you got to the current line: which function called which. If a script has already stopped with an error, typing <code>%debug</code> in the console takes you to the line where it failed, with the variables as they were at that moment. To have that happen by itself whenever a script fails, tick <b>Directly enter debugging when errors appear</b> in <b>Tools ▸ Preferences</b>.</p>
+
+<h3 data-anchor="isolation">When the debugger is not available</h3>
+<p>The debugger, <code>input()</code> and stopping code with <kbd>Ctrl</kbd>+<kbd>C</kbd> all need Python to pause and wait for you while it is in the middle of running something. A web page can only do that when it is <em>cross-origin isolated</em>. The workbench arranges this itself in most browsers, but not in every situation (in some private windows, for example). If the page is not isolated, the console says so when it starts. Everything else still works, but <code>input()</code> stops with an error instead of waiting for an answer, the debugger can’t be started, and the only way to stop code that runs for too long is <b>Restart kernel</b>. Reloading the page, or opening it in an ordinary window, usually helps; <a href="#h-limits/threads">What is different in the browser</a> explains more.</p>
+
+<h2>Files and the working directory</h2>
+<p>The console starts in your home folder, <code>~</code>. The working directory is shown at the right-hand end of the toolbar, where you can also change it, and the <b>Files</b> pane shows what is in it. When you run a whole file with <kbd>F5</kbd>, the working directory changes to the file’s folder, so a script can read the files next to it by their names alone; <b>Run ▸ Configuration per file</b> changes that. In the Files pane, right-click a CSV file and choose <b>Import data</b> to read it into a pandas data frame.</p>
+
+<h2>What is different from Spyder on a computer</h2>
+<ul>
+  <li>The console’s Python runs inside your browser (Pyodide), and is separate from the Python of the notebooks.</li>
+  <li>Python can’t start threads or other processes, so <code>threading</code>, <code>multiprocessing</code> and <code>subprocess</code> don’t work; use <code>!command</code> for the programs of the terminal.</li>
+  <li>Figures are drawn in the Plots pane and the console only: there are no separate interactive windows, and desktop toolkits such as tkinter and Qt are not available.</li>
+  <li>There are no projects, no plug-ins and no version control.</li>
+</ul>
+</article>
 <article class="help-page" id="h-ai" data-title="The AI assistant" data-group="AI assistant" data-group-page="h-ai" data-keys="ai assistant chat gemini claude anthropic openai model api key llm question error explain code notebook terminal prompt privacy check hallucination academic integrity" hidden>
 <h1><svg class="ic" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M12 3l2 5.5L19.5 10 14 12l-2 5.5L10 12l-5.5-2L10 8.5z"/><path d="M19 17l.8 2 2 .8-2 .8-.8 2-.8-2-2-.8 2-.8z"/></svg>The AI assistant</h1>
 <p class="lede">The AI assistant answers questions about your code, an error message, a program or a method – and puts the code from its answers into a notebook or the terminal with one click. Its <b>Agent</b> tab goes further: it carries out a whole task in the terminal (see <a href="#h-ai-agent">The AI agent</a>).</p>
@@ -2513,15 +2729,17 @@ nx.write_graphml(G, "lesmis.graphml")
   <li><b>the open notebook's code</b> – its code cells, not their output, not your data;</li>
   <li><b>your file names</b> – names and sizes, not what is in the files;</li>
   <li><b>your last commands</b> – when you come from the Terminal, your last three commands and the end of what they printed;</li>
-  <li><b>the open network</b> – when you come from the Networks tab: the network's name, size and columns, its best-connected nodes, the names of the selected ones and the latest results (not the values in its tables).</li>
+  <li><b>the open network</b> – when you come from the Networks tab: the network's name, size and columns, its best-connected nodes, the names of the selected ones and the latest results (not the values in its tables);</li>
+  <li><b>your code in the IDE</b> – when you come from the IDE tab: the script open in RStudio or Spyder (or the lines you have selected in it), the end of its console, and the names and types of its variables (not their values). A question from the IDE tab sends this instead of the open notebook’s code.</li>
 </ul>
-<p>It also knows which programs the terminal has, and the versions of Python and R. From the other tabs: <b>Ask AI</b> on a notebook cell, or <b>Ask the AI to explain this error</b> under a cell that failed – this sends the cell's code with its error message (up to 2,500 characters), or with the beginning of its output (up to 1,200 characters); <b>✦ Ask the AI assistant about this error</b> after a command that failed in the terminal – the command, its folder and the end of what it printed (up to 3,000 characters). The open notebook's code and your file names go with them if they are ticked under the box.</p>
+<p>It also knows which programs the terminal has, and the versions of Python and R. From the other tabs: <b>Ask AI</b> on a notebook cell, or <b>Ask the AI to explain this error</b> under a cell that failed – this sends the cell's code with its error message (up to 2,500 characters), or with the beginning of its output (up to 1,200 characters); <b>✦ Ask the AI assistant about this error</b> after a command that failed in the terminal – the command, its folder and the end of what it printed (up to 3,000 characters) – and under an error in RStudio or Spyder, which sends the code that failed (for a script that was run as a whole, the script), the error message and the IDE’s working directory, with your code in the IDE if that is ticked. The open notebook's code and your file names go with them if they are ticked under the box.</p>
 <p><b>Without a key</b>, common errors still get a short explanation from the page itself, and <b>Copy a prompt for another AI tool</b> copies your question, with its context, to paste into an AI tool you are allowed to use.</p>
 
 <h2>Code in the answers</h2>
 <p>Each block of code in an answer has buttons:</p>
 <ul>
-  <li>Python or R: <b>Add to notebook</b>, or <b>Add and run</b> – into the notebook that is open.</li>
+  <li>Python or R: <b>Add to notebook</b>, or <b>Add and run</b> – into the notebook that is open. Once you have opened Spyder or RStudio in the IDE tab, <b>Put into Spyder</b> or <b>Put into RStudio</b> puts the code into the script that is open there, at the cursor; when you came to the assistant from that IDE, this is the first button.</li>
+  <li>A whole R Markdown or Quarto document: <b>Open in RStudio</b>, as a new document that you can knit.</li>
   <li>Shell commands: <b>Run in the terminal</b> (commands with <code>rm</code>, <code>rmdir</code>, <code>mv</code>, <code>shred</code>, <code>truncate</code> or <code>find -delete</code>, and <code>&gt;</code> into a path that starts with <code>~/</code> or <code>/home</code>, ask first – other commands can overwrite files too, such as <code>&gt; results.txt</code>: read them before you run them), <b>Type in the terminal</b> (a single command, put at the prompt without running it: check it, then press <kbd>Enter</kbd>), or <b>Add to notebook</b> as a <code>%%bash</code> cell.</li>
   <li>A file with a name – a Snakefile, a script – <b>Save as</b> that name; <b>Copy</b> for any block.</li>
 </ul>
@@ -3357,7 +3575,7 @@ conda activate workbench</code></pre>
 </table>
 <p>Their licences: <a href="#h-credits">Credits and licences</a>.</p>
 </article>
-<article class="help-page" id="h-shortcuts" data-title="Keyboard shortcuts" data-group="Reference" data-group-page="h-reference" data-keys="keyboard shortcuts keys hotkeys ctrl shift enter escape tab arrows notebook terminal editor help viewer networks network assistant mac cmd command" hidden>
+<article class="help-page" id="h-shortcuts" data-title="Keyboard shortcuts" data-group="Reference" data-group-page="h-reference" data-keys="keyboard shortcuts keys hotkeys ctrl shift enter escape tab arrows notebook terminal editor help viewer networks network ide rstudio spyder assistant mac cmd command" hidden>
 <h1><svg class="ic" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><rect x="2" y="6" width="20" height="12" rx="2"/><path d="M6 10h.01M10 10h.01M14 10h.01M18 10h.01M7 14h10"/></svg>Keyboard shortcuts</h1>
 <p class="lede">On a Mac, use <kbd>⌘</kbd> (Cmd) where it says <kbd>Ctrl</kbd> – except in the terminal: there <kbd>Ctrl</kbd>+<kbd>C</kbd> and <kbd>Ctrl</kbd>+<kbd>L</kbd> are the Ctrl key, as in the Mac's own Terminal (<kbd>⌘</kbd>+<kbd>C</kbd> copies).</p>
 
@@ -3436,6 +3654,28 @@ conda activate workbench</code></pre>
 <tr><td><kbd>Enter</kbd> in <i>Find nodes</i></td><td>select the nodes found and zoom to them</td></tr>
 </table>
 
+<h2>IDE: RStudio</h2>
+<p>The full list is in RStudio’s <b>Help ▸ Keyboard Shortcuts Help</b>, and on the page <a href="#h-rstudio">RStudio</a>.</p>
+<table class="keys">
+<tr><td><kbd>Ctrl</kbd>+<kbd>Enter</kbd></td><td>run the current line, or the selected lines, in the Console</td></tr>
+<tr><td><kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>S</kbd></td><td>source the whole script</td></tr>
+<tr><td><kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>K</kbd></td><td>knit or render the document</td></tr>
+<tr><td><kbd>Ctrl</kbd>+<kbd>Alt</kbd>+<kbd>I</kbd></td><td>insert a chunk into an R Markdown document</td></tr>
+<tr><td><kbd>Esc</kbd> in the Console</td><td>stop the command that is running</td></tr>
+</table>
+
+<h2>IDE: Spyder</h2>
+<p>The full list is in Spyder’s <b>Help ▸ Keyboard shortcuts</b>, and on the page <a href="#h-spyder">Spyder</a>.</p>
+<table class="keys">
+<tr><td><kbd>F5</kbd></td><td>run the whole file</td></tr>
+<tr><td><kbd>Ctrl</kbd>+<kbd>Enter</kbd> / <kbd>Shift</kbd>+<kbd>Enter</kbd></td><td>run the current cell / run it and go to the next one</td></tr>
+<tr><td><kbd>F9</kbd></td><td>run the selected lines, or the current line</td></tr>
+<tr><td><kbd>F12</kbd></td><td>set or clear a breakpoint</td></tr>
+<tr><td><kbd>Ctrl</kbd>+<kbd>F5</kbd></td><td>debug the file; then <kbd>Ctrl</kbd>+<kbd>F10</kbd> steps, <kbd>Ctrl</kbd>+<kbd>F12</kbd> continues and <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>F12</kbd> stops</td></tr>
+<tr><td><kbd>Ctrl</kbd>+<kbd>I</kbd></td><td>show the documentation of the name at the cursor</td></tr>
+<tr><td><kbd>Ctrl</kbd>+<kbd>C</kbd> in the console</td><td>stop the code that is running</td></tr>
+</table>
+
 <h2>AI assistant</h2>
 <table class="keys">
 <tr><td><kbd>Enter</kbd></td><td>send</td></tr>
@@ -3450,14 +3690,14 @@ conda activate workbench</code></pre>
 <ul>
   <li>Each program runs on <b>one processor core</b>; options for threads (<code>-t</code>, <code>-p</code>, <code>-@</code>, <code>-j</code>, <code>--threads</code>, <code>--cpu</code>) are ignored, with a note. Three programs are different: <b>featureCounts</b> counts on up to four threads (<code>-T 1</code> to <code>-T 4</code>), <b>Salmon</b> runs its own helper threads, and <b>PLINK 2</b> reads its files on threads of their own and computes on one or two (<code>--threads 2</code> at most) – see <a href="#h-limits/threads">programs on several threads</a>. Programs run more slowly than on a server, and the speed depends on your computer: keep the data small.</li>
   <li>A program, Python and R each have <b>a few gigabytes of memory</b> at most (WebAssembly is 32-bit: 4 GB is the ceiling, and browsers often allow less). Mapping reads to a whole human genome does not fit; regions, a few genes, bacterial and viral genomes do.</li>
-  <li>Python has no threads, no <code>multiprocessing</code> and no <code>subprocess</code>; <code>input()</code> does not work in a notebook. R cannot run <code>system()</code>: use a <code>%%bash</code> cell.</li>
+  <li>Python has no threads, no <code>multiprocessing</code> and no <code>subprocess</code>; <code>input()</code> does not work in a notebook, though it does in Spyder (in the IDE tab). R cannot run <code>system()</code>: use a <code>%%bash</code> cell.</li>
 </ul>
 
 <h2 id="threads">Programs on several threads</h2>
 <p>featureCounts, Salmon and PLINK 2 start threads that share the program's memory. A browser allows that only in a page that is <b>cross-origin isolated</b>: the page and its workers come with two headers, <code>Cross-Origin-Opener-Policy</code> and <code>Cross-Origin-Embedder-Policy</code>, which also keep pictures of other sites out unless those sites allow them. Static hosting (GitHub Pages) cannot send the headers, so the workbench adds them itself with a small service worker (<code>isolation-sw.js</code>; it stores nothing): the first time you open the workbench, the page loads once more, at once. <code>serve.py</code> sends the headers itself.</p>
 <ul>
   <li>If featureCounts, Salmon or PLINK 2 say that the page is not isolated, reload the page. It cannot be isolated when it was not opened over <b>https</b> (or from <code>localhost</code>), or when the browser does not allow service workers there – some private windows do not.</li>
-  <li>The other programs, Python and R do not need isolation, and work either way.</li>
+  <li>The other programs, Python and R do not need isolation, and work either way. In the IDE tab, Spyder’s debugger and <code>input()</code>, and stopping code while it runs, need it too (see <a href="#h-spyder/isolation">Spyder</a>).</li>
   <li>To turn isolation off – if a picture of another site does not show, say – open the workbench with <code>?isolation=off</code> at the end of its address; open it without that to turn it on again.</li>
 </ul>
 
@@ -3484,13 +3724,13 @@ conda activate workbench</code></pre>
 <h2>Installing</h2>
 <ul>
   <li>No <code>sudo</code>, <code>apt</code> or background jobs (<code>&amp;</code>). Programs cannot be added to the terminal – <code>conda install</code> there only models environments.</li>
-  <li>Python packages install with <code>%pip install</code> (pure-Python packages, and those Pyodide has built); R packages with <code>install.packages()</code> (those built for webR). Both last until the page is reloaded.</li>
+  <li>Python packages install with <code>%pip install</code> (pure-Python packages, and those Pyodide has built); R packages with <code>install.packages()</code> (those built for webR). Both last until the page is reloaded – except in RStudio, which remembers the R packages you installed there and fetches them again when <code>library()</code> needs them.</li>
   <li>Some packages have no build for the browser yet – mostly those that need system libraries; the error says so. (DESeq2 and edgeR work: locfit, which they need, comes with the workbench.)</li>
 </ul>
 
 <h2>The internet</h2>
 <ul>
-  <li>Python is downloaded when a Python notebook is open, R when an R notebook is open – and the page opens the last notebook you had open when it starts (a Python one on the first visit) –, packages when they are imported or installed: tens of megabytes, of which the browser keeps a copy for later visits.</li>
+  <li>Python is downloaded when a Python notebook is open, R when an R notebook is open – and the page opens the last notebook you had open when it starts (a Python one on the first visit) –, and again for Spyder or RStudio when you first open one of them in the IDE tab; packages when they are imported or installed: tens of megabytes, of which the browser keeps a copy for later visits.</li>
   <li>A web page can only ask web services that allow requests from web pages (<b>CORS</b>). The big bioinformatics services do – Ensembl, UniProt, NCBI, EBI, the PDB, AlphaFold DB and the others of the Databases tab; KEGG and most web pages do not. This holds for notebooks, <code>curl</code> and <code>wget</code> alike.</li>
   <li>R in the browser can only make GET requests; use Python for POST requests.</li>
   <li>The Databases tab, the AI assistant, the hosted genomes of the genome browser, downloads from the PDB, and the Networks tab's STRING, IntAct, NDEx and enrichment need the internet all the time.</li>
@@ -3500,13 +3740,14 @@ conda activate workbench</code></pre>
 <ul>
   <li><b>Galaxy</b> offers a selection of tools, runs one job at a time, and has no user accounts or shared histories.</li>
   <li><b>Snakemake</b> is a browser edition of its commonly used core: rules, wildcards, <code>expand</code>, <code>-n</code>, <code>--dag</code>, <code>--summary</code>; no cluster execution.</li>
+  <li><b>The IDE tab</b>: RStudio and Spyder are imitations, made for teaching, of the programs of the same names. Each has an R or a Python of its own, separate from the notebooks’. Reports are knitted to HTML only (pandoc and LaTeX, which PDF and Word need, do not run in a browser); Shiny apps need the page’s service worker; there are no projects, no Git and no plug-ins (<a href="#h-ide">The IDE tab</a>).</li>
   <li><b>The 3D viewer</b> needs WebGL (3D graphics in the browser): if it does not start, turn on hardware acceleration in the browser's settings.</li>
   <li><b>The Networks tab</b> draws networks of a few thousand nodes smoothly; larger ones (up to 60,000 nodes and 300,000 edges) open, but are slow to draw and to lay out. Statistics and hub rankings follow every shortest path: seconds for a few thousand nodes, about half a minute for 10,000. Cytoscape's apps (plugins) are not here; the most used of them – NetworkAnalyzer, cytoHubba, MCODE, MCL, enrichment – have their equivalents in the tab (<a href="#h-network-analysis">Network analysis</a>).</li>
   <li>The workbench is made for a laptop or desktop screen; on a phone or tablet it works, cramped.</li>
 </ul>
 <p>Use a current Chrome, Edge, Firefox or Safari.</p>
 </article>
-<article class="help-page" id="h-troubleshoot" data-title="When something goes wrong" data-group="Reference" data-group-page="h-reference" data-keys="troubleshoot macs3 macs paired peaks model build peaks genome browser networks string hairball kraken2 bracken kmer_distrib unclassified prodigal hmmer hmmscan hmmpress auxfiles pressed format problem 20000 characters problem error help isolated isolation cross-origin featurecounts salmon threads not working slow stuck crash files gone lost storage full quota not found no such file network failed to fetch cors 429 genome browser empty galaxy red ai key locked terminal out of memory reload index bai fai chromosome names variant caller strelka lofreq plink plink2 pca lapack memory glm covariates allow-no-covars" hidden>
+<article class="help-page" id="h-troubleshoot" data-title="When something goes wrong" data-group="Reference" data-group-page="h-reference" data-keys="troubleshoot ide rstudio spyder macs3 macs paired peaks model build peaks genome browser networks string hairball kraken2 bracken kmer_distrib unclassified prodigal hmmer hmmscan hmmpress auxfiles pressed format problem 20000 characters problem error help isolated isolation cross-origin featurecounts salmon threads not working slow stuck crash files gone lost storage full quota not found no such file network failed to fetch cors 429 genome browser empty galaxy red ai key locked terminal out of memory reload index bai fai chromosome names variant caller strelka lofreq plink plink2 pca lapack memory glm covariates allow-no-covars" hidden>
 <h1><svg class="ic" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="9"/><path d="M9.2 9a2.9 2.9 0 0 1 5.6 1c0 2-2.8 2.6-2.8 4"/><path d="M12 17.5h.01"/></svg>When something goes wrong</h1>
 <p class="lede">The usual problems, and what to do about them. Error messages in the notebook and the terminal often carry a hint of their own – and <b>Ask the AI assistant about this error</b> explains them (<a href="#h-ai">AI assistant</a>).</p>
 
@@ -3596,6 +3837,14 @@ conda activate workbench</code></pre>
   <dd>The two columns must hold the same kind of names – gene names with gene names, Ensembl IDs with Ensembl IDs. A network from STRING keeps the names you sent in its column <code>query</code>, and STRING's own names in <code>name</code>: choose the one that matches your table.</dd>
   <dt>Networks: the network is a hairball</dt>
   <dd>Raise STRING's confidence (0.7), keep fewer genes (a smaller p-value), hide the nodes without edges (<i>Select → Nodes without edges</i>), or look at the clusters one at a time (<i>Analyse → Clusters</i>, then <i>new network</i> on a cluster).</dd>
+  <dt>RStudio or Spyder takes a long time to open, or says it could not be opened</dt>
+  <dd>The first time, the IDE downloads R or Python, which can take a minute or so on a slow connection. If it fails, check your internet connection and press <b>Try again</b>, or reload the page; your files are kept.</dd>
+  <dt>My variable is missing in RStudio or Spyder (or in the notebook)</dt>
+  <dd>Each IDE has an R or a Python of its own, separate from the notebooks’, so a variable only exists where you created it. Run the code that creates it in the IDE as well (<a href="#h-ide/separate">The IDE tab</a>).</dd>
+  <dt>Spyder: input() or the debugger doesn’t work</dt>
+  <dd>Both need the page to be cross-origin isolated, and the console says so when it starts if it isn’t. Reload the page, or open it in an ordinary (not private) window (<a href="#h-spyder/isolation">Spyder</a>).</dd>
+  <dt>RStudio: "there is no package called …"</dt>
+  <dd>In RStudio, as on your own computer, a package has to be installed once before <code>library()</code> can load it: run <code>install.packages("NAME")</code>, or use <b>Tools ▸ Install Packages…</b> (<a href="#h-rstudio">RStudio</a>).</dd>
   <dt>The AI assistant says "Not connected", the key is not accepted, or it is busy</dt>
   <dd>Check the service and key in <svg class="ic" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M4.2 4.2l2.1 2.1M17.7 17.7l2.1 2.1M2 12h3M19 12h3M4.2 19.8l2.1-2.1M17.7 6.3l2.1-2.1"/></svg> AI settings and press <b>Test</b>. Free keys allow only a few requests per minute: wait a minute.</dd>
 </dl>
@@ -3619,11 +3868,11 @@ conda activate workbench</code></pre>
 <table>
 <tr><th>When you…</th><th>…this is sent</th><th>to</th></tr>
 <tr><td>open the workbench</td><td>requests for the page and its programs; and for the language of the notebook that opens (the last one you had open – Python on the first visit), which starts in the background</td><td>the web server that hosts the workbench (as for any web page); jsDelivr (Python) or webR's servers (R)</td></tr>
-<tr><td>open a notebook of the other language, or install a package</td><td>requests for R and the package</td><td>webR's servers, the R package repositories (r-wasm.org, r-universe.dev, ropensci.org), PyPI</td></tr>
+<tr><td>open a notebook of the other language, open RStudio or Spyder in the IDE tab, or install a package</td><td>requests for R and the package</td><td>webR's servers, the R package repositories (r-wasm.org, r-universe.dev, ropensci.org), PyPI</td></tr>
 <tr><td>search in the Databases tab, or ask a service from code</td><td>the query you typed (for BLAST, also your e-mail address and the sequence)</td><td>the service: EMBL-EBI, NCBI, RCSB PDB, UCSC, STRING, Reactome …</td></tr>
 <tr><td>make a network from STRING, IntAct or NDEx, or ask for the enrichment of genes, in the Networks tab</td><td>the names of the genes or proteins, or the search words – from a table of genes, the names of those that pass the filters, never the table's values</td><td>STRING (string-db.org), EMBL-EBI (IntAct), NDEx (ndexbio.org), g:Profiler (biit.cs.ut.ee)</td></tr>
 <tr><td>load a structure, a hosted genome or a genome region</td><td>the identifier or region</td><td>RCSB PDB, AlphaFold DB; for hosted genomes the IGV team (igv.org) and UCSC (hgdownload.soe.ucsc.edu, or its copy on Amazon's servers)</td></tr>
-<tr><td>ask the AI assistant</td><td>your question and what you tick under the box: the open notebook's code, your file names, your last commands, a summary of the open network (its size, columns, most connected nodes, the names of the selected ones and the results of analyses). From a notebook cell: its code, with its error (up to 2,500 characters) or the beginning of its output (up to 1,200 characters); from a failed terminal command: the command, its folder and the end of what it printed (up to 3,000 characters)</td><td>the AI service you connected, under its terms</td></tr>
+<tr><td>ask the AI assistant</td><td>your question and what you tick under the box: the open notebook's code, your file names, your last commands, a summary of the open network (its size, columns, most connected nodes, the names of the selected ones and the results of analyses), your code in the IDE (from the IDE tab: the script open in RStudio or Spyder, the end of its console, and the names and types of its variables, but not their values). From a notebook cell: its code, with its error (up to 2,500 characters) or the beginning of its output (up to 1,200 characters); from a failed terminal command: the command, its folder and the end of what it printed (up to 3,000 characters); from an error in RStudio or Spyder: the code that failed (or the script that was run), the error message and the IDE’s working directory</td><td>the AI service you connected, under its terms</td></tr>
 <tr><td>give the AI agent a task</td><td>the task, its commands and what they print (up to 3,000 characters a step) – including what it reads from your files</td><td>the AI service you connected</td></tr>
 </table>
 <p>Nothing else leaves your computer: your files are not uploaded anywhere unless you send them yourself. The name you gave the workbench is not sent either: the agent's commands run as <code>user</code>, and in the terminal output that goes to the AI service your name is replaced by <code>user</code> where it names the user – the prompt, <code>whoami</code>, <code>id</code>, the owner in <code>ls -l</code>. (A name you write into a file or a question is sent like the rest of it.)</p>
@@ -3676,10 +3925,14 @@ conda activate workbench</code></pre>
 <tr><td>CodeMirror 5 (editors)</td><td>MIT</td></tr>
 <tr><td>marked (Markdown)</td><td>MIT</td></tr>
 <tr><td>DOMPurify (safe display of AI answers)</td><td>Apache 2.0 or MPL 2.0</td></tr>
+<tr><td>IPython and jedi (Spyder’s console and code completion), from Pyodide’s packages</td><td>BSD 3-Clause (IPython), MIT (jedi)</td></tr>
+<tr><td>pyflakes (Spyder’s code analysis)</td><td>MIT</td></tr>
+<tr><td>Shinylive (Posit): Shiny apps in RStudio reach their R in the way that Shinylive’s do – written again for the workbench</td><td>MIT</td></tr>
 <tr><td>JSZip (zip files)</td><td>MIT or GNU GPL 3</td></tr>
 <tr><td>PDF.js (PDF files in the Files tab)</td><td>Apache 2.0</td></tr>
 </table>
 <p>Galaxy, Snakemake and conda are re-implemented for the browser, after the real programs (<a href="https://galaxyproject.org" target="_blank" rel="noopener">Galaxy</a>, <a href="https://snakemake.github.io" target="_blank" rel="noopener">Snakemake</a>, <a href="https://docs.conda.io" target="_blank" rel="noopener">conda</a>); they contain no code of those projects.</p>
+<p>The RStudio and Spyder of the IDE tab imitate <a href="https://posit.co/products/open-source/rstudio/" target="_blank" rel="noopener">RStudio</a> (Posit) and <a href="https://www.spyder-ide.org" target="_blank" rel="noopener">Spyder</a> (the Spyder project) for teaching. They were written for the workbench, contain no code of those programs, and are not made or endorsed by Posit or by the Spyder project.</p>
 
 <h2>Data and services</h2>
 <ul>
@@ -3704,6 +3957,7 @@ conda activate workbench</code></pre>
         <button class="wb-tab" type="button" role="tab" data-wb="viewer" title="3D viewer"><svg class="ic" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M12 2l9 5v10l-9 5-9-5V7z"/><path d="M3 7l9 5 9-5M12 12v10"/></svg><span class="lbl">3D viewer</span><span class="dot"></span></button>
         <button class="wb-tab" type="button" role="tab" data-wb="igv" title="Genome browser"><svg class="ic" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M4 6h16M4 12h16M4 18h16"/><path d="M8 4v4M14 10v4M11 16v4"/></svg><span class="lbl">Genome browser</span><span class="dot"></span></button>
         <button class="wb-tab" type="button" role="tab" data-wb="networks" title="Networks"><svg class="ic" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="6" cy="6" r="2.6"/><circle cx="18" cy="7.5" r="2.6"/><circle cx="9.5" cy="18" r="2.6"/><circle cx="19" cy="18.5" r="1.8"/><path d="M8.5 6.4l7 .8M7 8.4l1.7 7.1M16.4 9.6l-5.3 6.3M12 18.1l5.2.3"/></svg><span class="lbl">Networks</span><span class="dot"></span></button>
+        <button class="wb-tab" type="button" role="tab" data-wb="ide" title="IDE: RStudio for R and Spyder for Python"><svg class="ic" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 8h18M10 8v12"/><path d="M14.5 12.5l-1.6 1.75 1.6 1.75M17.5 12.5l1.6 1.75-1.6 1.75"/></svg><span class="lbl">IDE</span><span class="dot"></span></button>
         <button class="wb-tab" type="button" role="tab" data-wb="assistant" title="AI"><svg class="ic" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M12 3l2 5.5L19.5 10 14 12l-2 5.5L10 12l-5.5-2L10 8.5z"/><path d="M19 17l.8 2 2 .8-2 .8-.8 2-.8-2-2-.8 2-.8z"/></svg><span class="lbl">AI</span><span class="dot"></span></button>
       </div>
       <div class="wb-body">
@@ -3715,6 +3969,7 @@ conda activate workbench</code></pre>
         <div class="wb-pane" data-wb="viewer" hidden><div id="viewerRoot"></div></div>
         <div class="wb-pane" data-wb="igv" hidden><div id="igvRoot"></div></div>
         <div class="wb-pane" data-wb="networks" hidden><div id="netRoot"></div></div>
+        <div class="wb-pane" data-wb="ide" hidden><div id="ideRoot"></div></div>
         <div class="wb-pane" data-wb="assistant" hidden><div id="aiRoot"></div></div>
       </div>
     </section>
@@ -3770,6 +4025,7 @@ window.WB_CITATIONS = {"fastp2018":"Chen S, Zhou Y, Chen Y, Gu J (2018) fastp: a
 <script src="assets/js/apis.js"></script>
 <script src="assets/js/igv-panel.js"></script>
 <script src="assets/js/page-wb.js"></script>
+<script src="assets/js/ide.js"></script>
 <script src="assets/js/workbench.js"></script>
 </body>
 </html>

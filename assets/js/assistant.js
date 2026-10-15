@@ -4,11 +4,13 @@
    Chat  – a real AI model answers questions about code, errors, programs
            and methods. With each question it gets – if the user leaves the
            boxes ticked – the code of the open notebook, the names of the
-           user's files and the last terminal commands (never what is in the
-           data files). Code in its answers goes into a notebook, the
-           terminal or a file with one click. "Ask AI" on a notebook cell and
-           "Ask the AI assistant about this error" under a failed command
-           send them here.
+           user's files, the last terminal commands and, from the IDE tab,
+           the script open in RStudio or Spyder with the end of its console
+           (never what is in the data files). Code in its answers goes into
+           a notebook, the terminal, an IDE or a file with one click. "Ask
+           AI" on a notebook cell and "Ask the AI assistant about this
+           error" under a failed command, or under an error in RStudio or
+           Spyder, send them here.
    Agent – the same model as an agent: it carries out a task by running
            commands in the Terminal, one step at a time, in a folder of its
            own (~/ai-agent/run-N). It may read any file but write only there:
@@ -31,12 +33,30 @@
   const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
   const HOME = () => (MG.app && MG.app.HOME) || '/home/user';
   const pretty = (p) => (MG.app && MG.app.fs ? MG.app.fs.pretty(p) : p);
-  const TAB_NAMES = { notebook: 'Notebook', terminal: 'Terminal', editor: 'Files', galaxy: 'Galaxy', apis: 'Databases', viewer: '3D viewer', igv: 'Genome browser', networks: 'Networks', assistant: 'AI assistant' };
+  const TAB_NAMES = { notebook: 'Notebook', terminal: 'Terminal', editor: 'Files', galaxy: 'Galaxy', apis: 'Databases', viewer: '3D viewer', igv: 'Genome browser', networks: 'Networks', ide: 'IDE', assistant: 'AI assistant' };
+  const IDE_NAMES = { rstudio: 'RStudio', spyder: 'Spyder' };
   const stamp = () => {
     const d = new Date(), p = (n) => String(n).padStart(2, '0');
     return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}_${p(d.getHours())}${p(d.getMinutes())}`;
   };
   const quote = (t) => String(t || '').trim().split('\n').map((l) => '> ' + l).join('\n');
+  /** a fenced code block that the text cannot break out of (a fence longer than any run of backticks in it) */
+  const fence = (text, lang) => {
+    const t = String(text == null ? '' : text).replace(/\s+$/, '');
+    const run = Math.max(2, ...(t.match(/`+/g) || []).map((x) => x.length));
+    const f = '`'.repeat(run + 1);
+    return `${f}${lang || ''}\n${t}\n${f}`;
+  };
+  /** wait for something that a tab makes when it is first shown */
+  async function waitFor(get, ms = 8000) {
+    for (let t = 0; t < ms && !get(); t += 50) await sleep(50);
+    return get();
+  }
+  /** the IDE showing in the IDE tab ('rstudio' | 'spyder'), if one has been opened */
+  const currentIDE = () => {
+    const T = MG.app && MG.app.ideTab;
+    return T && T.cur && T.apps && T.apps[T.cur] ? T.cur : null;
+  };
 
   /* ------------------------------------------------------------------
      answers: Markdown → HTML (marked), cleaned (DOMPurify). A model's answer can contain anything, so no
@@ -92,9 +112,10 @@
   /* the languages of code blocks */
   const PY = /^(python|py|python3|ipython|ipython3|pycon|jupyter)$/;
   const RL = /^(r|rscript|splus|rconsole)$/;
-  const SH = /^(bash|sh|shell|console|zsh|shell-session|sh-session|shellscript|terminal|cmd|command)$/;
+  const RMD = /^(rmd|rmarkdown|qmd|quarto)$/;
+  const SH =/^(bash|sh|shell|console|zsh|shell-session|sh-session|shellscript|terminal|cmd|command)$/;
   const PLAIN = /^(text|txt|plaintext|output|log|stdout|stderr|none)$/;
-  const EXT = { python: '.py', r: '.R', bash: '.sh', yaml: '.yaml', yml: '.yaml', json: '.json', csv: '.csv', tsv: '.tsv', fasta: '.fasta', fa: '.fa', fastq: '.fastq', snakemake: 'Snakefile', smk: 'Snakefile', nextflow: '.nf', markdown: '.md', md: '.md', html: '.html', sql: '.sql', javascript: '.js', js: '.js', vcf: '.vcf', bed: '.bed', gff: '.gff3', gff3: '.gff3', gtf: '.gtf', newick: '.nwk', nwk: '.nwk', dot: '.dot', graphviz: '.dot', toml: '.toml', ini: '.ini', xml: '.xml', sam: '.sam', awk: '.awk', sed: '.sed' };
+  const EXT = { python: '.py', r: '.R', rmd: '.Rmd', rmarkdown: '.Rmd', qmd: '.qmd', quarto: '.qmd', bash: '.sh', yaml: '.yaml', yml: '.yaml', json: '.json', csv: '.csv', tsv: '.tsv', fasta: '.fasta', fa: '.fa', fastq: '.fastq', snakemake: 'Snakefile', smk: 'Snakefile', nextflow: '.nf', markdown: '.md', md: '.md', html: '.html', sql: '.sql', javascript: '.js', js: '.js', vcf: '.vcf', bed: '.bed', gff: '.gff3', gff3: '.gff3', gtf: '.gtf', newick: '.nwk', nwk: '.nwk', dot: '.dot', graphviz: '.dot', toml: '.toml', ini: '.ini', xml: '.xml', sam: '.sam', awk: '.awk', sed: '.sed' };
   /** commands typed after a prompt ("$ samtools …") – the rest of such a block is what they printed */
   function shellCode(code) {
     const lines = String(code).replace(/\r/g, '').split('\n');
@@ -191,7 +212,7 @@
       `- Terminal: a bash-like shell (pipes, redirection, variables, $( ), loops, functions, here-documents; no background jobs, sudo, apt, conda installs or docker). Programs – the real ones, compiled to WebAssembly, each running on one thread (featureCounts, Salmon and PLINK 2 on several, in a cross-origin isolated page); there is no Python 2: ${programs()}.`,
       `- Python ${v.python} (Pyodide ${v.pyodide}) with numpy, pandas and matplotlib; more with %pip install NAME in a notebook (pip install NAME in the terminal): pure-Python packages from PyPI and the packages built for Pyodide – biopython (import Bio), scipy, scikit-learn, statsmodels, seaborn and others. No threads or subprocesses. In the terminal: python script.py, python -c "…".`,
       `- R ${v.r} (webR ${v.webr}): library(NAME) installs a package the first time it is used, if a build for webR exists (ggplot2, dplyr, tidyr, readr … from CRAN; Bioconductor packages of the current release from r-universe where they are built for webR – DESeq2, edgeR, limma, Biostrings, GenomicRanges among them). In the terminal: Rscript script.R, Rscript -e '…' (plots go to Rplots.pdf unless the script opens png()).`,
-      `- Files: the user's own files are in ~ (= ${HOME()}), kept in the browser and shared by the notebooks, the terminal and the Files tab. A notebook's code runs in the notebook's folder (~/notebooks for most). Read-only example data is in /data/examples: ${EXAMPLES}`,
+      `- Files: the user's own files are in ~ (= ${HOME()}), kept in the browser and shared by the notebooks, the terminal, the IDEs and the Files tab. A notebook's code runs in the notebook's folder (~/notebooks for most); RStudio and Spyder start in ~. Read-only example data is in /data/examples: ${EXAMPLES}`,
       web
     ];
   }
@@ -241,6 +262,100 @@
     const rules = lang === 'r' ? R_HELP.concat(SHELL_HELP) : SHELL_HELP;
     const hits = rules.filter(([re]) => re.test(text)).map(([, t]) => t);
     return hits.length ? hits.slice(0, 2).map((t) => '- ' + t).join('\n') : null;
+  }
+  /* The offline help for an error in an IDE. Its R or Python is not the notebooks' one, and its working directory is
+     not a notebook's folder, so for the commonest errors it says something else; these come before the rules above. */
+  const IDE_HELP = {
+    rstudio: [
+      [/object '.*' not found/, 'R doesn’t know that name. Either it is misspelt (names are case-sensitive), or the line that creates it hasn’t been run in RStudio’s R yet. RStudio has an R of its own, separate from the notebooks’ R, so something you made in a notebook doesn’t exist here until you run the code that makes it. The Environment pane shows what RStudio’s R has.'],
+      [/could not find function/, 'R doesn’t know that function. Check the spelling (names are case-sensitive), and load its package with `library()` first. That has to be done in RStudio too, even if a notebook has loaded the package already, because RStudio has an R of its own.'],
+      [/cannot open (file|the connection)|No such file or directory|does not exist in current working directory/, 'The file isn’t where R looked. RStudio’s R starts in your home folder (`~`), and `getwd()` shows where it is now. Give the path from there (`"~/data/x.csv"`) or the full path (`"/data/examples/tables/yeast_genes.csv"`), or change the working directory with Session > Set Working Directory.']
+    ],
+    spyder: [
+      [/NameError/, 'Python doesn’t know that name. Either it is misspelt (names are case-sensitive), or the line that creates it hasn’t been run in Spyder’s Python yet. Spyder has a Python of its own, separate from the notebooks’ Python, so a variable you made in a notebook doesn’t exist here until you run the code that makes it. The Variable Explorer shows what Spyder’s Python has.'],
+      [/FileNotFoundError/, 'The file isn’t where Python looked. Spyder looks for files in its working directory, which is shown at the right of its toolbar; when you run a whole file (F5), it is the file’s own folder. Give the path from there, or the full path (for example `/data/examples/tables/yeast_genes.csv`).'],
+      [/ModuleNotFoundError/, 'The packages that come with Pyodide – numpy, pandas, matplotlib, scipy, Biopython and many more – are loaded by themselves the first time they are imported, so this one is not among them, or its name is spelt differently (Biopython is imported as `Bio`). If it is written in pure Python, you can install it in Spyder’s console with `%pip install NAME`.']
+    ]
+  };
+  const ideHelp = (ide, text) => (IDE_HELP[ide] || []).filter(([re]) => re.test(text)).map(([, t]) => '- ' + t).join('\n');
+
+  /* ------------------------------------------------------------------
+     the IDEs: their last error, and what goes with a question
+     ------------------------------------------------------------------ */
+  /** R's start-up message is not sent (it says nothing about the user's work) */
+  function stripBanner(text) {
+    const t = String(text || '');
+    const m = /^\s*R version [\s\S]{0,2500}?Type 'q\(\)' to quit R\.[^\n]*\n?/.exec(t);
+    return m ? t.slice(m[0].length) : t;
+  }
+  /** the last command in an R console's text, if it ended in an error – or else in a warning → {code, error, output,
+      warning} or null (rui.js asks for it when "Ask the AI assistant about this error" is pressed in RStudio) */
+  function lastRError(text) {
+    const lines = String(text || '').replace(/\r/g, '').split('\n');
+    while (lines.length && !lines[lines.length - 1].trim()) lines.pop();
+    const cmdAt = (from) => {
+      for (let i = from; i >= 0 && i >= lines.length - 400; i--) if (/^> \S/.test(lines[i])) return i;
+      return -1;
+    };
+    const k = cmdAt(lines.length - 1);
+    if (k < 0) return null;
+    const code = [lines[k].slice(2)];
+    let j = k + 1;
+    while (j < lines.length && /^\+ /.test(lines[j])) code.push(lines[j++].slice(2));
+    const rest = lines.slice(j);
+    const e = rest.findIndex((l) => /^Error\b/.test(l));
+    const w = e < 0 ? rest.findIndex((l) => /^Warning( messages?:|\b)/.test(l)) : -1;
+    if (e < 0 && w < 0) return null;
+    const at = e >= 0 ? e : w;
+    const out = { code: code.join('\n'), error: rest.slice(at).join('\n').trim().slice(0, 2000), output: rest.slice(0, at).join('\n').slice(-1500), warning: e < 0 };
+    // (an "else" on a line of its own – code run line by line – ends in "unexpected '}'": the cause is the else a few
+    // commands before, so that is what is asked about)
+    if (/unexpected '\}'/.test(out.error)) {
+      for (let i = k - 1; i >= 0 && i >= k - 40; i--) {
+        if (!/^Error: unexpected 'else'/.test(lines[i])) continue;
+        let c = cmdAt(i);
+        if (c < 0) break;
+        // (with the if … that the else belongs to: the command before it)
+        if (cmdAt(c - 1) >= 0) c = cmdAt(c - 1);
+        out.code = lines.slice(c, k + 1 + code.length - 1).filter((l) => /^[>+] /.test(l)).map((l) => l.slice(2)).join('\n');
+        out.error = lines[i] + '\n' + out.error;
+        break;
+      }
+    }
+    return out;
+  }
+  /* the documents of the IDEs whose text may go with a question: code and writing, never data */
+  const RS_KIND = { r: 'an R script', rmd: 'an R Markdown document', notebook: 'an R Notebook', qmd: 'a Quarto document', md: 'a Markdown file' };
+  const SENDABLE = /\.(py|pyw|pyi|r|rmd|qmd|md|markdown|sh|bash|ya?ml|toml|rprofile)$/i;
+  /** the lines around the cursor, when a document is too long to send whole */
+  function around(text, line, n, mark = '#') {
+    if (text.length <= n) return text;
+    const L = text.split('\n');
+    line = Math.max(0, Math.min(L.length - 1, line || 0));
+    let a = line, b = line + 1, size = (L[line] || '').length;
+    while ((a > 0 || b < L.length) && size < n) {
+      if (a > 0) size += L[--a].length + 1;
+      if (b < L.length && size < n) size += L[b++].length + 1;
+    }
+    const pre = mark ? mark + ' ' : '';
+    return (a > 0 ? `${pre}… (lines 1–${a} are left out)\n` : '') + L.slice(a, b).join('\n') + (b < L.length ? `\n${pre}… (lines ${b + 1}–${L.length} are left out)` : '');
+  }
+  /** The name the person gave the workbench is not sent to an AI service (MG.user.mask): nor is it in the author line
+      that a new document gets from the IDEs – Spyder's "@author: NAME", R Markdown's and Quarto's "author: …" –,
+      where "user" takes its place. */
+  function maskAuthor(text) {
+    const n = MG.user && MG.user.name ? MG.user.name() : 'user';
+    if (!n || n === 'user' || text == null) return text;
+    const forms = Array.from(new Set([n, n.replace(/[._]+/g, ' ')])).map((x) => x.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
+    return String(text).replace(new RegExp(`^(\\s*@author:\\s*|\\s*author:\\s*["']?)(?:${forms.join('|')})(?=["']?\\s*$)`, 'gm'), '$1user');
+  }
+  /** the line of a file that a Python traceback ends at (the innermost frame in that file) – 0-based, or -1 */
+  function tracebackLine(tb, path) {
+    if (!path) return -1;
+    const name = MG.path.basename(path).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    let line = -1;
+    for (const m of String(tb || '').matchAll(new RegExp(name + '(?::|", line )(\\d+)', 'g'))) line = +m[1] - 1;
+    return line;
   }
 
   /* ------------------------------------------------------------------
@@ -556,7 +671,7 @@
       this.busy = false;
       this.tab = 'chat';
       this.settings = Object.assign({}, LIVE_DEFAULTS, store.get('ai:settings', {}));
-      this.ctxOpts = Object.assign({ nb: true, files: true, term: true, net: true }, store.get('ai:context', {}));
+      this.ctxOpts = Object.assign({ nb: true, files: true, term: true, net: true, ide: true }, store.get('ai:context', {}));
       try {
         this.key = window.sessionStorage.getItem(KEY_NAME) || '';
       } catch (e) {
@@ -730,10 +845,11 @@
         return h('label', { title: tip }, i, ' ' + label);
       };
       R.append(
-        cb('nb', 'the open notebook’s code', 'The code cells of the notebook that is open in the Notebook tab – not their outputs, and not your data'),
+        cb('nb', 'the open notebook’s code', 'The code cells of the notebook that is open in the Notebook tab – not their outputs, and not your data. Not with a question from the IDE tab, which sends the IDE’s code instead.'),
         cb('files', 'your file names', 'The names and sizes of the files in your home folder – not what is in them'),
         cb('term', 'your last commands', 'When you come from the Terminal: your last three commands and the end of what they printed'),
-        cb('net', 'the open network', 'When you come from the Networks tab: the name, size and columns of the network that is open, its best-connected nodes, what is selected and the latest results')
+        cb('net', 'the open network', 'When you come from the Networks tab: the name, size and columns of the network that is open, its best-connected nodes, what is selected and the latest results'),
+        cb('ide', 'your code in the IDE', 'When you come from the IDE tab: the script open in RStudio or Spyder (or the lines you have selected in it), the end of its console and the names and types of its variables, but not their values. What a console shows can include values from your data.')
       );
     }
     newConversation() {
@@ -820,9 +936,9 @@
     }
     codeBox(blk) {
       const lang = blk.lang || '';
-      const kind = PY.test(lang) ? 'python' : RL.test(lang) ? 'r' : SH.test(lang) || (!lang && looksShell(blk.code)) ? 'bash' : null;
+      const kind = PY.test(lang) ? 'python' : RL.test(lang) ? 'r' : RMD.test(lang) ? 'rmd' : SH.test(lang) || (!lang && looksShell(blk.code)) ? 'bash' : null;
       const pre = h('pre.ai-code', h('code', blk.code));
-      const label = blk.file || (kind === 'r' ? 'R' : lang) || '';
+      const label = blk.file || (kind === 'r' ? 'R' : kind === 'rmd' ? (/^q/.test(lang) ? 'Quarto' : 'R Markdown') : lang) || '';
       const head = label ? h('div.ai-code-head', label) : null;
       const acts = h('div.ai-code-acts');
       const btn = (icon, text, fn, primary, tip) => {
@@ -840,10 +956,29 @@
         });
         return b;
       };
-      if (blk.file) acts.appendChild(btn('save', 'Save as ' + blk.file, () => this.saveAs(blk.file, blk.code), true, 'Save this as a file in your home folder, and open it in Files'));
+      if (blk.file) acts.appendChild(btn('save', 'Save as ' + blk.file, () => this.saveAs(blk.file, blk.code), true, 'Save this as a file in your home folder, and open it (in Files, or in RStudio or Spyder if the IDE for it is open)'));
       if (kind === 'python' || kind === 'r') {
         const L = kind === 'r' ? 'an R' : 'a Python';
-        acts.append(btn('notebook', 'Add to notebook', () => this.toNotebook(blk.code, kind, false), !blk.file, `Add this code as a new cell of ${L} notebook (the open one, if it is ${L} notebook)`), btn('play', 'Add and run', () => this.toNotebook(blk.code, kind, true), false, `Add this code to ${L} notebook and run it`));
+        // (once the IDE for the language has been opened, the code can also go into the script that is open there –
+        // and when the user came from that IDE, that button comes first)
+        const ide = kind === 'r' ? 'rstudio' : 'spyder';
+        const ideOpen = !!(MG.app.ideTab && MG.app.ideTab.apps[ide]);
+        const first = ideOpen && this.lastBench() === 'ide' && currentIDE() === ide;
+        const nb = [btn('notebook', 'Add to notebook', () => this.toNotebook(blk.code, kind, false), !blk.file && !first, `Add this code as a new cell of ${L} notebook (the open one, if it is ${L} notebook)`), btn('play', 'Add and run', () => this.toNotebook(blk.code, kind, true), false, `Add this code to ${L} notebook and run it`)];
+        const into = ideOpen
+          ? btn(
+              kind === 'r' ? 'rlang' : 'python',
+              'Put into ' + IDE_NAMES[ide],
+              () => this.toIDE(blk.code, ide),
+              first && !blk.file,
+              kind === 'r' ? 'Put this code into the R script that is open in RStudio, at the cursor (or into a new script if none is open). Then run it with Ctrl+Enter.' : 'Put this code into the file that is open in Spyder’s Editor, at the cursor (or into a new file if none is open). Then run it with F9, or run the whole file with F5.'
+            )
+          : null;
+        if (first) acts.append(into, ...nb);
+        else acts.append(...nb, ...(into ? [into] : []));
+      } else if (kind === 'rmd') {
+        acts.appendChild(btn('rlang', 'Open in RStudio', () => this.rmdToRStudio(blk.code, lang), !blk.file, 'Open this as a new document in RStudio (in the IDE tab), where you can knit it'));
+        if (!blk.file) acts.appendChild(btn('save', 'Save as…', () => this.saveAsAsk(blk), false, 'Save this as a file in your home folder'));
       } else if (kind === 'bash') {
         const code = shellCode(blk.code);
         const cmds = shellCommands(code);
@@ -870,6 +1005,82 @@
       await MG.app.runInTerminal(code, run);
       bus.emit('ai:insert', { target: 'terminal', run: !!run });
     }
+    /** code into the script that is open in RStudio or Spyder, at the cursor – or into a new script. The user runs it
+        from there. */
+    async toIDE(code, ide) {
+      const app = MG.app.ideReady ? await MG.app.ideReady(ide) : null;
+      if (!app) throw new Error(`${IDE_NAMES[ide] || 'The IDE'} could not be opened.`);
+      const text = String(code).replace(/\s+$/, '');
+      const d = app.cur;
+      let doc = null, how = '', inChunk = false;
+      if (ide === 'rstudio') {
+        const md = d && /^(rmd|notebook|qmd)$/.test(d.kind || '');
+        if (d && d.type === 'code' && d.cmDoc && (d.kind === 'r' || md)) {
+          doc = d.cmDoc;
+          // (in an R Markdown or Quarto document: into the R chunk the cursor is in – else as a new chunk)
+          if (md) {
+            const cur = doc.getCursor();
+            const chunk = MG.Knit && MG.Knit.chunks ? MG.Knit.chunks(doc.getValue()).find((c) => cur.line >= c.from && cur.line <= c.to) || null : null;
+            inChunk = !!(chunk && chunk.lang === 'r' && cur.line > chunk.from && cur.line < chunk.to);
+            if (!inChunk) {
+              const after = chunk ? chunk.to : cur.line;
+              doc.replaceRange('\n\n```{r}\n' + text + '\n```\n', { line: after, ch: doc.getLine(after).length });
+              this._markInserted(app, doc, after + 3, text);
+              toast(`The code has been added to <b>${esc(d.name)}</b> as a new chunk. Run it with the ▶ button at the top right of the chunk.`, 'ok', 5000);
+              bus.emit('ai:insert', { target: ide, doc: d.name });
+              return;
+            }
+          }
+          how = 'Run it with Ctrl+Enter.';
+        }
+      } else if (d && d.cmDoc && d.mode === 'python') {
+        doc = d.cmDoc;
+        how = 'Run it with F9, or run the whole file with F5.';
+      }
+      if (!doc) {
+        const nd = ide === 'rstudio' ? app.newDoc('r', text + '\n') : app.newDoc(text + '\n');
+        const name = (nd && nd.name) || 'Untitled';
+        toast(ide === 'rstudio' ? `The code is in a new R script in RStudio, <b>${esc(name)}</b>. Run a line with Ctrl+Enter, or the whole script with Source.` : `The code is in a new file in Spyder, <b>${esc(name)}</b>. Run it with F5, or a line at a time with F9.`, 'ok', 5000);
+        bus.emit('ai:insert', { target: ide, doc: 'new' });
+        return;
+      }
+      // (on an empty line the code goes there; else after the line of the cursor)
+      const cur = doc.getCursor();
+      const lineText = doc.getLine(cur.line);
+      let from;
+      if (!lineText.trim()) {
+        doc.replaceRange(text + '\n', { line: cur.line, ch: 0 });
+        from = cur.line;
+      } else {
+        doc.replaceRange('\n' + text, { line: cur.line, ch: lineText.length });
+        from = cur.line + 1;
+      }
+      this._markInserted(app, doc, from, text);
+      toast(`The code has been put into <b>${esc(d.name)}</b> at line ${from + 1}. ${how}`, 'ok', 4500);
+      bus.emit('ai:insert', { target: ide, doc: d.name });
+    }
+    /** the lines that were put into an IDE's document: the cursor goes there, and they are lit up for a moment */
+    _markInserted(app, doc, from, text) {
+      const to = Math.min(doc.lineCount() - 1, from + text.split('\n').length - 1);
+      doc.setCursor({ line: from, ch: 0 });
+      if (app.cm && app.cm.getDoc() === doc) app.cm.scrollIntoView({ line: from, ch: 0 }, 80);
+      try {
+        const mark = doc.markText({ line: from, ch: 0 }, { line: to, ch: doc.getLine(to).length }, { className: 'ai-inserted' });
+        setTimeout(() => mark.clear(), 2200);
+      } catch (e) {
+        /* (no highlight) */
+      }
+      if (app.cm) setTimeout(() => app.cm.focus(), 40);
+    }
+    /** an R Markdown or Quarto document from an answer: a new document in RStudio */
+    async rmdToRStudio(code, lang) {
+      const RS = MG.app.ideReady ? await MG.app.ideReady('rstudio') : null;
+      if (!RS) throw new Error('RStudio could not be opened.');
+      const kind = /^(qmd|quarto)$/.test(lang) || /^---[\s\S]*?\nformat:/.test(code) ? 'qmd' : /output:\s*html_notebook/.test(code) ? 'notebook' : 'rmd';
+      const d = RS.newDoc(kind, String(code).replace(/\s+$/, '') + '\n');
+      toast(`This is now open in RStudio as a new ${kind === 'qmd' ? 'Quarto' : 'R Markdown'} document, <b>${esc((d && d.name) || 'Untitled')}</b>. Save it, then ${kind === 'qmd' ? 'render' : 'knit'} it.`, 'ok', 5000);
+      bus.emit('ai:insert', { target: 'rstudio', doc: 'new', kind });
+    }
     resolvePath(file) {
       const rel = file.replace(/^\.\//, '');
       return rel.startsWith('/') ? rel : rel.startsWith('~/') ? HOME() + rel.slice(1) : HOME() + '/' + rel;
@@ -886,7 +1097,11 @@
       }
       fs.mkdirp(MG.path.dirname(path));
       fs.writeText(path, code.replace(/\s+$/, '') + '\n', /\.(sh|bash|py|R)$/i.test(path) && /^#!/.test(code) ? { mode: 'x' } : undefined);
-      await MG.app.editFile(path, { line: 1 });
+      // (an R script or document opens in RStudio, and a Python script in Spyder, when that IDE is open already –
+      // else, as anything else, in Files)
+      const ide = MG.app.ideFor ? MG.app.ideFor(path) : null;
+      if (ide && MG.app.ideTab && MG.app.ideTab.apps[ide]) await MG.app.openInIDE(path);
+      else await MG.app.editFile(path, { line: 1 });
       toast(`Saved <b>${esc(pretty(path))}</b>.`, 'ok', 3000);
       bus.emit('ai:insert', { target: 'file', path });
     }
@@ -974,6 +1189,64 @@
       this.renderSuggestions();
       return this.live(q, { cell: c });
     }
+    /** r:ask – an error (or a warning) in RStudio's Console or in a chunk of an R Markdown document:
+        {where: 'rstudio', code, error, output, warning} */
+    async askAboutR(d) {
+      d = d || {};
+      if (this.tab !== 'chat') this.showTab('chat');
+      if (this.busy) return toast('The assistant is still answering – try again in a moment.', 'warn');
+      const src = String(d.code || '').replace(/\s+$/, '');
+      const err = String(d.error || '').trim();
+      const shortCode = src.length > 600 ? src.slice(0, 600) + '\n…' : src;
+      const shortErr = err.split('\n').slice(0, 12).join('\n');
+      const q = d.warning
+        ? `My R code gave a warning in RStudio:\n\n${shortCode}\n\n${shortErr}\n\nWhat does it mean, and do I need to do anything about it?`
+        : `My R code gave an error in RStudio:\n\n${shortCode}\n\n${shortErr}\n\nWhat does it mean, and how do I fix it?`;
+      this.addBubble('user', q);
+      const rerr = { code: src, error: err, output: String(d.output || ''), warning: !!d.warning };
+      if (!this.connected()) {
+        const text = err + '\n' + rerr.output;
+        const help = ideHelp('rstudio', text) || offlineHelp(text, 'r');
+        const none = d.warning
+          ? 'A warning is not an error: R did what you asked, but it is telling you that something looks odd. Read the message (`In f(…)` tells you which function gave the warning), and check the result before you use it.'
+          : 'Read the error message first, because it names the problem. `Error in f(…)` tells you which function stopped, and the mistake is often in what was given to that function. Run the code one line at a time to find the line that fails.';
+        const b = this.addBubble('assistant', (help ? `What that message usually means:\n\n${help}` : none) + '\n\n*Offline help – no AI model is connected.*', { badge: 'offline help' });
+        b.appendChild(this.setupActs({ question: d.warning ? 'What does this R warning mean?' : 'What does this R error mean, and how do I fix it?', extra: { rerr } }));
+        return;
+      }
+      this.msgs.chat.push({ role: 'user', content: q });
+      this.renderSuggestions();
+      return this.live(q, { rerr });
+    }
+    /** py:ask – an error in Spyder: {where: 'spyder', kind: 'file' | 'cell' | 'console', code (what ran: the file, the
+        cell or the command), command, file, cell: {index, first, name}, error (the traceback), ename, evalue, cwd} */
+    async askAboutPy(d) {
+      d = d || {};
+      if (this.tab !== 'chat') this.showTab('chat');
+      if (this.busy) return toast('The assistant is still answering – try again in a moment.', 'warn');
+      const kind = d.kind === 'file' || d.kind === 'cell' ? d.kind : 'console';
+      const src = String(d.code || '').replace(/\s+$/, '');
+      const name = d.file ? MG.path.basename(d.file) : '';
+      const msg = d.ename ? `${d.ename}${d.evalue ? ': ' + d.evalue : ''}` : String(d.error || '').trim().split('\n').pop() || 'an error';
+      const shortCode = src.length > 600 ? src.slice(0, 600) + '\n…' : src;
+      const q =
+        kind === 'file'
+          ? `My Python script ${name} stopped with an error when I ran it in Spyder:\n\n${msg}\n\nWhat does it mean, and how do I fix it?`
+          : `${kind === 'cell' ? `A cell of my script ${name}` : 'My Python code'} gave an error in Spyder:\n\n${shortCode}\n\n${msg}\n\nWhat does it mean, and how do I fix it?`;
+      this.addBubble('user', q);
+      const pyerr = { kind, code: src, command: String(d.command || ''), file: d.file || null, cell: d.cell || null, error: String(d.error || ''), ename: String(d.ename || ''), evalue: String(d.evalue || ''), cwd: d.cwd || '' };
+      if (!this.connected()) {
+        const text = `${pyerr.ename}: ${pyerr.evalue}\n${pyerr.error}`;
+        const help = ideHelp('spyder', text) || (PY_HELP[pyerr.ename] ? '- ' + PY_HELP[pyerr.ename] : offlineHelp(text, 'python'));
+        const reply = `**${pyerr.ename || 'Error'}**${pyerr.evalue ? ': ' + pyerr.evalue : ''}\n\n${help || '- Read the last line of the error first, because it names the problem. The line that the traceback points to is where Python noticed it, and the mistake can be a line or two above.'}`;
+        const b = this.addBubble('assistant', reply + '\n\n*Offline help – no AI model is connected.*', { badge: 'offline help' });
+        b.appendChild(this.setupActs({ question: 'What does this Python error mean, and how do I fix it?', extra: { pyerr } }));
+        return;
+      }
+      this.msgs.chat.push({ role: 'user', content: q });
+      this.renderSuggestions();
+      return this.live(q, { pyerr });
+    }
 
     /* ---------------- the chat ---------------- */
     systemPrompt() {
@@ -982,11 +1255,12 @@
         '',
         'The workbench:',
         ...envLines(),
-        '- Its tabs: Notebook (Jupyter-style notebooks in Python or R, saved as .ipynb files; in a Python cell !command runs a terminal command, and a cell that begins with %%bash runs terminal commands – in R notebooks too), Terminal, Files (a file browser and editor), Galaxy (a small Galaxy with the same programs), Databases (search forms for UniProt, PDB, Ensembl, NCBI, EBI BLAST and others, each with code to repeat the search), 3D viewer (NGL, for PDB and AlphaFold structures), Genome browser (igv.js: BAM, VCF, BED and GFF files), Networks (networks of genes, proteins or anything else, drawn with Cytoscape.js: SIF, GraphML, GML, XGMML, Cytoscape JSON and CX2 files, networks from STRING, IntAct and NDEx; styles mapped from table columns, e.g. DESeq2 results on a STRING network; statistics as in Cytoscape\'s Analyzer, hubs as in cytoHubba, clusters with MCODE, MCL and Louvain, enrichment with STRING or g:Profiler; the terminal command  network FILE  opens a file there), and AI assistant (you).',
+        '- Its tabs: Notebook (Jupyter-style notebooks in Python or R, saved as .ipynb files; in a Python cell !command runs a terminal command, and a cell that begins with %%bash runs terminal commands – in R notebooks too), Terminal, Files (a file browser and editor), Galaxy (a small Galaxy with the same programs), Databases (search forms for UniProt, PDB, Ensembl, NCBI, EBI BLAST and others, each with code to repeat the search), 3D viewer (NGL, for PDB and AlphaFold structures), Genome browser (igv.js: BAM, VCF, BED and GFF files), Networks (networks of genes, proteins or anything else, drawn with Cytoscape.js: SIF, GraphML, GML, XGMML, Cytoscape JSON and CX2 files, networks from STRING, IntAct and NDEx; styles mapped from table columns, e.g. DESeq2 results on a STRING network; statistics as in Cytoscape\'s Analyzer, hubs as in cytoHubba, clusters with MCODE, MCL and Louvain, enrichment with STRING or g:Profiler; the terminal command  network FILE  opens a file there), IDE (two integrated development environments, each with an R or a Python of its own that is separate from the notebooks\' – so a variable made in a notebook does not exist there – but working on the same files: an RStudio-like IDE for R, with R scripts – Ctrl+Enter runs the line or selection in its Console, Source runs the whole script –, R Markdown and Quarto documents knitted to HTML, Shiny apps, and Environment, Files, Plots, Packages, Help and Viewer panes; and a Spyder-like IDE for Python, whose Editor runs a script whole (F5), a cell at a time (cells begin with # %%; Ctrl+Enter) or a line at a time (F9), with an IPython console, a Variable Explorer, Plots and Help panes and a debugger with breakpoints), and AI assistant (you).',
         '',
         'How to answer:',
         '- Be brief, clear and friendly. Explain in plain words what code does and why – many users are learning.',
-        '- Put Python code in ```python blocks, R code in ```r blocks and terminal commands in ```bash blocks: each block gets a button that puts it into a notebook or runs it in the terminal. Give complete code that runs in this environment, with real paths (/data/examples/…, ~/…). To offer a file, put its path after the language: ```python scripts/count_genes.py',
+        '- Put Python code in ```python blocks, R code in ```r blocks and terminal commands in ```bash blocks: each block gets a button that puts it into a notebook or runs it in the terminal (and, once RStudio or Spyder has been opened, one that puts it into the script open there). A whole R Markdown or Quarto document goes in a ````rmd block – with four backticks, as its chunks have three – and opens in RStudio. Give complete code that runs in this environment, with real paths (/data/examples/…, ~/…). To offer a file, put its path after the language: ```python scripts/count_genes.py',
+        '- When the user is working in RStudio or Spyder, answer for that IDE: code for their script (or for a # %% cell of it in Spyder) rather than for a notebook cell, and the IDE\'s own ways of running, viewing and debugging it.',
         '- Never invent program options, functions, results or file contents. If you are not sure, say so, and say how to check (PROGRAM --help, help(name) in Python, ?name in R).',
         '- Do not claim to have run code or seen results that the user has not shown you.',
         '- If the user seems to be working with personal or patient data, remind them not to share it with AI tools.'
@@ -997,7 +1271,9 @@
       const parts = [];
       const fs = MG.app.fs;
       const last = this.lastBench();
-      parts.push(`(The user was last in the ${TAB_NAMES[last] || last} tab.)`);
+      // (the IDE that the context is about: the one with the error that is asked about, or the one the user came from)
+      const ide = extra.rerr ? 'rstudio' : extra.pyerr ? 'spyder' : last === 'ide' ? currentIDE() : null;
+      parts.push(extra.rerr || extra.pyerr ? `(The user asks about an error in ${IDE_NAMES[ide]}, in the IDE tab.)` : last === 'ide' && ide ? `(The user was last in the IDE tab, working in ${IDE_NAMES[ide]}.)` : `(The user was last in the ${TAB_NAMES[last] || last} tab.)`);
       try {
         if (extra.error) {
           const e = extra.error;
@@ -1009,8 +1285,26 @@
           if (c.error) parts.push(`It raised:\n\`\`\`text\n${String(c.error.traceback || c.error.ename + ': ' + c.error.evalue).slice(-2500)}\n\`\`\``);
           else if (c.output) parts.push(`What it printed (the beginning):\n\`\`\`text\n${c.output.slice(0, 1200)}\n\`\`\``);
         }
+        if (extra.rerr) {
+          const e = extra.rerr, RS = MG.app.rstudio, what = e.warning ? 'warning' : 'error';
+          const wd = RS && RS.S && RS.S.wd ? ` (its R's working directory: ${pretty(RS.S.wd)})` : '';
+          parts.push(`The R code that gave the ${what} in RStudio${wd}:\n${fence(e.code, 'r')}\nThe ${what}:\n${fence(e.error, 'text')}` + (e.output && e.output.trim() ? `\nWhat it printed before the ${what} (the end):\n${fence(e.output.slice(-1500), 'text')}` : ''));
+        }
+        if (extra.pyerr) {
+          const e = extra.pyerr;
+          const wd = e.cwd ? ` (Spyder's working directory: ${pretty(e.cwd)})` : '';
+          if (e.kind === 'file') {
+            const at = tracebackLine(e.error, e.file);
+            parts.push(`The user ran the script ${pretty(e.file)} in Spyder (Run file: \`${e.command}\`)${wd}. The script${e.code.length > 8000 ? ', around the line where it failed' : ''}:\n${fence(around(e.code, at, 8000), 'python')}`);
+          } else if (e.kind === 'cell') {
+            parts.push(`The user ran a cell of ${pretty(e.file)} in Spyder${e.cell && e.cell.first ? ` (the cell begins at line ${e.cell.first} of the file)` : ''}${wd}:\n${fence(e.code, 'python')}`);
+          } else parts.push(`The code that the user ran in Spyder's IPython console${wd}:\n${fence(e.code, 'python')}`);
+          parts.push(`The traceback:\n${fence(e.error.slice(-2500), 'text')}`);
+        }
+        if (this.ctxOpts.ide !== false && ide) parts.push(...(await this.ideContext(ide, !!(extra.rerr || extra.pyerr))));
         const v = this.nb && this.nb.view;
-        if (this.ctxOpts.nb && v) {
+        // (not with a question from the IDE tab: the IDE has an R or a Python of its own, and its code goes instead)
+        if (this.ctxOpts.nb && v && !ide) {
           const code = v.codeContext(4000);
           if (code) parts.push(`The notebook open in the Notebook tab: ${pretty(v.path)} (${v.lang === 'r' ? 'R' : 'Python'}; its code runs in ${pretty(MG.path.dirname(v.path))}). Its code cells:\n\`\`\`${v.lang === 'r' ? 'r' : 'python'}\n${code}\n\`\`\``);
         }
@@ -1028,7 +1322,81 @@
         console.error(e);
       }
       // (the name the person gave the workbench stays in the browser: "user" where it names the user – ls -l, whoami …)
-      return MG.user.mask(parts.join('\n\n')) + '\n\n';
+      return MG.user.mask(maskAuthor(parts.join('\n\n'))) + '\n\n';
+    }
+    /** what goes with a question from an IDE: the document on top (or the lines selected in it) – never a data file –,
+        the end of the console, and the names and types of the variables (never their values). asked: the question
+        is about an error, which is sent as well, so less of the console is needed. → [text] */
+    async ideContext(ide, asked) {
+      const out = [];
+      const sendDoc = (who, pane, d, kindName, lang, mark) => {
+        const name = d.path ? pretty(d.path) : `${d.name} (not saved yet)`;
+        if (!kindName && !(d.path && SENDABLE.test(d.path))) {
+          out.push(`${who} – the document open in ${pane}: ${name} (a data or text file: what is in it is not sent).`);
+          return;
+        }
+        const doc = d.cmDoc;
+        const sel = doc.somethingSelected() ? doc.getSelection() : '';
+        const line = doc.getCursor().line;
+        const what = kindName || 'a text file';
+        if (sel.trim()) out.push(`${who} – the document open in ${pane}: ${name} (${what}). The user has selected these lines of it:\n${fence(sel.slice(0, 5000), lang)}`);
+        else out.push(`${who} – the document open in ${pane}: ${name} (${what}; the cursor is on line ${line + 1}${d.dirty ? '; it has changes that are not saved' : ''}):\n${fence(around(doc.getValue(), line, 6000, mark), lang)}`);
+      };
+      if (ide === 'rstudio' && MG.app.rstudio) {
+        const RS = MG.app.rstudio;
+        const d = RS.cur;
+        if (d && d.type === 'code' && d.cmDoc) sendDoc('RStudio', 'Source', d, RS_KIND[d.kind], d.kind === 'r' ? 'r' : /^(rmd|notebook|qmd)$/.test(d.kind) ? 'rmd' : d.kind === 'md' ? 'markdown' : '', d.kind === 'r' ? '#' : '');
+        else if (d && d.type) out.push(`RStudio – Source shows ${d.type === 'data' ? 'a data viewer (View())' : 'a text viewer'}: ${d.name} (what it shows is not sent).`);
+        const t = RS.cv ? stripBanner(RS.cv.text(asked ? 1000 : 2500)).trim() : '';
+        if (t) out.push(`RStudio's Console (its R's working directory: ${RS.S && RS.S.wd ? pretty(RS.S.wd) : '~'}) – the end of what it shows:\n${fence(t, 'text')}`);
+        const objs = await this._rsObjects(RS);
+        if (objs) out.push(objs);
+      } else if (ide === 'spyder' && MG.app.spyder) {
+        const SP = MG.app.spyder;
+        const d = SP.cur;
+        if (d && d.cmDoc) {
+          const lang = { python: 'python', markdown: 'markdown', r: 'r', yaml: 'yaml', shell: 'bash' }[typeof d.mode === 'string' ? d.mode : ''] || '';
+          sendDoc('Spyder', 'the Editor', d, d.mode === 'python' ? 'a Python script' : null, lang, /^(python|r|yaml|bash)$/.test(lang) ? '#' : '');
+        }
+        const t = SP.consoleText ? SP.consoleText(asked ? 1000 : 2500) : '';
+        if (t) out.push(`Spyder's IPython console (its working directory: ${pretty(SP.cwd)}) – the end of what it shows:\n${fence(t, 'text')}`);
+        const vars = await this._spVariables(SP);
+        if (vars) out.push(vars);
+      }
+      return out;
+    }
+    /** RStudio's objects: names and classes (and the size of a data frame) – never values */
+    async _rsObjects(RS) {
+      let vars = RS.vars;
+      if (!Array.isArray(vars) && RS.S && RS.S.idle && typeof RS.S.variables === 'function') {
+        try {
+          vars = await Promise.race([RS.S.variables(), sleep(1500).then(() => null)]);
+        } catch (e) {
+          vars = null;
+        }
+      }
+      if (!Array.isArray(vars)) return '';
+      if (!vars.length) return "RStudio's Environment is empty: its R has no objects yet.";
+      const one = (v) => `${v.name} (${v.cls || v.kind || '?'}${v.kind === 'data' && /^[\d,]+ obs\. of \d+ variables?$/.test(v.desc || '') ? ', ' + v.desc : ''})`;
+      return `RStudio's Environment – the objects of its R (names and classes only, not their values): ${vars.slice(0, 40).map(one).join(', ')}${vars.length > 40 ? `, and ${vars.length - 40} more` : ''}.`;
+    }
+    /** Spyder's variables: names, types and sizes – never values */
+    async _spVariables(SP) {
+      let vars = null;
+      if (SP.py && SP.py.state === 'ready' && !SP.running && !SP.debugging) {
+        try {
+          vars = await Promise.race([SP.py.call('variables', SP.prefs.vars), sleep(1500).then(() => null)]);
+        } catch (e) {
+          vars = null;
+        }
+      }
+      if (!Array.isArray(vars)) vars = Array.isArray(SP.vars) && !SP.debugging ? SP.vars : null;
+      if (!vars) return '';
+      if (!vars.length) return "Spyder's Variable Explorer is empty: its Python has no variables yet.";
+      // (size: a number – a length – or a shape, [rows, columns])
+      const size = (s) => (Array.isArray(s) ? ', shape (' + s.join(', ') + ')' : s != null && s !== 1 ? ', length ' + s : '');
+      const one = (v) => `${v.name} (${v.type}${size(v.size)})`;
+      return `Spyder's Variable Explorer – the variables of its Python (names, types and sizes only, not their values): ${vars.slice(0, 40).map(one).join(', ')}${vars.length > 40 ? `, and ${vars.length - 40} more` : ''}.`;
     }
     /** the user's files: names and sizes, two folders deep */
     fileList(max = 60) {
@@ -1773,7 +2141,7 @@
       const q = question || this.input.value.trim() || '[write your question here]';
       const ctx = await this.contextFor(extra || {});
       return [
-        'I am using a bioinformatics workbench that runs in the web browser: Jupyter-style notebooks in Python (Pyodide) and R (webR), and a bash-like terminal with bioinformatics programs compiled to WebAssembly.',
+        'I am using a bioinformatics workbench that runs in the web browser: Jupyter-style notebooks in Python (Pyodide) and R (webR), a bash-like terminal with bioinformatics programs compiled to WebAssembly, and imitations of RStudio and Spyder, each with an R or a Python of its own.',
         ...envLines(),
         '',
         ctx.trim(),
@@ -1788,7 +2156,7 @@
       const ok = await MG.copyText(text);
       const m = MG.modal(
         'A prompt for another AI tool',
-        `<p class="small">${ok ? '<b>Copied to the clipboard.</b> ' : ''}Paste it into an AI tool you are allowed to use, and check what it gives you. It describes the workbench and contains what is ticked under the assistant's box (the open notebook's code, your file names, your last commands) and your question – not your data. Read it before you paste it, and never paste personal or patient data into an AI tool.</p><textarea class="prompt-text" readonly aria-label="Prompt">${esc(text)}</textarea><div class="prompt-actions"><button class="btn" data-x="copy" type="button">${MG.icon('copy')}<span>Copy</span></button><button class="btn primary" data-x="ok" type="button">Done</button></div>`
+        `<p class="small">${ok ? '<b>Copied to the clipboard.</b> ' : ''}Paste it into an AI tool you are allowed to use, and check what it gives you. It describes the workbench and contains what is ticked under the assistant's box (the open notebook's code, your file names, your last commands, your code in the IDE) and your question – not your data. Read it before you paste it, and never paste personal or patient data into an AI tool.</p><textarea class="prompt-text" readonly aria-label="Prompt">${esc(text)}</textarea><div class="prompt-actions"><button class="btn" data-x="copy" type="button">${MG.icon('copy')}<span>Copy</span></button><button class="btn primary" data-x="ok" type="button">Done</button></div>`
       );
       m.box.querySelector('[data-x="copy"]').addEventListener('click', async () => toast((await MG.copyText(text)) ? 'Prompt copied.' : 'Could not copy – select the text and copy it yourself.', null, 2500));
       m.box.querySelector('[data-x="ok"]').addEventListener('click', () => m.close());
@@ -1890,7 +2258,21 @@
     }
   }
 
+  /* An error in RStudio (r:ask {where, code, error, output, warning}, from rui.js and rsource.js) or in Spyder (py:ask,
+     from spyder.js): the assistant's tab is shown – and made, the first time – and the question is asked there. (The
+     notebook and the terminal show the tab themselves before they send nb:ask and term:ask.) */
+  function relay(method) {
+    return (d) => {
+      Promise.resolve(MG.app && MG.app.showWorkbench ? MG.app.showWorkbench('assistant') : null)
+        .then(() => waitFor(() => MG.app && MG.app.ai, 4000))
+        .then((A) => A && A[method](d || {}))
+        .catch((e) => console.error(e));
+    };
+  }
+  bus.on('r:ask', relay('askAboutR'));
+  bus.on('py:ask', relay('askAboutPy'));
+
   MG.Assistant = Assistant;
   MG.aiModelMemory = REST;
-  MG.aiUtil = { mdBlocks, shellCommands, shellCode, offlineHelp, envLines, programs };
+  MG.aiUtil = { mdBlocks, shellCommands, shellCode, offlineHelp, lastRError, stripBanner, envLines, programs };
 })();
