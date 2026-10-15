@@ -95,7 +95,7 @@
     }
     _renderPrompt() {
       // "> " while a command is not complete yet (an open quote, a for … without its done)
-      // (in front of the prompt: what the page puts there – the active conda environment)
+      // (in front of the prompt: whatever a page puts there – the workbench puts nothing)
       const pre = MG.shellHooks && MG.shellHooks.promptPrefix ? MG.shellHooks.promptPrefix() : '';
       // (user@workbench – or the name the person gave the workbench in place of user)
       const who = MG.user.name();

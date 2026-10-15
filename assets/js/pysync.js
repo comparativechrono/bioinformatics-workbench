@@ -112,7 +112,7 @@
     host() {
       const v = this.versions || {};
       return {
-        exe: (MG.conda && MG.conda.which('snakemake')) || '/usr/bin/snakemake',
+        exe: '/usr/bin/snakemake',
         platform: 'Linux-WebAssembly (Pyodide in your web browser)',
         host: MG.config.hostname || 'workbench',
         user: MG.user.login(),
@@ -191,8 +191,8 @@
                 MG.bus.emit('smk:job-shell', { cmd: m.cmd });
                 // (Snakemake runs the command of a rule with  /usr/bin/bash -c "set -euo pipefail; …" : the first error ends
                 // it, a name without a value is an error, and a pipeline fails if any of its programs does. The messages
-                // of that shell begin with "/usr/bin/bash: line 1: ". tools: the programs of the rule's conda environment.)
-                code = await ctx.shell.exec(m.cmd, io, { errexit: true, nounset: true, pipefail: true, command: true, name: '/usr/bin/bash', tools: m.tools || null });
+                // of that shell begin with "/usr/bin/bash: line 1: ".)
+                code = await ctx.shell.exec(m.cmd, io, { errexit: true, nounset: true, pipefail: true, command: true, name: '/usr/bin/bash' });
               } catch (e) {
                 ctx.err(String((e && e.message) || e) + '\n');
                 code = 1;

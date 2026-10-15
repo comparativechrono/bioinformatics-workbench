@@ -39,7 +39,7 @@
 
 <h2>Installing</h2>
 <ul>
-  <li>No <code>sudo</code>, <code>apt</code> or background jobs (<code>&amp;</code>). Programs cannot be added to the terminal – <code>conda install</code> there only models environments.</li>
+  <li>No <code>sudo</code>, <code>apt</code> or background jobs (<code>&amp;</code>). Programs cannot be added to the terminal, and there is no need to: every program is installed already, so there is no conda here either. (To set up the same programs on another computer, see <a href="#h-recipe-keep">Keep and share your work</a>.)</li>
   <li>Python packages install with <code>%pip install</code> (pure-Python packages, and those Pyodide has built); R packages with <code>install.packages()</code> (those built for webR). Both last until the page is reloaded – except in RStudio, which remembers the R packages you installed there and fetches them again when <code>library()</code> needs them.</li>
   <li>Some packages have no build for the browser yet – mostly those that need system libraries; the error says so. (DESeq2 and edgeR work: locfit, which they need, comes with the workbench.)</li>
 </ul>

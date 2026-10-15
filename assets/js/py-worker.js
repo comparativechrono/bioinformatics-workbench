@@ -101,7 +101,7 @@ self.term_emit = (text, stream, color) => {
 const shellWaits = new Map();
 let shellSeq = 0;
 const cancelled = new Set();
-self.smk_shell = (cmd, tools, env) =>
+self.smk_shell = (cmd) =>
   new Promise((resolve) => {
     termFlush();
     const sid = ++shellSeq;
@@ -110,7 +110,7 @@ self.smk_shell = (cmd, tools, env) =>
       resolve(m.code);
     });
     const ch = scan();
-    post({ type: 'smk-shell', id: termId, sid, cmd, tools: tools ? (tools.toJs ? tools.toJs() : tools) : null, env: env || null, cwd: pyodide.FS.cwd(), changes: ch }, transferOf(ch));
+    post({ type: 'smk-shell', id: termId, sid, cmd, cwd: pyodide.FS.cwd(), changes: ch }, transferOf(ch));
   });
 self.smk_sync = () => {
   termFlush();
@@ -1049,9 +1049,8 @@ from js import smk_shell, smk_sync, smk_cancelled
 
 class _PageBridge(smk.Bridge):
     cancel_flag = False
-    async def shell(self, cmd, tools=None, env=None):
-        from pyodide.ffi import to_js
-        return int(await smk_shell(cmd, to_js(tools) if tools is not None else None, env))
+    async def shell(self, cmd):
+        return int(await smk_shell(cmd))
     async def sync(self):
         smk_sync()
     def cancelled(self):
@@ -1211,6 +1210,49 @@ async function init(m) {
   }
 }
 
+/** the import lines of a workflow – its Snakefile (-s, or the usual places) and the .py files in its folder and in
+    scripts/ – as Python that loadPackagesFromImports can read (a Snakefile itself is not Python) */
+function smkImports(argv, cwd) {
+  const FS = pyodide.FS;
+  const read = (p) => {
+    try {
+      return new TextDecoder().decode(FS.readFile(p));
+    } catch (e) {
+      return '';
+    }
+  };
+  const abs = (p) => (p.startsWith('/') ? p : (cwd || '/home/user') + '/' + p);
+  let sf = null;
+  for (let i = 0; i < (argv || []).length; i++) {
+    const a = argv[i];
+    if ((a === '-s' || a === '--snakefile') && argv[i + 1]) sf = argv[i + 1];
+    else if (a.startsWith('--snakefile=')) sf = a.slice(12);
+  }
+  const files = [];
+  const cands = sf ? [abs(sf)] : ['Snakefile', 'snakefile', 'workflow/Snakefile', 'workflow/snakefile'].map(abs);
+  const main = cands.find((p) => read(p));
+  if (!main) return '';
+  files.push(main);
+  const dir = main.slice(0, main.lastIndexOf('/')) || '/';
+  for (const d of [dir, dir + '/scripts', dir + '/workflow/scripts']) {
+    let names = [];
+    try {
+      names = FS.readdir(d);
+    } catch (e) {
+      continue;
+    }
+    for (const n of names) if (/\.(py|smk)$/.test(n)) files.push(d + '/' + n);
+  }
+  // (as plain  import NAME  lines: a statement that goes on over several lines would not be read)
+  const mods = new Set();
+  for (const l of files.map(read).join('\n').split('\n')) {
+    let mm = /^\s*from\s+([A-Za-z_][\w.]*)\s+import\b/.exec(l);
+    if (mm) mods.add(mm[1]);
+    else if ((mm = /^\s*import\s+([^#;(]+)/.exec(l))) for (const x of mm[1].split(',')) if (/^\s*[A-Za-z_][\w.]*/.test(x)) mods.add(x.trim().split(/\s+/)[0]);
+  }
+  return Array.from(mods, (x) => 'import ' + x).join('\n');
+}
+
 async function loadImports(code, id) {
   try {
     await pyodide.loadPackagesFromImports(code, {
@@ -1304,6 +1346,14 @@ async function termRun(m) {
         f.destroy();
       }
     } else if (m.type === 'smk') {
+      // (Pyodide loads a package only when asked: PyYAML for config files and conda environment files, and what the
+      // Snakefile and the Python scripts next to it import)
+      try {
+        await pyodide.loadPackage(['pyyaml'], { messageCallback: () => {}, errorCallback: () => {} });
+      } catch (e) {
+        /* (offline: Snakemake says so when it needs YAML) */
+      }
+      await loadImports(smkImports(m.argv, m.cwd), m.id);
       const f = pyodide.globals.get('_smk_run');
       try {
         code = await f(pyodide.toPy(m.argv), m.cwd, pyodide.toPy(m.host || {}));

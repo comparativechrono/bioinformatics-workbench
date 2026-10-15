@@ -1402,7 +1402,7 @@ tar -tzf examples.tar.gz
 zip -r sequences.zip /data/examples/sequences > /dev/null && unzip -l sequences.zip</code></pre>
 <p><code>gzip</code>, <code>gunzip</code> and <code>zcat</code> are carried out by <code>bgzip</code>; <code>zip</code>, <code>unzip</code> and <code>tar</code> (with <code>z</code> for <code>.tar.gz</code>) work on your files.</p>
 </article>
-<article class="help-page" id="h-scripts" data-title="Scripts and pipelines" data-group="Terminal and programs" data-group-page="h-terminal" data-keys="script bash sh loop for while variables function pipeline snakemake snakefile workflow rule dot graphviz python script rscript reproducible" hidden>
+<article class="help-page" id="h-scripts" data-title="Scripts and pipelines" data-group="Terminal and programs" data-group-page="h-terminal" data-keys="script bash sh loop for while variables function pipeline snakemake snakefile workflow rule dot graphviz python script rscript reproducible conda use-conda environment" hidden>
 <h1><svg class="ic" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M8 7l-5 5 5 5M16 7l5 5-5 5M14 4l-4 16"/></svg>Scripts and pipelines</h1>
 <p class="lede">Commands that work once belong in a script – so that they run again tomorrow, on new data, and show exactly what was done.</p>
 <p>The examples work in a folder of your own: <button class="do" type="button" data-term-run="mkdir -p ~/scripts &amp;&amp; cd ~/scripts">mkdir -p ~/scripts &amp;&amp; cd ~/scripts</button></p>
@@ -1472,6 +1472,7 @@ snakemake -n
 snakemake --cores 1
 cat results/flagstat.txt</code></pre>
 <p>Run <code>snakemake --cores 1</code> again: nothing to do, because every result is newer than its inputs. Snakemake keeps a record of how each file was made: <code>snakemake --summary</code>.</p>
+<p>Pipelines written for a computer or a cluster often give each rule a conda environment (<code>conda: "envs/mapping.yaml"</code>) and are run with <code>snakemake --use-conda</code>. They run here as they are. Every program is installed already, so no environments are made: <code>--use-conda</code> only checks that each environment file is there and can be read.</p>
 
 <h2>Graphviz</h2>
 <p><code>dot</code> draws graphs written in the DOT language – workflows, networks, decision trees:</p>
@@ -3495,7 +3496,7 @@ conda activate workbench</code></pre>
 <li><a href="#h-credits">Credits and licences<small>The software and data the workbench is built from</small></a></li>
 </ul>
 </article>
-<article class="help-page" id="h-programs" data-title="Programs and versions" data-group="Reference" data-group-page="h-reference" data-keys="programs versions list fastp seqtk wgsim minimap2 bowtie2 bwa bwa-mem2 hisat2 freebayes stringtie kallisto salmon featurecounts subread mosdepth cutadapt dnaio xopen lofreq somaticsniper bam-somaticsniper strelka strelka2 configurestrelkasomaticworkflow kraken2 kraken2-build kraken2-inspect bracken bracken-build bustools macs macs3 hmmratac hmmlearn plink plink2 prodigal hmmer hmmbuild hmmsearch hmmscan hmmpress phmmer jackhmmer nhmmer nhmmscan hmmalign hmmfetch hmmstat hmmemit hmmconvert samtools bcftools htslib bedtools gffread kalign muscle fasttree seq-align lastz jq coreutils grep sed awk python pyodide numpy pandas matplotlib biopython scipy r webr snakemake graphviz conda igv ngl deseq2 edger locfit" hidden>
+<article class="help-page" id="h-programs" data-title="Programs and versions" data-group="Reference" data-group-page="h-reference" data-keys="programs versions list fastp seqtk wgsim minimap2 bowtie2 bwa bwa-mem2 hisat2 freebayes stringtie kallisto salmon featurecounts subread mosdepth cutadapt dnaio xopen lofreq somaticsniper bam-somaticsniper strelka strelka2 configurestrelkasomaticworkflow kraken2 kraken2-build kraken2-inspect bracken bracken-build bustools macs macs3 hmmratac hmmlearn plink plink2 prodigal hmmer hmmbuild hmmsearch hmmscan hmmpress phmmer jackhmmer nhmmer nhmmscan hmmalign hmmfetch hmmstat hmmemit hmmconvert samtools bcftools htslib bedtools gffread kalign muscle fasttree seq-align lastz jq coreutils grep sed awk python pyodide numpy pandas matplotlib biopython scipy r webr snakemake graphviz igv ngl deseq2 edger locfit" hidden>
 <h1><svg class="ic" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M8 6h13M8 12h13M8 18h13M3.5 6h.01M3.5 12h.01M3.5 18h.01"/></svg>Programs and versions</h1>
 <p class="lede">Results depend on versions: cite the ones you used, with the papers of the programs (<i>To cite</i>; in full at the end of each program's help page). <code>help</code> in the terminal prints this list too; <code>NAME --version</code> one program's.</p>
 
@@ -3551,7 +3552,6 @@ conda activate workbench</code></pre>
 <tr><td>jq</td><td>1.7</td></tr>
 <tr><td>Graphviz (<code>dot</code>), through Viz.js 3.31.0</td><td>16.1.0</td></tr>
 <tr><td>Snakemake, browser edition: the commonly used core of Snakemake, re-written to run here</td><td>9.27.0</td></tr>
-<tr><td><code>conda</code>, <code>mamba</code>: a model of conda environments – environments can be made and listed, but every program is always there</td><td>26.7.3</td></tr>
 </table>
 <p>The shell itself – bash's language, and <code>ls</code>, <code>cp</code>, <code>curl</code>, <code>unzip</code> … – is written for the workbench, to behave as on Linux.</p>
 
@@ -3723,7 +3723,7 @@ conda activate workbench</code></pre>
 
 <h2>Installing</h2>
 <ul>
-  <li>No <code>sudo</code>, <code>apt</code> or background jobs (<code>&amp;</code>). Programs cannot be added to the terminal – <code>conda install</code> there only models environments.</li>
+  <li>No <code>sudo</code>, <code>apt</code> or background jobs (<code>&amp;</code>). Programs cannot be added to the terminal, and there is no need to: every program is installed already, so there is no conda here either. (To set up the same programs on another computer, see <a href="#h-recipe-keep">Keep and share your work</a>.)</li>
   <li>Python packages install with <code>%pip install</code> (pure-Python packages, and those Pyodide has built); R packages with <code>install.packages()</code> (those built for webR). Both last until the page is reloaded – except in RStudio, which remembers the R packages you installed there and fetches them again when <code>library()</code> needs them.</li>
   <li>Some packages have no build for the browser yet – mostly those that need system libraries; the error says so. (DESeq2 and edgeR work: locfit, which they need, comes with the workbench.)</li>
 </ul>
@@ -3931,7 +3931,7 @@ conda activate workbench</code></pre>
 <tr><td>JSZip (zip files)</td><td>MIT or GNU GPL 3</td></tr>
 <tr><td>PDF.js (PDF files in the Files tab)</td><td>Apache 2.0</td></tr>
 </table>
-<p>Galaxy, Snakemake and conda are re-implemented for the browser, after the real programs (<a href="https://galaxyproject.org" target="_blank" rel="noopener">Galaxy</a>, <a href="https://snakemake.github.io" target="_blank" rel="noopener">Snakemake</a>, <a href="https://docs.conda.io" target="_blank" rel="noopener">conda</a>); they contain no code of those projects.</p>
+<p>Galaxy and Snakemake are re-implemented for the browser, after the real programs (<a href="https://galaxyproject.org" target="_blank" rel="noopener">Galaxy</a>, <a href="https://snakemake.github.io" target="_blank" rel="noopener">Snakemake</a>); they contain no code of those projects.</p>
 <p>The RStudio and Spyder of the IDE tab imitate <a href="https://posit.co/products/open-source/rstudio/" target="_blank" rel="noopener">RStudio</a> (Posit) and <a href="https://www.spyder-ide.org" target="_blank" rel="noopener">Spyder</a> (the Spyder project) for teaching. They were written for the workbench, contain no code of those programs, and are not made or endorsed by Posit or by the Spyder project.</p>
 
 <h2>Data and services</h2>
@@ -3990,7 +3990,6 @@ window.WB_CITATIONS = {"fastp2018":"Chen S, Zhou Y, Chen Y, Gu J (2018) fastp: a
 <script src="assets/js/tools-wasm.js"></script>
 <script src="assets/js/somatic.js"></script>
 <script src="assets/js/metagenomics.js"></script>
-<script src="assets/js/conda.js"></script>
 <script src="assets/js/shell-extra.js"></script>
 <script src="assets/js/shell-wb.js"></script>
 <script src="assets/js/terminal.js"></script>

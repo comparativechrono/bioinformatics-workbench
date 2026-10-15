@@ -1896,38 +1896,15 @@ def _record(job, start, use_conda):
 
 
 # ============================================================================
-# the software environment model (conda)
+# conda environment files
 # ============================================================================
-
-# programs of the workbench's terminal and the conda packages that provide them
-PACKAGE_PROGRAMS = {
-    "minimap2": ["minimap2"],
-    "samtools": ["samtools"],
-    "bcftools": ["bcftools"],
-    "htslib": ["bgzip", "tabix", "htsfile"],
-    "tabix": ["tabix", "bgzip"],
-    "python": ["python", "python3", "pip", "pip3"],
-    "snakemake": ["snakemake"],
-    "snakemake-minimal": ["snakemake"],
-    "graphviz": ["dot"],
-    "gawk": ["awk", "gawk"],
-    "sed": ["sed"],
-    "grep": ["grep"],
-    "coreutils": [],
-    "pandas": [], "matplotlib": [], "matplotlib-base": [], "numpy": [], "pyyaml": [], "scipy": [],
-    "seaborn": [], "pip": ["pip"],
-}
-# the tool versions this browser actually has (strictly checked)
-BROWSER_TOOLS = {"minimap2": ["2.22"], "samtools": ["1.17"], "bcftools": ["1.10"], "htslib": ["1.17", "1.10"],
-                 "tabix": ["1.17"], "graphviz": ["16.1.0"], "gawk": ["5.1.0"], "sed": ["4.8"], "grep": ["3.7"],
-                 "coreutils": ["8.32"], "snakemake": [VERSION], "snakemake-minimal": [VERSION]}
-# Python packages: provided by Pyodide; pins are accepted leniently
-BROWSER_PY = {"python": "3.13.2", "pandas": "2.3.3", "matplotlib": "3.8.4", "matplotlib-base": "3.8.4",
-              "numpy": "2.2.5", "pyyaml": "6.0.2", "scipy": "1.14.1", "pip": "25.0"}
-IMPORT_PACKAGE = {"yaml": "pyyaml", "sklearn": "scikit-learn", "Bio": "biopython", "PIL": "pillow"}
+# Conda is not part of the browser, and is not needed: every program is installed already, so the environment of a
+# rule's conda: directive is never made. With --use-conda (or --sdm conda) the environment files are read all the
+# same, so that a mistake in one shows up here as it would on a computer.
 
 
-def parse_env_file(path):
+def check_env_file(path):
+    """read a conda environment file as conda does -> a WorkflowError if it is not valid YAML or not a mapping"""
     import yaml
 
     with open(path) as fh:
@@ -1939,130 +1916,6 @@ def parse_env_file(path):
     if not isinstance(data, dict):
         raise WorkflowError(f"The conda environment file {path} must have 'channels:' and 'dependencies:' sections.",
                             "WorkflowError")
-    deps = []
-    for d in data.get("dependencies", []) or []:
-        if isinstance(d, str):
-            spec = d.split("::")[-1].strip()
-            m = re.match(r"^([A-Za-z0-9_.\-]+)\s*(?:(==|=|>=|<=|>|<|!=|~=)\s*([^\s]*))?", spec)
-            if m:
-                deps.append((m.group(1).lower(), m.group(2) or "", (m.group(3) or "").strip()))
-        elif isinstance(d, dict) and "pip" in d:
-            for p in d["pip"] or []:
-                m = re.match(r"^([A-Za-z0-9_.\-]+)\s*(?:(==|>=|<=|~=)\s*(.*))?", str(p))
-                if m:
-                    deps.append((m.group(1).lower(), m.group(2) or "", (m.group(3) or "").strip()))
-    return text, data, deps
-
-
-def _version_ok(have, op, want):
-    if not want:
-        return True
-
-    def key(v):
-        return tuple(int(x) if x.isdigit() else x for x in re.findall(r"\d+|[a-z]+", v.lower()))
-
-    want = want.rstrip("*").rstrip(".")
-    if op in ("=", "=="):
-        if op == "==" and "*" not in want:
-            return key(have) == key(want)
-        return have == want or have.startswith(want + ".")
-    if op == ">=":
-        return key(have) >= key(want)
-    if op == "<=":
-        return key(have) <= key(want)
-    if op == ">":
-        return key(have) > key(want)
-    if op == "<":
-        return key(have) < key(want)
-    if op == "!=":
-        return key(have) != key(want)
-    if op == "~=":
-        return key(have) >= key(want)
-    return True
-
-
-# which htslib versions each tool package accepts (bioconda's patched run requirements)
-NEEDS_HTSLIB = {"samtools": (("1.17", "1.25"), "1.17", "hd87286a_2"), "bcftools": (("1.10", "1.25"), "1.10", "h5d15f04_0")}
-
-
-def _vkey(v):
-    return tuple(int(x) if x.isdigit() else x for x in re.findall(r"\d+|[a-z]+", str(v).lower()))
-
-
-def htslib_choice(deps):
-    """the htslib conda would install for these packages in this browser -> (version or None, conflict lines)"""
-    need = [(n, NEEDS_HTSLIB[n]) for n, op, v in deps if n in NEEDS_HTSLIB]
-    pinned = [(op, v) for n, op, v in deps if n == "htslib" and v]
-    if not need and not pinned:
-        return None, []
-    ok = [h for h in sorted(BROWSER_TOOLS["htslib"], key=_vkey, reverse=True)
-          if all(_vkey(rg[0]) <= _vkey(h) < _vkey(rg[1]) for _, (rg, _v, _b) in need)
-          and all(_version_ok(h, op, v) for op, v in pinned)]
-    if ok:
-        return ok[0], []
-    fits = lambda rg: any(_vkey(rg[0]) <= _vkey(h) < _vkey(rg[1]) and all(_version_ok(h, op, v) for op, v in pinned)
-                          for h in BROWSER_TOOLS["htslib"])
-    culprits = [x for x in need if not fits(x[1][0])] if pinned else need
-    lines = [f"  - package {n}-{tv}-{b} requires htslib >={rg[0]},<{rg[1]}.0a0, but none of the providers can be installed"
-             for n, (rg, tv, b) in (culprits or need)]
-    lines += [f"  - requested htslib {op}{v}" for op, v in pinned]
-    return None, lines
-
-
-def htslib_conflicts(deps):
-    return htslib_choice(deps)[1]
-
-
-# these old bioconda builds were made against zlib 1.2 and need zlib <1.3; Python 3.13 needs zlib >=1.3.1
-NEEDS_OLD_ZLIB = {"minimap2": ("1.2.11", "2.22", "h5bf99c6_0"), "samtools": ("1.2.13", "1.17", "hd87286a_2"),
-                  "bcftools": ("1.2.11", "1.10", "h5d15f04_0")}
-
-
-def zlib_conflicts(deps):
-    """Python 3.13 (asked for explicitly) and the old tools cannot share one zlib -> conflict lines"""
-    py = [(op, v) for n, op, v in deps if n == "python" and v]
-    py313 = any(op not in ("<", "<=") and re.match(r"^3\.(1[3-9]|[2-9]\d)", v) for op, v in py)
-    old = [n for n, op, v in deps if n in NEEDS_OLD_ZLIB]
-    if not (py313 and old):
-        return []
-    lines = [f"  - package {n}-{NEEDS_OLD_ZLIB[n][1]}-{NEEDS_OLD_ZLIB[n][2]} requires libzlib >={NEEDS_OLD_ZLIB[n][0]},<1.3.0a0, "
-             "but none of the providers can be installed" for n in old]
-    lines.append("  - package python-3.13 requires libzlib >=1.3.1,<2.0a0")
-    return lines
-
-
-def env_problems(deps):
-    """packages the browser cannot provide -> list of messages"""
-    problems = htslib_conflicts(deps) or zlib_conflicts(deps)
-    for name, op, want in deps:
-        if name in BROWSER_TOOLS:
-            have = BROWSER_TOOLS[name]
-            if not any(_version_ok(v, op, want) for v in have):
-                problems.append(f"  - nothing provides requested {name} {op}{want} "
-                                f"(this browser only has {name} {' or '.join(have)})")
-        elif name in BROWSER_PY:
-            continue
-        else:
-            problems.append(f"  - nothing provides requested {name} (it cannot run inside this browser)")
-    return problems
-
-
-def env_programs(job):
-    path = job.rule.conda_path()
-    if not path:
-        return None, None
-    try:
-        _, _, deps = parse_env_file(path)
-    except WorkflowError:
-        return [], []
-    progs = set()
-    for n, op, v in deps:
-        progs.update(PACKAGE_PROGRAMS.get(n, [n]))
-    return sorted(progs), [n for n, op, v in deps]
-
-
-def env_location(path):
-    return ".snakemake/conda/" + _env_hash(path) + "_"
 
 
 # ============================================================================
@@ -2147,7 +2000,7 @@ class Out:
 class Bridge:
     """how the engine runs shell commands - the host page provides a real one"""
 
-    async def shell(self, cmd, tools=None, env=None):
+    async def shell(self, cmd):
         raise NotImplementedError
 
     async def sync(self):
@@ -2201,6 +2054,7 @@ OPTIONS = {
 SHORT = {v[0]: k for k, v in OPTIONS.items() if v[0]}
 QUIET_CHOICES = ("all", "host", "progress", "reason", "rules")
 TRIGGER_CHOICES = ("code", "input", "mtime", "params", "software-env")
+SDM_CHOICES = ("apptainer", "conda", "env-modules")
 
 USAGE = ("usage: snakemake [-h] [--dry-run] [--cores [N]] [--printshellcmds] [--forceall]\n"
          "                 [--forcerun [TARGET ...]] [--force] [--configfile FILE [FILE ...]]\n"
@@ -2232,8 +2086,13 @@ supports the options below; everything else behaves as in Snakemake 9.)
   --configfile FILE        Specify or overwrite the config file of the workflow
   --config [KEY=VALUE ...] Set or overwrite values in the workflow config object
   --snakefile FILE, -s     The Snakefile to use (default: Snakefile or workflow/Snakefile)
-  --use-conda              Run jobs in the conda environment given by their conda: directive
-  --conda-create-envs-only Only create the conda environments, then stop
+  --use-conda              Use the conda environments of the rules' conda: directives.
+                           Here every program is installed already, so the environment
+                           files are only checked, and no environment is made
+  --conda-create-envs-only Only make the conda environments, then stop (here: check them)
+  --sdm {conda,apptainer,env-modules}
+                           A way of providing the software (--sdm conda = --use-conda);
+                           not needed here, where every program is installed
   --dag                    Print the directed acyclic graph of jobs in the dot language
   --rulegraph              Print the dependency graph of rules in the dot language
   --list-rules, -l         Show available rules in the Snakefile
@@ -2257,6 +2116,7 @@ def _argerror(msg, hint=None):
 def parse_args(argv):
     a = Args()
     a.dryrun = a.printshell = a.forceall = a.force = a.use_conda = a.conda_create_only = False
+    a.other_sdm = []  # --sdm apptainer, env-modules: noted, as nothing needs them here
     a.dag = a.rulegraph = a.list = a.summary = a.detailed = a.lint = a.delete_all = False
     a.keep_going = a.version = a.help = a.show_failed_logs = False
     a.cores = None
@@ -2403,9 +2263,12 @@ def parse_args(argv):
                     a.cleanup = vals
                 elif opt == "--software-deployment-method":
                     for v in vals:
-                        if v != "conda":
-                            raise _argerror(f"argument --software-deployment-method/--sdm: only 'conda' is available in this browser edition (not '{v}')")
-                    a.use_conda = True
+                        if v not in SDM_CHOICES:
+                            raise _argerror(f"argument --software-deployment-method/--sdm: invalid choice: '{v}' (choose from {', '.join(repr(c) for c in SDM_CHOICES)})")
+                        if v == "conda":
+                            a.use_conda = True
+                        elif v not in a.other_sdm:
+                            a.other_sdm.append(v)
                 i = nxt
                 continue
         a.targets.append(argv[i])
@@ -2555,7 +2418,7 @@ async def _main(args, argv, out, host, t_start):
                      f"so this rule looks for {os.path.relpath(sp)}")
     log_path = _new_log_path()
     if args.use_conda:
-        ok = await _conda_envs(wf, dag, todo if not args.conda_create_only else dag.joblist, out, args.dryrun)
+        ok = await _conda_envs(wf, dag, todo if not args.conda_create_only else dag.joblist, out)
         if not ok:
             _write_log(log_path, out)
             return 1
@@ -2583,6 +2446,8 @@ async def _main(args, argv, out, host, t_start):
     out.resources_info("Rules claiming more threads will be scaled down.")
     if not args.use_conda and any(r.conda for r in wf.rules):
         out.info("Conda environments: ignored")
+    if args.other_sdm:
+        out.info(f"Software deployment ({', '.join(args.other_sdm)}): not available in this browser – every program is installed already, and the jobs use those.")
     out.run_info(_stats(dag, todo))
     code = await _execute(wf, dag, order, out, args)
     out.info(f"Complete log(s): {os.path.abspath(log_path)}")
@@ -2725,7 +2590,9 @@ def _provenance_info(out, dag, todo):
 # ============================================================================
 
 
-async def _conda_envs(wf, dag, jobs, out, dry):
+async def _conda_envs(wf, dag, jobs, out):
+    """--use-conda: the environment files of the jobs are checked; no environment is made (see check_env_file)
+    -> False after an error"""
     envs = collections.OrderedDict()
     for j in _exec_order(dag, jobs) if jobs else []:
         p = j.rule.conda_path()
@@ -2737,57 +2604,11 @@ async def _conda_envs(wf, dag, jobs, out, dry):
             out.error(f"WorkflowError:\nFailed to get conda environment file {rel} of rule {rule.name}: "
                       f"file does not exist (full checked path: {os.path.abspath(path)}).")
             return False
-        text, data, deps = parse_env_file(path)
-        loc = env_location(path)
-        if os.path.exists(loc + ".env_setup_done"):
-            continue
-        if dry:
-            out.info(f"Conda environment {rel} will be created.")
-            continue
-        out.info(f"Creating conda environment {rel}...")
-        out.info("Downloading and installing remote packages.")
-        problems = env_problems(deps)
-        if problems:
-            out.error(
-                f"CreateCondaEnvironmentException:\nCould not create conda environment from {os.path.abspath(path)}:\n"
-                f"Command:\nconda env create --quiet --no-default-packages --file \"{os.path.abspath(loc)}.yaml\" "
-                f"--prefix \"{os.path.abspath(loc)}\"\nOutput:\nLibMambaUnsatisfiableError: Encountered problems while solving:\n"
-                + "\n".join(problems))
-            if htslib_conflicts(deps) or zlib_conflicts(deps):
-                out.hint("An environment holds ONE version of each library, and these packages need different versions "
-                         "of " + ("htslib" if htslib_conflicts(deps) else "zlib") + ". Put them in separate environment "
-                         "files – one conda: file for each rule that needs them.")
-            else:
-                out.hint("On a real computer conda downloads the requested versions from the internet. This browser has "
-                         "a fixed set of tools: minimap2 2.22, samtools 1.17, bcftools 1.10, htslib 1.17 or 1.10, and "
-                         "Python 3.13 with pandas and matplotlib.")
-            return False
-        await asyncio.sleep(0.4)
-        os.makedirs(os.path.join(loc, "conda-meta"), exist_ok=True)
-        with open(loc + ".yaml", "w") as fh:
-            fh.write(text)
-        with open(os.path.join(loc, "conda-meta", "history"), "w") as fh:
-            fh.write(f"==> {datetime.datetime.now():%Y-%m-%d %H:%M:%S} <==\n")
-            fh.write(f"# cmd: conda env create --quiet --no-default-packages --file {os.path.abspath(loc)}.yaml "
-                     f"--prefix {os.path.abspath(loc)}\n# conda version: 26.7.3 (browser workbench)\n")
-            hts, _ = htslib_choice(deps)
-            listed = [d for d in deps if d[0] != "htslib"]
-            if hts:
-                listed.append(("htslib", "==", hts))  # installed as a dependency (or as pinned)
-            for name, op, want in listed:
-                tools = [v for v in BROWSER_TOOLS.get(name, []) if _version_ok(v, op, want)]
-                have = (tools[0] if tools else None) or BROWSER_PY.get(name) or want or "?"
-                chan = "bioconda" if name in ("minimap2", "samtools", "bcftools", "htslib", "tabix", "snakemake", "snakemake-minimal") else "conda-forge"
-                fh.write(f"+{chan}/wasm32::{name}-{have}\n")
-        with open(loc + ".env_setup_done", "w") as fh:
-            fh.write("")
-        out.info("Cleaning up conda package tarballs.")
-        out.info(f"Environment for {os.path.abspath(path)} created (location: {loc})")
-        notes = [f"{n} {BROWSER_PY[n]} (you asked for {n}{op}{v})" for n, op, v in deps
-                 if n in BROWSER_PY and v and not _version_ok(BROWSER_PY[n], op, v)]
-        if notes:
-            out.hint("In this browser the Python packages come from Pyodide: " + "; ".join(notes) + ".")
-    await _bridge.sync()
+        check_env_file(path)
+    if envs:
+        out.info("Conda environments: not made in this browser – every program is installed already, and the jobs use those.")
+        out.hint("On a computer or a cluster, --use-conda makes an environment from each rule's conda: file before its "
+                 "jobs run. Here the files are only checked.")
     return True
 
 
@@ -2831,14 +2652,9 @@ async def _execute(wf, dag, order, out, args):
             if j.output_flags.get(f, {}).get("directory"):
                 os.makedirs(f, exist_ok=True)
         err = None
-        env = None
-        if args.use_conda and j.rule.conda_path():
-            env = env_location(j.rule.conda_path())
-            out.info(f"Activating conda environment: {env}")
         try:
             if j.rule.shellcmd is not None:
-                progs = env_programs(j)[0] if env else None
-                code = await _bridge.shell(j.shellcmd.strip(), tools=progs, env=env)
+                code = await _bridge.shell(j.shellcmd.strip())
                 if code != 0:
                     raise _JobFailed(
                         f"RuleException:\nCalledProcessError in file \"{j.rule.snakefile}\", line {j.rule.lines.get('shell', (0, j.rule.lineno))[1]}:\n"
@@ -2846,10 +2662,10 @@ async def _execute(wf, dag, order, out, args):
                         shell_failed=True, code=code)
             elif j.rule.run is not None:
                 await _bridge.sync()
-                await _run_block(j, out, env)
+                await _run_block(j, out)
             elif j.rule.script is not None:
                 await _bridge.sync()
-                await _run_script(j, out, args, env)
+                await _run_script(j, out, args)
         except _JobFailed as e:
             err = e
         except WorkflowError as e:
@@ -2928,8 +2744,6 @@ async def _execute(wf, dag, order, out, args):
             lines.append(f"    output: {', '.join(j.output)}")
         if len(j.log):
             lines.append(f"    log: {', '.join(j.log)} (check log file(s) for error details)")
-        if env:
-            lines.append(f"    conda-env: {os.path.abspath(env)}")
         if err.shell_failed:
             lines.append(f"    shell:\n        {j.shellcmd.strip()}\n        (command exited with non-zero exit code)")
         if args.show_failed_logs:
@@ -3035,7 +2849,7 @@ class _SnakemakeScriptObject:
         return ""
 
 
-async def _run_script(job, out, args, env):
+async def _run_script(job, out, args):
     rule = job.rule
     path = rule.script_path()
     vline = rule.lines.get("script", (rule.lineno, rule.lineno))[1]
@@ -3054,19 +2868,6 @@ async def _run_script(job, out, args, env):
     command = f"python {os.path.abspath(os.path.join('.snakemake', 'scripts', tmpname))}"
     fail_head = (f"RuleException:\nCalledProcessError in file \"{rule.snakefile}\", line {vline}:\n"
                  f"Command 'set -euo pipefail;  {command}' returned non-zero exit status 1.")
-    if env:
-        progs, pkgs = env_programs(job)
-        if "python" not in (pkgs or []):
-            raise _JobFailed("/usr/bin/bash: line 1: python: command not found\n" + fail_head.replace("status 1", "status 127"))
-        for mod in _imports(src):
-            base = mod.split(".")[0]
-            pkg = IMPORT_PACKAGE.get(base, base)
-            if pkg in PACKAGE_PROGRAMS or pkg in BROWSER_PY or pkg in ("scikit-learn", "biopython", "pillow", "seaborn"):
-                if pkg not in pkgs and not (pkg == "matplotlib" and "matplotlib-base" in pkgs) and pkg != "pip":
-                    raise _JobFailed(
-                        f"Traceback (most recent call last):\n  File \"{os.path.abspath(path)}\", line {_import_line(src, base)}, in <module>\n"
-                        f"    {src.splitlines()[_import_line(src, base) - 1].strip()}\n"
-                        f"ModuleNotFoundError: No module named '{base}'\n" + fail_head)
     g = {"__name__": "__main__", "__file__": os.path.abspath(path), "__builtins__": __builtins__,
          "snakemake": _SnakemakeScriptObject(job)}
     try:
@@ -3111,35 +2912,14 @@ def _script_traceback(e, path, src):
     return "\n".join(lines)
 
 
-def _imports(src):
-    try:
-        tree = ast.parse(src)
-    except SyntaxError:
-        return []
-    mods = []
-    for node in ast.walk(tree):
-        if isinstance(node, ast.Import):
-            mods += [a.name for a in node.names]
-        elif isinstance(node, ast.ImportFrom) and node.module and not node.level:
-            mods.append(node.module)
-    return mods
-
-
-def _import_line(src, base):
-    for i, line in enumerate(src.split("\n"), 1):
-        if re.match(rf"^\s*(import|from)\s+{re.escape(base)}\b", line):
-            return i
-    return 1
-
-
-async def _run_block(job, out, env):
+async def _run_block(job, out):
     rule = job.rule
     wf = rule.workflow
     gen = wf.linemaps.get(rule.snakefile)
     fn = rule.run
     ns = dict(input=job.input, output=job.output, params=job.params, wildcards=job.wildcards, threads=job.threads,
               resources=job.resources, log=job.log, rule=job.name, jobid=job.jobid)
-    afn = _async_run_function(fn, wf, job, env)
+    afn = _async_run_function(fn, wf, job)
     try:
         await afn(**ns)
     except _JobFailed:
@@ -3156,7 +2936,7 @@ async def _run_block(job, out, env):
                          f"  File \"{rule.snakefile}\", line {line}, in {fn.__name__}")
 
 
-def _async_run_function(fn, wf, job, env):
+def _async_run_function(fn, wf, job):
     """turn the run: block function into an async function whose shell() calls are awaited"""
     gen = wf.linemaps.get(job.rule.snakefile)
     code_text = gen.code()
@@ -3189,7 +2969,6 @@ def _async_run_function(fn, wf, job, env):
     mod = ast.Module(body=[afdef], type_ignores=[])
     ast.fix_missing_locations(mod)
     g = wf.globals
-    progs = env_programs(job)[0] if env else None
 
     async def __async_shell(cmd, *a, __line=None, __locals=None, **kw):
         variables = job.format_vars()
@@ -3202,7 +2981,7 @@ def _async_run_function(fn, wf, job, env):
                                 gen.origin(__line) if __line else None, job.rule.snakefile, job.name)
         out_cmd = text.strip()
         get_bridge()
-        code = await _bridge.shell(out_cmd, tools=progs, env=env)
+        code = await _bridge.shell(out_cmd)
         if code != 0:
             raise _JobFailed(f"RuleException:\nCalledProcessError in file \"{job.rule.snakefile}\", line "
                              f"{gen.origin(__line) if __line else job.rule.lineno}:\n"
